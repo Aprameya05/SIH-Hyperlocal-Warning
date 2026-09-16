@@ -13,3 +13,4 @@
 # regime tab
 # what-if tab
 # multiday tab
+# climatology tab
