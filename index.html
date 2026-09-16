@@ -1138,6 +1138,7 @@
       const voblPopupRef = React.useRef(null);
       const [mapReady, setMapReady] = React.useState(false);
       const [mapError, setMapError] = React.useState(false);
+      const [panLayer, setPanLayer] = React.useState('thunderstorm');
       const [winW, setWinW] = React.useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
       React.useEffect(() => {
         const onResize = () => setWinW(window.innerWidth);
@@ -1166,33 +1167,11 @@
         if (!mapContainerRef.current || mapRef.current || typeof maplibregl === 'undefined') return;
         const map = new maplibregl.Map({
           container: mapContainerRef.current,
-          style: {
-            version: 8,
-            glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
-            sources: {
-              'esri-dark': {
-                type: 'raster',
-                tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}'],
-                tileSize: 256,
-                attribution: 'Tiles &copy; Esri',
-                maxzoom: 16,
-              },
-              'esri-ref': {
-                type: 'raster',
-                tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}'],
-                tileSize: 256,
-                maxzoom: 16,
-              }
-            },
-            layers: [
-              { id: 'esri-dark-layer', type: 'raster', source: 'esri-dark' },
-              { id: 'esri-ref-layer',  type: 'raster', source: 'esri-ref' },
-            ]
-          },
+          style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
           center: [VOBL.lng, VOBL.lat],
-          zoom: 10,
-          pitch: 48,
-          bearing: -12,
+          zoom: 9,
+          pitch: 0,
+          bearing: 0,
           antialias: true,
         });
         mapRef.current = map;
@@ -1256,6 +1235,95 @@
             'text-field': ['get', 'label'], 'text-size': 9, 'text-anchor': 'bottom',
           }, paint: { 'text-color': 'rgba(56,189,248,0.55)', 'text-halo-color': 'rgba(0,0,0,0.6)', 'text-halo-width': 1 }});
 
+          // Pan-India multi-hazard grid layer
+          map.addSource('pan-india-src', {
+            type: 'geojson',
+            data: { type: 'FeatureCollection', features: [] }
+          });
+          map.addLayer({
+            id: 'pan-india-ts',
+            type: 'fill',
+            source: 'pan-india-src',
+            filter: ['==', ['get', 'layer'], 'thunderstorm'],
+            paint: {
+              'fill-color': ['interpolate', ['linear'], ['get', 'prob'],
+                0, 'rgba(0,0,0,0)',
+                0.1, 'rgba(255,235,59,0.25)',
+                0.3, 'rgba(255,152,0,0.45)',
+                0.5, 'rgba(239,83,80,0.6)',
+                0.8, 'rgba(183,28,28,0.75)'
+              ],
+              'fill-opacity': 1
+            }
+          });
+          map.addLayer({
+            id: 'pan-india-cb',
+            type: 'fill',
+            source: 'pan-india-src',
+            filter: ['==', ['get', 'layer'], 'cloudburst'],
+            layout: { visibility: 'none' },
+            paint: {
+              'fill-color': ['interpolate', ['linear'], ['get', 'prob'],
+                0, 'rgba(0,0,0,0)',
+                0.1, 'rgba(100,181,246,0.25)',
+                0.3, 'rgba(30,136,229,0.45)',
+                0.5, 'rgba(13,71,161,0.6)',
+                0.8, 'rgba(1,42,100,0.75)'
+              ],
+              'fill-opacity': 1
+            }
+          });
+          map.addLayer({
+            id: 'pan-india-ff',
+            type: 'fill',
+            source: 'pan-india-src',
+            filter: ['==', ['get', 'layer'], 'flash_flood'],
+            layout: { visibility: 'none' },
+            paint: {
+              'fill-color': ['interpolate', ['linear'], ['get', 'prob'],
+                0, 'rgba(0,0,0,0)',
+                0.1, 'rgba(255,183,77,0.25)',
+                0.3, 'rgba(239,108,0,0.45)',
+                0.5, 'rgba(183,28,28,0.6)',
+                0.8, 'rgba(100,0,0,0.75)'
+              ],
+              'fill-opacity': 1
+            }
+          });
+
+          // Load pan-India grid data
+          fetch('data/pan_india_grid.json?' + Date.now())
+            .then(r => r.json())
+            .then(d => {
+              if (!d.grid_cells || d.grid_cells.length === 0) return;
+              const STEP = 1.0;
+              const features = [];
+              ['thunderstorm', 'cloudburst', 'flash_flood'].forEach(layer => {
+                d.grid_cells.forEach(c => {
+                  const prob = c[layer + '_probability'] ?? 0;
+                  if (prob < 0.03) return;
+                  const h = STEP / 2;
+                  features.push({
+                    type: 'Feature',
+                    geometry: {
+                      type: 'Polygon',
+                      coordinates: [[
+                        [c.lon - h, c.lat - h],
+                        [c.lon + h, c.lat - h],
+                        [c.lon + h, c.lat + h],
+                        [c.lon - h, c.lat + h],
+                        [c.lon - h, c.lat - h]
+                      ]]
+                    },
+                    properties: { layer, prob }
+                  });
+                });
+              });
+              const src = map.getSource('pan-india-src');
+              if (src) src.setData({ type: 'FeatureCollection', features });
+            })
+            .catch(() => {});
+
           map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right');
           setMapReady(true);
         });
@@ -1264,6 +1332,17 @@
         // Hard fallback after 5s regardless
         setTimeout(() => { setMapReady(true); }, 5000);
         return () => { if (mapRef.current) { map.remove(); mapRef.current = null; } };
+      }, []);
+
+      React.useEffect(() => {
+        const map = mapRef.current;
+        if (!map || !mapReady) return;
+        const layers = ['pan-india-ts', 'pan-india-cb', 'pan-india-ff'];
+        const active = { 'thunderstorm': 'pan-india-ts', 'cloudburst': 'pan-india-cb', 'flash_flood': 'pan-india-ff' };
+        layers.forEach(l => {
+          if (map.getLayer(l)) map.setLayoutProperty(l, 'visibility', l === active[panLayer] ? 'visible' : 'none');
+        });
+      // eslint-disable-next-line react-hooks/exhaustive-deps
       }, []);
 
       React.useEffect(() => {
@@ -1285,6 +1364,17 @@
         <div style={{ position: 'relative', width: '100%', height: '100%', minHeight: 0, background: '#080c18', overflow: 'hidden' }}>
           {/* MAP */}
           <div ref={mapContainerRef} style={{ position: 'absolute', inset: 0 }} />
+          {/* Pan-India layer toggles */}
+          <div style={{ position: 'absolute', bottom: 185, right: 12, zIndex: 20, display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {[['thunderstorm','⚡ TS'],['cloudburst','🌧 CB'],['flash_flood','🌊 FF']].map(([l, label]) => (
+              <button key={l} onClick={() => setPanLayer(l)} style={{
+                padding: '4px 10px', borderRadius: 6, fontSize: 10, fontWeight: 700, fontFamily: 'monospace',
+                border: `1px solid ${panLayer === l ? 'rgba(56,189,248,0.8)' : 'rgba(56,189,248,0.2)'}`,
+                background: panLayer === l ? 'rgba(56,189,248,0.18)' : 'rgba(4,7,17,0.85)',
+                color: panLayer === l ? '#7dd3fc' : '#607d8b', cursor: 'pointer', backdropFilter: 'blur(8px)'
+              }}>{label}</button>
+            ))}
+          </div>
 
           {/* Gradient vignettes */}
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, rgba(4,7,17,0.93) 0%, rgba(4,7,17,0.65) 240px, rgba(4,7,17,0.1) 420px)', pointerEvents: 'none', zIndex: 2 }} />
