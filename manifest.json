@@ -1,0 +1,39 @@
+{
+  "name": "CSIR Thunderstorm Nowcast — VOBL",
+  "short_name": "TS Nowcast",
+  "description": "Real-time 6-hour thunderstorm nowcasting for Bengaluru Airport (VOBL/43295). CSIR & IMD Bengaluru.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#040711",
+  "theme_color": "#38bdf8",
+  "orientation": "any",
+  "lang": "en",
+  "categories": ["weather", "productivity"],
+  "icons": [
+    {
+      "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxOTIgMTkyIj48cmVjdCB3aWR0aD0iMTkyIiBoZWlnaHQ9IjE5MiIgcng9IjMyIiBmaWxsPSIjMDQwNzExIi8+PHRleHQgeD0iOTYiIHk9IjEyOCIgZm9udC1zaXplPSIxMTIiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJzZXJpZiI+4pmlPC90ZXh0Pjwvc3ZnPg==",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjgwIiBmaWxsPSIjMDQwNzExIi8+PHRleHQgeD0iMjU2IiB5PSIzNDAiIGZvbnQtc2l6ZT0iMzAwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2VyaWYiPuKZpTwvdGV4dD48L3N2Zz4=",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Today's Forecast",
+      "url": "/#dashboard",
+      "description": "View current slot probabilities"
+    },
+    {
+      "name": "Multi-Day Outlook",
+      "url": "/#multiday",
+      "description": "3-day thunderstorm outlook"
+    }
+  ],
+  "screenshots": []
+}
