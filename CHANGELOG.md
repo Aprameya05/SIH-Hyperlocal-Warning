@@ -11,3 +11,4 @@
 # shap tab
 # forecast cards
 # regime tab
+# what-if tab
