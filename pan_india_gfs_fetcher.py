@@ -111,14 +111,9 @@ def safe_open(grib_path: str, filter_keys: dict) -> xr.Dataset | None:
 
 
 def extract_india_grid(grib_path: str) -> list[dict]:
-    """
-    Extract atmospheric variables at each India grid cell.
-    Returns list of cell dicts with lat, lon, and all variables.
-    """
     log.info("Extracting surface fields...")
 
-    # Surface CAPE/CIN/PWAT
-    ds_sfc = safe_open(grib_path, {"typeOfLevel": "surface", "stepType": "instant"})
+    ds_sfc  = safe_open(grib_path, {"typeOfLevel": "surface", "stepType": "instant"})
     ds_cape = safe_open(grib_path, {"typeOfLevel": "atmosphereSingleLayer"})
     ds_2m   = safe_open(grib_path, {"typeOfLevel": "heightAboveGround", "level": 2})
     ds_10m  = safe_open(grib_path, {"typeOfLevel": "heightAboveGround", "level": 10})
@@ -126,79 +121,101 @@ def extract_india_grid(grib_path: str) -> list[dict]:
     ds_700  = safe_open(grib_path, {"typeOfLevel": "isobaricInhPa", "level": 700})
     ds_500  = safe_open(grib_path, {"typeOfLevel": "isobaricInhPa", "level": 500})
 
-    # Build lat/lon grid
+    def load_arr(ds, varname):
+        if ds is None or varname not in ds:
+            return None, None, None
+        try:
+            da = ds[varname].load()
+            lats = da.latitude.values
+            lons = da.longitude.values % 360
+            return da.values, lats, lons
+        except Exception:
+            return None, None, None
+
+    def nearest(arr, lats_arr, lons_arr, lat, lon):
+        if arr is None:
+            return None
+        lon360 = lon % 360
+        ilat = int(np.argmin(np.abs(lats_arr - lat)))
+        ilon = int(np.argmin(np.abs(lons_arr - lon360)))
+        val = float(arr[ilat, ilon])
+        return None if np.isnan(val) else val
+
+    # Preload all arrays
+    cape_arr, c_lats, c_lons = load_arr(ds_cape, "cape")
+    if cape_arr is None:
+        cape_arr, c_lats, c_lons = load_arr(ds_sfc, "cape")
+    cin_arr,  _,      _      = load_arr(ds_cape, "cin")
+    pwat_arr, pw_lats, pw_lons = load_arr(ds_cape, "pwat")
+    t2m_arr,  t2_lats, t2_lons = load_arr(ds_2m, "t2m")
+    d2m_arr,  _,       _       = load_arr(ds_2m, "d2m")
+    rh_arr,   rh_lats, rh_lons = load_arr(ds_2m, "r")
+    u850_arr, u8_lats, u8_lons = load_arr(ds_850, "u")
+    v850_arr, _,       _       = load_arr(ds_850, "v")
+    t850_arr, _,       _       = load_arr(ds_850, "t")
+    q850_arr, _,       _       = load_arr(ds_850, "q")
+    u700_arr, u7_lats, u7_lons = load_arr(ds_700, "u")
+    v700_arr, _,       _       = load_arr(ds_700, "v")
+    t700_arr, _,       _       = load_arr(ds_700, "t")
+    u500_arr, u5_lats, u5_lons = load_arr(ds_500, "u")
+    v500_arr, _,       _       = load_arr(ds_500, "v")
+    t500_arr, _,       _       = load_arr(ds_500, "t")
+    tp_arr,   tp_lats, tp_lons = load_arr(ds_sfc, "tp")
+
+    log.info("Arrays loaded — building grid cells...")
+
     lats = np.arange(INDIA_SOUTH, INDIA_NORTH + GRID_STEP, GRID_STEP)
     lons = np.arange(INDIA_WEST,  INDIA_EAST  + GRID_STEP, GRID_STEP)
-
-    def _get(ds, varname, lat, lon):
-        if ds is None or varname not in ds:
-            return None
-        try:
-            val = float(ds[varname].sel(latitude=lat, longitude=lon % 360, method="nearest").values)
-            return None if np.isnan(val) else val
-        except Exception:
-            return None
 
     cells = []
     for lat in lats:
         for lon in lons:
-            cape = _get(ds_cape, "cape", lat, lon) or _get(ds_sfc, "cape", lat, lon) or 0.0
-            cin  = _get(ds_cape, "cin",  lat, lon) or _get(ds_sfc, "cin",  lat, lon) or 0.0
-            pwat = _get(ds_cape, "pwat", lat, lon) or _get(ds_sfc, "pwat", lat, lon) or 0.0
+            cape = nearest(cape_arr, c_lats, c_lons, lat, lon) or 0.0
+            cin  = nearest(cin_arr,  c_lats, c_lons, lat, lon) or 0.0
+            pwat = nearest(pwat_arr, pw_lats, pw_lons, lat, lon) or 0.0
+            t2m  = nearest(t2m_arr,  t2_lats, t2_lons, lat, lon)
+            d2m  = nearest(d2m_arr,  t2_lats, t2_lons, lat, lon)
+            rh   = nearest(rh_arr,   rh_lats, rh_lons, lat, lon)
+            u850 = nearest(u850_arr, u8_lats, u8_lons, lat, lon) or 0.0
+            v850 = nearest(v850_arr, u8_lats, u8_lons, lat, lon) or 0.0
+            t850 = nearest(t850_arr, u8_lats, u8_lons, lat, lon)
+            q850 = nearest(q850_arr, u8_lats, u8_lons, lat, lon)
+            u700 = nearest(u700_arr, u7_lats, u7_lons, lat, lon) or 0.0
+            v700 = nearest(v700_arr, u7_lats, u7_lons, lat, lon) or 0.0
+            t700 = nearest(t700_arr, u7_lats, u7_lons, lat, lon)
+            u500 = nearest(u500_arr, u5_lats, u5_lons, lat, lon) or 0.0
+            v500 = nearest(v500_arr, u5_lats, u5_lons, lat, lon) or 0.0
+            t500 = nearest(t500_arr, u5_lats, u5_lons, lat, lon)
+            apcp = nearest(tp_arr,   tp_lats, tp_lons, lat, lon) or 0.0
 
-            t2m  = _get(ds_2m,  "t2m",  lat, lon)
-            d2m  = _get(ds_2m,  "d2m",  lat, lon)
-            rh   = _get(ds_2m,  "r",    lat, lon)
-
-            u850 = _get(ds_850, "u",    lat, lon) or 0.0
-            v850 = _get(ds_850, "v",    lat, lon) or 0.0
-            t850 = _get(ds_850, "t",    lat, lon)
-            q850 = _get(ds_850, "q",    lat, lon)
-
-            u700 = _get(ds_700, "u",    lat, lon) or 0.0
-            v700 = _get(ds_700, "v",    lat, lon) or 0.0
-            t700 = _get(ds_700, "t",    lat, lon)
-
-            u500 = _get(ds_500, "u",    lat, lon) or 0.0
-            v500 = _get(ds_500, "v",    lat, lon) or 0.0
-            t500 = _get(ds_500, "t",    lat, lon)
-
-            apcp = _get(ds_sfc, "tp",   lat, lon) or 0.0
-
-            # Derived indices
+                        # Derived indices
             k_index = None
-            if t850 and t700 and t500 and d2m:
-                # K-Index = T850 - T500 + Td850 - (T700 - Td700)
-                # Approximate Td850 from q850
-                td850_approx = t850 - 273.15 - 2.0  # rough approx
-                k_index = (t850 - 273.15) - (t500 - 273.15) + (d2m - 273.15) - ((t700 - 273.15) - td850_approx)
+            if t850 is not None and t700 is not None and t500 is not None and d2m is not None:
+                td850 = d2m  # approximate
+                k_index = (t850 - 273.15) - (t500 - 273.15) + (td850 - 273.15) - ((t700 - 273.15) - (td850 - 273.15))
 
             totals_totals = None
-            if t850 and t500 and d2m:
-                td850_approx = t850 - 273.15 - 2.0
+            if t850 is not None and t500 is not None and d2m is not None:
                 totals_totals = (t850 - 273.15) + (d2m - 273.15) - 2 * (t500 - 273.15)
 
-            wind_shear = float(np.sqrt((u500 - u850)**2 + (v500 - v850)**2))
+            wind_shear = None
+            if u850 is not None and v850 is not None and u500 is not None and v500 is not None:
+                wind_shear = ((u500 - u850)**2 + (v500 - v850)**2) ** 0.5
 
             cells.append({
                 "lat": round(float(lat), 2),
                 "lon": round(float(lon), 2),
-                "cape": round(cape, 1),
-                "cin": round(cin, 1),
-                "pwat": round(pwat, 1),
-                "k_index": round(k_index, 1) if k_index is not None else 30.0,
-                "totals_totals": round(totals_totals, 1) if totals_totals is not None else 40.0,
-                "u850": round(u850, 2),
-                "v850": round(v850, 2),
-                "u500": round(u500, 2),
-                "v500": round(v500, 2),
-                "wind_shear_ms": round(wind_shear, 2),
-                "apcp_mm": round(apcp * 1000, 2) if apcp else 0.0,  # kg/m2 -> mm
-                "t2m_c": round(t2m - 273.15, 1) if t2m else None,
-                "rh2": round(rh, 1) if rh else None,
+                "cape": cape, "cin": cin, "pwat": pwat,
+                "t2m": t2m, "d2m": d2m, "rh": rh,
+                "u850": u850, "v850": v850, "t850": t850, "q850": q850,
+                "u700": u700, "v700": v700, "t700": t700,
+                "u500": u500, "v500": v500, "t500": t500,
+                "apcp": apcp,
+                "k_index": k_index,
+                "totals_totals": totals_totals,
+                "wind_shear_ms": wind_shear,
             })
 
-    log.info(f"Extracted {len(cells)} grid cells.")
     return cells
 
 
