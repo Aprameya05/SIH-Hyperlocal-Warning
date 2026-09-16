@@ -1211,9 +1211,9 @@
             const ts = cell.thunderstorm_probability ?? 0;
             const cb = cell.cloudburst_probability ?? 0;
             const ff = cell.flash_flood_probability ?? 0;
-            const cape = cell.cape_jkg != null ? Math.round(cell.cape_jkg) + ' J/kg' : '—';
+            const cape = cell.totals_totals != null ? cell.totals_totals.toFixed(1) : '—';
             const ki = cell.k_index != null ? cell.k_index.toFixed(1) : '—';
-            const li = cell.lifted_index != null ? cell.lifted_index.toFixed(1) : '—';
+            const li = cell.wind_shear_ms != null ? cell.wind_shear_ms.toFixed(1) + ' m/s' : '—';
             const verdict = ts >= 0.35 ? '⚡ THUNDERSTORM LIKELY' : ts >= 0.15 ? '⚠ POSSIBLE THUNDERSTORM' : '✓ NO THUNDERSTORM';
             const vcolor = ts >= 0.35 ? '#ef5350' : ts >= 0.15 ? '#ffc107' : '#4caf50';
             const locationLine = name ? `<div style="font-size:11px;color:#7dd3fc;margin-bottom:6px;font-weight:700">${name}</div>` : '';
@@ -1242,7 +1242,7 @@
                 </div>
                 <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px">
                   <div style="background:rgba(0,0,0,0.3);border-radius:5px;padding:4px;text-align:center">
-                    <div style="color:#455a64;font-size:8px">CAPE</div>
+                    <div style="color:#455a64;font-size:8px">TT</div>
                     <div style="color:#90a4ae;font-size:10px;font-weight:700">${cape}</div>
                   </div>
                   <div style="background:rgba(0,0,0,0.3);border-radius:5px;padding:4px;text-align:center">
@@ -1250,7 +1250,7 @@
                     <div style="color:#90a4ae;font-size:10px;font-weight:700">${ki}</div>
                   </div>
                   <div style="background:rgba(0,0,0,0.3);border-radius:5px;padding:4px;text-align:center">
-                    <div style="color:#455a64;font-size:8px">LI</div>
+                    <div style="color:#455a64;font-size:8px">SHEAR</div>
                     <div style="color:#90a4ae;font-size:10px;font-weight:700">${li}</div>
                   </div>
                 </div>
@@ -3366,7 +3366,7 @@
                       </div>
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-[10px] mb-3">
                         <div className="p-1.5 rounded bg-[#020409] border border-[#172338]">
-                          <div className="text-[8px] text-[#607d8b]">CAPE</div>
+                          <div className="text-[8px] text-[#607d8b]">TT</div>
                           <div className="font-bold text-white">{day.cape}</div>
                         </div>
                         <div className="p-1.5 rounded bg-[#020409] border border-[#172338]">
@@ -3374,7 +3374,7 @@
                           <div className="font-bold text-white">{day.k_index}</div>
                         </div>
                         <div className="p-1.5 rounded bg-[#020409] border border-[#172338]">
-                          <div className="text-[8px] text-[#607d8b]">LI</div>
+                          <div className="text-[8px] text-[#607d8b]">SHEAR</div>
                           <div className="font-bold text-white">{day.lifted_index}</div>
                         </div>
                         <div className="p-1.5 rounded bg-[#020409] border border-[#172338]">
@@ -4786,7 +4786,7 @@
                   <div className="text-white font-bold">{todayRegime.ts_rate}%</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-[#607d8b]">CAPE</div>
+                  <div className="text-[#607d8b]">TT</div>
                   <div className="text-white font-bold">{todayRegime.cape_used ?? '—'}</div>
                 </div>
                 <div className="text-center">
