@@ -1134,6 +1134,10 @@
       const mapContainerRef = React.useRef(null);
       const mapRef = React.useRef(null);
       const voblPopupRef = React.useRef(null);
+      const gridCellsRef = React.useRef([]);
+      const clickPopupRef = React.useRef(null);
+      const [searchQuery, setSearchQuery] = React.useState('');
+      const [searching, setSearching] = React.useState(false);
       const [mapReady, setMapReady] = React.useState(false);
       const [mapError, setMapError] = React.useState(false);
       const [panLayer, setPanLayer] = React.useState('thunderstorm');
@@ -1199,6 +1203,77 @@
           map.on('click', 'vobl-clickzone', () => { map.flyTo({ center: [VOBL.lng, VOBL.lat], zoom: 9, speed: 1.2 }); });
           map.on('mouseenter', 'vobl-clickzone', () => { map.getCanvas().style.cursor = 'pointer'; });
           map.on('mouseleave', 'vobl-clickzone', () => { map.getCanvas().style.cursor = ''; });
+
+          function riskLabel(p) { return p >= 0.55 ? 'HIGH' : p >= 0.35 ? 'MODERATE' : p >= 0.15 ? 'LOW' : 'MINIMAL'; }
+          function riskColor(p) { return p >= 0.55 ? '#ef5350' : p >= 0.35 ? '#ff9800' : p >= 0.15 ? '#ffc107' : '#4caf50'; }
+          function showCellPopup(map, lng, lat, cell, name) {
+            if (clickPopupRef.current) { clickPopupRef.current.remove(); clickPopupRef.current = null; }
+            const ts = cell.thunderstorm_probability ?? 0;
+            const cb = cell.cloudburst_probability ?? 0;
+            const ff = cell.flash_flood_probability ?? 0;
+            const cape = cell.cape_jkg != null ? Math.round(cell.cape_jkg) + ' J/kg' : '—';
+            const ki = cell.k_index != null ? cell.k_index.toFixed(1) : '—';
+            const li = cell.lifted_index != null ? cell.lifted_index.toFixed(1) : '—';
+            const verdict = ts >= 0.35 ? '⚡ THUNDERSTORM LIKELY' : ts >= 0.15 ? '⚠ POSSIBLE THUNDERSTORM' : '✓ NO THUNDERSTORM';
+            const vcolor = ts >= 0.35 ? '#ef5350' : ts >= 0.15 ? '#ffc107' : '#4caf50';
+            const locationLine = name ? `<div style="font-size:11px;color:#7dd3fc;margin-bottom:6px;font-weight:700">${name}</div>` : '';
+            clickPopupRef.current = new maplibregl.Popup({ closeButton: true, closeOnClick: true, maxWidth: '260px' })
+              .setLngLat([lng, lat])
+              .setHTML(`<div style="font-family:monospace;font-size:10px;color:#cfd8dc;background:rgba(4,7,17,0.97);padding:12px 14px;border-radius:10px;border:1px solid rgba(56,189,248,0.25);min-width:220px">
+                ${locationLine}
+                <div style="font-size:9px;color:#455a64;margin-bottom:8px">${lat.toFixed(2)}°N ${lng.toFixed(2)}°E · GFS cell ${cell.lat}°N ${cell.lon}°E</div>
+                <div style="color:${vcolor};font-size:11px;font-weight:800;margin-bottom:8px;letter-spacing:1px">${verdict}</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;margin-bottom:8px">
+                  <div style="background:rgba(0,0,0,0.4);border-radius:6px;padding:5px;text-align:center">
+                    <div style="color:#607d8b;font-size:8px">⚡ TS</div>
+                    <div style="color:${riskColor(ts)};font-size:13px;font-weight:800">${(ts*100).toFixed(0)}%</div>
+                    <div style="color:#546e7a;font-size:8px">${riskLabel(ts)}</div>
+                  </div>
+                  <div style="background:rgba(0,0,0,0.4);border-radius:6px;padding:5px;text-align:center">
+                    <div style="color:#607d8b;font-size:8px">🌧 CB</div>
+                    <div style="color:${riskColor(cb)};font-size:13px;font-weight:800">${(cb*100).toFixed(0)}%</div>
+                    <div style="color:#546e7a;font-size:8px">${riskLabel(cb)}</div>
+                  </div>
+                  <div style="background:rgba(0,0,0,0.4);border-radius:6px;padding:5px;text-align:center">
+                    <div style="color:#607d8b;font-size:8px">🌊 FF</div>
+                    <div style="color:${riskColor(ff)};font-size:13px;font-weight:800">${(ff*100).toFixed(0)}%</div>
+                    <div style="color:#546e7a;font-size:8px">${riskLabel(ff)}</div>
+                  </div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px">
+                  <div style="background:rgba(0,0,0,0.3);border-radius:5px;padding:4px;text-align:center">
+                    <div style="color:#455a64;font-size:8px">CAPE</div>
+                    <div style="color:#90a4ae;font-size:10px;font-weight:700">${cape}</div>
+                  </div>
+                  <div style="background:rgba(0,0,0,0.3);border-radius:5px;padding:4px;text-align:center">
+                    <div style="color:#455a64;font-size:8px">K-IDX</div>
+                    <div style="color:#90a4ae;font-size:10px;font-weight:700">${ki}</div>
+                  </div>
+                  <div style="background:rgba(0,0,0,0.3);border-radius:5px;padding:4px;text-align:center">
+                    <div style="color:#455a64;font-size:8px">LI</div>
+                    <div style="color:#90a4ae;font-size:10px;font-weight:700">${li}</div>
+                  </div>
+                </div>
+              </div>`)
+              .addTo(map);
+          }
+
+          map.on('click', (e) => {
+            const hit = map.queryRenderedFeatures(e.point, { layers: ['vobl-clickzone'] });
+            if (hit.length > 0) return;
+            const cells = gridCellsRef.current;
+            if (!cells || cells.length === 0) return;
+            const { lng, lat } = e.lngLat;
+            let best = null, bestD = Infinity;
+            cells.forEach(c => {
+              const d = Math.abs(c.lat - lat) + Math.abs(c.lon - lng);
+              if (d < bestD) { bestD = d; best = c; }
+            });
+            if (!best || bestD > 5) return;
+            showCellPopup(map, lng, lat, best, null);
+          });
+
+          window._showCellPopup = showCellPopup;
           map.addLayer({ id: 'vobl-outer', type: 'circle', source: 'vobl-src',
             paint: { 'circle-radius': 24, 'circle-color': 'rgba(56,189,248,0.08)', 'circle-stroke-width': 2, 'circle-stroke-color': '#38bdf8' }
           });
@@ -1298,6 +1373,7 @@
             .then(r => r.json())
             .then(d => {
               if (!d.cells || d.cells.length === 0) return;
+              gridCellsRef.current = d.cells;
               const STEP = 1.0;
               const features = [];
               ['thunderstorm', 'cloudburst', 'flash_flood'].forEach(layer => {
@@ -1388,6 +1464,59 @@
           </div>
 
 
+          {/* ── SEARCH BOX ── */}
+          {(() => {
+            const handleSearch = async (q) => {
+              if (!q.trim()) return;
+              setSearching(true);
+              try {
+                const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&countrycodes=in&format=json&limit=1`);
+                const data = await res.json();
+                if (data.length === 0) { alert('Place not found in India'); setSearching(false); return; }
+                const { lat, lon, display_name } = data[0];
+                const lngN = parseFloat(lon), latN = parseFloat(lat);
+                const shortName = display_name.split(',').slice(0,2).join(', ');
+                mapRef.current.flyTo({ center: [lngN, latN], zoom: 8, speed: 1.4 });
+                const cells = gridCellsRef.current;
+                if (cells && cells.length > 0) {
+                  let best = null, bestD = Infinity;
+                  cells.forEach(c => {
+                    const d = Math.abs(c.lat - latN) + Math.abs(c.lon - lngN);
+                    if (d < bestD) { bestD = d; best = c; }
+                  });
+                  if (best && window._showCellPopup) {
+                    setTimeout(() => window._showCellPopup(mapRef.current, lngN, latN, best, shortName), 800);
+                  }
+                }
+              } catch(e) { alert('Search failed'); }
+              setSearching(false);
+            };
+            return (
+              <div style={{ position: 'absolute', top: 50, right: 44, zIndex: 25, display: 'flex', gap: 4 }}>
+                <input
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && handleSearch(searchQuery)}
+                  placeholder="Search city or place..."
+                  style={{
+                    width: 190, padding: '6px 10px', borderRadius: 8, fontSize: 11,
+                    fontFamily: 'monospace', border: '1px solid rgba(56,189,248,0.3)',
+                    background: 'rgba(4,7,17,0.9)', color: '#cfd8dc', outline: 'none',
+                    backdropFilter: 'blur(8px)'
+                  }}
+                />
+                <button
+                  onClick={() => handleSearch(searchQuery)}
+                  disabled={searching}
+                  style={{
+                    padding: '6px 10px', borderRadius: 8, fontSize: 11, fontFamily: 'monospace',
+                    border: '1px solid rgba(56,189,248,0.3)', background: 'rgba(56,189,248,0.1)',
+                    color: '#38bdf8', cursor: 'pointer'
+                  }}
+                >{searching ? '...' : '🔍'}</button>
+              </div>
+            );
+          })()}
           {/* Gradient vignettes */}
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, rgba(4,7,17,0.93) 0%, rgba(4,7,17,0.65) 240px, rgba(4,7,17,0.1) 420px)', pointerEvents: 'none', zIndex: 2 }} />
           <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 175, background: 'linear-gradient(to top, rgba(4,7,17,1) 0%, rgba(4,7,17,0) 100%)', pointerEvents: 'none', zIndex: 2 }} />
