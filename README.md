@@ -1,9 +1,8 @@
 <div align="center">
-<img src="https://img.shields.io/badge/CSIR-Research%20Project-blue?style=for-the-badge" />
 
-# CSIR Thunderstorm Prediction System
+# Hyper-Local Thunderstorm Early Warning System
 
-**Operational AI Thunderstorm Nowcasting for Bengaluru Airport (VOBL)**
+**AI-Driven Nowcasting for Bengaluru Airport (VOBL) — SIH 2025**
 
 IMD Station 43295 · Kempegowda International Airport · Bengaluru, India
 
@@ -445,8 +444,8 @@ Saves each model using `Booster.save_model()` into `.ubj` format, which is stabl
 ## Local Development
 
 ```bash
-git clone https://github.com/Aprameya05/CSIR-Thunderstorm-Bengaluru.git
-cd CSIR-Thunderstorm-Bengaluru
+git clone https://github.com/Aprameya05/SIH-Hyperlocal-Warning.git
+cd SIH-Hyperlocal-Warning
 pip install -r requirements.txt
 
 python gfs_fetcher.py
@@ -510,24 +509,10 @@ The entire system runs at zero cost.
 
 ## What Is Next
 
-Near-term: Himawari backtest (`python backtest_himawari.py --per-slot --start 2015-07-01`) to generate per-slot BT training data for proper v6 Himawari model training. Re-calibrate v5 models on 2024-2025 data using isotonic calibration without full retraining. Integrate Dr. Agnihotri's 2026 raw VOBL surface data when received. Add Damini lightning network feed (pending IMD agreement).
+Near-term: Himawari backtest (`python backtest_himawari.py --per-slot --start 2015-07-01`) to generate per-slot BT training data for proper v6 Himawari model training. Re-calibrate v5 models on 2024-2025 data using isotonic calibration without full retraining. Add Damini lightning network feed (pending IMD agreement).
 
 Medium-term: API rate limiting and authentication for IMD production deployment. Automated retraining trigger when new IMD annual data arrives. Email alert channel (currently WhatsApp only).
 
 ---
 
-## Team
-
-| Member | Role |
-|--------|------|
-| **Aprameya** | ML lead, project architect |
-| **Atul Denny** | Upper-air data, GFS pipeline, Himawari satellite fetching |
-| **Satvik** | FastAPI backend on Render |
-| **Vidhi** | ERA5 historical data |
-| **Sneha** | Verification pipeline, visualisation |
-
-**Institutional collaborator:** Dr. Geeta Agnihotri, Scientist F, IMD Bengaluru. Agreed to share 2026 VOBL raw surface observation data and is a candidate co-author on a joint technical report.
-
----
-
-*This is a production system, not a research prototype. Everything described above runs today.*
+*This is a production system, not a prototype. Everything described above runs today.*
