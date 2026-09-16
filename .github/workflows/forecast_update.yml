@@ -96,10 +96,7 @@ jobs:
             SLOT_ARG="--slot ${{ github.event.inputs.slot }}"
           fi
           python pan_india_gfs_fetcher.py $SLOT_ARG
-          [ -f data/pan_india_grid.json ] && python3 - << 'PYCHECK'
-import json,sys; d=json.load(open('data/pan_india_grid.json')); c=d.get('grid_cells',[]); s=d.get('summary',{}).get('thunderstorm',{}); print(f'pan-India grid: {len(c)} cells, ts_max={s.get("max_prob",0)*100:.1f}%')
-PYCHECK
-          echo 'pan-India grid check done' || echo 'pan-India grid not yet available'
+          [ -f data/pan_india_grid.json ] && python3 -c 'import json; d=json.load(open("data/pan_india_grid.json")); c=d.get("grid_cells",[]); s=d.get("summary",{}).get("thunderstorm",{}); print("pan-India grid:",len(c),"cells ts_max="+str(round(s.get("max_prob",0)*100,1))+"%")' || echo 'pan-India grid not yet available'
         continue-on-error: true
 
       - name: Fetch Himawari-9 satellite data
