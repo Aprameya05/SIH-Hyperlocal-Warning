@@ -215,4 +215,4 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
-          npx wrangler@3.87.0 pages deploy . --project-name=sih-hyperlocal-warning --branch=main
+                    CLOUDFLARE_ACCOUNT_ID="d1ebec3d837d56d32a077b449a65f0c0" npx wrangler@3.87.0 pages deploy . --project-name=sih-hyperlocal-warning --branch=main
