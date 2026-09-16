@@ -12,3 +12,4 @@
 # forecast cards
 # regime tab
 # what-if tab
+# multiday tab
