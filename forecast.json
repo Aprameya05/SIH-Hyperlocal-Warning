@@ -1,6 +1,6 @@
 {
   "date": "2026-09-16",
-  "generated_at": "2026-09-16 22:52 IST",
+  "generated_at": "2026-09-16 22:57 IST",
   "alert_active": false,
   "peak_slot": 1,
   "peak_probability": 0.0015,
@@ -109,8 +109,8 @@
   },
   "satellite": {
     "himawari9": {
-      "timestamp_utc": "2026-09-16T17:10:00",
-      "timestamp_ist": "2026-09-16T22:40:00",
+      "timestamp_utc": "2026-09-16T17:20:00",
+      "timestamp_ist": "2026-09-16T22:50:00",
       "vobl_bt_celsius": 1.11,
       "min_bt_50km": -43.74,
       "mean_bt_50km": -4.85,
@@ -187,8 +187,8 @@
         "bt_trend_1h": -0.04
       },
       {
-        "timestamp_utc": "2026-09-16T17:10:00",
-        "timestamp_ist": "2026-09-16T22:40:00",
+        "timestamp_utc": "2026-09-16T17:20:00",
+        "timestamp_ist": "2026-09-16T22:50:00",
         "vobl_bt_celsius": 1.11,
         "min_bt_50km": -43.74,
         "mean_bt_50km": -4.85,
@@ -224,7 +224,7 @@
     "monsoon_regime": "NEUTRAL",
     "regime_thresh_factor": 1.0,
     "peak_window_ist": "1300\u20131800 IST",
-    "computed_at": "2026-09-16 22:52 IST"
+    "computed_at": "2026-09-16 22:57 IST"
   },
   "multiday_outlook": [
     {
@@ -299,7 +299,7 @@
     "query_cape": 0,
     "query_ki": 30,
     "query_li": 0,
-    "computed_at": "2026-09-16 22:52 IST"
+    "computed_at": "2026-09-16 22:57 IST"
   },
   "airport_impact": {
     "total_departures_today": 143,
@@ -341,7 +341,7 @@
         "impact_pct": 0.0
       }
     ],
-    "computed_at": "2026-09-16 22:52 IST"
+    "computed_at": "2026-09-16 22:57 IST"
   },
   "synoptic_regime": {
     "regime_id": "R1",
@@ -354,7 +354,7 @@
     "ki_used": 30,
     "t2m_c": 28.0,
     "month": 9,
-    "computed_at": "2026-09-16 22:52 IST"
+    "computed_at": "2026-09-16 22:57 IST"
   },
   "verification": {
     "pod": 0.0,
@@ -751,12 +751,12 @@
     ],
     "thunderstorm_present": false,
     "raw": "METAR VOBL 161700Z 11006KT 6000 FEW012 SCT080 24/21 Q1017 NOSIG",
-    "fetched_utc": "2026-09-16T17:22:05Z"
+    "fetched_utc": "2026-09-16T17:27:58Z"
   },
   "sigmet_bulletin": null,
   "pipeline_health": {
-    "generated_at_utc": "2026-09-16T17:22:01Z",
-    "generated_at_ist": "2026-09-16 22:52 IST",
+    "generated_at_utc": "2026-09-16T17:27:58Z",
+    "generated_at_ist": "2026-09-16 22:57 IST",
     "components": {
       "gfs": {
         "status": "MISSING",
@@ -767,7 +767,7 @@
       },
       "himawari9": {
         "status": "OK",
-        "timestamp_utc": "2026-09-16T17:10:00",
+        "timestamp_utc": "2026-09-16T17:20:00",
         "storm_detected": true,
         "min_bt_50km": -43.74,
         "staleness": "UNKNOWN"
