@@ -1,0 +1,175 @@
+name: Retrain Models
+
+# ── When this fires ──────────────────────────────────────────────
+# 1. Manual: Actions → Retrain Models → Run workflow (pick slot + year)
+# 2. New IMD data: push a file matching data/43295_Table_2_*.csv to main
+# 3. Scheduled: 1st of every October (post-monsoon season data complete)
+#
+# The workflow runs on GitHub-hosted runners (CPU only).
+# For GPU training (A100), use train_v6_slot_models.py on Colab/local.
+
+on:
+  workflow_dispatch:
+    inputs:
+      slot:
+        description: "Slot to retrain (0/1/2/3 or 'all')"
+        required: false
+        default: "2"
+      source:
+        description: "Model version: v6 (full retrain) or recal (isotonic only)"
+        required: false
+        default: "recal"
+      cal_years:
+        description: "Calibration years (space-separated, e.g. '2024 2025')"
+        required: false
+        default: "2024 2025"
+
+  push:
+    paths:
+      - "data/43295_Table_2_*.csv"   # New IMD observation file pushed
+
+  schedule:
+    - cron: "0 3 1 10 *"   # 1st October 03:00 UTC — post-monsoon data complete
+
+jobs:
+  retrain:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install \
+            "scikit-learn>=1.5.0" \
+            "xgboost>=2.0.0" \
+            "joblib>=1.3.0" \
+            "pandas>=2.0.0" \
+            "numpy>=1.24.0" \
+            "scipy>=1.12.0" \
+            "matplotlib>=3.7.0" \
+            "optuna>=3.4.0"
+
+      - name: Determine action
+        id: action
+        run: |
+          SOURCE="${{ github.event.inputs.source || 'recal' }}"
+          SLOT="${{ github.event.inputs.slot || '2' }}"
+          CAL_YEARS="${{ github.event.inputs.cal_years || '2024 2025' }}"
+
+          # On push (new IMD data), always run recalibration on all slots
+          if [ "${{ github.event_name }}" = "push" ]; then
+            SOURCE="recal"
+            SLOT="all"
+          fi
+
+          # On scheduled October run, run recalibration on all slots
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            SOURCE="recal"
+            SLOT="all"
+          fi
+
+          echo "source=$SOURCE" >> $GITHUB_OUTPUT
+          echo "slot=$SLOT"     >> $GITHUB_OUTPUT
+          echo "cal_years=$CAL_YEARS" >> $GITHUB_OUTPUT
+          echo "Running: source=$SOURCE  slot=$SLOT  cal_years=$CAL_YEARS"
+
+      - name: Run isotonic recalibration
+        if: steps.action.outputs.source == 'recal'
+        run: |
+          SLOT="${{ steps.action.outputs.slot }}"
+          CAL_YEARS="${{ steps.action.outputs.cal_years }}"
+
+          if [ "$SLOT" = "all" ]; then
+            python recalibrate_models.py --slots 0 1 2 3 --cal-years $CAL_YEARS
+          else
+            python recalibrate_models.py --slots $SLOT --cal-years $CAL_YEARS
+          fi
+
+      - name: Run v6 retrain (CPU, single slot)
+        if: steps.action.outputs.source == 'v6'
+        run: |
+          SLOT="${{ steps.action.outputs.slot }}"
+          if [ "$SLOT" = "all" ]; then
+            echo "Full v6 retrain on CPU is slow — use A100 Colab for all slots."
+            echo "Running slot 2 only as a smoke test."
+            SLOT="2"
+          fi
+          python train_v6_slot_models.py --slot $SLOT --trials 20 \
+            2>&1 | tail -50
+        continue-on-error: true
+
+      - name: Verify new model loads correctly
+        run: |
+          python - <<'EOF'
+          import joblib, sys, glob
+          from pathlib import Path
+          models = list(Path("models").glob("*recal*.pkl")) + \
+                   list(Path("models").glob("*v6_temporal*.pkl"))
+          ok = 0
+          for m in models:
+              try:
+                  art = joblib.load(m)
+                  if isinstance(art, dict):
+                      assert art.get("model") or art.get("calibrated"), "no model key"
+                  ok += 1
+              except Exception as e:
+                  print(f"FAIL {m.name}: {e}")
+          print(f"Model load check: {ok}/{len(models)} OK")
+          if ok == 0:
+              sys.exit(1)
+          EOF
+
+      - name: Run forecast pipeline to confirm inference works
+        run: python forecast_action.py
+        continue-on-error: true
+
+      - name: Update calibration results in README badge
+        run: |
+          python - <<'EOF'
+          import json
+          from pathlib import Path
+
+          for f in Path("results").glob("calibration_results_*_recal.json"):
+              try:
+                  data = json.load(open(f))
+                  print(f"\n{f.name}:")
+                  for s in data.get("slots", []):
+                      if s.get("status") == "ok":
+                          print(f"  Slot {s['slot']}: Brier {s['brier_before']:.4f} → "
+                                f"{s['brier_after']:.4f} (delta {s['improvement']:+.4f})")
+              except Exception:
+                  pass
+          EOF
+
+      - name: Commit updated models and results
+        run: |
+          git config --global user.name  "CSIR Retrain Bot"
+          git config --global user.email "bot@csir-thunderstorm.in"
+
+          cp forecast.json /tmp/forecast_generated.json
+          git pull origin main --no-rebase || true
+          cp /tmp/forecast_generated.json forecast.json
+
+          git add \
+            models/*recal*.pkl \
+            results/calibration_results_*.json \
+            results/reliability_slot*.png \
+            forecast.json \
+            2>/dev/null || true
+
+          git diff --staged --quiet || \
+            git commit -m "retrain: recalibration $(date -u '+%Y-%m-%d') slot=${{ steps.action.outputs.slot }}"
+
+          git push origin main --force-with-lease

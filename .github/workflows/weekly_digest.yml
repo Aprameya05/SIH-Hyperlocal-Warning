@@ -1,0 +1,198 @@
+name: Weekly Thunderstorm Forecast Digest
+
+# Runs every Monday at 06:00 UTC (11:30 IST) — weekly performance summary.
+# Also triggerable manually.
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"    # Monday 11:30 IST
+  workflow_dispatch:
+    inputs:
+      lookback_days:
+        description: "Number of days to include in digest (default: 7)"
+        required: false
+        default: "7"
+
+jobs:
+  weekly-digest:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install pandas numpy requests --quiet
+
+      - name: Generate weekly digest
+        env:
+          LOOKBACK_DAYS: ${{ github.event.inputs.lookback_days || '7' }}
+        run: |
+          python - <<'PYEOF'
+          import os, json, csv, math
+          from datetime import datetime, timezone, timedelta
+          from pathlib import Path
+
+          IST = timezone(timedelta(hours=5, minutes=30))
+          now_ist = datetime.now(IST)
+          lookback = int(os.environ.get("LOOKBACK_DAYS", 7))
+          cutoff = now_ist - timedelta(days=lookback)
+
+          print(f"[DIGEST] Generating {lookback}-day digest ending {now_ist.strftime('%Y-%m-%d %H:%M IST')}")
+
+          # ── Load forecast.json for today's state ─────────────────────────────
+          fj = Path("forecast.json")
+          forecast = json.loads(fj.read_text()) if fj.exists() else {}
+          regime = forecast.get("monsoon_regime", {}).get("regime", "UNKNOWN")
+          slots = forecast.get("slots", [])
+          today_max = max((s.get("ts_probability", 0) for s in slots), default=0)
+
+          # ── Load forecast_log.csv for recent verification ──────────────────────
+          log_path = Path("data/forecast_log.csv")
+          recent_rows = []
+          if log_path.exists():
+              with open(log_path, newline="", encoding="utf-8") as f:
+                  reader = csv.DictReader(f)
+                  for row in reader:
+                      try:
+                          rd = datetime.strptime(row.get("date",""), "%Y-%m-%d")
+                          rd = rd.replace(tzinfo=IST)
+                          if rd >= cutoff:
+                              recent_rows.append(row)
+                      except Exception:
+                          pass
+          print(f"[DIGEST] {len(recent_rows)} rows in last {lookback} days")
+
+          # Compute verification metrics over recent_rows
+          tp = fp = tn = fn = 0
+          brier_sum = 0.0
+          ts_days = 0
+          labeled = 0
+          for row in recent_rows:
+              try:
+                  prob = float(row.get("ts_probability") or row.get("ts_prob") or 0)
+                  pred = int(row.get("ts_predicted") or 0)
+                  label_raw = row.get("ts_label_actual", "")
+                  if label_raw == "":
+                      continue
+                  label = int(label_raw)
+                  labeled += 1
+                  if label == 1: ts_days += 1
+                  brier_sum += (prob - label) ** 2
+                  if pred == 1 and label == 1: tp += 1
+                  elif pred == 1 and label == 0: fp += 1
+                  elif pred == 0 and label == 1: fn += 1
+                  else: tn += 1
+              except Exception:
+                  pass
+
+          pod = tp / (tp + fn) if (tp + fn) > 0 else float("nan")
+          far = fp / (tp + fp) if (tp + fp) > 0 else float("nan")
+          hss_num = 2*(tp*tn - fp*fn)
+          hss_den = ((tp+fn)*(fn+tn) + (tp+fp)*(fp+tn))
+          hss = hss_num / hss_den if hss_den > 0 else float("nan")
+          brier = brier_sum / labeled if labeled > 0 else float("nan")
+          ts_rate = ts_days / labeled if labeled > 0 else float("nan")
+
+          # ── Load drift report if exists ───────────────────────────────────────
+          drift_rpt = {}
+          drift_path = Path("drift_report.json")
+          if drift_path.exists():
+              drift_rpt = json.loads(drift_path.read_text())
+
+          # ── Load recent_alerts ────────────────────────────────────────────────
+          alert_count = 0
+          recent_alerts = forecast.get("recent_alerts", [])
+          for a in recent_alerts:
+              try:
+                  ad = datetime.strptime(a.get("date",""), "%Y-%m-%d").replace(tzinfo=IST)
+                  if ad >= cutoff:
+                      alert_count += 1
+              except Exception:
+                  pass
+
+          # ── Build digest dict ─────────────────────────────────────────────────
+          digest = {
+              "period_start": cutoff.strftime("%Y-%m-%d"),
+              "period_end": now_ist.strftime("%Y-%m-%d"),
+              "lookback_days": lookback,
+              "generated_at": now_ist.isoformat(),
+              "regime": regime,
+              "today_max_prob_pct": round(today_max * 100, 1),
+              "metrics": {
+                  "labeled_rows": labeled,
+                  "ts_days": ts_days,
+                  "ts_rate_pct": round(ts_rate * 100, 1) if not math.isnan(ts_rate) else None,
+                  "POD": round(pod, 3) if not math.isnan(pod) else None,
+                  "FAR": round(far, 3) if not math.isnan(far) else None,
+                  "HSS": round(hss, 3) if not math.isnan(hss) else None,
+                  "Brier": round(brier, 4) if not math.isnan(brier) else None,
+                  "TP": tp, "FP": fp, "TN": tn, "FN": fn,
+              },
+              "alert_days_in_period": alert_count,
+              "drift_flag": drift_rpt.get("drift_detected", False),
+              "recalibrated": drift_rpt.get("recalibrated", False),
+          }
+
+          out = Path("data/weekly_digest.json")
+          out.parent.mkdir(exist_ok=True)
+          out.write_text(json.dumps(digest, indent=2))
+          print(f"[DIGEST] Saved data/weekly_digest.json")
+          print(json.dumps(digest, indent=2))
+          PYEOF
+
+      - name: Send digest via ntfy (push notification)
+        env:
+          NTFY_TOKEN: ${{ secrets.NTFY_TOKEN }}
+        run: |
+          python - <<'PYEOF'
+          import json, os, urllib.request
+          d = json.loads(open("data/weekly_digest.json").read())
+          m = d["metrics"]
+          pod = m.get("POD"); far = m.get("FAR"); hss = m.get("HSS"); brier = m.get("Brier")
+          regime = d.get("regime", "UNKNOWN")
+          drift = "⚠️ DRIFT" if d.get("drift_flag") else "✓ OK"
+
+          title = f"[CSIR] Weekly Digest — {d['period_end']} | {regime}"
+          body = (
+              f"Period: {d['period_start']} → {d['period_end']}\n"
+              f"POD={pod:.3f}  FAR={far:.3f}  HSS={hss:.3f}  Brier={brier:.4f}\n"
+              f"TS Days: {m['ts_days']}/{m['labeled_rows']} ({m.get('ts_rate_pct','?')}% base rate)\n"
+              f"Alerts: {d['alert_days_in_period']} days | Model: {drift}\n"
+              f"Today max prob: {d['today_max_prob_pct']}%"
+          ) if (pod and far and hss and brier) else f"Digest generated. Labeled rows: {m['labeled_rows']}. Regime: {regime}."
+
+          token = os.environ.get("NTFY_TOKEN", "")
+          headers = {
+              "Title": title.encode(),
+              "Priority": "default",
+              "Tags": "thunderstorm,digest,weekly",
+              "Authorization": f"Bearer {token}" if token else "",
+          }
+          req = urllib.request.Request(
+              "https://ntfy.sh/csir-vobl-thunderstorm",
+              data=body.encode(), headers={k: v for k, v in headers.items() if v}, method="POST"
+          )
+          try:
+              with urllib.request.urlopen(req, timeout=10) as r:
+                  print(f"[DIGEST] ntfy push sent: {r.status}")
+          except Exception as e:
+              print(f"[DIGEST] ntfy push failed (non-fatal): {e}")
+          PYEOF
+
+      - name: Commit digest JSON
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git pull origin main --no-rebase
+          git add data/weekly_digest.json || true
+          git diff --cached --quiet && echo "[DIGEST] Nothing to commit" || \
+            git commit -m "chore: weekly digest $(date -u +%Y-%m-%d)"
+          git push origin main --force-with-lease
