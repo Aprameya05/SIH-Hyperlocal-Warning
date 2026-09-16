@@ -1168,8 +1168,8 @@
         const map = new maplibregl.Map({
           container: mapContainerRef.current,
           style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
-          center: [VOBL.lng, VOBL.lat],
-          zoom: 9,
+          center: [82.5, 22.0],
+          zoom: 4,
           pitch: 0,
           bearing: 0,
           antialias: true,
@@ -1197,6 +1197,10 @@
             },
           });
           map.addSource('vobl-src', { type: 'geojson', data: { type: 'Feature', geometry: { type: 'Point', coordinates: [VOBL.lng, VOBL.lat] }, properties: {} } });
+          map.addLayer({ id: 'vobl-clickzone', type: 'circle', source: 'vobl-src', paint: { 'circle-radius': 22, 'circle-color': 'rgba(0,0,0,0)', 'circle-stroke-width': 0 } });
+          map.on('click', 'vobl-clickzone', () => { map.flyTo({ center: [VOBL.lng, VOBL.lat], zoom: 9, speed: 1.2 }); });
+          map.on('mouseenter', 'vobl-clickzone', () => { map.getCanvas().style.cursor = 'pointer'; });
+          map.on('mouseleave', 'vobl-clickzone', () => { map.getCanvas().style.cursor = ''; });
           map.addLayer({ id: 'vobl-outer', type: 'circle', source: 'vobl-src',
             paint: { 'circle-radius': 24, 'circle-color': 'rgba(56,189,248,0.08)', 'circle-stroke-width': 2, 'circle-stroke-color': '#38bdf8' }
           });
@@ -1205,7 +1209,7 @@
           });
           voblPopupRef.current = new maplibregl.Popup({ closeButton: false, closeOnClick: false, offset: 32 })
             .setLngLat([VOBL.lng, VOBL.lat])
-            .setHTML(`<div style="font-family:monospace;font-size:11px;color:#38bdf8;background:rgba(4,7,17,0.95);padding:8px 12px;border-radius:10px;border:1px solid rgba(56,189,248,0.35);white-space:nowrap">✈ VOBL / Station 43295<br><span style="color:#4caf50;font-size:10px">LOADING...</span></div>`)
+            .setHTML(`<div style="font-family:monospace;font-size:11px;color:#38bdf8;background:rgba(4,7,17,0.95);padding:8px 12px;border-radius:10px;border:1px solid rgba(56,189,248,0.35);white-space:nowrap;cursor:pointer" title="Click to zoom BLR">✈ VOBL / Station 43295<br><span style="color:#4caf50;font-size:10px">LOADING...</span></div>`)
             .addTo(map);
           // Add range rings at 50/100/150/200 km centred on VOBL
           const makeRingGeoJSON = (centerLng, centerLat, radiusKm) => {
@@ -1342,8 +1346,7 @@
         layers.forEach(l => {
           if (map.getLayer(l)) map.setLayoutProperty(l, 'visibility', l === active[panLayer] ? 'visible' : 'none');
         });
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-      }, []);
+      }, [panLayer, mapReady]);
 
       React.useEffect(() => {
         if (!mapRef.current || !mapReady) return;
@@ -1364,8 +1367,18 @@
         <div style={{ position: 'relative', width: '100%', height: '100%', minHeight: 0, background: '#080c18', overflow: 'hidden' }}>
           {/* MAP */}
           <div ref={mapContainerRef} style={{ position: 'absolute', inset: 0 }} />
-          {/* Pan-India layer toggles */}
+          {/* Pan-India layer toggles + zoom controls */}
           <div style={{ position: 'absolute', bottom: 185, right: 12, zIndex: 20, display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <button onClick={() => { if (mapRef.current) mapRef.current.flyTo({ center: [82.5, 22.0], zoom: 4, speed: 1.2 }); }} style={{
+              padding: '4px 10px', borderRadius: 6, fontSize: 10, fontWeight: 700, fontFamily: 'monospace',
+              border: '1px solid rgba(99,255,130,0.5)', background: 'rgba(4,7,17,0.85)',
+              color: '#63ff82', cursor: 'pointer', backdropFilter: 'blur(8px)', marginBottom: 4
+            }}>🌏 India</button>
+            <button onClick={() => { if (mapRef.current) mapRef.current.flyTo({ center: [VOBL.lng, VOBL.lat], zoom: 9, speed: 1.2 }); }} style={{
+              padding: '4px 10px', borderRadius: 6, fontSize: 10, fontWeight: 700, fontFamily: 'monospace',
+              border: '1px solid rgba(56,189,248,0.5)', background: 'rgba(4,7,17,0.85)',
+              color: '#38bdf8', cursor: 'pointer', backdropFilter: 'blur(8px)', marginBottom: 6
+            }}>✈ BLR</button>
             {[['thunderstorm','⚡ TS'],['cloudburst','🌧 CB'],['flash_flood','🌊 FF']].map(([l, label]) => (
               <button key={l} onClick={() => setPanLayer(l)} style={{
                 padding: '4px 10px', borderRadius: 6, fontSize: 10, fontWeight: 700, fontFamily: 'monospace',
@@ -1376,6 +1389,102 @@
             ))}
           </div>
 
+
+          {/* ── PAN-INDIA HEATMAP PANEL (home page) ── */}
+          {(() => {
+            const [panData2, setPanData2] = React.useState(null);
+            const [panLayer2, setPanLayer2] = React.useState('thunderstorm');
+            const [panLoading2, setPanLoading2] = React.useState(true);
+            const [showPanel, setShowPanel] = React.useState(false);
+
+            React.useEffect(() => {
+              fetch('data/pan_india_grid.json?' + Date.now())
+                .then(r => r.json())
+                .then(d => { setPanData2(d); setPanLoading2(false); })
+                .catch(() => setPanLoading2(false));
+            }, []);
+
+            const cells2 = panData2?.grid_cells ?? [];
+            const SW2=6, NE2=37, WE2=68, EE2=98, svgW2=480, svgH2=360;
+            const toSvg2 = (lat, lon) => ({
+              x: ((lon - WE2) / (EE2 - WE2)) * svgW2,
+              y: svgH2 - ((lat - SW2) / (NE2 - SW2)) * svgH2
+            });
+            const colorFor2 = (prob, layer) => {
+              const p = Math.min(1, Math.max(0, prob));
+              if (p < 0.05) return 'rgba(0,0,0,0)';
+              if (layer === 'thunderstorm') { const r=Math.round(255*Math.min(1,p*2)), g=Math.round(255*Math.max(0,1-p*2)); return `rgba(${r},${g},30,${0.5+p*0.4})`; }
+              if (layer === 'cloudburst') return `rgba(30,100,${Math.round(200+55*p)},${0.4+p*0.5})`;
+              return `rgba(${Math.round(180+75*p)},${Math.round(100-80*p)},20,${0.45+p*0.45})`;
+            };
+            const cityDots2 = [
+              {name:'Delhi',lat:28.61,lon:77.21},{name:'Mumbai',lat:19.08,lon:72.88},
+              {name:'VOBL',lat:12.97,lon:77.58},{name:'Chennai',lat:13.08,lon:80.27},
+              {name:'Kolkata',lat:22.57,lon:88.36},{name:'Hyd',lat:17.38,lon:78.47},
+            ];
+            return (
+              <div style={{ position: 'absolute', bottom: 180, left: 12, zIndex: 25 }}>
+                <button onClick={() => setShowPanel(p => !p)} style={{
+                  padding: '5px 12px', borderRadius: 8, fontSize: 10, fontWeight: 700, fontFamily: 'monospace',
+                  border: `1px solid ${showPanel ? 'rgba(99,255,130,0.8)' : 'rgba(99,255,130,0.3)'}`,
+                  background: showPanel ? 'rgba(10,40,20,0.95)' : 'rgba(4,7,17,0.85)',
+                  color: '#63ff82', cursor: 'pointer', backdropFilter: 'blur(8px)'
+                }}>🌏 {showPanel ? 'Hide' : 'Pan-India Hazard'}</button>
+                {showPanel && (
+                  <div style={{ position: 'absolute', bottom: 34, left: 0, width: Math.min(400, window.innerWidth - 24), background: 'rgba(4,7,17,0.97)', border: '1px solid #172338', borderRadius: 14, padding: 12, backdropFilter: 'blur(16px)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                      <span style={{ fontSize: 10, fontWeight: 700, color: '#38bdf8', fontFamily: 'monospace' }}>🌏 PAN-INDIA MULTI-HAZARD · GFS 0.25°</span>
+                      <span style={{ fontSize: 9, color: '#607d8b', fontFamily: 'monospace' }}>{panData2 ? `${cells2.length} cells` : panLoading2 ? 'Loading…' : 'No data'}</span>
+                    </div>
+                    <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+                      {[['thunderstorm','⚡ TS'],['cloudburst','🌧 CB'],['flash_flood','🌊 FF']].map(([l, label]) => (
+                        <button key={l} onClick={() => setPanLayer2(l)} style={{
+                          padding: '3px 8px', borderRadius: 5, fontSize: 9, fontWeight: 700, fontFamily: 'monospace', cursor: 'pointer',
+                          border: `1px solid ${panLayer2 === l ? '#38bdf8' : '#172338'}`,
+                          background: panLayer2 === l ? 'rgba(56,189,248,0.15)' : '#050811',
+                          color: panLayer2 === l ? '#7dd3fc' : '#607d8b'
+                        }}>{label}</button>
+                      ))}
+                    </div>
+                    <svg viewBox={`0 0 ${svgW2} ${svgH2}`} style={{ width: '100%', borderRadius: 8, background: '#04080f', display: 'block' }}>
+                      <rect width={svgW2} height={svgH2} fill="#04080f"/>
+                      {cells2.map((c,i) => {
+                        const prob = c[panLayer2 + '_probability'] ?? 0;
+                        const pos = toSvg2(c.lat, c.lon);
+                        const cW = (1.0/(EE2-WE2))*svgW2+1.5, cH = (1.0/(NE2-SW2))*svgH2+1.5;
+                        return <rect key={i} x={pos.x-cW/2} y={pos.y-cH/2} width={cW} height={cH} fill={colorFor2(prob, panLayer2)}/>;
+                      })}
+                      {cityDots2.map(city => {
+                        const pos = toSvg2(city.lat, city.lon);
+                        return (
+                          <g key={city.name} style={{cursor:'pointer'}} onClick={() => { if(mapRef.current) mapRef.current.flyTo({center:[city.lon,city.lat], zoom: city.name==='VOBL'?9:7, speed:1.2}); setShowPanel(false); }}>
+                            <circle cx={pos.x} cy={pos.y} r={city.name==='VOBL'?6:3.5} fill={city.name==='VOBL'?'#00e5ff':'#90caf9'} opacity={0.9}/>
+                            <text x={pos.x+7} y={pos.y+4} fill="white" fontSize="8" opacity={0.85}>{city.name}</text>
+                          </g>
+                        );
+                      })}
+                      <rect x={8} y={svgH2-22} width={155} height={16} fill="rgba(0,0,0,0.65)" rx={3}/>
+                      <text x={12} y={svgH2-11} fill="#90caf9" fontSize="7">LOW ─────────── HIGH probability</text>
+                    </svg>
+                    {panData2 && (
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6, marginTop: 8 }}>
+                        {['thunderstorm','cloudburst','flash_flood'].map(l => {
+                          const s = panData2.summary?.[l] ?? {};
+                          return (
+                            <div key={l} style={{ padding: '6px 4px', borderRadius: 6, background: '#050811', border: '1px solid #172338', textAlign: 'center' }}>
+                              <div style={{ fontSize: 8, color: '#607d8b', fontFamily: 'monospace', marginBottom: 2 }}>{l==='thunderstorm'?'⚡ TS MAX':l==='cloudburst'?'🌧 CB MAX':'🌊 FF MAX'}</div>
+                              <div style={{ fontSize: 12, fontWeight: 700, color: 'white', fontFamily: 'monospace' }}>{s.max_prob !== undefined ? (s.max_prob*100).toFixed(0)+'%' : '—'}</div>
+                              <div style={{ fontSize: 8, color: '#607d8b', fontFamily: 'monospace' }}>{s.alert_cells ?? 0} alerts</div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
           {/* Gradient vignettes */}
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, rgba(4,7,17,0.93) 0%, rgba(4,7,17,0.65) 240px, rgba(4,7,17,0.1) 420px)', pointerEvents: 'none', zIndex: 2 }} />
           <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 175, background: 'linear-gradient(to top, rgba(4,7,17,1) 0%, rgba(4,7,17,0) 100%)', pointerEvents: 'none', zIndex: 2 }} />
@@ -5524,102 +5633,6 @@
             </div>
           </div>
 
-          {/* Pan-India Multi-Hazard Spatial Forecast */}
-          {(() => {
-            const [panData, setPanData] = React.useState(null);
-            const [panLayer, setPanLayer] = React.useState("thunderstorm");
-            const [panLoading, setPanLoading] = React.useState(true);
-
-            React.useEffect(() => {
-              fetch("data/pan_india_grid.json?" + Date.now())
-                .then(r => r.json())
-                .then(d => { setPanData(d); setPanLoading(false); })
-                .catch(() => setPanLoading(false));
-            }, []);
-
-            const cells = panData?.grid_cells ?? [];
-            const SW = 6, NE = 37, WE = 68, EE = 98;
-            const svgW = 480, svgH = 360;
-            const toSvg = (lat, lon) => ({
-              x: ((lon - WE) / (EE - WE)) * svgW,
-              y: svgH - ((lat - SW) / (NE - SW)) * svgH
-            });
-            const colorFor = (prob, layer) => {
-              const p = Math.min(1, Math.max(0, prob));
-              if (p < 0.05) return "rgba(0,0,0,0)";
-              if (layer === "thunderstorm") {
-                const r = Math.round(255 * Math.min(1, p * 2));
-                const g = Math.round(255 * Math.max(0, 1 - p * 2));
-                return `rgba(${r},${g},30,${0.5 + p * 0.4})`;
-              } else if (layer === "cloudburst") {
-                return `rgba(30,100,${Math.round(200 + 55 * p)},${0.4 + p * 0.5})`;
-              } else {
-                return `rgba(${Math.round(180 + 75 * p)},${Math.round(100 - 80 * p)},20,${0.45 + p * 0.45})`;
-              }
-            };
-            const cityDots = [
-              {name:"Delhi",lat:28.61,lon:77.21},{name:"Mumbai",lat:19.08,lon:72.88},
-              {name:"VOBL",lat:12.97,lon:77.58},{name:"Chennai",lat:13.08,lon:80.27},
-              {name:"Kolkata",lat:22.57,lon:88.36},{name:"Hyderabad",lat:17.38,lon:78.47},
-              {name:"Pune",lat:18.52,lon:73.86},{name:"Ahmedabad",lat:23.03,lon:72.58},
-            ];
-
-            return (
-              <div className="atc-card p-4 rounded-2xl border border-[#172338] space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-xs font-bold text-cyan-300">🌏 PAN-INDIA MULTI-HAZARD SPATIAL FORECAST — GFS 0.25° GRID</span>
-                  <span className="text-[10px] text-[#607d8b]">{panData ? `${cells.length} cells · ${panData.generated_at_ist ?? ""}` : panLoading ? "Loading…" : "No data"}</span>
-                </div>
-                <div className="flex gap-2 flex-wrap">
-                  {["thunderstorm","cloudburst","flash_flood"].map(l => (
-                    <button key={l} onClick={() => setPanLayer(l)}
-                      className={`px-3 py-1 rounded text-[10px] font-bold border ${panLayer===l ? "bg-cyan-500/20 border-cyan-400 text-cyan-300" : "bg-[#080d1a] border-[#172338] text-[#607d8b]"}`}>
-                      {l === "thunderstorm" ? "⚡ Thunderstorm" : l === "cloudburst" ? "🌧 Cloudburst" : "🌊 Flash Flood"}
-                    </button>
-                  ))}
-                </div>
-                <div className="relative bg-[#04080f] rounded-xl border border-[#172338] overflow-hidden" style={{aspectRatio:"4/3",maxHeight:"400px"}}>
-                  {panLoading && <div className="absolute inset-0 flex items-center justify-center text-[#607d8b] text-xs">Loading GFS grid…</div>}
-                  {!panLoading && cells.length === 0 && <div className="absolute inset-0 flex items-center justify-center text-[#607d8b] text-xs">No pan-India grid data yet — populates after next GFS fetch</div>}
-                  <svg viewBox={`0 0 ${svgW} ${svgH}`} className="w-full h-full">
-                    <rect width={svgW} height={svgH} fill="#04080f"/>
-                    {cells.map((c,i) => {
-                      const prob = c[panLayer + "_probability"] ?? 0;
-                      const pos = toSvg(c.lat, c.lon);
-                      const cellW = (1.0 / (EE - WE)) * svgW + 1.5;
-                      const cellH = (1.0 / (NE - SW)) * svgH + 1.5;
-                      return <rect key={i} x={pos.x - cellW/2} y={pos.y - cellH/2} width={cellW} height={cellH} fill={colorFor(prob, panLayer)}/>;
-                    })}
-                    {cityDots.map(city => {
-                      const pos = toSvg(city.lat, city.lon);
-                      return (
-                        <g key={city.name}>
-                          <circle cx={pos.x} cy={pos.y} r={city.name==="VOBL"?5:3} fill={city.name==="VOBL"?"#00e5ff":"#90caf9"} opacity={0.9}/>
-                          <text x={pos.x+6} y={pos.y+4} fill="white" fontSize="8" opacity={0.8}>{city.name}</text>
-                        </g>
-                      );
-                    })}
-                    <rect x={8} y={svgH-28} width={160} height={18} fill="rgba(0,0,0,0.65)" rx={3}/>
-                    <text x={13} y={svgH-16} fill="#90caf9" fontSize="7">LOW ──────────── HIGH probability</text>
-                  </svg>
-                </div>
-                {panData && (
-                  <div className="grid grid-cols-3 gap-2 text-center text-[10px]">
-                    {["thunderstorm","cloudburst","flash_flood"].map(l => {
-                      const s = panData.summary?.[l] ?? {};
-                      return (
-                        <div key={l} className="p-2 rounded bg-[#050811] border border-[#172338]">
-                          <div className="text-[9px] text-[#607d8b] mb-1">{l==="thunderstorm"?"⚡ TS MAX":l==="cloudburst"?"🌧 CB MAX":"🌊 FF MAX"}</div>
-                          <div className="font-bold text-white">{s.max_prob !== undefined ? (s.max_prob*100).toFixed(1)+"%" : "—"}</div>
-                          <div className="text-[#607d8b]">{s.alert_cells ?? 0} cells &gt;30%</div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            );
-          })()}
 
         </div>
         </div>
