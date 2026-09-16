@@ -1,3 +1,4 @@
 # SIGMET generation module
 # METAR override
 # analog search
+# airport impact
