@@ -15,3 +15,4 @@
 # multiday tab
 # climatology tab
 # skill scores tab
+# alerts tab
