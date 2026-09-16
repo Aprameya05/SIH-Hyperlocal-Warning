@@ -201,8 +201,8 @@ jobs:
             git diff --staged --quiet || git commit -m "auto: forecast retry $(date -u '+%Y-%m-%d %H:%M UTC')"
             git push origin main
           }
-      - name: Deploy to Cloudflare Pages
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          command: pages deploy . --project-name=sih-hyperlocal-warning --branch=main
+            - name: Deploy to Cloudflare Pages
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          npx wrangler@3.87.0 pages deploy . --project-name=sih-hyperlocal-warning --branch=main
