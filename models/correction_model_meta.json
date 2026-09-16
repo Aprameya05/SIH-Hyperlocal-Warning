@@ -1,0 +1,39 @@
+{
+  "features": [
+    "ERA5_CAPE",
+    "cold_top_proxy",
+    "mid_moisture",
+    "lapse_rate_850_500",
+    "shear_850_500",
+    "K_INDEX",
+    "LIFTED_INDEX",
+    "TOTALS_TOTALS",
+    "PRECIP_WATER",
+    "cape_x_ki",
+    "MONTH_sin",
+    "MONTH_cos",
+    "min_bt_50km",
+    "cold_pixels_count",
+    "nearest_dist_km",
+    "storm_detected"
+  ],
+  "cv_auroc_mean": 0.9141335743225515,
+  "cv_auroc_std": 0.009647363873907501,
+  "full_auroc": 0.9176856929747714,
+  "brier_score": 0.06705519370274633,
+  "n_train": 3819,
+  "n_positives": 457,
+  "base_rate": 0.11966483372610631,
+  "t500_climatological_mean": 268.80315602775596,
+  "trained_on": "2015-2025 ERA5+IMD+Himawari-9 Bengaluru 43295",
+  "model_type": "LogisticRegression + IsotonicCalibration",
+  "himawari_features": [
+    "min_bt_50km",
+    "cold_pixels_count",
+    "nearest_dist_km",
+    "storm_detected"
+  ],
+  "note": "V4 uses real Himawari-9 BT from Atul historical archive (2015-2025)",
+  "v3_cv_auroc": 0.8812209575123962,
+  "improvement_pp": 3.2912616810155337
+}

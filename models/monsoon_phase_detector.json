@@ -1,0 +1,20 @@
+{
+  "ki_mean": 36.45,
+  "ki_std": 2.74,
+  "q500_mean": 0.00387,
+  "q500_std": 0.00117,
+  "t500_mean": 269.33,
+  "t500_std": 0.80,
+  "active_threshold": 0.5,
+  "break_threshold": -0.5,
+  "phase_thresholds": {
+    "ACTIVE": 0.167,
+    "NEUTRAL": 0.15,
+    "BREAK": 0.15
+  },
+  "model_version": "monsoon_phase_v2",
+  "features_used": ["K_INDEX", "ERA5_q_500hPa", "ERA5_t_500hPa"],
+  "weights": [0.60, 0.20, 0.20],
+  "description": "KI+q500+t500 only — PWAT excluded (GFS/ERA5 unit incompatibility)",
+  "monsoon_months": [6, 7, 8, 9]
+}

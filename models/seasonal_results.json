@@ -1,0 +1,41 @@
+{
+  "PRE_MONSOON": {
+    "auroc_specialist": 0.8669678714859438,
+    "auroc_general": 0.893239625167336,
+    "delta": -0.02627175368139223,
+    "months": [
+      3,
+      4,
+      5
+    ],
+    "n_train": 820,
+    "pos_rate": 0.21951219512195122
+  },
+  "MONSOON": {
+    "auroc_specialist": 0.616468253968254,
+    "auroc_general": 0.6238095238095238,
+    "delta": -0.007341269841269815,
+    "months": [
+      6,
+      7,
+      8,
+      9
+    ],
+    "n_train": 1048,
+    "pos_rate": 0.15076335877862596
+  },
+  "POST_MONSOON": {
+    "auroc_specialist": 0.8509803921568627,
+    "auroc_general": 0.8612745098039216,
+    "delta": -0.010294117647058898,
+    "months": [
+      10,
+      11
+    ],
+    "n_train": 546,
+    "pos_rate": 0.10989010989010989
+  },
+  "WINTER": {
+    "skipped": true
+  }
+}
