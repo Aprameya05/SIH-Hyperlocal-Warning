@@ -89,6 +89,16 @@ jobs:
           [ -f data/gfs_realtime_43295.csv ] && head -2 data/gfs_realtime_43295.csv || echo "No GFS CSV"
         continue-on-error: true
 
+      - name: Fetch pan-India spatial forecast
+        run: |
+          SLOT_ARG=""
+          if [ -n "${{ github.event.inputs.slot }}" ]; then
+            SLOT_ARG="--slot ${{ github.event.inputs.slot }}"
+          fi
+          python pan_india_gfs_fetcher.py $SLOT_ARG
+          [ -f data/pan_india_grid.json ] && python -c "import json; d=json.load(open('data/pan_india_grid.json')); print(f'pan-India grid: {len(d["grid_cells"])} cells, ts_max={d["summary"]["thunderstorm"]["max_prob"]:.3f}')" || echo "pan-India grid not yet available"
+        continue-on-error: true
+
       - name: Fetch Himawari-9 satellite data
         run: python fetch_himawari_realtime.py
         continue-on-error: true
@@ -188,6 +198,7 @@ jobs:
           cp /tmp/forecast_generated.json forecast.json
           git add forecast.json
           git add \
+            data/pan_india_grid.json \
             data/gfs_realtime_43295.csv \
             data/upperair_realtime_43295.csv \
             data/gfs_multiday_43295.json \

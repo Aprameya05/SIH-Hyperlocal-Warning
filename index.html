@@ -5433,6 +5433,104 @@
               <span style={{color:'rgba(239,83,80,1)'}}>●</span><span className="text-[#607d8b]">&lt;50km</span>
             </div>
           </div>
+
+          {/* Pan-India Multi-Hazard Spatial Forecast */}
+          {(() => {
+            const [panData, setPanData] = React.useState(null);
+            const [panLayer, setPanLayer] = React.useState("thunderstorm");
+            const [panLoading, setPanLoading] = React.useState(true);
+
+            React.useEffect(() => {
+              fetch("data/pan_india_grid.json?" + Date.now())
+                .then(r => r.json())
+                .then(d => { setPanData(d); setPanLoading(false); })
+                .catch(() => setPanLoading(false));
+            }, []);
+
+            const cells = panData?.grid_cells ?? [];
+            const SW = 6, NE = 37, WE = 68, EE = 98;
+            const svgW = 480, svgH = 360;
+            const toSvg = (lat, lon) => ({
+              x: ((lon - WE) / (EE - WE)) * svgW,
+              y: svgH - ((lat - SW) / (NE - SW)) * svgH
+            });
+            const colorFor = (prob, layer) => {
+              const p = Math.min(1, Math.max(0, prob));
+              if (p < 0.05) return "rgba(0,0,0,0)";
+              if (layer === "thunderstorm") {
+                const r = Math.round(255 * Math.min(1, p * 2));
+                const g = Math.round(255 * Math.max(0, 1 - p * 2));
+                return `rgba(${r},${g},30,${0.5 + p * 0.4})`;
+              } else if (layer === "cloudburst") {
+                return `rgba(30,100,${Math.round(200 + 55 * p)},${0.4 + p * 0.5})`;
+              } else {
+                return `rgba(${Math.round(180 + 75 * p)},${Math.round(100 - 80 * p)},20,${0.45 + p * 0.45})`;
+              }
+            };
+            const cityDots = [
+              {name:"Delhi",lat:28.61,lon:77.21},{name:"Mumbai",lat:19.08,lon:72.88},
+              {name:"VOBL",lat:12.97,lon:77.58},{name:"Chennai",lat:13.08,lon:80.27},
+              {name:"Kolkata",lat:22.57,lon:88.36},{name:"Hyderabad",lat:17.38,lon:78.47},
+              {name:"Pune",lat:18.52,lon:73.86},{name:"Ahmedabad",lat:23.03,lon:72.58},
+            ];
+
+            return (
+              <div className="atc-card p-4 rounded-2xl border border-[#172338] space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-bold text-cyan-300">🌏 PAN-INDIA MULTI-HAZARD SPATIAL FORECAST — GFS 0.25° GRID</span>
+                  <span className="text-[10px] text-[#607d8b]">{panData ? `${cells.length} cells · ${panData.generated_at_ist ?? ""}` : panLoading ? "Loading…" : "No data"}</span>
+                </div>
+                <div className="flex gap-2 flex-wrap">
+                  {["thunderstorm","cloudburst","flash_flood"].map(l => (
+                    <button key={l} onClick={() => setPanLayer(l)}
+                      className={`px-3 py-1 rounded text-[10px] font-bold border ${panLayer===l ? "bg-cyan-500/20 border-cyan-400 text-cyan-300" : "bg-[#080d1a] border-[#172338] text-[#607d8b]"}`}>
+                      {l === "thunderstorm" ? "⚡ Thunderstorm" : l === "cloudburst" ? "🌧 Cloudburst" : "🌊 Flash Flood"}
+                    </button>
+                  ))}
+                </div>
+                <div className="relative bg-[#04080f] rounded-xl border border-[#172338] overflow-hidden" style={{aspectRatio:"4/3",maxHeight:"400px"}}>
+                  {panLoading && <div className="absolute inset-0 flex items-center justify-center text-[#607d8b] text-xs">Loading GFS grid…</div>}
+                  {!panLoading && cells.length === 0 && <div className="absolute inset-0 flex items-center justify-center text-[#607d8b] text-xs">No pan-India grid data yet — populates after next GFS fetch</div>}
+                  <svg viewBox={`0 0 ${svgW} ${svgH}`} className="w-full h-full">
+                    <rect width={svgW} height={svgH} fill="#04080f"/>
+                    {cells.map((c,i) => {
+                      const prob = c[panLayer + "_probability"] ?? 0;
+                      const pos = toSvg(c.lat, c.lon);
+                      const cellW = (1.0 / (EE - WE)) * svgW + 1.5;
+                      const cellH = (1.0 / (NE - SW)) * svgH + 1.5;
+                      return <rect key={i} x={pos.x - cellW/2} y={pos.y - cellH/2} width={cellW} height={cellH} fill={colorFor(prob, panLayer)}/>;
+                    })}
+                    {cityDots.map(city => {
+                      const pos = toSvg(city.lat, city.lon);
+                      return (
+                        <g key={city.name}>
+                          <circle cx={pos.x} cy={pos.y} r={city.name==="VOBL"?5:3} fill={city.name==="VOBL"?"#00e5ff":"#90caf9"} opacity={0.9}/>
+                          <text x={pos.x+6} y={pos.y+4} fill="white" fontSize="8" opacity={0.8}>{city.name}</text>
+                        </g>
+                      );
+                    })}
+                    <rect x={8} y={svgH-28} width={160} height={18} fill="rgba(0,0,0,0.65)" rx={3}/>
+                    <text x={13} y={svgH-16} fill="#90caf9" fontSize="7">LOW ──────────── HIGH probability</text>
+                  </svg>
+                </div>
+                {panData && (
+                  <div className="grid grid-cols-3 gap-2 text-center text-[10px]">
+                    {["thunderstorm","cloudburst","flash_flood"].map(l => {
+                      const s = panData.summary?.[l] ?? {};
+                      return (
+                        <div key={l} className="p-2 rounded bg-[#050811] border border-[#172338]">
+                          <div className="text-[9px] text-[#607d8b] mb-1">{l==="thunderstorm"?"⚡ TS MAX":l==="cloudburst"?"🌧 CB MAX":"🌊 FF MAX"}</div>
+                          <div className="font-bold text-white">{s.max_prob !== undefined ? (s.max_prob*100).toFixed(1)+"%" : "—"}</div>
+                          <div className="text-[#607d8b]">{s.alert_cells ?? 0} cells &gt;30%</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+
         </div>
         </div>
       );
@@ -6563,7 +6661,7 @@ Source: csir-thunderstorm-bengaluru.pages.dev | IMD Station 43295`;
             </div>
             <div className="rounded-xl p-3" style={{background:'rgba(56,189,248,0.06)', border:'1px solid rgba(56,189,248,0.18)'}}>
               <div className="text-[10px] font-mono text-[#38bdf8]">⏳ DATA AWAITED — 2026 TABLE-II OBSERVATION DATA</div>
-              <div className="text-[11px] text-[#607d8b] mt-1">Rolling skill scores for 2026 depend on IMD Table-II observation data for Station 43295 (Col AA weather code 9 = thunderstorm, Col AB time of commencement). This dataset has been requested from Dr. Geeta Agnihotri. Once received, the verification pipeline will ingest it and all event-based metrics (POD, FAR, ETS, CSI) will populate automatically. Current scores reflect Aug 2025 – Aug 2026 holdout only.</div>
+              <div className="text-[11px] text-[#607d8b] mt-1">Rolling skill scores for 2026 depend on IMD Table-II observation data for Station 43295 (Col AA weather code 9 = thunderstorm, Col AB time of commencement). Once received, verification pipeline will ingest it and all event-based metrics (POD, FAR, ETS, CSI) will populate automatically. Current scores reflect Aug 2025 – Aug 2026 holdout only.</div>
             </div>
           </div>
           <div className="grid grid-cols-1 gap-3">
@@ -6716,7 +6814,7 @@ Source: csir-thunderstorm-bengaluru.pages.dev | IMD Station 43295`;
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <div className="text-[9px] font-bold tracking-widest text-[#607d8b] mb-1">YOUR NAME</div>
-                  <input type="text" placeholder="Dr. Geeta Agnihotri" value={form.name}
+                  <input type="text" placeholder="Your name" value={form.name}
                     onChange={e => handleFormChange('name', e.target.value)}
                     className="w-full rounded-xl px-3 py-2.5 text-sm font-mono text-white outline-none"
                     style={{background:'rgba(255,255,255,0.05)', border:'1px solid rgba(56,189,248,0.2)'}} />
