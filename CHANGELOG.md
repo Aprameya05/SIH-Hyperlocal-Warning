@@ -14,3 +14,4 @@
 # what-if tab
 # multiday tab
 # climatology tab
+# skill scores tab
