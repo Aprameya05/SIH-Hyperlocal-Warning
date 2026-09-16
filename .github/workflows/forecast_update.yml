@@ -172,8 +172,8 @@ jobs:
 
       - name: Commit and push forecast outputs
         run: |
-          git config --global user.name  "CSIR Forecast Bot"
-          git config --global user.email "bot@csir-thunderstorm.in"
+          git config --global user.name  "SIH Forecast Bot"
+          git config --global user.email "bot@sih-hyperlocal.in"
           cp forecast.json /tmp/forecast_generated.json
           git pull origin main --no-rebase || true
           cp /tmp/forecast_generated.json forecast.json
@@ -205,4 +205,4 @@ jobs:
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          command: pages deploy . --project-name=csir-thunderstorm-bengaluru --branch=main
+          command: pages deploy . --project-name=sih-hyperlocal-warning --branch=main
