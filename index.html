@@ -1193,6 +1193,9 @@
       const clickPopupRef = React.useRef(null);
       const [searchQuery, setSearchQuery] = React.useState('');
       const [searching, setSearching] = React.useState(false);
+      const [suggestions, setSuggestions] = React.useState([]);
+      const [showSuggestions, setShowSuggestions] = React.useState(false);
+      const suggestTimerRef = React.useRef(null);
       const [mapReady, setMapReady] = React.useState(false);
       const [mapError, setMapError] = React.useState(false);
       const [panLayer, setPanLayer] = React.useState('thunderstorm');
@@ -1204,7 +1207,7 @@
       }, []);
       const isMobile = winW < 640;
 
-      const peakProb = slots.length > 0 ? Math.max(...slots.map(s => s.probability || 0)) : (liveData?.peak_probability ?? 0);
+      const peakProb = liveData?.peak_probability ?? (slots.length > 0 ? Math.max(...slots.map(s => s.probability || 0)) : 0);
       const alertActive = (hazardCfg.summaryKey ? liveData?.hazard_summary?.[hazardCfg.summaryKey]?.alert_active : liveData?.alert_active) ?? (peakProb >= 0.35);
       const peakSlot = slots.length > 0 ? slots.reduce((a, b) => (a.probability > b.probability ? a : b), slots[0]) : null;
       const riskColor = mapRiskColor(peakProb);
@@ -1225,8 +1228,8 @@
         const map = new maplibregl.Map({
           container: mapContainerRef.current,
           style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
-          center: [82.5, 22.0],
-          zoom: 4,
+          center: [VOBL.lng, VOBL.lat],
+          zoom: 9,
           pitch: 0,
           bearing: 0,
           antialias: true,
@@ -1458,6 +1461,7 @@
             .catch(() => {});
 
           map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right');
+          map.resize();
           setMapReady(true);
         });
         // Fallback: if load event already fired or any step threw, idle guarantees the overlay clears
@@ -1521,16 +1525,23 @@
 
           {/* ── SEARCH BOX ── */}
           {(() => {
-            const handleSearch = async (q) => {
+            const handleSearch = async (q, lat, lon) => {
               if (!q.trim()) return;
+              setSuggestions([]);
+              setShowSuggestions(false);
               setSearching(true);
               try {
-                const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&countrycodes=in&format=json&limit=1`);
-                const data = await res.json();
-                if (data.length === 0) { alert('Place not found in India'); setSearching(false); return; }
-                const { lat, lon, display_name } = data[0];
-                const lngN = parseFloat(lon), latN = parseFloat(lat);
-                const shortName = display_name.split(',').slice(0,2).join(', ');
+                let lngN, latN, shortName;
+                if (lat !== undefined && lon !== undefined) {
+                  lngN = parseFloat(lon); latN = parseFloat(lat);
+                  shortName = q.split(',').slice(0,2).join(', ');
+                } else {
+                  const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&countrycodes=in&format=json&limit=1`);
+                  const data = await res.json();
+                  if (data.length === 0) { setSearching(false); return; }
+                  lngN = parseFloat(data[0].lon); latN = parseFloat(data[0].lat);
+                  shortName = data[0].display_name.split(',').slice(0,2).join(', ');
+                }
                 mapRef.current.flyTo({ center: [lngN, latN], zoom: 8, speed: 1.4 });
                 const cells = gridCellsRef.current;
                 if (cells && cells.length > 0) {
@@ -1543,32 +1554,81 @@
                     setTimeout(() => window._showCellPopup(mapRef.current, lngN, latN, best, shortName), 800);
                   }
                 }
-              } catch(e) { alert('Search failed'); }
+              } catch(e) {}
               setSearching(false);
             };
+            const handleInputChange = (e) => {
+              const q = e.target.value;
+              setSearchQuery(q);
+              setShowSuggestions(false);
+              if (suggestTimerRef.current) clearTimeout(suggestTimerRef.current);
+              if (q.trim().length < 2) { setSuggestions([]); return; }
+              suggestTimerRef.current = setTimeout(async () => {
+                try {
+                  const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&countrycodes=in&format=json&limit=5`);
+                  const data = await res.json();
+                  if (data.length > 0) {
+                    setSuggestions(data);
+                    setShowSuggestions(true);
+                  }
+                } catch(e) {}
+              }, 280);
+            };
             return (
-              <div style={{ position: 'absolute', top: 50, right: 44, zIndex: 25, display: 'flex', gap: 4 }}>
-                <input
-                  value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && handleSearch(searchQuery)}
-                  placeholder="Search city or place..."
-                  style={{
-                    width: 190, padding: '6px 10px', borderRadius: 8, fontSize: 11,
-                    fontFamily: 'monospace', border: '1px solid rgba(56,189,248,0.3)',
-                    background: 'rgba(4,7,17,0.9)', color: '#cfd8dc', outline: 'none',
-                    backdropFilter: 'blur(8px)'
-                  }}
-                />
-                <button
-                  onClick={() => handleSearch(searchQuery)}
-                  disabled={searching}
-                  style={{
-                    padding: '6px 10px', borderRadius: 8, fontSize: 11, fontFamily: 'monospace',
-                    border: '1px solid rgba(56,189,248,0.3)', background: 'rgba(56,189,248,0.1)',
-                    color: '#38bdf8', cursor: 'pointer'
-                  }}
-                >{searching ? '...' : '🔍'}</button>
+              <div style={{ position: 'absolute', top: 50, right: 44, zIndex: 25, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0 }}>
+                <div style={{ display: 'flex', gap: 4 }}>
+                  <input
+                    value={searchQuery}
+                    onChange={handleInputChange}
+                    onKeyDown={e => { if (e.key === 'Enter') handleSearch(searchQuery); if (e.key === 'Escape') setShowSuggestions(false); }}
+                    onBlur={() => setTimeout(() => setShowSuggestions(false), 180)}
+                    onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
+                    placeholder="Search city or place..."
+                    style={{
+                      width: 210, padding: '6px 10px', borderRadius: 8, fontSize: 11,
+                      fontFamily: 'monospace', border: '1px solid rgba(56,189,248,0.3)',
+                      background: 'rgba(4,7,17,0.95)', color: '#cfd8dc', outline: 'none',
+                      backdropFilter: 'blur(8px)'
+                    }}
+                  />
+                  <button
+                    onClick={() => handleSearch(searchQuery)}
+                    disabled={searching}
+                    style={{
+                      padding: '6px 10px', borderRadius: 8, fontSize: 11, fontFamily: 'monospace',
+                      border: '1px solid rgba(56,189,248,0.3)', background: 'rgba(56,189,248,0.1)',
+                      color: '#38bdf8', cursor: 'pointer'
+                    }}
+                  >{searching ? '...' : '🔍'}</button>
+                </div>
+                {showSuggestions && suggestions.length > 0 && (
+                  <div style={{
+                    marginTop: 2, width: 210, background: 'rgba(4,7,17,0.97)',
+                    border: '1px solid rgba(56,189,248,0.25)', borderRadius: 8,
+                    backdropFilter: 'blur(12px)', overflow: 'hidden', boxShadow: '0 8px 24px rgba(0,0,0,0.6)'
+                  }}>
+                    {suggestions.map((s, i) => {
+                      const parts = s.display_name.split(',');
+                      const main = parts[0].trim();
+                      const sub = parts.slice(1, 3).join(',').trim();
+                      return (
+                        <div
+                          key={i}
+                          onMouseDown={() => { setSearchQuery(main); handleSearch(s.display_name, s.lat, s.lon); }}
+                          style={{
+                            padding: '7px 10px', cursor: 'pointer', borderBottom: i < suggestions.length - 1 ? '1px solid rgba(56,189,248,0.08)' : 'none',
+                            transition: 'background 0.15s'
+                          }}
+                          onMouseEnter={e => e.currentTarget.style.background = 'rgba(56,189,248,0.1)'}
+                          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                        >
+                          <div style={{ fontSize: 11, fontFamily: 'monospace', color: '#cfd8dc', fontWeight: 600 }}>{main}</div>
+                          {sub && <div style={{ fontSize: 9, fontFamily: 'monospace', color: '#546e7a', marginTop: 1 }}>{sub}</div>}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             );
           })()}
@@ -1580,7 +1640,7 @@
           {/* ── TOP BAR ── */}
           <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 42, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px', background: 'rgba(4,7,17,0.88)', backdropFilter: 'blur(14px)', borderBottom: '1px solid rgba(56,189,248,0.1)', zIndex: 20 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-              <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: 4, color: '#38bdf8', fontFamily: 'monospace' }}>IMD {hazardCfg?.shortLabel || 'TS'} NOWCAST</span>
+              <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: 4, color: '#38bdf8', fontFamily: 'monospace' }}>IMD TS NOWCAST</span>
               <span style={{ fontSize: 9, color: '#172338', fontFamily: 'monospace' }}>|</span>
               <span style={{ fontSize: 9, fontFamily: 'monospace', color: '#455a64' }}>VOBL / IMD 43295</span>
               <span style={{ fontSize: 9, color: '#172338', fontFamily: 'monospace' }}>|</span>
@@ -1890,7 +1950,7 @@
               const overrideActive = liveData?.himawari_override_active ?? false;
               const overrideSlots = liveData?.himawari_override_slots ?? [];
               const peakSlot = liveData?.peak_slot ?? null;
-              const peakProb = slots.length > 0 ? Math.max(...slots.map(s => s.probability || 0)) : (liveData?.peak_probability ?? 0);
+              const peakProb = liveData?.peak_probability ?? 0;
               return (
                 <div className={`shimmer-card atc-card atc-card-hover p-4 rounded-xl flex flex-col justify-between min-h-[190px] transition-all duration-300 ${alertActive ? 'alert-glow-card' : ''}`}>
                   <div className="flex items-center gap-2 text-[10px] font-mono text-[#607d8b] font-bold">
@@ -6194,7 +6254,7 @@
               return {
                 slot: s.slot,
                 label: s.label.toUpperCase(),
-                time: s.time,
+                time: (s.time || '').replace(/ IST$/, ''),
                 ts_probability: s.ts_probability ?? 0,
                 cb_probability: s.cb_probability ?? 0,
                 ff_probability: s.ff_probability ?? 0,
