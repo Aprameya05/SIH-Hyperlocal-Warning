@@ -1697,7 +1697,7 @@
               gridCellsRef.current = d.grid_cells;
               const STEP = 1.0;
               const features = [];
-              ['thunderstorm', 'cloudburst', 'flash_flood'].forEach(layer => {
+              ['flash_flood'].forEach(layer => { // TS and CB use animated canvas overlays only
                 d.grid_cells.forEach(c => {
                   const prob = c[layer + '_probability'] ?? 0;
                   if (prob < 0.15) return;
