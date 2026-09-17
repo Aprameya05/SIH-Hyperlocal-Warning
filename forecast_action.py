@@ -663,6 +663,12 @@ def main():
                 "Marginal" if met_slot.get("cape", 0) >= 100  else
                 "Stable"
             ),
+            # IWV from GFS PRECIP_WATER (same variable used by the model)
+            "iwv_mm": round(float(
+                obs_by_slot.get(peak_slot, obs_by_slot.get(2, {})).get("PRECIP_WATER", 0) or 0
+            ), 2),
+            # CTT drop rate placeholder -- patched after Himawari block loads
+            "ctt_drop_rate_c_per_h": None,
         },
     }
 
@@ -701,6 +707,14 @@ def main():
         },
         "history": himawari_history[-6:] if himawari_history else [],
     }
+
+    # Patch CTT drop rate into met_parameters now that Himawari is loaded
+    bt_trend = himawari.get("bt_trend_1h")
+    if bt_trend is not None:
+        try:
+            forecast["met_parameters"]["ctt_drop_rate_c_per_h"] = round(float(bt_trend), 2)
+        except (TypeError, ValueError):
+            pass
 
     # ── Verification ─────────────────────────────────────────────────────────
     verification = {}

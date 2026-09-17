@@ -1426,6 +1426,29 @@
             }
           });
 
+          // ── Terrain hillshade (shown in Flash Flood mode) ─────────────────────
+          // Uses AWS Terrain Tiles terrarium encoding (free, no API key required)
+          map.addSource('terrain-dem', {
+            type: 'raster-dem',
+            tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
+            encoding: 'terrarium',
+            tileSize: 256,
+            minzoom: 5,
+            maxzoom: 15,
+          });
+          map.addLayer({
+            id: 'terrain-hillshade',
+            type: 'hillshade',
+            source: 'terrain-dem',
+            layout: { visibility: 'none' },
+            paint: {
+              'hillshade-exaggeration': 0.55,
+              'hillshade-shadow-color': 'rgba(0,40,80,0.75)',
+              'hillshade-highlight-color': 'rgba(255,255,255,0.12)',
+              'hillshade-accent-color': 'rgba(0,100,180,0.3)',
+            }
+          }, 'storm-heat-layer'); // insert below the heatmap so heatmap stays on top
+
           // Load pan-India grid data
           fetch('data/pan_india_grid.json?' + Date.now())
             .then(r => r.json())
@@ -1479,6 +1502,10 @@
         layers.forEach(l => {
           if (map.getLayer(l)) map.setLayoutProperty(l, 'visibility', l === active[panLayer] ? 'visible' : 'none');
         });
+        // Show terrain hillshade only in flash flood mode (aids drainage/slope visualisation)
+        if (map.getLayer('terrain-hillshade')) {
+          map.setLayoutProperty('terrain-hillshade', 'visibility', panLayer === 'flash_flood' ? 'visible' : 'none');
+        }
       }, [panLayer, mapReady]);
 
       React.useEffect(() => {
@@ -1693,6 +1720,7 @@
                   { k: 'K-IDX', v: gfs.ua_k_index != null ? gfs.ua_k_index.toFixed(1) : '—', u: '', hi: (gfs.ua_k_index || 0) > 35 },
                   { k: 'LI', v: gfs.ua_lifted_index != null ? gfs.ua_lifted_index.toFixed(1) : '—', u: '', hi: (gfs.ua_lifted_index || 0) < -3 },
                   { k: 'TT', v: gfs.ua_totals_totals != null ? gfs.ua_totals_totals.toFixed(1) : '—', u: '', hi: (gfs.ua_totals_totals || 0) > 50 },
+                  { k: 'IWV', v: gfs.iwv_mm != null ? gfs.iwv_mm.toFixed(1) : '—', u: 'mm', hi: (gfs.iwv_mm || 0) > 50 },
                 ].map(r => (
                   <div key={r.k} style={{ background: 'rgba(0,0,0,0.35)', borderRadius: 9, padding: '7px 9px', border: r.hi ? '1px solid rgba(255,152,0,0.3)' : '1px solid transparent' }}>
                     <div style={{ fontSize: 8, color: '#37474f', fontFamily: 'monospace', marginBottom: 3 }}>{r.k}</div>
@@ -1711,8 +1739,8 @@
                   <span style={{ fontSize: 11, fontWeight: 700, color: sat.storm_detected ? '#ef5350' : '#78909c', fontFamily: 'monospace' }}>{sat.min_bt_50km != null ? `${sat.min_bt_50km.toFixed(1)}°C` : '—'}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                  <span style={{ fontSize: 9, color: '#455a64', fontFamily: 'monospace' }}>BT TREND</span>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: (sat.bt_trend_1h || 0) < 0 ? '#ef5350' : '#4caf50', fontFamily: 'monospace' }}>{sat.bt_trend_1h != null ? `${sat.bt_trend_1h > 0 ? '+' : ''}${sat.bt_trend_1h.toFixed(1)}°/h` : '—'}</span>
+                  <span style={{ fontSize: 9, color: '#455a64', fontFamily: 'monospace' }}>CTT DROP RATE</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: (sat.bt_trend_1h || 0) < 0 ? '#ef5350' : '#4caf50', fontFamily: 'monospace' }} title="Cloud-Top Temperature change over 1 hour (negative = cooling = convection building)">{sat.bt_trend_1h != null ? `${sat.bt_trend_1h > 0 ? '+' : ''}${sat.bt_trend_1h.toFixed(1)} °C/h` : '—'}</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 7, background: sat.storm_detected ? 'rgba(239,83,80,0.1)' : 'rgba(76,175,80,0.07)', borderRadius: 9, padding: '6px 9px', border: `1px solid ${sat.storm_detected ? 'rgba(239,83,80,0.25)' : 'rgba(76,175,80,0.2)'}` }}>
                   <div style={{ width: 7, height: 7, borderRadius: '50%', background: sat.storm_detected ? '#ef5350' : '#4caf50', boxShadow: sat.storm_detected ? '0 0 8px #ef5350' : '0 0 8px #4caf50' }} />
@@ -5356,9 +5384,9 @@
                       </div>
                     </div>
                     <div className="p-2 rounded bg-[#050811] border border-[#172338]">
-                      <div className="text-[9px] text-[#607d8b] mb-1">BT TREND 1H</div>
-                      <div className={`text-sm font-bold ${btTrend1h !== null && btTrend1h < -3 ? 'text-red-400' : btTrend1h !== null && btTrend1h > 3 ? 'text-emerald-400' : 'text-white'}`}>
-                        {btTrend1h !== null ? `${btTrend1h > 0 ? '+' : ''}${btTrend1h}°C` : '—'}
+                      <div className="text-[9px] text-[#607d8b] mb-1">CTT DROP RATE</div>
+                      <div className={`text-sm font-bold ${btTrend1h !== null && btTrend1h < -3 ? 'text-red-400' : btTrend1h !== null && btTrend1h > 3 ? 'text-emerald-400' : 'text-white'}`} title="Cloud-Top Temperature change per hour. Negative = cooling top = convection intensifying.">
+                        {btTrend1h !== null ? `${btTrend1h > 0 ? '+' : ''}${btTrend1h} °C/h` : '—'}
                         {btTrend1h !== null && btTrend1h < -3 ? ' ❄' : btTrend1h !== null && btTrend1h > 3 ? ' ↑' : ''}
                       </div>
                     </div>
@@ -6199,11 +6227,11 @@
       const [liveTime, setLiveTime] = useState('');
       const NAV_TAB_LIST = ['DASHBOARD', 'FORECAST', 'RADAR MAP', 'MODELS', 'EXPLAINABILITY', 'REGIMES', 'LIVE API', 'ATC VIEW'];
       const hashToTab = (h) => {
-        const map = { '#dashboard':'DASHBOARD','#forecast':'FORECAST','#radar':'RADAR MAP','#models':'MODELS','#explainability':'EXPLAINABILITY','#regimes':'REGIMES','#api':'LIVE API','#atc':'ATC VIEW' };
+        const map = { '#dashboard':'DASHBOARD','#forecast':'FORECAST','#radar':'RADAR MAP','#models':'MODELS','#explainability':'EXPLAINABILITY','#regimes':'REGIMES','#api':'LIVE API','#atc':'ATC VIEW','#multiday':'MULTIDAY','#climatology':'CLIMATOLOGY','#scores':'SKILL SCORES','#alerts':'ALERTS','#whatif':'WHATIF' };
         return map[h.toLowerCase()] || 'DASHBOARD';
       };
       const tabToHash = (t) => {
-        const map = { 'DASHBOARD':'#dashboard','FORECAST':'#forecast','RADAR MAP':'#radar','MODELS':'#models','EXPLAINABILITY':'#explainability','REGIMES':'#regimes','LIVE API':'#api','ATC VIEW':'#atc' };
+        const map = { 'DASHBOARD':'#dashboard','FORECAST':'#forecast','RADAR MAP':'#radar','MODELS':'#models','EXPLAINABILITY':'#explainability','REGIMES':'#regimes','LIVE API':'#api','ATC VIEW':'#atc','MULTIDAY':'#multiday','CLIMATOLOGY':'#climatology','SKILL SCORES':'#scores','ALERTS':'#alerts','WHATIF':'#whatif' };
         return map[t] || '#dashboard';
       };
       const [activeNavTab, setActiveNavTab] = useState(() => {
