@@ -3094,7 +3094,7 @@
       );
     }
 
-    function ForecastPage({ slots, selectedSlotIndex, onSelectSlot, liveData }) {
+    function ForecastPage({ slots, selectedSlotIndex, onSelectSlot, liveData, hazardCfg }) {
       // Find peak slot index (highest ts_probability)
       const maxProb = slots && slots.length > 0 ? Math.max(...slots.map(s => s.probability)) : 0;
       const peakSlotObj = slots ? slots.find(s => s.probability === maxProb) : null;
@@ -6505,6 +6505,7 @@ Source: csir-thunderstorm-bengaluru.pages.dev | IMD Station 43295`;
                     exit={{ opacity: 0, y: -16, scale: 0.99 }}
                     transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}>
                     <ForecastPage
+                      hazardCfg={hazardCfg}
                       slots={currentSlots}
                       selectedSlotIndex={selectedSlotIndex}
                       onSelectSlot={setSelectedSlotIndex}
