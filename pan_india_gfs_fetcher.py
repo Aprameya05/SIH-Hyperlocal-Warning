@@ -115,6 +115,9 @@ def extract_india_grid(grib_path: str) -> list[dict]:
 
     ds_sfc  = safe_open(grib_path, {"typeOfLevel": "surface", "stepType": "instant"})
     ds_cape = safe_open(grib_path, {"typeOfLevel": "atmosphereSingleLayer"})
+    ds_pwat = safe_open(grib_path, {"typeOfLevel": "atmosphereSingleLayer", "shortName": "pwat"})
+    if ds_pwat is None:
+        ds_pwat = safe_open(grib_path, {"typeOfLevel": "atmosphereSingleLayer", "stepType": "instant"})
     ds_2m   = safe_open(grib_path, {"typeOfLevel": "heightAboveGround", "level": 2})
     ds_10m  = safe_open(grib_path, {"typeOfLevel": "heightAboveGround", "level": 10})
     ds_850  = safe_open(grib_path, {"typeOfLevel": "isobaricInhPa", "level": 850})
@@ -146,7 +149,7 @@ def extract_india_grid(grib_path: str) -> list[dict]:
     if cape_arr is None:
         cape_arr, c_lats, c_lons = load_arr(ds_sfc, "cape")
     cin_arr,  _,      _      = load_arr(ds_cape, "cin")
-    pwat_arr, pw_lats, pw_lons = load_arr(ds_cape, "pwat")
+    pwat_arr, pw_lats, pw_lons = load_arr(ds_pwat if ds_pwat is not None else ds_cape, "pwat")
     t2m_arr,  t2_lats, t2_lons = load_arr(ds_2m, "t2m")
     d2m_arr,  _,       _       = load_arr(ds_2m, "d2m")
     rh_arr,   rh_lats, rh_lons = load_arr(ds_2m, "r")
@@ -363,16 +366,16 @@ def main():
 
             grid_cells.append({
                 **cell,
-                "ts_probability": ts_prob,
+                "thunderstorm_probability": ts_prob,
                 "ts_risk": risk_label(ts_prob),
                 "cloudburst_probability": cb_prob,
                 "cloudburst_risk": risk_label(cb_prob),
-                "flash_flood_risk": ff_risk,
+                "flash_flood_probability": ff_risk,
                 "flash_flood_label": risk_label(ff_risk),
             })
 
         # Summary stats
-        ts_max   = max(c["ts_probability"]         for c in grid_cells)
+        ts_max   = max(c["thunderstorm_probability"]         for c in grid_cells)
         cb_max   = max(c["cloudburst_probability"] for c in grid_cells)
         ff_max   = max(c["flash_flood_risk"]        for c in grid_cells)
         cape_max = max(c["cape"]                    for c in grid_cells)
@@ -392,7 +395,7 @@ def main():
                 "ff_max_risk": round(ff_max, 4),
                 "cape_max": round(cape_max, 1),
                 "pwat_max": round(pwat_max, 1),
-                "high_risk_cells_ts": sum(1 for c in grid_cells if c["ts_probability"] >= 0.25),
+                "high_risk_cells_ts": sum(1 for c in grid_cells if c["thunderstorm_probability"] >= 0.25),
                 "high_risk_cells_cb": sum(1 for c in grid_cells if c["cloudburst_probability"] >= 0.25),
             },
             "cells": grid_cells,
