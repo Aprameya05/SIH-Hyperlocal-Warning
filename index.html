@@ -1268,9 +1268,16 @@
           function riskColor(p) { return p >= 0.55 ? '#ef5350' : p >= 0.35 ? '#ff9800' : p >= 0.15 ? '#ffc107' : '#4caf50'; }
           function showCellPopup(map, lng, lat, cell, name) {
             if (clickPopupRef.current) { clickPopupRef.current.remove(); clickPopupRef.current = null; }
-            const ts = cell.thunderstorm_probability ?? 0;
-            const cb = cell.cloudburst_probability ?? 0;
-            const ff = cell.flash_flood_probability ?? 0;
+            // Normalize raw GFS probabilities relative to the observed grid range
+            // (e.g. TS never drops below 0.20 during monsoon, so raw values make every city look HIGH)
+            const norm = (val, field) => {
+              const st = window._gridStats && window._gridStats[field];
+              if (!st || st.max <= st.min) return val;
+              return Math.max(0, Math.min(1, (val - st.min) / (st.max - st.min)));
+            };
+            const ts = norm(cell.thunderstorm_probability ?? 0, 'thunderstorm_probability');
+            const cb = norm(cell.cloudburst_probability ?? 0, 'cloudburst_probability');
+            const ff = norm(cell.flash_flood_probability ?? 0, 'flash_flood_probability');
             const cape = cell.totals_totals != null ? cell.totals_totals.toFixed(1) : '—';
             const ki = cell.k_index != null ? cell.k_index.toFixed(1) : '—';
             const li = cell.wind_shear_ms != null ? cell.wind_shear_ms.toFixed(1) + ' m/s' : '—';
