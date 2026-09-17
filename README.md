@@ -48,24 +48,6 @@ India is highly vulnerable to rapidly intensifying, localized extreme weather ev
 
 ![System Architecture](assets/architecture.png)
 
-
-Dashboard (index.html -- single-file React + Babel + Tailwind)
-|
-+-- Fetches pan_india_grid.json on load
-+-- MapLibre GL JS v4: canvas image source for hazard overlay, GeoJSON line layers
-+-- 3D terrain layer (Mapbox Terrain DEM v1) for flash flood visualization
-+-- Per-city risk cards (40 Indian cities, nearest grid cell lookup)
-+-- Grid cell detail panel: shows CAPE, KI, TT, PWAT, shear, CIN per cell
-+-- Hazard switcher: Thunderstorm / Cloudburst / Flash Flood toggle
-+-- Alert backend integration: Twilio SMS on threshold breach (configurable)
-
-Cloudflare Pages
-|
-+-- Auto-deploys on every push to main
-+-- Serves index.html + data/ as static files
-+-- No backend needed for the dashboard itself
-```
-
 ---
 
 ## The Three Hazard Models
