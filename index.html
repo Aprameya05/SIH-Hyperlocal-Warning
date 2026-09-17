@@ -1837,7 +1837,7 @@
             )}
 
             {/* Flash Flood Terrain Risk -- shown when FF hazard active */}
-            {selectedHazard === 'ff' && liveData?.terrain && (() => {
+            {hazardCfg?.key === 'ff' && liveData?.terrain && (() => {
               const tr = liveData.terrain;
               const hz = liveData.terrain.high_risk_zones || [];
               const ffRisk = liveData.terrain.ff_terrain_risk || {};
