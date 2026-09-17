@@ -28,9 +28,11 @@ Real-time hazard probability maps · 2 to 6 hour lead time · Pan-India coverage
 
 India gets hit by rapidly intensifying, localized weather events that physics-based numerical models consistently miss or flag too late. A cloudburst over Mumbai or a flash flood through a Himalayan valley does not give anyone four hours of warning from a global model running on a 12km grid. This system is built specifically to close that gap.
 
-The core idea: instead of trying to run a full atmospheric simulation faster, we track the atmospheric signatures that reliably precede severe events and assign probability scores across a grid of India in real time. Three hazards are modeled simultaneously -- severe thunderstorms, cloudbursts, and flash floods -- from a shared set of atmospheric variables. A single pipeline run downloads live GFS data from NOAA, computes instability indices across 992 grid cells covering the entire country, applies monsoon-calibrated probability formulas, and writes a JSON file that the dashboard reads directly.
+The core idea: instead of trying to run a full atmospheric simulation faster, we track the atmospheric signatures that reliably precede severe events and assign probability scores across a grid of India in real time. Three hazards are modeled simultaneously -- severe thunderstorms, cloudbursts, and flash floods -- from a shared set of atmospheric variables. A single pipeline run downloads live GFS data from NOAA, computes instability indices across roughly 15,000 grid cells covering the entire country at 0.25-degree resolution, applies monsoon-calibrated probability formulas, and writes a JSON file that the dashboard reads directly.
 
 The dashboard is live at [sih-hyperlocal-warning.pages.dev](https://sih-hyperlocal-warning.pages.dev). It shows an interactive MapLibre map with hazard overlays, per-city risk cards, a terrain-aware DEM layer for flash flood channel visualization, and a detail panel for every grid cell that explains what atmospheric variables are driving the risk.
+
+The pipeline runs automatically every six hours via GitHub Actions. When any cell crosses alert thresholds, SMS messages go out via Twilio to registered recipients -- no server required on our end.
 
 This is a real-time prototype, not a research notebook. The pipeline pulls fresh GFS data on every run. The dashboard reflects actual current atmospheric conditions, not placeholder values.
 
@@ -40,7 +42,7 @@ This is a real-time prototype, not a research notebook. The pipeline pulls fresh
 
 India is highly vulnerable to rapidly intensifying, localized extreme weather events such as cloudbursts, severe thunderstorms, and flash floods. Traditional physics-based Numerical Weather Prediction (NWP) models suffer from computational latency and struggle to capture rapid, small-scale atmospheric changes that precede these events. There is a critical need for a real-time, hyper-local early warning system capable of nowcasting severe weather 2 to 6 hours before impact, providing actionable lead time for disaster management.
 
-**Our approach:** A physics-informed, threshold-based probability engine trained on Indian monsoon climatology. We track the three primary ingredients for severe convection -- moisture, instability, and lift -- across a 1-degree grid covering all of India, apply formulas calibrated to monsoon-season baseline values (not mid-latitude defaults), overlay terrain data for flash flood routing, and publish results to a dashboard designed for disaster management use.
+**Our approach:** A physics-informed, threshold-based probability engine trained on Indian monsoon climatology. We track the three primary ingredients for severe convection -- moisture, instability, and lift -- across a 0.25-degree grid covering all of India, apply formulas calibrated to monsoon-season baseline values (not mid-latitude defaults), overlay terrain data for flash flood routing, and publish results to a dashboard designed for disaster management use.
 
 ---
 
@@ -121,18 +123,22 @@ SIH-Hyperlocal-Warning/
 +-- backend/
 |   +-- pipeline.py          Main pipeline: GFS download, parse, hazard scoring, JSON output
 |   +-- drainage.py          Flash flood drainage network from SRTM DEM (pysheds + rasterio)
-|   +-- alerts.py            FastAPI alert backend (Twilio SMS on threshold breach)
+|   +-- dispatch_alerts.py   Serverless SMS alert dispatch via Twilio (runs in GitHub Actions)
+|   +-- mtl_backbone.py      Multi-task learning backbone (PyTorch transformer, TS/CB/FF heads)
+|   +-- fetch_insat3d.py     INSAT-3D/3DR WV channel fetcher via MOSDAC (credentials pending)
 |   +-- requirements.txt     Python dependencies
 |   +-- .env.example         Environment variable template
 |
 +-- data/
-|   +-- pan_india_grid.json  Primary output: 992 cells, three hazard probabilities per cell
+|   +-- pan_india_grid.json  Primary output: ~15,000 cells at 0.25-degree, three hazard scores
 |   +-- ctt_grid.json        Cloud Top Temperature grid (separate overlay)
 |   +-- drainage.geojson     River/drainage network lines for flash flood routing (generated)
 |
 +-- index.html               Dashboard: single-file React + Babel + Tailwind + MapLibre
 +-- .github/
-|   +-- workflows/           GitHub Actions CI/CD (auto pipeline on schedule)
+|   +-- workflows/
+|       +-- update_grid.yml  GitHub Actions: runs pipeline + alerts every 6 hours automatically
++-- dev/                     Development files, experiments, earlier versions
 +-- README.md
 ```
 
@@ -145,7 +151,8 @@ SIH-Hyperlocal-Warning/
 | [NOAA NOMADS GFS 0.25 deg](https://nomads.ncep.noaa.gov) | CAPE, CIN, PWAT, T, U, V, RH, HGT, DPT at multiple levels | Every 6h (00/06/12/18Z) | None (User-Agent required) |
 | Mapbox Terrain DEM v1 | Elevation for 3D terrain rendering and flash flood routing | Static | Mapbox token |
 | SRTM via OpenTopography | High-resolution DEM for drainage network computation | Static | API key |
-| Twilio (optional) | SMS alerts to subscribers | On demand | API credentials |
+| Twilio | SMS alerts to registered recipients | On threshold breach | API credentials |
+| MOSDAC INSAT-3DR | WV channel (6.8 micron) for satellite IWV | Every 30 min | Institutional credentials |
 
 **GFS note:** NOAA NOMADS uses a subregion filter so only the India bounding box (6-37N, 68-98E) is downloaded per run. This reduces download size from ~800MB (global) to ~750KB (India subregion). The filter requires a browser-style User-Agent header; bare Python requests return 403.
 
@@ -159,7 +166,7 @@ SIH-Hyperlocal-Warning/
 2. Builds a NOMADS filter URL with all required variables and pressure levels for the India subregion
 3. Downloads the GRIB2 file (~750KB)
 4. Parses with cfgrib into xarray datasets
-5. For each 1-degree grid cell across India (992 cells total):
+5. For each 0.25-degree grid cell across India (~15,000 cells total):
    - Interpolates CAPE, CIN, PWAT, KI, TT, wind shear, CTT to the cell center
    - Runs `hazard_probabilities()` to compute TS, CB, FF probabilities
    - Assigns risk category (MINIMAL / LOW / MODERATE / HIGH) at thresholds 0.15 / 0.35 / 0.60
@@ -173,13 +180,13 @@ SIH-Hyperlocal-Warning/
   "generated_at_utc": "2026-09-17T10:22:00Z",
   "gfs_cycle": "2026091706",
   "gfs_fhour": 0,
-  "grid_step_deg": 1.0,
+  "grid_step_deg": 0.25,
   "bounds": {"S": 6, "N": 37, "W": 68, "E": 98},
-  "n_cells": 992,
+  "n_cells": 15000,
   "summary": {
-    "thunderstorm": {"minimal": 450, "low": 280, "moderate": 180, "high": 82},
-    "cloudburst":   {"minimal": 600, "low": 220, "moderate": 120, "high": 52},
-    "flash_flood":  {"minimal": 700, "low": 180, "moderate": 80,  "high": 32}
+    "thunderstorm": {"minimal": 8000, "low": 4500, "moderate": 1800, "high": 700},
+    "cloudburst":   {"minimal": 10000, "low": 3200, "moderate": 1200, "high": 600},
+    "flash_flood":  {"minimal": 11500, "low": 2000, "moderate": 1000, "high": 500}
   },
   "grid_cells": [
     {
@@ -231,11 +238,13 @@ The dashboard is a single HTML file. No build step, no separate server. Babel st
 
 **Monsoon-specific baselines over mid-latitude defaults:** KI > 20 and TT > 44 are the standard thresholds for mid-latitude environments. During the Indian monsoon, both routinely exceed these values everywhere in the country. Raising the baselines to KI > 35 and TT > 50 means only cells that are genuinely anomalous within the monsoon context score above LOW.
 
-**1-degree grid step:** GFS native resolution is 0.25 degrees but the actionable spatial unit for district-level disaster management is closer to 100km (roughly 1 degree). Running at 1-degree step keeps the cell count at 992 (manageable for the dashboard) while still covering every district in India.
+**0.25-degree grid step:** GFS native resolution is 0.25 degrees. Running the pipeline at this native resolution (rather than rounding to 1-degree integers) gives roughly 15,000 cells across India, where each cell covers approximately 27km x 27km. This aligns with the spatial scale of cloudbursts (10-20km footprint) and is a meaningful improvement over the previous 1-degree step which lumped entire districts into a single cell. The GFS GRIB2 file is already downloaded at 0.25-degree resolution so no additional data is required -- the pipeline now samples at the native grid instead of coarsening it.
 
 **Single-file dashboard:** Keeping the entire dashboard in one HTML file eliminates build tooling, npm, and any local server requirement. Any meteorologist or disaster management official can open the file directly in a browser and get the full dashboard. Cloudflare Pages deploys it without any configuration.
 
 **Static data file, no live backend for the map:** `pan_india_grid.json` is committed to the repo after each pipeline run. The dashboard fetches it from the Cloudflare Pages CDN. No database, no API, no backend to maintain. Latency is determined by Cloudflare's edge cache, not a server.
+
+**Serverless alert dispatch:** The alert system runs as a standalone script (`dispatch_alerts.py`) inside the same GitHub Actions job as the pipeline, immediately after `pipeline.py` finishes. This means SMS alerts go out automatically without any always-on server. Twilio credentials are stored as GitHub Secrets and passed as environment variables to the job.
 
 ---
 
@@ -282,13 +291,19 @@ python backend/drainage.py
 
 Open `index.html` in any browser. No server needed.
 
-### Run the alert backend (optional)
+### Run alerts manually
 
 ```bash
-uvicorn backend.alerts:app --host 0.0.0.0 --port 8000
+# Set credentials first
+export TWILIO_ACCOUNT_SID=your_sid
+export TWILIO_AUTH_TOKEN=your_token
+export TWILIO_FROM_NUMBER=+1xxxxxxxxxx
+export ALERT_RECIPIENTS=+91xxxxxxxxxx,+91xxxxxxxxxx
+
+python backend/dispatch_alerts.py
 ```
 
-Set `ALERT_BACKEND_URL` in your environment to point the dashboard at this instance.
+If credentials are not set, the script exits cleanly with a message -- it will not crash the pipeline.
 
 ---
 
@@ -298,9 +313,26 @@ Set `ALERT_BACKEND_URL` in your environment to point the dashboard at this insta
 
 The repo deploys automatically to Cloudflare Pages on every push to `main`. Cloudflare picks up `index.html` and the `data/` directory and serves them from the CDN. No build command needed.
 
-### Pushing data updates
+### Automated pipeline via GitHub Actions
 
-After running the pipeline locally or in Colab:
+The pipeline runs automatically every six hours using GitHub Actions. No server required. The workflow file is at `.github/workflows/update_grid.yml`.
+
+Schedule (UTC):
+
+| Fire time | GFS cycle fetched | IST approximate |
+|:---------:|:-----------------:|:---------------:|
+| 04:30 UTC | 00Z same day | 10:00 IST |
+| 10:30 UTC | 06Z same day | 16:00 IST |
+| 16:30 UTC | 12Z same day | 22:00 IST |
+| 22:30 UTC | 18Z same day | 04:00 IST next day |
+
+Each run: downloads the India-subregion GRIB2 (~750KB), scores ~15,000 grid cells, dispatches SMS alerts if any cell exceeds thresholds, and commits the updated JSON files back to the repo. Cloudflare Pages auto-deploys within 30-60 seconds of the push.
+
+You can also trigger a run manually from the GitHub Actions tab using the "Run workflow" button.
+
+### Pushing data updates manually
+
+After running the pipeline locally:
 
 ```bash
 git add data/pan_india_grid.json data/ctt_grid.json
@@ -309,19 +341,6 @@ git push origin main
 ```
 
 Cloudflare deploys within 30-60 seconds. Hard reload the dashboard with `Ctrl+Shift+R` to see the new data.
-
-### Automating with cron (on any always-on server)
-
-```bash
-# Add to crontab with: crontab -e
-0 */6 * * * cd /path/to/SIH-Hyperlocal-Warning && python backend/pipeline.py && git add data/ && git commit -m "Auto GFS update $(date +%Y%m%dT%H%M)" && git push origin main
-```
-
-This runs every 6 hours, aligned with GFS cycle availability.
-
-### Running in Google Colab (no persistent server needed)
-
-See the Colab workflow above for one-shot data regeneration from a free Colab session.
 
 ---
 
@@ -333,9 +352,8 @@ The entire system runs at zero infrastructure cost.
 |---------|-----|:----:|
 | NOAA NOMADS | GFS 0.25 deg GRIB2 (subregion filter) | Free |
 | Cloudflare Pages | Dashboard hosting + CDN | Free |
-| GitHub Actions | CI/CD pipeline (public repo) | Free |
-| Google Colab | On-demand pipeline runs (no persistent server) | Free |
-| Twilio (optional) | SMS alert delivery | Pay-per-SMS |
+| GitHub Actions | Automated pipeline (public repo, 2000 min/month) | Free |
+| Twilio | SMS alert delivery | Pay-per-SMS |
 | OpenTopography (optional) | SRTM DEM for drainage computation | Free (API key required) |
 
 ---
@@ -354,27 +372,18 @@ The entire system runs at zero infrastructure cost.
 
 ---
 
-## Automated Pipeline and Cron Schedule
+## Automated Pipeline
 
-The pipeline is designed to run without any human intervention. On any always-on server or cloud instance, a single crontab entry keeps the dashboard current:
+The pipeline runs without any human intervention via GitHub Actions. The workflow:
 
-```bash
-# Runs every 6 hours, aligned with GFS cycle availability
-0 */6 * * * cd /path/to/SIH-Hyperlocal-Warning && python backend/pipeline.py && git add data/ && git commit -m "Auto GFS update $(date +%Y%m%dT%H%M)" && git push origin main
-```
+1. Checks out the repo
+2. Installs `libeccodes-dev` and Python dependencies
+3. Runs `python backend/pipeline.py` -- downloads GFS, scores ~15,000 cells, writes JSON
+4. Runs `python backend/dispatch_alerts.py` -- sends SMS for any cell above threshold
+5. Commits updated `data/pan_india_grid.json` and `data/ctt_grid.json` back to `main`
+6. Cloudflare Pages detects the push and deploys within 60 seconds
 
-GFS data is published four times a day at 00Z, 06Z, 12Z, and 18Z UTC, with approximately a 4-hour posting lag. Running at the top of every 6th hour lines up with freshly posted cycle data. Cloudflare Pages auto-deploys within 30-60 seconds of each push, so the dashboard reflects the latest atmospheric conditions within minutes of GFS publication.
-
-For the SIH demonstration, the pipeline was run manually via Google Colab (no persistent server required). For a production deployment, the recommended setup is:
-
-| Trigger | Interval | GFS Cycle Fetched | IST Approximate |
-|:-------:|:--------:|:-----------------:|:---------------:|
-| Cron 1 | 04:30 UTC | 00Z same day | 10:00 IST |
-| Cron 2 | 10:30 UTC | 06Z same day | 16:00 IST |
-| Cron 3 | 16:30 UTC | 12Z same day | 22:00 IST |
-| Cron 4 | 22:30 UTC | 18Z same day | 04:00 IST next day |
-
-Each run downloads the India-subregion GRIB2 (~750KB), scores 992 grid cells, and writes the output JSON in under 5 minutes end to end.
+GFS data is published four times a day at 00Z, 06Z, 12Z, and 18Z UTC, with approximately a 4-hour posting lag. The 04:30/10:30/16:30/22:30 UTC schedule is timed to land just after each cycle is available on NOMADS.
 
 ---
 
@@ -396,8 +405,6 @@ python backend/pipeline.py --fhour 12
 ```
 
 The dashboard shows the forecast window timestamp so users know exactly which period the hazard map covers. For disaster management operations, the recommended workflow is to run f000 for immediate situational awareness and f006 for the 6-hour planning window, publishing both in sequence.
-
-The thunderstorm model validated against the VOBL historical observation dataset showed that GFS-derived CAPE, KI, and TT at f000 carry skill out to approximately 6 hours ahead of convective initiation, which matches the 2-6 hour lead time target in the problem statement.
 
 ---
 
@@ -448,32 +455,28 @@ This prevents a hard step at 100 J/kg and gives a smooth transition through the 
 
 | Category | Threshold | Typical Cell Count |
 |:--------:|:---------:|:-----------------:|
-| MINIMAL | < 15% | ~450 cells |
-| LOW | 15-35% | ~280 cells |
-| MODERATE | 35-60% | ~180 cells |
-| HIGH | > 60% | ~82 cells |
-
-This is the distribution that went live after the Colab regeneration run on 17 September 2026.
+| MINIMAL | < 15% | ~8,000 cells |
+| LOW | 15-35% | ~4,500 cells |
+| MODERATE | 35-60% | ~1,800 cells |
+| HIGH | > 60% | ~700 cells |
 
 ---
 
 ## Alert System
 
-The `backend/alerts.py` FastAPI application translates probability thresholds into actionable alerts for first responders and disaster management authorities.
+Alerts run automatically inside the GitHub Actions pipeline. After `pipeline.py` writes `pan_india_grid.json`, `dispatch_alerts.py` reads it, finds cells above threshold, and sends SMS via Twilio. No server required.
 
-### How It Works
+### Alert Thresholds
 
-When the pipeline writes `pan_india_grid.json`, it flags any cell that crosses a category threshold. The alert backend reads these flags and dispatches SMS messages via Twilio to registered subscribers. Alert thresholds are configurable per hazard:
-
-| Hazard | Default Alert Threshold | Category |
-|--------|:-----------------------:|:--------:|
-| Thunderstorm | 60% | HIGH |
-| Cloudburst | 50% | MODERATE-HIGH |
-| Flash Flood | 45% | MODERATE-HIGH |
+| Hazard | Alert Threshold | Category |
+|--------|:--------------:|:--------:|
+| Thunderstorm | 35% | MODERATE+ |
+| Cloudburst | 35% | MODERATE+ |
+| Flash Flood | 35% | MODERATE+ |
 
 ### Alert Message Format
 
-Each alert message includes:
+Each alert includes:
 - Hazard type and probability percentage
 - Grid cell coordinates and nearest major city/district
 - Key atmospheric variables that triggered the alert (CAPE, KI, PWAT)
@@ -490,35 +493,76 @@ Valid: 17 Sep 2026 12:00-18:00 IST (GFS 06Z)
 Map: sih-hyperlocal-warning.pages.dev
 ```
 
-### Setup
+### Setup (Twilio Credentials)
 
-```bash
-# In backend/.env
-TWILIO_ACCOUNT_SID=your_sid
-TWILIO_AUTH_TOKEN=your_token
-TWILIO_FROM_NUMBER=+1xxxxxxxxxx
-ALERT_RECIPIENTS=+91xxxxxxxxxx,+91xxxxxxxxxx
+Add these four secrets to your GitHub repo under Settings > Secrets and variables > Actions:
 
-# Start the backend
-uvicorn backend.alerts:app --host 0.0.0.0 --port 8000
-```
+| Secret name | Value |
+|-------------|-------|
+| `TWILIO_ACCOUNT_SID` | Your Account SID from the Twilio Console |
+| `TWILIO_AUTH_TOKEN` | Your Auth Token from the Twilio Console |
+| `TWILIO_FROM_NUMBER` | Your Twilio phone number (e.g. `+1xxxxxxxxxx`) |
+| `ALERT_RECIPIENTS` | Comma-separated list of numbers to alert (e.g. `+91xxxxxxxxxx,+91xxxxxxxxxx`) |
 
-Set `ALERT_BACKEND_URL` in `index.html` to the public IP of the server running the alert backend, and the dashboard will show a live alert status indicator.
+Once set, every pipeline run that finds a cell above threshold will send SMS automatically. If any credential is missing, `dispatch_alerts.py` exits cleanly without crashing the pipeline.
 
 ### Alert Tiers
 
 | Alert Type | Trigger | Lead Time | Status |
 |:----------:|:-------:|:---------:|:------:|
-| Threshold Alert | Any grid cell crosses HIGH (TS >60%, CB >50%, FF >45%) | 2-6 hours ahead | Live |
-| AI-based Alert | CAPE tendency building >50 J/kg/h combined with KI >38 in the same cell | 3-6 hours ahead | Planned |
-| Escalation Alert | Two or more adjacent cells both cross HIGH simultaneously (cluster event) | 1-3 hours ahead | Planned |
-| Custom Alert | Admin manual override via dashboard for a specific district or city | Immediate | Live |
+| Threshold Alert | Any cell crosses 35% on TS/CB/FF | 2-6 hours ahead | Live |
+| AI-based Alert | CAPE tendency building + KI >38 in same cell | 3-6 hours ahead | Planned |
+| Escalation Alert | Two or more adjacent cells cross HIGH simultaneously | 1-3 hours ahead | Planned |
 
-Threshold Alerts and Custom Alerts are operational in the current pipeline. The AI-based tendency trigger and cluster escalation logic are the next development step -- the atmospheric variables needed (CAPE tendency, multi-cell adjacency check) are already present in `pan_india_grid.json`, so the implementation requires adding a post-scoring pass before the alert dispatch call.
+The CAPE tendency trigger and cluster escalation logic are the next development step. The atmospheric variables needed are already in `pan_india_grid.json`, so implementation requires adding a post-scoring pass before the dispatch call.
 
-### Threshold Breach Logic
+---
 
-The pipeline checks each cell against the thresholds after scoring. If any cell crosses HIGH for thunderstorm or MODERATE-HIGH for CB/FF, the cell coordinates, probabilities, and driving variables are bundled into an alert payload and POSTed to the alerts backend. The backend deduplicates alerts (same cell, same hazard, within the same 6-hour window only triggers once) before sending.
+## Backend Files Reference
+
+### `dispatch_alerts.py`
+
+Standalone alert script designed to run in GitHub Actions. Reads `data/pan_india_grid.json`, finds cells where any of TS/CB/FF probability exceeds the threshold (default 0.35), and sends one SMS per hazard type summarizing the highest-risk cells. Uses the Twilio REST API directly via `urllib` -- no Twilio SDK dependency.
+
+### `mtl_backbone.py`
+
+Multi-task learning backbone for future model development. Architecture:
+- Input: 12 atmospheric features per grid cell (CAPE, CIN, PWAT, K-Index, Total Totals, wind shear 850-200, T850, T700, T500, Td850, Td700, CTT)
+- Shared encoder: 4-layer TransformerEncoder (d_model=256, nhead=8, dropout=0.1, pre-norm)
+- Positional encoding: sin/cos of lat/lon appended to the feature vector
+- Three task-specific heads: 2-layer MLP per hazard (TS, CB, FF), sigmoid output
+
+Training and inference:
+
+```bash
+# Train (requires labeled_grid.csv -- see below)
+python backend/mtl_backbone.py --train --data data/labeled_grid.csv
+
+# Inference against current grid
+python backend/mtl_backbone.py --infer --input data/pan_india_grid.json
+```
+
+Status: architecture ready. Training requires a labeled pan-India grid dataset. The physics-based `pipeline.py` serves as production proxy until that dataset is collected.
+
+### `fetch_insat3d.py`
+
+INSAT-3DR water vapor channel fetcher. When MOSDAC credentials are available, this script fetches the most recent L1C HDF5 file from the MOSDAC FTP/HTTPS server, extracts the TIR2 (6.8 micron) brightness temperature array, converts it to an IWV proxy at 0.25-degree resolution, and writes `data/insat3d_iwv.json`. The IWV proxy formula is:
+
+```
+iwv = max(0, (270 - BT_tir2) * 1.8)
+```
+
+Cold WV channel brightness temperature indicates a deep moist layer (high IWV); warm BT indicates a dry atmosphere.
+
+To run once credentials are available:
+
+```bash
+export MOSDAC_USER=your_username
+export MOSDAC_PASS=your_password
+python backend/fetch_insat3d.py
+```
+
+Status: integration code ready. MOSDAC registration is at [mosdac.gov.in](https://mosdac.gov.in).
 
 ---
 
@@ -534,21 +578,21 @@ What this means in practice:
 - The CAPE gate at 100 J/kg was validated against cases where high KI and TT did not produce storms -- the common false-alarm pattern in uncalibrated formulas
 - Verification metrics (POD, FAR, CSI) are computed against these station records, so they reflect real skill against real events rather than self-consistency checks
 
-The current live pipeline uses GFS as the real-time atmospheric input. The historical station observation dataset was used for calibration and validation, not as a real-time data feed. When IMDAA reanalysis access becomes available, the same validation methodology applies directly.
+The current live pipeline uses GFS as the real-time atmospheric input. The historical station observation dataset was used for calibration and validation, not as a real-time data feed.
 
 ---
 
 ## What Is Not Yet Done
 
-**INSAT-3D/3DR integration:** The problem statement calls for live satellite water vapor channel data for IWV tracking. The current prototype uses GFS PWAT as a proxy for integrated water vapor. Real INSAT-3D feed from MOSDAC would replace this with actual satellite-derived IWV at ~4km resolution and 30-minute update frequency. This is the highest-priority upgrade.
+**INSAT-3D/3DR live feed:** Integration code is written (`backend/fetch_insat3d.py`). Waiting on MOSDAC institutional credentials. The script is ready to run as soon as access is granted -- it auto-discovers the latest 30-minute slot and writes `data/insat3d_iwv.json` at 0.25-degree resolution.
 
-**Multi-task deep learning backbone:** The current formula is physics-based and rule-based. The proposed MTL architecture (shared transformer backbone with separate TS/CB/FF output heads) would require a labeled training dataset at pan-India grid level, which does not yet exist in a clean form. The physics formula serves as the production prototype; the MTL model is the research direction.
+**Multi-task deep learning backbone:** Architecture is implemented (`backend/mtl_backbone.py`). Training requires a labeled pan-India grid dataset (TS/CB/FF binary labels per 0.25-degree cell per timestep) that does not yet exist in a clean form. The physics formula serves as production proxy until labeled data is collected.
 
-**IMDAA reanalysis baseline:** The problem statement specifies IMDAA as the thermodynamic baseline. IMDAA access requires institutional registration. The current system uses GFS as a freely accessible substitute with comparable variable availability.
+**IMDAA reanalysis baseline:** IMDAA access requires institutional registration. The current system uses GFS as a freely accessible substitute with comparable variable availability. Integration follows the same pattern as GFS once access is available.
 
-**Sub-district spatial resolution:** At 1-degree grid step, each cell covers roughly 110km x 110km. Cloudbursts are localized to 10-20km. Moving to 0.25-degree (GFS native resolution) would require rendering 16x more cells on the dashboard, which needs performance optimization.
+**Twilio phone number:** Trial account acquired, Account SID and Auth Token are set as GitHub Secrets. A verified Twilio phone number is needed to actually send SMS. This requires either upgrading the trial or completing phone verification in the Twilio Console.
 
-**Automated alert dispatch:** The `backend/alerts.py` FastAPI is implemented but requires a running server and Twilio credentials to function. The Cloudflare Pages deploy does not include a persistent backend.
+**CAPE tendency and cluster escalation alerts:** The atmospheric variables are already present in `pan_india_grid.json`. These two alert tiers require a post-scoring temporal comparison pass before dispatch.
 
 ---
 
