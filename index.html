@@ -1006,7 +1006,6 @@
               ];
               return (
                 <>
-                <HazardSwitcher selected={selectedHazard} onChange={onHazardChange} />
                 <nav className="hidden lg:flex items-center gap-3 font-mono text-[10px] font-bold"
                   style={{
                     background:'rgba(4,8,18,0.65)',
@@ -1037,8 +1036,9 @@
               );
             })()}
 
-            {/* Right: time + live badge + hamburger */}
+            {/* Right: hazard switcher + time + live badge + hamburger */}
             <div className="flex items-center gap-3 font-mono">
+              <div className="hidden lg:block"><HazardSwitcher selected={selectedHazard} onChange={onHazardChange} /></div>
               <div className="hidden sm:block text-right">
                 <div className="text-sm font-extrabold text-white tracking-widest neon-cyan">{liveTime}</div>
                 <div className="text-[9px] text-[#3d5066]">{(() => {
@@ -1207,7 +1207,10 @@
       }, []);
       const isMobile = winW < 640;
 
-      const peakProb = liveData?.peak_probability ?? (slots.length > 0 ? Math.max(...slots.map(s => s.probability || 0)) : 0);
+      const peakProb = (() => {
+        if (hazardCfg.key === 'ts') return liveData?.peak_probability ?? (slots.length > 0 ? Math.max(...slots.map(s => s.ts_probability || s.probability || 0)) : 0);
+        return slots.length > 0 ? Math.max(...slots.map(s => s[hazardCfg.probKey] || 0)) : 0;
+      })();
       const alertActive = (hazardCfg.summaryKey ? liveData?.hazard_summary?.[hazardCfg.summaryKey]?.alert_active : liveData?.alert_active) ?? (peakProb >= 0.35);
       const peakSlot = slots.length > 0 ? slots.reduce((a, b) => (a.probability > b.probability ? a : b), slots[0]) : null;
       const riskColor = mapRiskColor(peakProb);
@@ -1774,7 +1777,7 @@
           </div>
 
           {/* ── HEATMAP LEGEND (bottom-right) ── */}
-          <div style={{ position: 'absolute', bottom: 158, right: 52, zIndex: 20, display: isMobile ? 'none' : undefined, background: 'rgba(4,7,17,0.9)', backdropFilter: 'blur(12px)', border: '1px solid rgba(56,189,248,0.14)', borderRadius: 13, padding: '11px 14px' }}>
+          <div style={{ position: 'absolute', bottom: 160, left: 12, zIndex: 20, display: isMobile ? 'none' : undefined, background: 'rgba(4,7,17,0.9)', backdropFilter: 'blur(12px)', border: '1px solid rgba(56,189,248,0.14)', borderRadius: 13, padding: '11px 14px' }}>
             <div style={{ fontSize: 8, fontWeight: 800, letterSpacing: 3, color: '#37474f', fontFamily: 'monospace', marginBottom: 9 }}>TS PROBABILITY HEATMAP</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
               {[
@@ -1978,7 +1981,7 @@
               const overrideActive = liveData?.himawari_override_active ?? false;
               const overrideSlots = liveData?.himawari_override_slots ?? [];
               const peakSlot = liveData?.peak_slot ?? null;
-              const peakProb = liveData?.peak_probability ?? 0;
+              const peakProb = hazardCfg.key === 'ts' ? (liveData?.peak_probability ?? 0) : (slots.length > 0 ? Math.max(...slots.map(s => s[hazardCfg.probKey] || 0)) : 0);
               return (
                 <div className={`shimmer-card atc-card atc-card-hover p-4 rounded-xl flex flex-col justify-between min-h-[190px] transition-all duration-300 ${alertActive ? 'alert-glow-card' : ''}`}>
                   <div className="flex items-center gap-2 text-[10px] font-mono text-[#607d8b] font-bold">
@@ -6323,7 +6326,7 @@
           const now = new Date();
           const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
           const ist = new Date(utc + (3600000 * 5.5));
-          setLiveTime(ist.toLocaleTimeString('en-US', { hour12: false }) + ' IST');
+          setLiveTime(ist.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }) + ' IST');
         };
         updateClock();
         const timer = setInterval(updateClock, 1000);
