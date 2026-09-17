@@ -1451,6 +1451,74 @@
             }
           }, 'storm-heat-layer'); // insert below the heatmap so heatmap stays on top
 
+          // ── Flood susceptibility raster overlay from SRTM DEM analysis ────────────
+          // Fetches data/blr_terrain.json (151x151 grid, 0.01 deg resolution)
+          // and renders flood_susceptibility as a semi-transparent color raster
+          // Shown only in Flash Flood mode, layered above hillshade
+          (function loadFloodSusceptibilityOverlay() {
+            const BBOX_W = 77.0, BBOX_E = 78.5, BBOX_S = 12.5, BBOX_N = 14.0;
+            const COLS = 151, ROWS = 151;
+            const CANVAS_W = 512, CANVAS_H = 512;
+            fetch('data/blr_terrain.json?v=1')
+              .then(r => r.ok ? r.json() : null)
+              .then(terrain => {
+                if (!terrain || !terrain.grid || terrain.grid.length === 0) return;
+                const canvas = document.createElement('canvas');
+                canvas.width = CANVAS_W; canvas.height = CANVAS_H;
+                const ctx = canvas.getContext('2d');
+                const imgData = ctx.createImageData(CANVAS_W, CANVAS_H);
+                const grid = terrain.grid;
+                // Build lookup: lat,lon -> susceptibility
+                const lookup = {};
+                grid.forEach(pt => {
+                  const lr = Math.round(pt.lat * 100);
+                  const lc = Math.round(pt.lon * 100);
+                  lookup[lr + ',' + lc] = pt.flood_susceptibility;
+                });
+                for (let py = 0; py < CANVAS_H; py++) {
+                  for (let px = 0; px < CANVAS_W; px++) {
+                    // Map pixel to lat/lon
+                    const lon = BBOX_W + (px / (CANVAS_W - 1)) * (BBOX_E - BBOX_W);
+                    const lat = BBOX_N - (py / (CANVAS_H - 1)) * (BBOX_N - BBOX_S);
+                    // Nearest grid point
+                    const lr = Math.round(lat * 100);
+                    const lc = Math.round(lon * 100);
+                    const fs = lookup[lr + ',' + lc];
+                    const idx = (py * CANVAS_W + px) * 4;
+                    if (fs !== undefined && fs >= 0.35) {
+                      // Color ramp: blue->cyan->yellow->red
+                      let r, g, b;
+                      if (fs < 0.55) { const t = (fs - 0.35) / 0.20; r = Math.round(0 + 0*t); g = Math.round(100 + 100*t); b = Math.round(220 - 20*t); }
+                      else if (fs < 0.75) { const t = (fs - 0.55) / 0.20; r = Math.round(0 + 255*t); g = Math.round(200 - 50*t); b = Math.round(200 - 200*t); }
+                      else { const t = (fs - 0.75) / 0.25; r = 255; g = Math.round(150 - 150*t); b = 0; }
+                      imgData.data[idx] = r; imgData.data[idx+1] = g; imgData.data[idx+2] = b;
+                      imgData.data[idx+3] = Math.round(180 * Math.pow((fs - 0.35) / 0.65, 0.6));
+                    } else {
+                      imgData.data[idx+3] = 0;
+                    }
+                  }
+                }
+                ctx.putImageData(imgData, 0, 0);
+                const dataURL = canvas.toDataURL('image/png');
+                map.addSource('flood-susc-canvas', {
+                  type: 'image',
+                  url: dataURL,
+                  coordinates: [
+                    [BBOX_W, BBOX_N], [BBOX_E, BBOX_N],
+                    [BBOX_E, BBOX_S], [BBOX_W, BBOX_S]
+                  ]
+                });
+                map.addLayer({
+                  id: 'flood-susc-overlay',
+                  type: 'raster',
+                  source: 'flood-susc-canvas',
+                  layout: { visibility: 'none' },
+                  paint: { 'raster-opacity': 0.72, 'raster-fade-duration': 300 }
+                }, 'storm-heat-layer');
+              })
+              .catch(() => {});
+          })();
+
           // Load pan-India grid data
           fetch('data/pan_india_grid.json?' + Date.now())
             .then(r => r.json())
@@ -1504,9 +1572,12 @@
         layers.forEach(l => {
           if (map.getLayer(l)) map.setLayoutProperty(l, 'visibility', l === active[panLayer] ? 'visible' : 'none');
         });
-        // Show terrain hillshade only in flash flood mode (aids drainage/slope visualisation)
+        // Show terrain hillshade + flood susceptibility overlay only in flash flood mode
         if (map.getLayer('terrain-hillshade')) {
           map.setLayoutProperty('terrain-hillshade', 'visibility', panLayer === 'flash_flood' ? 'visible' : 'none');
+        }
+        if (map.getLayer('flood-susc-overlay')) {
+          map.setLayoutProperty('flood-susc-overlay', 'visibility', panLayer === 'flash_flood' ? 'visible' : 'none');
         }
       }, [panLayer, mapReady]);
 
@@ -1717,6 +1788,35 @@
               </div>
             </div>
 
+            {/* IWV Satellite Moisture Tracker */}
+            {(() => {
+              const iwv = liveData?.met_parameters?.iwv_mm;
+              const cat = liveData?.met_parameters?.iwv_category;
+              const pct = liveData?.met_parameters?.iwv_pct_of_threshold ?? (iwv ? Math.min(1, iwv / 55) : null);
+              if (iwv == null) return null;
+              const catColor = cat === 'HIGH' ? '#ef5350' : cat === 'ELEVATED' ? '#ff9800' : cat === 'MODERATE' ? '#ffc107' : '#4caf50';
+              const barW = Math.round((pct ?? 0) * 100);
+              return (
+                <div style={{ background: 'rgba(5,8,18,0.9)', backdropFilter: 'blur(16px)', border: `1px solid ${catColor}33`, borderRadius: 15, padding: '12px 14px' }}>
+                  <div style={{ fontSize: 8, fontWeight: 800, letterSpacing: 3.5, color: '#37474f', fontFamily: 'monospace', marginBottom: 8 }}>IWV MOISTURE COLUMN</div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 6 }}>
+                    <span style={{ fontSize: 22, fontWeight: 900, color: catColor, fontFamily: 'monospace', lineHeight: 1 }}>{iwv.toFixed(1)}<span style={{ fontSize: 10, marginLeft: 3, opacity: 0.7 }}>mm</span></span>
+                    <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: 1.5, color: catColor, fontFamily: 'monospace', padding: '2px 7px', background: catColor + '18', borderRadius: 6, border: '1px solid ' + catColor + '44' }}>{cat ?? 'MODERATE'}</span>
+                  </div>
+                  <div style={{ background: 'rgba(0,0,0,0.4)', borderRadius: 4, height: 5, overflow: 'hidden', marginBottom: 5 }}>
+                    <div style={{ width: barW + '%', height: '100%', background: `linear-gradient(90deg, #4caf50, ${catColor})`, borderRadius: 4, transition: 'width 0.6s ease' }} />
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 8, color: '#37474f', fontFamily: 'monospace' }}>
+                    <span>0 mm</span>
+                    <span style={{ color: '#607d8b' }}>THRESHOLD 55 mm</span>
+                  </div>
+                  <div style={{ marginTop: 6, fontSize: 8, color: '#455a64', fontFamily: 'monospace' }}>
+                    GFS PRECIP WATER COLUMN · HIMAWARI-9 ANCHOR · {barW}% OF DEEP CONV THRESHOLD
+                  </div>
+                </div>
+              );
+            })()}
+
             {/* Satellite */}
             {sat.available && (
               <div style={{ background: 'rgba(5,8,18,0.9)', backdropFilter: 'blur(16px)', border: '1px solid rgba(126,87,194,0.2)', borderRadius: 15, padding: '12px 14px' }}>
@@ -1735,6 +1835,59 @@
                 </div>
               </div>
             )}
+
+            {/* Flash Flood Terrain Risk -- shown when FF hazard active */}
+            {selectedHazard === 'ff' && liveData?.terrain && (() => {
+              const tr = liveData.terrain;
+              const hz = liveData.terrain.high_risk_zones || [];
+              const ffRisk = liveData.terrain.ff_terrain_risk || {};
+              const compound = liveData.terrain.iwv_terrain_compound_factor ?? null;
+              const slots = liveData.slots || [];
+              return (
+                <div style={{ background: 'rgba(5,8,18,0.9)', backdropFilter: 'blur(16px)', border: '1px solid rgba(239,83,80,0.25)', borderRadius: 15, padding: '12px 14px' }}>
+                  <div style={{ fontSize: 8, fontWeight: 800, letterSpacing: 3.5, color: '#37474f', fontFamily: 'monospace', marginBottom: 8 }}>DEM TERRAIN ROUTING</div>
+                  {/* Per-slot terrain-amplified FF risk */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 5, marginBottom: 8 }}>
+                    {slots.map(s => {
+                      const baseP = s.ff_probability ?? 0;
+                      const ampP = ffRisk[String(s.slot)] ?? baseP;
+                      const ampColor = ampP >= 0.5 ? '#ef5350' : ampP >= 0.3 ? '#ff9800' : '#4caf50';
+                      return (
+                        <div key={s.slot} style={{ background: 'rgba(0,0,0,0.4)', borderRadius: 8, padding: '6px 8px', border: `1px solid ${ampColor}33` }}>
+                          <div style={{ fontSize: 7, color: '#37474f', fontFamily: 'monospace', marginBottom: 2 }}>SLOT {s.slot} {['LN','AM','PM','EVE'][s.slot]}</div>
+                          <div style={{ fontSize: 11, fontWeight: 800, color: ampColor, fontFamily: 'monospace' }}>{(ampP * 100).toFixed(0)}%</div>
+                          <div style={{ fontSize: 7, color: '#37474f', fontFamily: 'monospace' }}>BASE {(baseP * 100).toFixed(0)}%</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {/* DEM stats */}
+                  <div style={{ fontSize: 8, color: '#455a64', fontFamily: 'monospace', marginBottom: 6, display: 'flex', justifyContent: 'space-between' }}>
+                    <span>TOP 10% SUSC</span>
+                    <span style={{ color: '#ff9800', fontWeight: 700 }}>{tr.mean_flood_susceptibility_top10pct != null ? (tr.mean_flood_susceptibility_top10pct * 100).toFixed(0) + '%' : '--'}</span>
+                  </div>
+                  {compound != null && (
+                    <div style={{ fontSize: 8, color: '#455a64', fontFamily: 'monospace', marginBottom: 6, display: 'flex', justifyContent: 'space-between' }}>
+                      <span>IWV+TERRAIN FACTOR</span>
+                      <span style={{ color: compound > 0.5 ? '#ef5350' : '#ffc107', fontWeight: 700 }}>{(compound * 100).toFixed(0)}%</span>
+                    </div>
+                  )}
+                  {/* High risk drainage zones */}
+                  {hz.length > 0 && (
+                    <div>
+                      <div style={{ fontSize: 7, color: '#37474f', fontFamily: 'monospace', marginBottom: 4 }}>HIGH-RISK DRAINAGE ZONES ({hz.length})</div>
+                      {hz.slice(0, 4).map((z, i) => (
+                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 8, color: '#607d8b', fontFamily: 'monospace', padding: '2px 0', borderBottom: '1px solid rgba(23,35,56,0.4)' }}>
+                          <span>{z.lat.toFixed(2)}N {z.lon.toFixed(2)}E</span>
+                          <span style={{ color: '#ef5350' }}>{(z.flood_susceptibility * 100).toFixed(0)}%</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <div style={{ fontSize: 7, color: '#263238', fontFamily: 'monospace', marginTop: 6 }}>SRTM via AWS Terrain Tiles · zoom=11 · {tr.n_points ?? '--'} pts</div>
+                </div>
+              );
+            })()}
 
             {/* Regime + CI */}
             {(ci.monsoon_regime || ciRisk) && (
@@ -2970,7 +3123,7 @@
               { label: 'K-Index',   val: Math.min(((ci.ki_now || 0) - 10) / 30, 1),     raw: `${(ci.ki_now||0).toFixed(1)}` },
               { label: 'Instab.',   val: (ci.instability_score || 0) / 100,              raw: `${(ci.instability_score||0).toFixed(0)}/100` },
               { label: 'TT',        val: Math.min(((ci.tt_now||0) - 40) / 20, 1),       raw: `${(ci.tt_now||0).toFixed(1)}` },
-              { label: 'PW',        val: Math.min((liveData.met_parameters?.PRECIP_WATER||40) / 70, 1), raw: `${(liveData.met_parameters?.PRECIP_WATER||0).toFixed(0)} mm` },
+              { label: 'IWV',       val: Math.min((liveData.met_parameters?.iwv_mm||40) / 70, 1),       raw: `${(liveData.met_parameters?.iwv_mm||0).toFixed(1)} mm` },
               { label: '-LI',       val: Math.min(Math.max(-(ci.li_now||0) / 8, 0), 1), raw: `${(ci.li_now||0).toFixed(1)}` },
             ];
             const N = params.length;
@@ -3566,6 +3719,77 @@
             badgeColor="green"
           />
           <div className="atc-card p-6 rounded-2xl space-y-6">
+
+          {/* Pipeline Architecture Diagram */}
+          <div className="p-4 rounded-xl bg-[#050811] border border-[#172338]">
+            <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+              <div>
+                <h3 className="text-xs font-bold text-cyan-300 uppercase tracking-wider">SYSTEM ARCHITECTURE: FOUR-SLOT PARALLEL TASK HEADS</h3>
+                <p className="text-[9px] text-[#607d8b]">Shared feature extraction layer feeds three parallel hazard classifiers per 6-hour slot</p>
+              </div>
+              <span className="text-[9px] text-emerald-300 font-bold px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/30">78 FEATURES</span>
+            </div>
+            <svg viewBox="0 0 800 320" width="100%" style={{ fontFamily: 'monospace', overflow: 'visible' }}>
+              {/* ── DATA SOURCES row ── */}
+              {[
+                { x: 40,  label: 'GFS NWP',    sub: '78 features',  color: '#38bdf8' },
+                { x: 180, label: 'HIMAWARI-9',  sub: 'IWV / CTT',    color: '#ab47bc' },
+                { x: 320, label: 'SRTM DEM',    sub: 'slope / elev', color: '#4caf50' },
+                { x: 460, label: 'METAR',        sub: 'VOBL obs',     color: '#ffc107' },
+                { x: 600, label: 'IMD SYNOP',    sub: '43295',        color: '#ff7043' },
+              ].map(d => (
+                <g key={d.label}>
+                  <rect x={d.x} y={10} width={110} height={40} rx="7" fill="#080d1a" stroke={d.color} strokeWidth="1.2" />
+                  <text x={d.x + 55} y={28} textAnchor="middle" fontSize="9" fontWeight="bold" fill={d.color}>{d.label}</text>
+                  <text x={d.x + 55} y={42} textAnchor="middle" fontSize="7" fill="#455a64">{d.sub}</text>
+                  <line x1={d.x + 55} y1={50} x2={d.x + 55} y2={78} stroke={d.color} strokeWidth="1" strokeDasharray="3,2" />
+                </g>
+              ))}
+              {/* ── SHARED FEATURE EXTRACTION box ── */}
+              <rect x={20} y={80} width={720} height={48} rx="10" fill="#0a1628" stroke="#38bdf8" strokeWidth="1.5" />
+              <text x={380} y={100} textAnchor="middle" fontSize="10" fontWeight="bold" fill="#38bdf8">SHARED FEATURE EXTRACTION LAYER</text>
+              <text x={380} y={116} textAnchor="middle" fontSize="8" fill="#455a64">78 engineered features: instability indices, lag/rolling stats, terrain amplifiers, satellite anomalies, moisture column (IWV)</text>
+              {/* fanout lines */}
+              {[120, 260, 400, 540, 680].map(x => (
+                <line key={x} x1={x} y1={128} x2={x} y2={155} stroke="#172338" strokeWidth="1" strokeDasharray="2,2" />
+              ))}
+              {/* horizontal connector */}
+              <line x1={120} y1={155} x2={680} y2={155} stroke="#172338" strokeWidth="1" />
+              {/* ── 4 SLOT columns ── */}
+              {[
+                { slot: 0, x: 30,  label: 'SLOT 0', win: '00-06 IST', col: '#38bdf8' },
+                { slot: 1, x: 210, label: 'SLOT 1', win: '06-12 IST', col: '#ab47bc' },
+                { slot: 2, x: 390, label: 'SLOT 2', win: '12-18 IST', col: '#ffc107' },
+                { slot: 3, x: 570, label: 'SLOT 3', win: '18-24 IST', col: '#4caf50' },
+              ].map(sl => (
+                <g key={sl.slot}>
+                  <line x1={sl.x + 85} y1={155} x2={sl.x + 85} y2={168} stroke={sl.col} strokeWidth="1.2" />
+                  {/* slot header */}
+                  <rect x={sl.x + 10} y={168} width={150} height={26} rx="6" fill="#080d1a" stroke={sl.col} strokeWidth="1.2" />
+                  <text x={sl.x + 85} y={181} textAnchor="middle" fontSize="8" fontWeight="bold" fill={sl.col}>{sl.label} · {sl.win}</text>
+                  <text x={sl.x + 85} y={191} textAnchor="middle" fontSize="7" fill="#455a64">XGBoost + Isotonic Cal.</text>
+                  {/* 3 parallel task heads */}
+                  {[
+                    { label: 'TS HEAD', col: '#38bdf8', dy: 0 },
+                    { label: 'CB HEAD', col: '#ab47bc', dy: 38 },
+                    { label: 'FF HEAD', col: '#4caf50', dy: 76 },
+                  ].map(h => (
+                    <g key={h.label}>
+                      <line x1={sl.x + 85} y1={194 + h.dy} x2={sl.x + 85} y2={202 + h.dy} stroke={h.col} strokeWidth="1" />
+                      <rect x={sl.x + 35} y={202 + h.dy} width={100} height={28} rx="5" fill="#0d1427" stroke={h.col} strokeWidth="0.8" />
+                      <text x={sl.x + 85} y={214 + h.dy} textAnchor="middle" fontSize="8" fontWeight="bold" fill={h.col}>{h.label}</text>
+                      <text x={sl.x + 85} y={226 + h.dy} textAnchor="middle" fontSize="6.5" fill="#37474f">P(hazard|slot)</text>
+                    </g>
+                  ))}
+                </g>
+              ))}
+              {/* ── TERRAIN ROUTING + XAI row ── */}
+              <rect x={20} y={300} width={340} height={14} rx="5" fill="#080d1a" stroke="#4caf50" strokeWidth="0.8" />
+              <text x={190} y={311} textAnchor="middle" fontSize="7" fill="#4caf50">SRTM TERRAIN ROUTING (FF amplification)</text>
+              <rect x={440} y={300} width={300} height={14} rx="5" fill="#080d1a" stroke="#ffc107" strokeWidth="0.8" />
+              <text x={590} y={311} textAnchor="middle" fontSize="7" fill="#ffc107">SHAP XAI (per-slot feature attribution)</text>
+            </svg>
+          </div>
 
           {/* Per-slot model table */}
           <div>
