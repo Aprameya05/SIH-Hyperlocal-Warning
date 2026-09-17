@@ -28,9 +28,11 @@ import argparse
 from pathlib import Path
 from datetime import datetime, timedelta, timezone
 
+import pickle
 import joblib
 import numpy as np
 import pandas as pd
+import xgboost as xgb
 
 BASE   = Path(".")
 MODELS = BASE / "models"
@@ -283,6 +285,32 @@ def build_pipeline_health(now: datetime, gfs_df: pd.DataFrame,
     }
 
 
+# ── CB / FF hazard scoring ────────────────────────────────────────────────────
+
+def score_hazard_slots(obs_by_slot: dict, feature_cols: list,
+                       hazard: str, models_dir: Path) -> dict:
+    """Score all 4 slots for a hazard (cb or ff) and return calibrated probs."""
+    probs = {i: 0.0 for i in range(4)}
+    for slot_id in range(4):
+        model_path = models_dir / f"{hazard}_slot_{slot_id}_model.json"
+        cal_path   = models_dir / f"{hazard}_slot_{slot_id}_calibrator.pkl"
+        if not model_path.exists() or not cal_path.exists():
+            continue
+        try:
+            model = xgb.XGBClassifier()
+            model.load_model(str(model_path))
+            with open(cal_path, "rb") as f:
+                calibrator = pickle.load(f)
+            obs = obs_by_slot.get(slot_id, {})
+            X   = np.array([[float(obs.get(c, 0.0)) for c in feature_cols]])
+            raw = float(model.predict_proba(X)[0][1])
+            cal = float(calibrator.transform([raw])[0])
+            probs[slot_id] = round(min(max(cal, 0.0), 1.0), 4)
+        except Exception as e:
+            print(f"  {hazard.upper()} slot {slot_id} scoring error: {e}")
+    return probs
+
+
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 def main():
@@ -368,6 +396,7 @@ def main():
     # ── Slot loop ─────────────────────────────────────────────────────────────
     slots_output = []
     results      = {}
+    obs_by_slot  = {}   # store feature vectors per slot for CB/FF scoring
 
     for slot_id in range(4):
         # Apply October threshold fix for Slot 2
@@ -495,6 +524,7 @@ def main():
             data_source = "gfs+upperair"
 
         obs = compute_derived(obs, slot_id)
+        obs_by_slot[slot_id] = obs.copy()   # save for CB/FF scoring
 
         # Predict
         X   = np.array([[float(obs.get(c, 0.0)) for c in feature_cols]])
@@ -536,6 +566,29 @@ def main():
         })
         print(f"  Slot {slot_id}: {model_ver}  raw={raw*100:.1f}%  cal={cal*100:.1f}%  "
               f"threshold={threshold}  predicted={'YES' if float(cal) >= threshold else 'NO'}")
+
+    # ── CB / FF hazard scoring ────────────────────────────────────────────────
+    cb_probs = {0: 0.0, 1: 0.0, 2: 0.0, 3: 0.0}
+    ff_probs = {0: 0.0, 1: 0.0, 2: 0.0, 3: 0.0}
+    cb_ff_feat_path = MODELS / "cb_ff_feature_list.json"
+    if cb_ff_feat_path.exists() and obs_by_slot:
+        try:
+            with open(cb_ff_feat_path) as f:
+                cb_ff_features = json.load(f)
+            cb_probs = score_hazard_slots(obs_by_slot, cb_ff_features, "cb", MODELS)
+            ff_probs = score_hazard_slots(obs_by_slot, cb_ff_features, "ff", MODELS)
+            print(f"  CB probs: { {k: f'{v*100:.1f}%' for k,v in cb_probs.items()} }")
+            print(f"  FF probs: { {k: f'{v*100:.1f}%' for k,v in ff_probs.items()} }")
+        except Exception as e:
+            print(f"  CB/FF scoring error (non-fatal): {e}")
+    else:
+        print("  CB/FF models not found — skipping hazard scoring")
+
+    # Inject CB/FF probs into each slot dict
+    for s in slots_output:
+        sid = s["slot"]
+        s["cb_probability"] = cb_probs.get(sid, 0.0)
+        s["ff_probability"] = ff_probs.get(sid, 0.0)
 
     # ── Load previous forecast for trend delta ────────────────────────────────
     prev_probs = {}
@@ -813,6 +866,24 @@ def main():
         except Exception as e:
             print(f"  Multiday outlook error: {e}")
     forecast["multiday_outlook"] = multiday_outlook
+
+    # ── Hazard summary (CB / FF) ──────────────────────────────────────────────
+    forecast["hazard_summary"] = {
+        "cloudburst": {
+            "max_prob":  round(max(cb_probs.values()), 4),
+            "peak_slot": int(max(cb_probs, key=cb_probs.get)),
+            "alert":     max(cb_probs.values()) >= 0.30,
+            "slots":     cb_probs,
+            "threshold": 0.30,
+        },
+        "flash_flood": {
+            "max_prob":  round(max(ff_probs.values()), 4),
+            "peak_slot": int(max(ff_probs, key=ff_probs.get)),
+            "alert":     max(ff_probs.values()) >= 0.25,
+            "slots":     ff_probs,
+            "threshold": 0.25,
+        },
+    }
 
     # ── Historical analogs ────────────────────────────────────────────────────
     analogs = []
