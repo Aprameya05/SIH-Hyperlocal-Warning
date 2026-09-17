@@ -1825,17 +1825,30 @@
                   shortName = data[0].display_name.split(',').slice(0,2).join(', ');
                 }
                 mapRef.current.flyTo({ center: [lngN, latN], zoom: 8, speed: 1.4 });
-                const cells = gridCellsRef.current;
-                if (cells && cells.length > 0) {
-                  let best = null, bestD = Infinity;
-                  cells.forEach(c => {
-                    const d = Math.abs(c.lat - latN) + Math.abs(c.lon - lngN);
-                    if (d < bestD) { bestD = d; best = c; }
-                  });
-                  if (best && window._showCellPopup) {
-                    setTimeout(() => window._showCellPopup(mapRef.current, lngN, latN, best, shortName), 800);
+                // Show popup after flyTo — retry up to 3s if grid data still loading
+                const tryPopup = (attempts) => {
+                  const cells = gridCellsRef.current;
+                  if (cells && cells.length > 0 && window._showCellPopup) {
+                    let best = null, bestD = Infinity;
+                    cells.forEach(c => {
+                      const d = Math.abs(c.lat - latN) + Math.abs(c.lon - lngN);
+                      if (d < bestD) { bestD = d; best = c; }
+                    });
+                    if (best) { window._showCellPopup(mapRef.current, lngN, latN, best, shortName); return; }
                   }
-                }
+                  // Grid data not ready yet — show minimal location popup, retry
+                  if (attempts > 0) {
+                    setTimeout(() => tryPopup(attempts - 1), 700);
+                  } else {
+                    // Final fallback: plain location marker popup
+                    if (clickPopupRef && clickPopupRef.current) { clickPopupRef.current.remove(); clickPopupRef.current = null; }
+                    const fb = new maplibregl.Popup({ closeButton: true, maxWidth: '220px' })
+                      .setLngLat([lngN, latN])
+                      .setHTML(`<div style="font-family:monospace;font-size:10px;color:#cfd8dc;background:rgba(4,7,17,0.97);padding:10px 14px;border-radius:10px;border:1px solid rgba(56,189,248,0.25)"><div style="color:#7dd3fc;font-weight:700;margin-bottom:4px">${shortName}</div><div style="color:#455a64;font-size:9px">${latN.toFixed(2)}N ${lngN.toFixed(2)}E</div><div style="color:#546e7a;font-size:9px;margin-top:6px">Grid forecast not available for this location.</div></div>`)
+                      .addTo(mapRef.current);
+                  }
+                };
+                setTimeout(() => tryPopup(4), 900);
               } catch(e) {}
               setSearching(false);
             };
