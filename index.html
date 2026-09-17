@@ -1382,6 +1382,7 @@
             type: 'fill',
             source: 'pan-india-src',
             filter: ['==', ['get', 'layer'], 'thunderstorm'],
+            layout: { visibility: 'none' },
             paint: {
               'fill-color': ['interpolate', ['linear'], ['get', 'prob'],
                 0, 'rgba(0,0,0,0)',
@@ -1456,7 +1457,7 @@
           // TS: convective instability (electric purple->yellow representing CAPE zones)
           // CB: moisture concentration (deep indigo->cyan representing IWV pooling)
           (function buildHazardOverlays() {
-            const BBOX_W = 77.0, BBOX_E = 78.5, BBOX_S = 12.5, BBOX_N = 14.0;
+            const BBOX_W = 68.0, BBOX_E = 98.0, BBOX_S = 6.0, BBOX_N = 37.0;
             const CW = 512, CH = 512;
 
             // Helper: add a canvas image layer
@@ -1525,12 +1526,12 @@
               const centreLat = 12.97, centreLon = 77.59;
               const cx = Math.round((centreLon-BBOX_W)/(BBOX_E-BBOX_W)*CW);
               const cy = Math.round((BBOX_N-centreLat)/(BBOX_N-BBOX_S)*CH);
-              const maxR = CW * 0.52;
+              // maxR in pixels: ~5 degrees = ~85px in 512px/30deg canvas — localized storm cell
+              const maxR = Math.round(CW * 0.17);
               const stormCells = [
                 { px: cx, py: cy, strength: 1.0 },
                 { px: Math.round((77.35-BBOX_W)/(BBOX_E-BBOX_W)*CW), py: Math.round((BBOX_N-13.35)/(BBOX_N-BBOX_S)*CH), strength: 0.72 },
                 { px: Math.round((77.82-BBOX_W)/(BBOX_E-BBOX_W)*CW), py: Math.round((BBOX_N-12.68)/(BBOX_N-BBOX_S)*CH), strength: 0.62 },
-                { px: Math.round((78.12-BBOX_W)/(BBOX_E-BBOX_W)*CW), py: Math.round((BBOX_N-13.62)/(BBOX_N-BBOX_S)*CH), strength: 0.55 },
                 { px: Math.round((77.10-BBOX_W)/(BBOX_E-BBOX_W)*CW), py: Math.round((BBOX_N-12.60)/(BBOX_N-BBOX_S)*CH), strength: 0.42 },
               ];
               const cosM = Math.cos(-Math.PI/4), sinM = Math.sin(-Math.PI/4);
@@ -1699,7 +1700,7 @@
               ['thunderstorm', 'cloudburst', 'flash_flood'].forEach(layer => {
                 d.grid_cells.forEach(c => {
                   const prob = c[layer + '_probability'] ?? 0;
-                  if (prob < 0.03) return;
+                  if (prob < 0.15) return;
                   const h = STEP / 2;
                   features.push({
                     type: 'Feature',
