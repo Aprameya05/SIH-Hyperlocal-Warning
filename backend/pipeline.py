@@ -494,3 +494,4 @@ if __name__ == "__main__":
                         help="Forecast hour (0, 3, 6, ... default 0)")
     args = parser.parse_args()
     run(cycle_override=args.cycle, fhour=args.fhour)
+# calibrated for Indian monsoon
