@@ -881,6 +881,84 @@ def main():
             print(f"  Multiday outlook error: {e}")
     forecast["multiday_outlook"] = multiday_outlook
 
+    # ── Terrain-routed Flash Flood risk (SRTM DEM) ───────────────────────────
+    terrain_path = DATA / "blr_terrain.json"
+    if terrain_path.exists():
+        try:
+            with open(terrain_path) as f:
+                terrain_data = json.load(f)
+            grid = terrain_data.get("grid", [])
+            if grid:
+                # Find high-susceptibility cells (top 10%) for the terrain amplifier
+                sorted_grid = sorted(grid, key=lambda x: x.get("flood_susceptibility", 0), reverse=True)
+                top_n = max(1, len(sorted_grid) // 10)
+                top_cells = sorted_grid[:top_n]
+                mean_fs_top = sum(c["flood_susceptibility"] for c in top_cells) / len(top_cells)
+
+                # Per-slot terrain-routed FF risk: raw ff_prob amplified by local terrain
+                ff_terrain_risk = {}
+                for s in slots_output:
+                    ff_p = s.get("ff_probability", 0.0)
+                    # Susceptibility amplifies risk in low-lying drainage areas
+                    terrain_amplified = round(min(1.0, ff_p * (0.4 + 0.6 * mean_fs_top) * 1.8), 4)
+                    ff_terrain_risk[str(s["slot"])] = terrain_amplified
+
+                # Named high-risk drainage zones (top susceptibility cells)
+                high_risk_zones = []
+                seen_cells = set()
+                for cell in sorted_grid:
+                    # Cluster: skip cells within 0.05 deg of an already-named cell
+                    key = (round(cell["lat"] * 20), round(cell["lon"] * 20))
+                    if key in seen_cells:
+                        continue
+                    if cell["flood_susceptibility"] < 0.60:
+                        break
+                    seen_cells.add(key)
+                    high_risk_zones.append({
+                        "lat": cell["lat"],
+                        "lon": cell["lon"],
+                        "elevation_m": cell["elevation_m"],
+                        "slope_deg": cell["slope_deg"],
+                        "flood_susceptibility": cell["flood_susceptibility"],
+                    })
+                    if len(high_risk_zones) >= 8:
+                        break
+
+                # IWV-terrain compound risk: higher IWV + susceptible terrain = elevated FF risk
+                iwv_now = forecast["met_parameters"].get("iwv_mm", 0) or 0
+                iwv_factor = max(0.0, min(1.0, (iwv_now - 30) / 40))  # 0 at 30mm, 1 at 70mm
+
+                forecast["terrain"] = {
+                    "source": "SRTM via AWS Terrain Tiles (terrarium encoding, zoom=11)",
+                    "bbox": terrain_data.get("bbox", {}),
+                    "resolution_deg": terrain_data.get("resolution_deg", 0.01),
+                    "n_points": terrain_data.get("n_points", 0),
+                    "elevation_stats": terrain_data.get("elevation_stats", {}),
+                    "ff_terrain_risk": ff_terrain_risk,
+                    "mean_flood_susceptibility_top10pct": round(mean_fs_top, 3),
+                    "iwv_terrain_compound_factor": round(iwv_factor, 3),
+                    "high_risk_zones": high_risk_zones,
+                    "data_file": "data/blr_terrain.json",
+                    "computed_at": now.strftime("%Y-%m-%d %H:%M IST"),
+                }
+                print(f"  Terrain: {len(grid)} grid pts  mean_fs_top10={mean_fs_top:.3f}  "
+                      f"FF terrain risk: {ff_terrain_risk}")
+        except Exception as e:
+            print(f"  Terrain integration error (non-fatal): {e}")
+
+    # IWV trend and category in met_parameters
+    iwv_val = forecast["met_parameters"].get("iwv_mm", 0) or 0
+    forecast["met_parameters"]["iwv_category"] = (
+        "HIGH" if iwv_val >= 55 else
+        "ELEVATED" if iwv_val >= 45 else
+        "MODERATE" if iwv_val >= 35 else
+        "LOW"
+    )
+    forecast["met_parameters"]["iwv_threshold_mm"] = 55.0
+    forecast["met_parameters"]["iwv_pct_of_threshold"] = round(
+        min(1.0, iwv_val / 55.0), 3
+    )
+
     # ── Hazard summary (CB / FF) ──────────────────────────────────────────────
     forecast["hazard_summary"] = {
         "cloudburst": {
