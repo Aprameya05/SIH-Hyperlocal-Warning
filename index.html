@@ -1515,7 +1515,9 @@
                 addCanvasLayer('flood-susc-overlay', canvas.toDataURL('image/png'), 'flood-susc-canvas');
               }).catch(()=>{});
 
-            // ── TS overlay: storm cell with spiral arms and lightning streaks ──────
+            // ── TS overlay: thunderstorm probability — matches legend (red/orange/yellow/blue) ──
+            // Colours: MINIMAL(cyan-blue) -> LOW(yellow) -> MODERATE(orange) -> HIGH(red)
+            // Movement effect: directional sweep streaks NE (typical BLR storm track)
             (function buildTSOverlay() {
               const canvas = document.createElement('canvas');
               canvas.width = CW; canvas.height = CH;
@@ -1524,59 +1526,61 @@
               const centreLat = 12.97, centreLon = 77.59;
               const cx = Math.round((centreLon-BBOX_W)/(BBOX_E-BBOX_W)*CW);
               const cy = Math.round((BBOX_N-centreLat)/(BBOX_N-BBOX_S)*CH);
-              const maxR = CW * 0.50;
+              const maxR = CW * 0.52;
+              // Storm cells across the region
               const stormCells = [
                 { px: cx, py: cy, strength: 1.0 },
-                { px: Math.round((77.35-BBOX_W)/(BBOX_E-BBOX_W)*CW), py: Math.round((BBOX_N-13.35)/(BBOX_N-BBOX_S)*CH), strength: 0.70 },
-                { px: Math.round((77.82-BBOX_W)/(BBOX_E-BBOX_W)*CW), py: Math.round((BBOX_N-12.70)/(BBOX_N-BBOX_S)*CH), strength: 0.60 },
-                { px: Math.round((78.10-BBOX_W)/(BBOX_E-BBOX_W)*CW), py: Math.round((BBOX_N-13.60)/(BBOX_N-BBOX_S)*CH), strength: 0.55 },
+                { px: Math.round((77.35-BBOX_W)/(BBOX_E-BBOX_W)*CW), py: Math.round((BBOX_N-13.35)/(BBOX_N-BBOX_S)*CH), strength: 0.72 },
+                { px: Math.round((77.82-BBOX_W)/(BBOX_E-BBOX_W)*CW), py: Math.round((BBOX_N-12.68)/(BBOX_N-BBOX_S)*CH), strength: 0.62 },
+                { px: Math.round((78.12-BBOX_W)/(BBOX_E-BBOX_W)*CW), py: Math.round((BBOX_N-13.62)/(BBOX_N-BBOX_S)*CH), strength: 0.55 },
+                { px: Math.round((77.10-BBOX_W)/(BBOX_E-BBOX_W)*CW), py: Math.round((BBOX_N-12.60)/(BBOX_N-BBOX_S)*CH), strength: 0.42 },
               ];
-              // Fixed lightning bolt angles radiating from storm centre
-              const lightningAngles = [0.4, 1.1, 1.9, 2.7, 3.5, 4.3, 5.1, 5.8];
+              // Storm movement direction: NE (about 45 deg), NE sweep streaks
+              const MOVE_ANGLE = -Math.PI / 4; // NE in canvas coords
+              const cosM = Math.cos(MOVE_ANGLE), sinM = Math.sin(MOVE_ANGLE);
               for (let py = 0; py < CH; py++) {
                 for (let px = 0; px < CW; px++) {
-                  const dx = px - cx, dy = py - cy;
-                  const d = Math.sqrt(dx*dx + dy*dy);
-                  const angle = Math.atan2(dy, dx);
-                  // Base radial storm field from all cells
+                  // Base radial probability field from storm cells
                   let field = 0;
                   stormCells.forEach(n => {
                     const ddx = px-n.px, ddy = py-n.py;
                     const dd = Math.sqrt(ddx*ddx+ddy*ddy);
                     field += n.strength * Math.max(0, 1 - dd/maxR);
                   });
-                  // Spiral arm modulation — rotating storm structure
-                  const spiral = 0.28 * Math.max(0, Math.sin(angle * 4 - d * 0.025 + 1.0));
-                  field = Math.min(1, field + spiral * field);
-                  // Lightning streaks: narrow bright arcs at fixed angles
-                  let lightning = 0;
-                  lightningAngles.forEach(la => {
-                    const ad = Math.abs(((angle - la + Math.PI*3) % (Math.PI*2)) - Math.PI);
-                    if (ad < 0.07 && d > 20 && d < maxR * 0.85) {
-                      const progress = d / (maxR * 0.85);
-                      lightning = Math.max(lightning, 0.85 * Math.exp(-ad*ad*200) * Math.sin(progress * Math.PI));
-                    }
-                  });
-                  field = Math.min(1, field + lightning);
+                  // Spiral arms (storm rotation structure)
+                  const dx = px-cx, dy = py-cy;
+                  const d = Math.sqrt(dx*dx+dy*dy);
+                  const angle = Math.atan2(dy, dx);
+                  const spiral = 0.22 * Math.max(0, Math.sin(angle*4 - d*0.022 + 0.8));
+                  field = Math.min(1, field + spiral*field);
+                  // Movement streaks: project pixel onto NE axis, modulate with sine
+                  // Creates visual "sweeping" bands suggesting storm track
+                  const proj = px*cosM + py*sinM;
+                  const sweep = 0.18 * Math.max(0, Math.sin(proj * 0.045)) * Math.min(1, field * 2);
+                  field = Math.min(1, field + sweep);
                   const idx = (py*CW+px)*4;
-                  if (field > 0.08) {
-                    // Dark charcoal -> electric purple -> searing white-yellow (storm energy)
+                  if (field > 0.06) {
+                    // Match legend exactly: MINIMAL=blue(56,189,248) LOW=yellow(255,213,0) MODERATE=orange(255,100,0) HIGH=red(220,0,0)
                     let r, g, b;
                     if (field < 0.25) {
-                      const t = (field-0.08)/0.17;
-                      r=Math.round(20+60*t); g=Math.round(0+5*t); b=Math.round(60+100*t);
-                    } else if (field < 0.55) {
-                      const t = (field-0.25)/0.30;
-                      r=Math.round(80+140*t); g=Math.round(5+30*t); b=Math.round(160+60*t);
-                    } else if (field < 0.80) {
-                      const t = (field-0.55)/0.25;
-                      r=Math.round(220+30*t); g=Math.round(35+180*t); b=Math.round(220-120*t);
+                      // MINIMAL: cyan-blue
+                      const t = (field-0.06)/0.19;
+                      r=Math.round(20+36*t); g=Math.round(80+109*t); b=Math.round(160+88*t);
+                    } else if (field < 0.50) {
+                      // LOW: blue -> yellow
+                      const t = (field-0.25)/0.25;
+                      r=Math.round(56+199*t); g=Math.round(189+24*t); b=Math.round(248-248*t);
+                    } else if (field < 0.75) {
+                      // MODERATE: yellow -> orange
+                      const t = (field-0.50)/0.25;
+                      r=Math.round(255); g=Math.round(213-113*t); b=Math.round(0);
                     } else {
-                      const t = (field-0.80)/0.20;
-                      r=255; g=Math.round(215+40*t); b=Math.round(100+155*t);
+                      // HIGH: orange -> deep red
+                      const t = (field-0.75)/0.25;
+                      r=Math.round(255-35*t); g=Math.round(100-100*t); b=Math.round(0);
                     }
                     imgData.data[idx]=r; imgData.data[idx+1]=g; imgData.data[idx+2]=b;
-                    imgData.data[idx+3]=Math.round(205*Math.pow(field, 0.48));
+                    imgData.data[idx+3]=Math.round(210*Math.pow(field, 0.50));
                   } else { imgData.data[idx+3]=0; }
                 }
               }
@@ -1584,62 +1588,90 @@
               addCanvasLayer('ts-instability-overlay', canvas.toDataURL('image/png'), 'ts-instability-canvas');
             })();
 
-            // ── CB overlay: storm cloud formation (billow texture + grey-white) ───
+            // ── CB overlay: floating cloud formations spread across the map ──────────
+            // Looks like satellite visible imagery: scattered monsoon cloud clusters
+            // Multiple blobs at varied positions/sizes, grey-white billow texture
             (function buildCBOverlay() {
               const canvas = document.createElement('canvas');
               canvas.width = CW; canvas.height = CH;
               const ctx = canvas.getContext('2d');
               const imgData = ctx.createImageData(CW, CH);
-              // Cloud cell centres — SW monsoon convergence zones over BLR
-              const cloudCells = [
-                { px: Math.round((77.59-BBOX_W)/(BBOX_E-BBOX_W)*CW), py: Math.round((BBOX_N-12.97)/(BBOX_N-BBOX_S)*CH), r: 115, str: 1.0 },
-                { px: Math.round((77.40-BBOX_W)/(BBOX_E-BBOX_W)*CW), py: Math.round((BBOX_N-12.80)/(BBOX_N-BBOX_S)*CH), r: 90, str: 0.85 },
-                { px: Math.round((77.75-BBOX_W)/(BBOX_E-BBOX_W)*CW), py: Math.round((BBOX_N-13.15)/(BBOX_N-BBOX_S)*CH), r: 95, str: 0.75 },
-                { px: Math.round((77.20-BBOX_W)/(BBOX_E-BBOX_W)*CW), py: Math.round((BBOX_N-13.45)/(BBOX_N-BBOX_S)*CH), r: 72, str: 0.55 },
-                { px: Math.round((78.05-BBOX_W)/(BBOX_E-BBOX_W)*CW), py: Math.round((BBOX_N-12.60)/(BBOX_N-BBOX_S)*CH), r: 68, str: 0.50 },
+              // Cloud cluster positions spread across the full Karnataka/AP region
+              // Each: { px, py, rx, ry, angle, str } — elliptical blobs with orientation
+              const clouds = [
+                // Main BLR convergence zone
+                { px: 258, py: 180, rx: 100, ry: 68, angle: 0.3, str: 1.00 },
+                // Western Ghats cloud band
+                { px: 68,  py: 155, rx: 55,  ry: 90, angle: 0.1, str: 0.82 },
+                { px: 52,  py: 240, rx: 48,  ry: 80, angle: 0.0, str: 0.70 },
+                // NW cluster (Tumkur/Chitradurga)
+                { px: 148, py: 98,  rx: 85,  ry: 55, angle: 0.4, str: 0.75 },
+                // NE cluster (Chikkaballapur/Kolar)
+                { px: 380, py: 130, rx: 70,  ry: 50, angle: 0.5, str: 0.68 },
+                // SE cluster (towards AP border)
+                { px: 420, py: 250, rx: 75,  ry: 48, angle: 0.6, str: 0.60 },
+                // Southern cluster (Mysuru flank)
+                { px: 200, py: 320, rx: 80,  ry: 52, angle: 0.2, str: 0.65 },
+                // Far NE (Andhra border)
+                { px: 460, py: 80,  rx: 55,  ry: 40, angle: 0.7, str: 0.50 },
+                // Coastal west
+                { px: 30,  py: 330, rx: 45,  ry: 70, angle: 0.0, str: 0.55 },
+                // Mid-east
+                { px: 340, py: 330, rx: 60,  ry: 42, angle: 0.3, str: 0.48 },
+                // North-centre
+                { px: 220, py: 55,  rx: 65,  ry: 40, angle: 0.5, str: 0.58 },
+                // Small wispy patches
+                { px: 460, py: 390, rx: 42,  ry: 30, angle: 0.8, str: 0.42 },
+                { px: 110, py: 400, rx: 50,  ry: 35, angle: 0.1, str: 0.45 },
+                { px: 300, py: 440, rx: 55,  ry: 32, angle: 0.4, str: 0.40 },
+                { px: 170, py: 470, rx: 40,  ry: 28, angle: 0.2, str: 0.38 },
               ];
               for (let py = 0; py < CH; py++) {
                 for (let px = 0; px < CW; px++) {
                   let field = 0;
-                  cloudCells.forEach(c => {
+                  clouds.forEach(c => {
+                    // Rotate dx/dy by cloud orientation angle
                     const dx = px - c.px, dy = py - c.py;
-                    const d = Math.sqrt(dx*dx + dy*dy);
-                    if (d < c.r) {
-                      const t = d / c.r;
-                      // Gaussian falloff — smooth cloud interior
-                      const base = c.str * Math.exp(-t*t*2.2);
-                      // Turbulent edge texture simulating cumulus billows
-                      const angle = Math.atan2(dy, dx);
-                      const turb = 0.14 * Math.sin(angle*7 + d*0.09) * Math.cos(angle*3 + d*0.06);
+                    const ca = Math.cos(c.angle), sa = Math.sin(c.angle);
+                    const lx = dx*ca + dy*sa;
+                    const ly = -dx*sa + dy*ca;
+                    // Elliptical distance
+                    const ellD = Math.sqrt((lx/c.rx)*(lx/c.rx) + (ly/c.ry)*(ly/c.ry));
+                    if (ellD < 1.0) {
+                      // Smooth Gaussian falloff
+                      const base = c.str * Math.exp(-ellD*ellD*2.0);
+                      // Turbulence texture — billowy cumulus edges
+                      const rawAngle = Math.atan2(dy, dx);
+                      const turbR = Math.sqrt(dx*dx+dy*dy);
+                      const turb = 0.16 * Math.sin(rawAngle*8 + turbR*0.10) * Math.cos(rawAngle*4 + turbR*0.07);
                       field += base + turb * base;
                     }
                   });
                   field = Math.max(0, Math.min(1, field));
                   const idx = (py*CW+px)*4;
-                  if (field > 0.08) {
+                  if (field > 0.07) {
                     // Dark storm grey -> steel blue-grey -> thick cloud white
-                    // Mimics INSAT visible/IR satellite cloud imagery
+                    // Matches satellite visible imagery of monsoon cloud clusters
                     let r, g, b;
-                    if (field < 0.30) {
-                      const t = (field-0.08)/0.22;
-                      r=Math.round(28+45*t); g=Math.round(38+55*t); b=Math.round(58+72*t);
-                    } else if (field < 0.65) {
-                      const t = (field-0.30)/0.35;
-                      r=Math.round(73+115*t); g=Math.round(93+112*t); b=Math.round(130+88*t);
+                    if (field < 0.28) {
+                      const t = (field-0.07)/0.21;
+                      r=Math.round(32+42*t); g=Math.round(42+52*t); b=Math.round(62+68*t);
+                    } else if (field < 0.62) {
+                      const t = (field-0.28)/0.34;
+                      r=Math.round(74+118*t); g=Math.round(94+110*t); b=Math.round(130+86*t);
                     } else {
-                      const t = (field-0.65)/0.35;
-                      r=Math.round(188+62*t); g=Math.round(205+48*t); b=Math.round(218+37*t);
+                      const t = (field-0.62)/0.38;
+                      r=Math.round(192+58*t); g=Math.round(204+48*t); b=Math.round(216+39*t);
                     }
                     imgData.data[idx]=r; imgData.data[idx+1]=g; imgData.data[idx+2]=b;
-                    // Soft billowy opacity — clouds have gradual edges
-                    imgData.data[idx+3]=Math.round(195*Math.pow(field, 0.42));
+                    // Soft billowy opacity — gradual cloud edges
+                    imgData.data[idx+3]=Math.round(200*Math.pow(field, 0.40));
                   } else { imgData.data[idx+3]=0; }
                 }
               }
               ctx.putImageData(imgData, 0, 0);
               addCanvasLayer('cb-moisture-overlay', canvas.toDataURL('image/png'), 'cb-moisture-canvas');
             })();
-          })();
 
           // Load pan-India grid data
           fetch('data/pan_india_grid.json?' + Date.now())
