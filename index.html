@@ -1721,11 +1721,65 @@
             .then(r => r.json())
             .then(d => {
               if (!d.grid_cells || d.grid_cells.length === 0) return;
-              gridCellsRef.current = d.grid_cells;
-              const STEP = 1.0;
-              const features = [];
-              // Grid cell squares removed -- canvas overlays handle all three hazards visually
-              if (false) { // disabled
+                  gridCellsRef.current = d.grid_cells;
+
+    // Draw actual pan-India hazard probability data onto map canvas overlays
+    (function() {
+      const PAN_W = 68, PAN_E = 98, PAN_S = 6, PAN_N = 37;
+      const PCW = 600, PCH = 620;
+      const PAN_COORDS = [[PAN_W,PAN_N],[PAN_E,PAN_N],[PAN_E,PAN_S],[PAN_W,PAN_S]];
+      const cellW = PCW / (PAN_E - PAN_W);
+      const cellH = PCH / (PAN_N - PAN_S);
+
+      function probColor(prob) {
+        if (prob >= 0.55) return 'rgba(239,83,80,0.85)';
+        if (prob >= 0.35) return 'rgba(255,152,0,0.78)';
+        if (prob >= 0.15) return 'rgba(255,235,59,0.55)';
+        if (prob >= 0.05) return 'rgba(100,220,255,0.28)';
+        return null;
+      }
+
+      function makeCanvas(cells, key) {
+        const cv = document.createElement('canvas');
+        cv.width = PCW; cv.height = PCH;
+        const ctx = cv.getContext('2d');
+        cells.forEach(function(c) {
+          const prob = c[key] || 0;
+          const col = probColor(prob);
+          if (!col) return;
+          const px = (c.lon - PAN_W) * cellW;
+          const py = (PAN_N - c.lat - 1) * cellH;
+          ctx.fillStyle = col;
+          ctx.fillRect(Math.floor(px), Math.floor(py), Math.ceil(cellW) + 1, Math.ceil(cellH) + 1);
+        });
+        return cv.toDataURL('image/png');
+      }
+
+      function applyToSrc(srcId, dataUrl, coords) {
+        try {
+          const src = map.getSource(srcId);
+          if (src && src.updateImage) {
+            src.updateImage({ url: dataUrl, coordinates: coords });
+          }
+        } catch(e) {}
+      }
+
+      const tsUrl = makeCanvas(d.grid_cells, 'thunderstorm_probability');
+      const cbUrl = makeCanvas(d.grid_cells, 'cloudburst_probability');
+      const ffUrl = makeCanvas(d.grid_cells, 'flash_flood_probability');
+
+      function doUpdate() {
+        applyToSrc('ts-instability-canvas', tsUrl, PAN_COORDS);
+        applyToSrc('cb-moisture-canvas',    cbUrl, PAN_COORDS);
+        applyToSrc('flood-susc-canvas',     ffUrl, PAN_COORDS);
+      }
+      if (map.loaded()) doUpdate(); else map.once('load', doUpdate);
+    })();
+
+    const STEP = 1.0;
+    const features = [];
+    // Grid cell squares removed -- canvas overlays handle all three hazards visually
+    if (false) { // disabled
               ['flash_flood'].forEach(layer => {
                 d.grid_cells.forEach(c => {
                   const prob = c[layer + '_probability'] ?? 0;
