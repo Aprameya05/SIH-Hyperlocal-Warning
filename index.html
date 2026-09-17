@@ -1515,19 +1515,17 @@
                 addCanvasLayer('flood-susc-overlay', canvas.toDataURL('image/png'), 'flood-susc-canvas');
               }).catch(()=>{});
 
-            // ── TS overlay: thunderstorm probability — matches legend (red/orange/yellow/blue) ──
-            // Colours: MINIMAL(cyan-blue) -> LOW(yellow) -> MODERATE(orange) -> HIGH(red)
-            // Movement effect: directional sweep streaks NE (typical BLR storm track)
+            // ── TS overlay: rotating storm cell, legend-aligned colors ─────────────
+            // Pre-renders once, then rotates via canvas compositing (~12fps)
             (function buildTSOverlay() {
-              const canvas = document.createElement('canvas');
-              canvas.width = CW; canvas.height = CH;
-              const ctx = canvas.getContext('2d');
-              const imgData = ctx.createImageData(CW, CH);
+              const SRC = document.createElement('canvas');
+              SRC.width = CW; SRC.height = CH;
+              const srcCtx = SRC.getContext('2d');
+              const srcImg = srcCtx.createImageData(CW, CH);
               const centreLat = 12.97, centreLon = 77.59;
               const cx = Math.round((centreLon-BBOX_W)/(BBOX_E-BBOX_W)*CW);
               const cy = Math.round((BBOX_N-centreLat)/(BBOX_N-BBOX_S)*CH);
               const maxR = CW * 0.52;
-              // Storm cells across the region
               const stormCells = [
                 { px: cx, py: cy, strength: 1.0 },
                 { px: Math.round((77.35-BBOX_W)/(BBOX_E-BBOX_W)*CW), py: Math.round((BBOX_N-13.35)/(BBOX_N-BBOX_S)*CH), strength: 0.72 },
@@ -1535,142 +1533,158 @@
                 { px: Math.round((78.12-BBOX_W)/(BBOX_E-BBOX_W)*CW), py: Math.round((BBOX_N-13.62)/(BBOX_N-BBOX_S)*CH), strength: 0.55 },
                 { px: Math.round((77.10-BBOX_W)/(BBOX_E-BBOX_W)*CW), py: Math.round((BBOX_N-12.60)/(BBOX_N-BBOX_S)*CH), strength: 0.42 },
               ];
-              // Storm movement direction: NE (about 45 deg), NE sweep streaks
-              const MOVE_ANGLE = -Math.PI / 4; // NE in canvas coords
-              const cosM = Math.cos(MOVE_ANGLE), sinM = Math.sin(MOVE_ANGLE);
-              for (let py = 0; py < CH; py++) {
-                for (let px = 0; px < CW; px++) {
-                  // Base radial probability field from storm cells
+              const cosM = Math.cos(-Math.PI/4), sinM = Math.sin(-Math.PI/4);
+              // Pixel-by-pixel pre-render (done once)
+              for (let py2 = 0; py2 < CH; py2++) {
+                for (let px2 = 0; px2 < CW; px2++) {
+                  const dx = px2-cx, dy = py2-cy;
+                  const d = Math.sqrt(dx*dx+dy*dy);
+                  const angle = Math.atan2(dy, dx);
                   let field = 0;
                   stormCells.forEach(n => {
-                    const ddx = px-n.px, ddy = py-n.py;
+                    const ddx = px2-n.px, ddy = py2-n.py;
                     const dd = Math.sqrt(ddx*ddx+ddy*ddy);
                     field += n.strength * Math.max(0, 1 - dd/maxR);
                   });
-                  // Spiral arms (storm rotation structure)
-                  const dx = px-cx, dy = py-cy;
-                  const d = Math.sqrt(dx*dx+dy*dy);
-                  const angle = Math.atan2(dy, dx);
                   const spiral = 0.22 * Math.max(0, Math.sin(angle*4 - d*0.022 + 0.8));
                   field = Math.min(1, field + spiral*field);
-                  // Movement streaks: project pixel onto NE axis, modulate with sine
-                  // Creates visual "sweeping" bands suggesting storm track
-                  const proj = px*cosM + py*sinM;
-                  const sweep = 0.18 * Math.max(0, Math.sin(proj * 0.045)) * Math.min(1, field * 2);
+                  const proj = px2*cosM + py2*sinM;
+                  const sweep = 0.18 * Math.max(0, Math.sin(proj*0.045)) * Math.min(1, field*2);
                   field = Math.min(1, field + sweep);
-                  const idx = (py*CW+px)*4;
+                  const idx = (py2*CW+px2)*4;
                   if (field > 0.06) {
-                    // Match legend exactly: MINIMAL=blue(56,189,248) LOW=yellow(255,213,0) MODERATE=orange(255,100,0) HIGH=red(220,0,0)
                     let r, g, b;
-                    if (field < 0.25) {
-                      // MINIMAL: cyan-blue
-                      const t = (field-0.06)/0.19;
-                      r=Math.round(20+36*t); g=Math.round(80+109*t); b=Math.round(160+88*t);
-                    } else if (field < 0.50) {
-                      // LOW: blue -> yellow
-                      const t = (field-0.25)/0.25;
-                      r=Math.round(56+199*t); g=Math.round(189+24*t); b=Math.round(248-248*t);
-                    } else if (field < 0.75) {
-                      // MODERATE: yellow -> orange
-                      const t = (field-0.50)/0.25;
-                      r=Math.round(255); g=Math.round(213-113*t); b=Math.round(0);
-                    } else {
-                      // HIGH: orange -> deep red
-                      const t = (field-0.75)/0.25;
-                      r=Math.round(255-35*t); g=Math.round(100-100*t); b=Math.round(0);
-                    }
-                    imgData.data[idx]=r; imgData.data[idx+1]=g; imgData.data[idx+2]=b;
-                    imgData.data[idx+3]=Math.round(210*Math.pow(field, 0.50));
-                  } else { imgData.data[idx+3]=0; }
+                    if (field < 0.25) { const t=(field-0.06)/0.19; r=Math.round(20+36*t); g=Math.round(80+109*t); b=Math.round(160+88*t); }
+                    else if (field < 0.50) { const t=(field-0.25)/0.25; r=Math.round(56+199*t); g=Math.round(189+24*t); b=Math.round(248-248*t); }
+                    else if (field < 0.75) { const t=(field-0.50)/0.25; r=255; g=Math.round(213-113*t); b=0; }
+                    else { const t=(field-0.75)/0.25; r=Math.round(255-35*t); g=Math.round(100-100*t); b=0; }
+                    srcImg.data[idx]=r; srcImg.data[idx+1]=g; srcImg.data[idx+2]=b;
+                    srcImg.data[idx+3]=Math.round(210*Math.pow(field, 0.50));
+                  } else { srcImg.data[idx+3]=0; }
                 }
               }
-              ctx.putImageData(imgData, 0, 0);
-              addCanvasLayer('ts-instability-overlay', canvas.toDataURL('image/png'), 'ts-instability-canvas');
+              srcCtx.putImageData(srcImg, 0, 0);
+              // Animation canvas (rotated frame delivered to MapLibre)
+              const ANIM = document.createElement('canvas');
+              ANIM.width = CW; ANIM.height = CH;
+              const animCtx = ANIM.getContext('2d');
+              let tsAngle = 0, tsTimer = null;
+              function drawTSFrame() {
+                tsAngle += 0.008; // slow anticlockwise rotation
+                animCtx.clearRect(0, 0, CW, CH);
+                animCtx.save();
+                animCtx.translate(cx, cy);
+                animCtx.rotate(tsAngle);
+                animCtx.translate(-cx, -cy);
+                animCtx.drawImage(SRC, 0, 0);
+                animCtx.restore();
+                // Subtle opacity flicker for lightning effect
+                const flicker = 0.72 + 0.12 * Math.sin(tsAngle * 23);
+                try {
+                  if (map.getSource('ts-instability-canvas')) {
+                    map.getSource('ts-instability-canvas').updateImage({ url: ANIM.toDataURL('image/png') });
+                  }
+                  if (map.getLayer('ts-instability-overlay')) {
+                    map.setPaintProperty('ts-instability-overlay', 'raster-opacity', flicker);
+                  }
+                } catch(e) {}
+              }
+              // Initial static frame
+              animCtx.drawImage(SRC, 0, 0);
+              addCanvasLayer('ts-instability-overlay', ANIM.toDataURL('image/png'), 'ts-instability-canvas');
+              // Expose start/stop for toggle effect
+              if (!window._overlayAnims) window._overlayAnims = {};
+              window._overlayAnims.startTS = () => { if (!tsTimer) tsTimer = setInterval(drawTSFrame, 85); };
+              window._overlayAnims.stopTS = () => { clearInterval(tsTimer); tsTimer = null; };
             })();
 
-            // ── CB overlay: floating cloud formations spread across the map ──────────
-            // Looks like satellite visible imagery: scattered monsoon cloud clusters
-            // Multiple blobs at varied positions/sizes, grey-white billow texture
+            // ── CB overlay: scrolling cloud formations across the map ─────────────────
+            // Pre-renders wide cloud texture, scrolls it eastward (~10fps)
             (function buildCBOverlay() {
-              const canvas = document.createElement('canvas');
-              canvas.width = CW; canvas.height = CH;
-              const ctx = canvas.getContext('2d');
-              const imgData = ctx.createImageData(CW, CH);
-              // Cloud cluster positions spread across the full Karnataka/AP region
-              // Each: { px, py, rx, ry, angle, str } — elliptical blobs with orientation
+              // Source canvas: 2x wide for seamless horizontal wrap
+              const SRC = document.createElement('canvas');
+              SRC.width = CW*2; SRC.height = CH;
+              const srcCtx = SRC.getContext('2d');
+              const srcImg = srcCtx.createImageData(CW*2, CH);
+              // Cloud clusters — spread across both tiles so scroll wraps seamlessly
               const clouds = [
-                // Main BLR convergence zone
                 { px: 258, py: 180, rx: 100, ry: 68, angle: 0.3, str: 1.00 },
-                // Western Ghats cloud band
                 { px: 68,  py: 155, rx: 55,  ry: 90, angle: 0.1, str: 0.82 },
                 { px: 52,  py: 240, rx: 48,  ry: 80, angle: 0.0, str: 0.70 },
-                // NW cluster (Tumkur/Chitradurga)
                 { px: 148, py: 98,  rx: 85,  ry: 55, angle: 0.4, str: 0.75 },
-                // NE cluster (Chikkaballapur/Kolar)
                 { px: 380, py: 130, rx: 70,  ry: 50, angle: 0.5, str: 0.68 },
-                // SE cluster (towards AP border)
                 { px: 420, py: 250, rx: 75,  ry: 48, angle: 0.6, str: 0.60 },
-                // Southern cluster (Mysuru flank)
                 { px: 200, py: 320, rx: 80,  ry: 52, angle: 0.2, str: 0.65 },
-                // Far NE (Andhra border)
                 { px: 460, py: 80,  rx: 55,  ry: 40, angle: 0.7, str: 0.50 },
-                // Coastal west
                 { px: 30,  py: 330, rx: 45,  ry: 70, angle: 0.0, str: 0.55 },
-                // Mid-east
                 { px: 340, py: 330, rx: 60,  ry: 42, angle: 0.3, str: 0.48 },
-                // North-centre
                 { px: 220, py: 55,  rx: 65,  ry: 40, angle: 0.5, str: 0.58 },
-                // Small wispy patches
                 { px: 460, py: 390, rx: 42,  ry: 30, angle: 0.8, str: 0.42 },
                 { px: 110, py: 400, rx: 50,  ry: 35, angle: 0.1, str: 0.45 },
                 { px: 300, py: 440, rx: 55,  ry: 32, angle: 0.4, str: 0.40 },
                 { px: 170, py: 470, rx: 40,  ry: 28, angle: 0.2, str: 0.38 },
+                // Second tile (offset by CW for wrapping)
+                { px: 258+CW, py: 180, rx: 100, ry: 68, angle: 0.3, str: 1.00 },
+                { px: 68+CW,  py: 155, rx: 55,  ry: 90, angle: 0.1, str: 0.82 },
+                { px: 52+CW,  py: 240, rx: 48,  ry: 80, angle: 0.0, str: 0.70 },
+                { px: 148+CW, py: 98,  rx: 85,  ry: 55, angle: 0.4, str: 0.75 },
+                { px: 380+CW, py: 130, rx: 70,  ry: 50, angle: 0.5, str: 0.68 },
+                { px: 420+CW, py: 250, rx: 75,  ry: 48, angle: 0.6, str: 0.60 },
+                { px: 200+CW, py: 320, rx: 80,  ry: 52, angle: 0.2, str: 0.65 },
+                { px: 110+CW, py: 400, rx: 50,  ry: 35, angle: 0.1, str: 0.45 },
+                { px: 300+CW, py: 440, rx: 55,  ry: 32, angle: 0.4, str: 0.40 },
               ];
-              for (let py = 0; py < CH; py++) {
-                for (let px = 0; px < CW; px++) {
+              for (let py2 = 0; py2 < CH; py2++) {
+                for (let px2 = 0; px2 < CW*2; px2++) {
                   let field = 0;
                   clouds.forEach(c => {
-                    // Rotate dx/dy by cloud orientation angle
-                    const dx = px - c.px, dy = py - c.py;
+                    const dx = px2-c.px, dy = py2-c.py;
                     const ca = Math.cos(c.angle), sa = Math.sin(c.angle);
-                    const lx = dx*ca + dy*sa;
-                    const ly = -dx*sa + dy*ca;
-                    // Elliptical distance
-                    const ellD = Math.sqrt((lx/c.rx)*(lx/c.rx) + (ly/c.ry)*(ly/c.ry));
+                    const lx = dx*ca+dy*sa, ly = -dx*sa+dy*ca;
+                    const ellD = Math.sqrt((lx/c.rx)*(lx/c.rx)+(ly/c.ry)*(ly/c.ry));
                     if (ellD < 1.0) {
-                      // Smooth Gaussian falloff
                       const base = c.str * Math.exp(-ellD*ellD*2.0);
-                      // Turbulence texture — billowy cumulus edges
-                      const rawAngle = Math.atan2(dy, dx);
+                      const rawA = Math.atan2(dy, dx);
                       const turbR = Math.sqrt(dx*dx+dy*dy);
-                      const turb = 0.16 * Math.sin(rawAngle*8 + turbR*0.10) * Math.cos(rawAngle*4 + turbR*0.07);
-                      field += base + turb * base;
+                      const turb = 0.16 * Math.sin(rawA*8+turbR*0.10) * Math.cos(rawA*4+turbR*0.07);
+                      field += base + turb*base;
                     }
                   });
                   field = Math.max(0, Math.min(1, field));
-                  const idx = (py*CW+px)*4;
+                  const idx = (py2*(CW*2)+px2)*4;
                   if (field > 0.07) {
-                    // Dark storm grey -> steel blue-grey -> thick cloud white
-                    // Matches satellite visible imagery of monsoon cloud clusters
                     let r, g, b;
-                    if (field < 0.28) {
-                      const t = (field-0.07)/0.21;
-                      r=Math.round(32+42*t); g=Math.round(42+52*t); b=Math.round(62+68*t);
-                    } else if (field < 0.62) {
-                      const t = (field-0.28)/0.34;
-                      r=Math.round(74+118*t); g=Math.round(94+110*t); b=Math.round(130+86*t);
-                    } else {
-                      const t = (field-0.62)/0.38;
-                      r=Math.round(192+58*t); g=Math.round(204+48*t); b=Math.round(216+39*t);
-                    }
-                    imgData.data[idx]=r; imgData.data[idx+1]=g; imgData.data[idx+2]=b;
-                    // Soft billowy opacity — gradual cloud edges
-                    imgData.data[idx+3]=Math.round(200*Math.pow(field, 0.40));
-                  } else { imgData.data[idx+3]=0; }
+                    if (field < 0.28) { const t=(field-0.07)/0.21; r=Math.round(32+42*t); g=Math.round(42+52*t); b=Math.round(62+68*t); }
+                    else if (field < 0.62) { const t=(field-0.28)/0.34; r=Math.round(74+118*t); g=Math.round(94+110*t); b=Math.round(130+86*t); }
+                    else { const t=(field-0.62)/0.38; r=Math.round(192+58*t); g=Math.round(204+48*t); b=Math.round(216+39*t); }
+                    srcImg.data[idx]=r; srcImg.data[idx+1]=g; srcImg.data[idx+2]=b;
+                    srcImg.data[idx+3]=Math.round(200*Math.pow(field, 0.40));
+                  } else { srcImg.data[idx+3]=0; }
                 }
               }
-              ctx.putImageData(imgData, 0, 0);
-              addCanvasLayer('cb-moisture-overlay', canvas.toDataURL('image/png'), 'cb-moisture-canvas');
+              srcCtx.putImageData(srcImg, 0, 0);
+              // Animation canvas (512x512 window into the wide texture)
+              const ANIM = document.createElement('canvas');
+              ANIM.width = CW; ANIM.height = CH;
+              const animCtx = ANIM.getContext('2d');
+              let cbOffset = 0, cbTimer = null;
+              function drawCBFrame() {
+                cbOffset = (cbOffset + 0.6) % CW; // drift ~0.6px per frame eastward
+                animCtx.clearRect(0, 0, CW, CH);
+                // Draw scrolled window from wide texture (wraps seamlessly)
+                animCtx.drawImage(SRC, Math.floor(cbOffset), 0, CW, CH, 0, 0, CW, CH);
+                try {
+                  if (map.getSource('cb-moisture-canvas')) {
+                    map.getSource('cb-moisture-canvas').updateImage({ url: ANIM.toDataURL('image/png') });
+                  }
+                } catch(e) {}
+              }
+              // Initial frame
+              animCtx.drawImage(SRC, 0, 0, CW, CH, 0, 0, CW, CH);
+              addCanvasLayer('cb-moisture-overlay', ANIM.toDataURL('image/png'), 'cb-moisture-canvas');
+              if (!window._overlayAnims) window._overlayAnims = {};
+              window._overlayAnims.startCB = () => { if (!cbTimer) cbTimer = setInterval(drawCBFrame, 100); };
+              window._overlayAnims.stopCB = () => { clearInterval(cbTimer); cbTimer = null; };
             })();
           })();
 
@@ -1739,6 +1753,13 @@
         }
         if (map.getLayer('cb-moisture-overlay')) {
           map.setLayoutProperty('cb-moisture-overlay', 'visibility', panLayer === 'cloudburst' ? 'visible' : 'none');
+        }
+        // Start / stop canvas animations based on active overlay
+        const anims = window._overlayAnims;
+        if (anims) {
+          if (panLayer === 'thunderstorm') { anims.startTS && anims.startTS(); anims.stopCB && anims.stopCB(); }
+          else if (panLayer === 'cloudburst') { anims.startCB && anims.startCB(); anims.stopTS && anims.stopTS(); }
+          else { anims.stopTS && anims.stopTS(); anims.stopCB && anims.stopCB(); }
         }
       }, [panLayer, mapReady]);
 
