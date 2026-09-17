@@ -1457,7 +1457,7 @@
           // TS: convective instability (electric purple->yellow representing CAPE zones)
           // CB: moisture concentration (deep indigo->cyan representing IWV pooling)
           (function buildHazardOverlays() {
-            const BBOX_W = 68.0, BBOX_E = 98.0, BBOX_S = 6.0, BBOX_N = 37.0;
+            const BBOX_W = 76.0, BBOX_E = 79.5, BBOX_S = 11.5, BBOX_N = 15.0; // BLR region
             const CW = 512, CH = 512;
 
             // Helper: add a canvas image layer
@@ -1517,61 +1517,83 @@
               }).catch(()=>{});
 
             // ── TS overlay: rotating storm cell, legend-aligned colors ─────────────
-            // Pre-renders once, then rotates via canvas compositing (~12fps)
+            // TS overlay: proper storm cell drawn with canvas 2D API — spiral arms + electric core
             (function buildTSOverlay() {
               const SRC = document.createElement('canvas');
               SRC.width = CW; SRC.height = CH;
               const srcCtx = SRC.getContext('2d');
-              const srcImg = srcCtx.createImageData(CW, CH);
-              const centreLat = 12.97, centreLon = 77.59;
-              const cx = Math.round((centreLon-BBOX_W)/(BBOX_E-BBOX_W)*CW);
-              const cy = Math.round((BBOX_N-centreLat)/(BBOX_N-BBOX_S)*CH);
-              // maxR in pixels: ~5 degrees = ~85px in 512px/30deg canvas — localized storm cell
-              const maxR = Math.round(CW * 0.17);
-              const stormCells = [
-                { px: cx, py: cy, strength: 1.0 },
-                { px: Math.round((77.35-BBOX_W)/(BBOX_E-BBOX_W)*CW), py: Math.round((BBOX_N-13.35)/(BBOX_N-BBOX_S)*CH), strength: 0.72 },
-                { px: Math.round((77.82-BBOX_W)/(BBOX_E-BBOX_W)*CW), py: Math.round((BBOX_N-12.68)/(BBOX_N-BBOX_S)*CH), strength: 0.62 },
-                { px: Math.round((77.10-BBOX_W)/(BBOX_E-BBOX_W)*CW), py: Math.round((BBOX_N-12.60)/(BBOX_N-BBOX_S)*CH), strength: 0.42 },
-              ];
-              const cosM = Math.cos(-Math.PI/4), sinM = Math.sin(-Math.PI/4);
-              // Pixel-by-pixel pre-render (done once)
-              for (let py2 = 0; py2 < CH; py2++) {
-                for (let px2 = 0; px2 < CW; px2++) {
-                  const dx = px2-cx, dy = py2-cy;
-                  const d = Math.sqrt(dx*dx+dy*dy);
-                  const angle = Math.atan2(dy, dx);
-                  let field = 0;
-                  stormCells.forEach(n => {
-                    const ddx = px2-n.px, ddy = py2-n.py;
-                    const dd = Math.sqrt(ddx*ddx+ddy*ddy);
-                    field += n.strength * Math.max(0, 1 - dd/maxR);
-                  });
-                  const spiral = 0.22 * Math.max(0, Math.sin(angle*4 - d*0.022 + 0.8));
-                  field = Math.min(1, field + spiral*field);
-                  const proj = px2*cosM + py2*sinM;
-                  const sweep = 0.18 * Math.max(0, Math.sin(proj*0.045)) * Math.min(1, field*2);
-                  field = Math.min(1, field + sweep);
-                  const idx = (py2*CW+px2)*4;
-                  if (field > 0.06) {
-                    let r, g, b;
-                    if (field < 0.25) { const t=(field-0.06)/0.19; r=Math.round(20+36*t); g=Math.round(80+109*t); b=Math.round(160+88*t); }
-                    else if (field < 0.50) { const t=(field-0.25)/0.25; r=Math.round(56+199*t); g=Math.round(189+24*t); b=Math.round(248-248*t); }
-                    else if (field < 0.75) { const t=(field-0.50)/0.25; r=255; g=Math.round(213-113*t); b=0; }
-                    else { const t=(field-0.75)/0.25; r=Math.round(255-35*t); g=Math.round(100-100*t); b=0; }
-                    srcImg.data[idx]=r; srcImg.data[idx+1]=g; srcImg.data[idx+2]=b;
-                    srcImg.data[idx+3]=Math.round(210*Math.pow(field, 0.50));
-                  } else { srcImg.data[idx+3]=0; }
+              // Storm centre: BLR in all-India BBOX (68-98E, 6-37N)
+              const cx = Math.round((77.59-BBOX_W)/(BBOX_E-BBOX_W)*CW); // ~164
+              const cy = Math.round((BBOX_N-12.97)/(BBOX_N-BBOX_S)*CH); // ~397
+              const R = 92; // ~5.5 degrees radius
+
+              srcCtx.clearRect(0, 0, CW, CH);
+
+              // Layer 1: wide faint outer envelope
+              const env = srcCtx.createRadialGradient(cx, cy, R*0.45, cx, cy, R*1.05);
+              env.addColorStop(0,    'rgba(140,0,220,0.38)');
+              env.addColorStop(0.4,  'rgba(90,0,180,0.28)');
+              env.addColorStop(0.75, 'rgba(40,0,100,0.14)');
+              env.addColorStop(1.0,  'rgba(0,0,0,0)');
+              srcCtx.fillStyle = env;
+              srcCtx.beginPath(); srcCtx.arc(cx, cy, R*1.05, 0, Math.PI*2); srcCtx.fill();
+
+              // Layer 2: mid rain-band ring (orange belt)
+              const band = srcCtx.createRadialGradient(cx, cy, R*0.38, cx, cy, R*0.72);
+              band.addColorStop(0,   'rgba(255,120,0,0.0)');
+              band.addColorStop(0.3, 'rgba(255,100,0,0.50)');
+              band.addColorStop(0.6, 'rgba(220,60,0,0.42)');
+              band.addColorStop(1.0, 'rgba(160,20,120,0.0)');
+              srcCtx.fillStyle = band;
+              srcCtx.beginPath(); srcCtx.arc(cx, cy, R*0.72, 0, Math.PI*2); srcCtx.fill();
+
+              // Layer 3: hot inner core
+              const core = srcCtx.createRadialGradient(cx, cy, 0, cx, cy, R*0.38);
+              core.addColorStop(0,   'rgba(255,255,240,0.98)');
+              core.addColorStop(0.18,'rgba(255,220,60,0.90)');
+              core.addColorStop(0.38,'rgba(255,80,0,0.78)');
+              core.addColorStop(0.65,'rgba(180,0,60,0.45)');
+              core.addColorStop(1.0, 'rgba(0,0,0,0)');
+              srcCtx.fillStyle = core;
+              srcCtx.beginPath(); srcCtx.arc(cx, cy, R*0.38, 0, Math.PI*2); srcCtx.fill();
+
+              // Layer 4: three spiral arms (drawn as thick arcs with gradient alpha)
+              for (let arm = 0; arm < 3; arm++) {
+                const baseA = (arm/3)*Math.PI*2;
+                srcCtx.beginPath();
+                let first = true;
+                for (let t = 0.08; t <= 1.0; t += 0.008) {
+                  const r2 = t * R * 0.95;
+                  const a2 = baseA - t * Math.PI * 1.75;
+                  const px2 = cx + r2*Math.cos(a2), py2 = cy + r2*Math.sin(a2);
+                  if (first) { srcCtx.moveTo(px2, py2); first = false; }
+                  else srcCtx.lineTo(px2, py2);
                 }
+                const alpha = 0.68 - arm*0.12;
+                srcCtx.strokeStyle = `rgba(255,210,40,${alpha})`;
+                srcCtx.lineWidth = 5 - arm*1.2;
+                srcCtx.lineCap = 'round';
+                srcCtx.shadowColor = 'rgba(255,200,0,0.6)';
+                srcCtx.shadowBlur = 8;
+                srcCtx.stroke();
+                srcCtx.shadowBlur = 0;
               }
-              srcCtx.putImageData(srcImg, 0, 0);
-              // Animation canvas (rotated frame delivered to MapLibre)
+
+              // Layer 5: bright eye dot
+              const eye = srcCtx.createRadialGradient(cx, cy, 0, cx, cy, R*0.07);
+              eye.addColorStop(0,   'rgba(255,255,255,1.0)');
+              eye.addColorStop(0.6, 'rgba(200,230,255,0.7)');
+              eye.addColorStop(1.0, 'rgba(0,0,0,0)');
+              srcCtx.fillStyle = eye;
+              srcCtx.beginPath(); srcCtx.arc(cx, cy, R*0.07, 0, Math.PI*2); srcCtx.fill();
+
+              // Animate: rotate spiral arms anticlockwise (NH cyclone direction)
               const ANIM = document.createElement('canvas');
               ANIM.width = CW; ANIM.height = CH;
               const animCtx = ANIM.getContext('2d');
               let tsAngle = 0, tsTimer = null;
               function drawTSFrame() {
-                tsAngle += 0.008; // slow anticlockwise rotation
+                tsAngle -= 0.011;
                 animCtx.clearRect(0, 0, CW, CH);
                 animCtx.save();
                 animCtx.translate(cx, cy);
@@ -1579,23 +1601,18 @@
                 animCtx.translate(-cx, -cy);
                 animCtx.drawImage(SRC, 0, 0);
                 animCtx.restore();
-                // Subtle opacity flicker for lightning effect
-                const flicker = 0.72 + 0.12 * Math.sin(tsAngle * 23);
+                const flicker = 0.82 + 0.18 * Math.sin(tsAngle * 19);
                 try {
-                  if (map.getSource('ts-instability-canvas')) {
+                  if (map.getSource('ts-instability-canvas'))
                     map.getSource('ts-instability-canvas').updateImage({ url: ANIM.toDataURL('image/png') });
-                  }
-                  if (map.getLayer('ts-instability-overlay')) {
+                  if (map.getLayer('ts-instability-overlay'))
                     map.setPaintProperty('ts-instability-overlay', 'raster-opacity', flicker);
-                  }
                 } catch(e) {}
               }
-              // Initial static frame
               animCtx.drawImage(SRC, 0, 0);
               addCanvasLayer('ts-instability-overlay', ANIM.toDataURL('image/png'), 'ts-instability-canvas');
-              // Expose start/stop for toggle effect
               if (!window._overlayAnims) window._overlayAnims = {};
-              window._overlayAnims.startTS = () => { if (!tsTimer) tsTimer = setInterval(drawTSFrame, 85); };
+              window._overlayAnims.startTS = () => { if (!tsTimer) tsTimer = setInterval(drawTSFrame, 80); };
               window._overlayAnims.stopTS = () => { clearInterval(tsTimer); tsTimer = null; };
             })();
 
@@ -1655,11 +1672,11 @@
                   const idx = (py2*(CW*2)+px2)*4;
                   if (field > 0.07) {
                     let r, g, b;
-                    if (field < 0.28) { const t=(field-0.07)/0.21; r=Math.round(32+42*t); g=Math.round(42+52*t); b=Math.round(62+68*t); }
-                    else if (field < 0.62) { const t=(field-0.28)/0.34; r=Math.round(74+118*t); g=Math.round(94+110*t); b=Math.round(130+86*t); }
-                    else { const t=(field-0.62)/0.38; r=Math.round(192+58*t); g=Math.round(204+48*t); b=Math.round(216+39*t); }
+                    if (field < 0.28) { const t=(field-0.07)/0.21; r=Math.round(18+28*t); g=Math.round(28+38*t); b=Math.round(55+65*t); }
+                    else if (field < 0.62) { const t=(field-0.28)/0.34; r=Math.round(46+74*t); g=Math.round(66+80*t); b=Math.round(120+80*t); }
+                    else { const t=(field-0.62)/0.38; r=Math.round(120+60*t); g=Math.round(146+54*t); b=Math.round(200+30*t); }
                     srcImg.data[idx]=r; srcImg.data[idx+1]=g; srcImg.data[idx+2]=b;
-                    srcImg.data[idx+3]=Math.round(200*Math.pow(field, 0.40));
+                    srcImg.data[idx+3]=Math.round(220*Math.pow(field, 0.38));
                   } else { srcImg.data[idx+3]=0; }
                 }
               }
@@ -1697,7 +1714,9 @@
               gridCellsRef.current = d.grid_cells;
               const STEP = 1.0;
               const features = [];
-              ['flash_flood'].forEach(layer => { // TS and CB use animated canvas overlays only
+              // Grid cell squares removed -- canvas overlays handle all three hazards visually
+              if (false) { // disabled
+              ['flash_flood'].forEach(layer => {
                 d.grid_cells.forEach(c => {
                   const prob = c[layer + '_probability'] ?? 0;
                   if (prob < 0.15) return;
@@ -1720,6 +1739,7 @@
               });
               const src = map.getSource('pan-india-src');
               if (src) src.setData({ type: 'FeatureCollection', features });
+              } // end disabled
             })
             .catch(() => {});
 
