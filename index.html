@@ -6364,7 +6364,7 @@ Source: csir-thunderstorm-bengaluru.pages.dev | IMD Station 43295`;
           <AuroraBackground alertActive={(hazardCfg.summaryKey ? liveData?.hazard_summary?.[hazardCfg.summaryKey]?.alert_active : liveData?.alert_active) ?? currentSlots.some(s => s.probability >= 0.30)} />
 
           {/* ── PARTICLE FIELD ── */}
-          <ParticleField alertActive={(hazardCfg.summaryKey ? liveData?.hazard_summary?.[hazardCfg.summaryKey]?.alert_active : liveData?.alert_active) ?? currentSlots.some(s => s.probability >= 0.30) />
+          <ParticleField alertActive={(hazardCfg.summaryKey ? liveData?.hazard_summary?.[hazardCfg.summaryKey]?.alert_active : liveData?.alert_active) ?? currentSlots.some(s => s.probability >= 0.30)} />
 
           {/* ── SCAN LINE ── */}
           <ScanLine />
