@@ -1004,6 +1004,7 @@
                 { label: 'OPS', tabs: ['ALERTS', 'LIVE API', 'ATC VIEW'] },
               ];
               return (
+                <>
                 <HazardSwitcher selected={selectedHazard} onChange={onHazardChange} />
                 <nav className="hidden lg:flex items-center gap-3 font-mono text-[10px] font-bold"
                   style={{
@@ -1031,6 +1032,7 @@
                     </div>
                   ))}
                 </nav>
+                </>
               );
             })()}
 
