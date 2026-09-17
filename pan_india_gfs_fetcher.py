@@ -377,7 +377,7 @@ def main():
         # Summary stats
         ts_max   = max(c["thunderstorm_probability"]         for c in grid_cells)
         cb_max   = max(c["cloudburst_probability"] for c in grid_cells)
-        ff_max   = max(c["flash_flood_risk"]        for c in grid_cells)
+        ff_max   = max(c["flash_flood_probability"]        for c in grid_cells)
         cape_max = max(c["cape"]                    for c in grid_cells)
         pwat_max = max(c["pwat"]                    for c in grid_cells)
 
