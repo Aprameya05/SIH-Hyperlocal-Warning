@@ -3718,6 +3718,55 @@
             badge="VERIFIED 2023–2025"
             badgeColor="green"
           />
+          {/* MTL Architecture + Data Source Mapping */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 font-mono">
+            {/* Multi-Task Learning framing */}
+            <div className="p-4 rounded-xl bg-[#050811] border border-cyan-500/20">
+              <h3 className="text-xs font-bold text-cyan-300 uppercase tracking-wider mb-3">MULTI-TASK LEARNING ARCHITECTURE</h3>
+              <div className="space-y-2 text-[10px] text-[#90a4ae]">
+                <div className="p-3 rounded-lg bg-[#080d1a] border border-cyan-500/10">
+                  <div className="text-cyan-300 font-bold text-[9px] mb-1">SHARED FEATURE EXTRACTION LAYER</div>
+                  <div>78 engineered atmospheric features (moisture, instability, kinematics) extracted once, shared across all three hazard task heads. Eliminates redundant computation vs. three independent models.</div>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { label: 'TS HEAD', col: '#38bdf8', desc: 'Thunderstorm onset P(TS|slot)' },
+                    { label: 'CB HEAD', col: '#ab47bc', desc: 'Cloudburst P(CB|slot)' },
+                    { label: 'FF HEAD', col: '#4caf50', desc: 'Flash Flood P(FF|slot) + DEM routing' },
+                  ].map(h => (
+                    <div key={h.label} className="p-2 rounded bg-[#080d1a]" style={{ border: `1px solid ${h.col}33` }}>
+                      <div className="text-[9px] font-bold mb-1" style={{ color: h.col }}>{h.label}</div>
+                      <div className="text-[8px] text-[#455a64]">{h.desc}</div>
+                    </div>
+                  ))}
+                </div>
+                <div className="p-2 rounded bg-[#080d1a] border border-[#172338] text-[9px] text-[#607d8b]">
+                  4 time slots per hazard (00-06, 06-12, 12-18, 18-24 IST) · 2–6 hour predictive window · Isotonic calibration per slot
+                </div>
+              </div>
+            </div>
+            {/* Data source mapping */}
+            <div className="p-4 rounded-xl bg-[#050811] border border-amber-500/20">
+              <h3 className="text-xs font-bold text-amber-300 uppercase tracking-wider mb-3">DATA FUSION INPUTS</h3>
+              <div className="space-y-2 text-[10px]">
+                {[
+                  { src: 'GFS NWP (NCEP)', spec: 'IMDAA Reanalysis proxy', desc: 'CAPE, CIN, K-Index, TT, LI, shear, wind, humidity · 78 features', col: '#38bdf8' },
+                  { src: 'Himawari-9 IR/WV', spec: 'INSAT-3D/3DR (MOSDAC)', desc: 'IWV variations, CTT drop rate, storm cell detection · headline feature', col: '#ab47bc' },
+                  { src: 'SRTM (AWS Terrarium)', spec: 'CartoDEM / SRTM DEM', desc: 'Slope, elevation, drainage basins · FF terrain routing', col: '#4caf50' },
+                  { src: 'METAR VOBL', spec: 'Surface obs 43295', desc: 'Wind, pressure, visibility, flight category · real-time anchor', col: '#ffc107' },
+                ].map(d => (
+                  <div key={d.src} className="p-2 rounded bg-[#080d1a] border border-[#172338]">
+                    <div className="flex justify-between items-start mb-0.5">
+                      <span className="font-bold" style={{ color: d.col }}>{d.src}</span>
+                      <span className="text-[8px] text-[#37474f] italic">{d.spec}</span>
+                    </div>
+                    <div className="text-[#455a64] text-[8px]">{d.desc}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
           <div className="atc-card p-6 rounded-2xl space-y-6">
 
           {/* Per-slot model table */}
