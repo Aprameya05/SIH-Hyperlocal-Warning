@@ -1,6 +1,6 @@
 {
   "date": "2026-09-17",
-  "generated_at": "2026-09-17 09:16 IST",
+  "generated_at": "2026-09-17 09:20 IST",
   "alert_active": false,
   "peak_slot": 2,
   "peak_probability": 0.0621,
@@ -119,24 +119,11 @@
       "alert_level": "GREEN",
       "nearest_pixel_dist_km": 22.11,
       "threshold_celsius": -40.0,
-      "bt_trend_1h": 15.29,
+      "bt_trend_1h": 0.0,
       "data_source": "Himawari-9 Band 13 (10.4\u00b5m) via NOAA AWS S3",
       "available": true
     },
     "history": [
-      {
-        "timestamp_utc": "2026-08-11T12:40:00",
-        "timestamp_ist": "2026-08-11T18:10:00",
-        "vobl_bt_celsius": 2.76,
-        "min_bt_50km": -24.28,
-        "mean_bt_50km": -3.35,
-        "cold_pixels_count": 0,
-        "storm_detected": false,
-        "nearest_pixel_dist_km": null,
-        "threshold_celsius": -40.0,
-        "data_source": "Himawari-9 Band 13 (10.4um) via NOAA AWS S3",
-        "bt_trend_1h": -0.04
-      },
       {
         "timestamp_utc": "2026-09-16T18:30:00",
         "timestamp_ist": "2026-09-17T00:00:00",
@@ -201,6 +188,19 @@
         "threshold_celsius": -40.0,
         "data_source": "Himawari-9 Band 13 (10.4um) via NOAA AWS S3",
         "bt_trend_1h": 15.29
+      },
+      {
+        "timestamp_utc": "2026-09-17T03:40:00",
+        "timestamp_ist": "2026-09-17T09:10:00",
+        "vobl_bt_celsius": -5.25,
+        "min_bt_50km": -45.95,
+        "mean_bt_50km": -22.06,
+        "cold_pixels_count": 69,
+        "storm_detected": true,
+        "nearest_pixel_dist_km": 22.11,
+        "threshold_celsius": -40.0,
+        "data_source": "Himawari-9 Band 13 (10.4um) via NOAA AWS S3",
+        "bt_trend_1h": 0.0
       }
     ]
   },
@@ -227,7 +227,7 @@
     "monsoon_regime": "NEUTRAL",
     "regime_thresh_factor": 1.0,
     "peak_window_ist": "1300\u20131800 IST",
-    "computed_at": "2026-09-17 09:16 IST"
+    "computed_at": "2026-09-17 09:20 IST"
   },
   "multiday_outlook": [
     {
@@ -302,7 +302,7 @@
     "query_cape": 426.0,
     "query_ki": 36.29,
     "query_li": -2.4,
-    "computed_at": "2026-09-17 09:16 IST"
+    "computed_at": "2026-09-17 09:20 IST"
   },
   "airport_impact": {
     "total_departures_today": 143,
@@ -344,7 +344,7 @@
         "impact_pct": 0.8
       }
     ],
-    "computed_at": "2026-09-17 09:16 IST"
+    "computed_at": "2026-09-17 09:20 IST"
   },
   "synoptic_regime": {
     "regime_id": "R2",
@@ -357,7 +357,7 @@
     "ki_used": 36.29,
     "t2m_c": 23.0,
     "month": 9,
-    "computed_at": "2026-09-17 09:16 IST"
+    "computed_at": "2026-09-17 09:20 IST"
   },
   "verification": {
     "pod": 0.0,
@@ -479,7 +479,7 @@
           "direction": "decreases_risk"
         }
       ],
-      "computed_at": "2026-09-17 07:13 IST"
+      "computed_at": "2026-09-17 09:16 IST"
     },
     "1": {
       "slot": 1,
@@ -561,7 +561,7 @@
           "direction": "decreases_risk"
         }
       ],
-      "computed_at": "2026-09-17 07:13 IST"
+      "computed_at": "2026-09-17 09:16 IST"
     },
     "2": {
       "slot": 2,
@@ -643,7 +643,7 @@
           "direction": "decreases_risk"
         }
       ],
-      "computed_at": "2026-09-17 07:13 IST"
+      "computed_at": "2026-09-17 09:16 IST"
     },
     "3": {
       "slot": 3,
@@ -725,7 +725,7 @@
           "direction": "decreases_risk"
         }
       ],
-      "computed_at": "2026-09-17 07:13 IST"
+      "computed_at": "2026-09-17 09:16 IST"
     }
   },
   "metar": {
@@ -754,18 +754,18 @@
     ],
     "thunderstorm_present": false,
     "raw": "METAR VOBL 170330Z 26008KT 6000 SCT010 SCT012 25/20 Q1017 NOSIG",
-    "fetched_utc": "2026-09-17T03:46:13Z"
+    "fetched_utc": "2026-09-17T03:50:09Z"
   },
   "sigmet_bulletin": null,
   "pipeline_health": {
-    "generated_at_utc": "2026-09-17T03:46:13Z",
-    "generated_at_ist": "2026-09-17 09:16 IST",
+    "generated_at_utc": "2026-09-17T03:50:08Z",
+    "generated_at_ist": "2026-09-17 09:20 IST",
     "components": {
       "gfs": {
         "status": "OK",
         "cycle": "2026-09-16 12Z f012",
         "fetched_utc": "2026-09-16 19:23",
-        "staleness": "STALE (503m)",
+        "staleness": "STALE (507m)",
         "rows": 2
       },
       "himawari9": {
