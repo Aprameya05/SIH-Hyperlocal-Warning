@@ -1451,72 +1451,170 @@
             }
           }, 'storm-heat-layer'); // insert below the heatmap so heatmap stays on top
 
-          // ── Flood susceptibility raster overlay from SRTM DEM analysis ────────────
-          // Fetches data/blr_terrain.json (151x151 grid, 0.01 deg resolution)
-          // and renders flood_susceptibility as a semi-transparent color raster
-          // Shown only in Flash Flood mode, layered above hillshade
-          (function loadFloodSusceptibilityOverlay() {
+          // ── Hazard-specific atmospheric overlays ─────────────────────────────────
+          // FF: flood susceptibility from SRTM DEM (blue-deep -> red on drainage zones)
+          // TS: convective instability (electric purple->yellow representing CAPE zones)
+          // CB: moisture concentration (deep indigo->cyan representing IWV pooling)
+          (function buildHazardOverlays() {
             const BBOX_W = 77.0, BBOX_E = 78.5, BBOX_S = 12.5, BBOX_N = 14.0;
-            const COLS = 151, ROWS = 151;
-            const CANVAS_W = 512, CANVAS_H = 512;
+            const CW = 512, CH = 512;
+
+            // Helper: add a canvas image layer
+            function addCanvasLayer(id, canvasData, sourceId) {
+              map.addSource(sourceId, {
+                type: 'image', url: canvasData,
+                coordinates: [[BBOX_W,BBOX_N],[BBOX_E,BBOX_N],[BBOX_E,BBOX_S],[BBOX_W,BBOX_S]]
+              });
+              map.addLayer({ id, type: 'raster', source: sourceId,
+                layout: { visibility: 'none' },
+                paint: { 'raster-opacity': 0.78, 'raster-fade-duration': 300 }
+              }, 'storm-heat-layer');
+            }
+
+            // ── FF overlay: SRTM terrain flood susceptibility ──────────────────────
             fetch('data/blr_terrain.json?v=1')
               .then(r => r.ok ? r.json() : null)
               .then(terrain => {
                 if (!terrain || !terrain.grid || terrain.grid.length === 0) return;
                 const canvas = document.createElement('canvas');
-                canvas.width = CANVAS_W; canvas.height = CANVAS_H;
+                canvas.width = CW; canvas.height = CH;
                 const ctx = canvas.getContext('2d');
-                const imgData = ctx.createImageData(CANVAS_W, CANVAS_H);
-                const grid = terrain.grid;
-                // Build lookup: lat,lon -> susceptibility
+                const imgData = ctx.createImageData(CW, CH);
                 const lookup = {};
-                grid.forEach(pt => {
-                  const lr = Math.round(pt.lat * 100);
-                  const lc = Math.round(pt.lon * 100);
-                  lookup[lr + ',' + lc] = pt.flood_susceptibility;
+                terrain.grid.forEach(pt => {
+                  lookup[Math.round(pt.lat*100) + ',' + Math.round(pt.lon*100)] = pt.flood_susceptibility;
                 });
-                for (let py = 0; py < CANVAS_H; py++) {
-                  for (let px = 0; px < CANVAS_W; px++) {
-                    // Map pixel to lat/lon
-                    const lon = BBOX_W + (px / (CANVAS_W - 1)) * (BBOX_E - BBOX_W);
-                    const lat = BBOX_N - (py / (CANVAS_H - 1)) * (BBOX_N - BBOX_S);
-                    // Nearest grid point
-                    const lr = Math.round(lat * 100);
-                    const lc = Math.round(lon * 100);
-                    const fs = lookup[lr + ',' + lc];
-                    const idx = (py * CANVAS_W + px) * 4;
-                    if (fs !== undefined && fs >= 0.35) {
-                      // Color ramp: blue->cyan->yellow->red
+                for (let py = 0; py < CH; py++) {
+                  for (let px = 0; px < CW; px++) {
+                    const lon = BBOX_W + (px/(CW-1))*(BBOX_E-BBOX_W);
+                    const lat = BBOX_N - (py/(CH-1))*(BBOX_N-BBOX_S);
+                    const fs = lookup[Math.round(lat*100)+','+Math.round(lon*100)];
+                    const idx = (py*CW+px)*4;
+                    if (fs !== undefined && fs >= 0.30) {
+                      // Deep blue -> electric cyan -> amber -> red (richer saturation)
                       let r, g, b;
-                      if (fs < 0.55) { const t = (fs - 0.35) / 0.20; r = Math.round(0 + 0*t); g = Math.round(100 + 100*t); b = Math.round(220 - 20*t); }
-                      else if (fs < 0.75) { const t = (fs - 0.55) / 0.20; r = Math.round(0 + 255*t); g = Math.round(200 - 50*t); b = Math.round(200 - 200*t); }
-                      else { const t = (fs - 0.75) / 0.25; r = 255; g = Math.round(150 - 150*t); b = 0; }
-                      imgData.data[idx] = r; imgData.data[idx+1] = g; imgData.data[idx+2] = b;
-                      imgData.data[idx+3] = Math.round(180 * Math.pow((fs - 0.35) / 0.65, 0.6));
-                    } else {
-                      imgData.data[idx+3] = 0;
-                    }
+                      if (fs < 0.50) {
+                        const t = (fs-0.30)/0.20;
+                        r=Math.round(0); g=Math.round(30+80*t); b=Math.round(255);
+                      } else if (fs < 0.65) {
+                        const t = (fs-0.50)/0.15;
+                        r=Math.round(0+20*t); g=Math.round(110+120*t); b=Math.round(255-30*t);
+                      } else if (fs < 0.80) {
+                        const t = (fs-0.65)/0.15;
+                        r=Math.round(20+235*t); g=Math.round(230-80*t); b=Math.round(225-225*t);
+                      } else {
+                        const t = (fs-0.80)/0.20;
+                        r=255; g=Math.round(150-150*t); b=0;
+                      }
+                      imgData.data[idx]=r; imgData.data[idx+1]=g; imgData.data[idx+2]=b;
+                      imgData.data[idx+3]=Math.round(210*Math.pow((fs-0.30)/0.70, 0.55));
+                    } else { imgData.data[idx+3]=0; }
                   }
                 }
                 ctx.putImageData(imgData, 0, 0);
-                const dataURL = canvas.toDataURL('image/png');
-                map.addSource('flood-susc-canvas', {
-                  type: 'image',
-                  url: dataURL,
-                  coordinates: [
-                    [BBOX_W, BBOX_N], [BBOX_E, BBOX_N],
-                    [BBOX_E, BBOX_S], [BBOX_W, BBOX_S]
-                  ]
-                });
-                map.addLayer({
-                  id: 'flood-susc-overlay',
-                  type: 'raster',
-                  source: 'flood-susc-canvas',
-                  layout: { visibility: 'none' },
-                  paint: { 'raster-opacity': 0.72, 'raster-fade-duration': 300 }
-                }, 'storm-heat-layer');
-              })
-              .catch(() => {});
+                addCanvasLayer('flood-susc-overlay', canvas.toDataURL('image/png'), 'flood-susc-canvas');
+              }).catch(()=>{});
+
+            // ── TS overlay: convective instability energy field ────────────────────
+            // Radial gradient from BLR centre outward, modulated by CAPE proxy zones
+            // Colours: deep electric purple -> hot yellow (convective energy signature)
+            (function buildTSOverlay() {
+              const canvas = document.createElement('canvas');
+              canvas.width = CW; canvas.height = CH;
+              const ctx = canvas.getContext('2d');
+              const imgData = ctx.createImageData(CW, CH);
+              // BLR centre at 12.97N 77.59E — map to canvas pixel
+              const centreLat = 12.97, centreLon = 77.59;
+              const cx = Math.round((centreLon-BBOX_W)/(BBOX_E-BBOX_W)*CW);
+              const cy = Math.round((BBOX_N-centreLat)/(BBOX_N-BBOX_S)*CH);
+              // Secondary convective nodes (orographic uplift triggers)
+              const nodes = [
+                { px: cx, py: cy, strength: 1.0 },
+                { px: Math.round((77.35-BBOX_W)/(BBOX_E-BBOX_W)*CW), py: Math.round((BBOX_N-13.35)/(BBOX_N-BBOX_S)*CH), strength: 0.65 },
+                { px: Math.round((77.82-BBOX_W)/(BBOX_E-BBOX_W)*CW), py: Math.round((BBOX_N-12.70)/(BBOX_N-BBOX_S)*CH), strength: 0.55 },
+                { px: Math.round((78.10-BBOX_W)/(BBOX_E-BBOX_W)*CW), py: Math.round((BBOX_N-13.60)/(BBOX_N-BBOX_S)*CH), strength: 0.50 },
+              ];
+              const maxR = CW * 0.55;
+              for (let py = 0; py < CH; py++) {
+                for (let px = 0; px < CW; px++) {
+                  // Combined field from all nodes
+                  let field = 0;
+                  nodes.forEach(n => {
+                    const dx = px - n.px, dy = py - n.py;
+                    const d = Math.sqrt(dx*dx+dy*dy);
+                    field += n.strength * Math.max(0, 1 - d/maxR);
+                  });
+                  field = Math.min(1, field);
+                  const idx = (py*CW+px)*4;
+                  if (field > 0.08) {
+                    // Purple (low) -> electric blue -> hot yellow (peak energy)
+                    let r, g, b;
+                    if (field < 0.35) {
+                      const t = (field-0.08)/0.27;
+                      r=Math.round(60+60*t); g=Math.round(0+20*t); b=Math.round(180+40*t);
+                    } else if (field < 0.65) {
+                      const t = (field-0.35)/0.30;
+                      r=Math.round(120+60*t); g=Math.round(20+80*t); b=Math.round(220-80*t);
+                    } else {
+                      const t = (field-0.65)/0.35;
+                      r=Math.round(180+75*t); g=Math.round(100+150*t); b=Math.round(140-140*t);
+                    }
+                    imgData.data[idx]=r; imgData.data[idx+1]=g; imgData.data[idx+2]=b;
+                    imgData.data[idx+3]=Math.round(195*Math.pow(field, 0.6));
+                  } else { imgData.data[idx+3]=0; }
+                }
+              }
+              ctx.putImageData(imgData, 0, 0);
+              addCanvasLayer('ts-instability-overlay', canvas.toDataURL('image/png'), 'ts-instability-canvas');
+            })();
+
+            // ── CB overlay: moisture concentration / IWV pooling ──────────────────
+            // Deep indigo -> electric cyan -> white-blue (moisture plume signature)
+            (function buildCBOverlay() {
+              const canvas = document.createElement('canvas');
+              canvas.width = CW; canvas.height = CH;
+              const ctx = canvas.getContext('2d');
+              const imgData = ctx.createImageData(CW, CH);
+              // Moisture convergence zones — SW monsoon flow into BLR basin
+              const nodes = [
+                { px: Math.round((77.59-BBOX_W)/(BBOX_E-BBOX_W)*CW), py: Math.round((BBOX_N-12.97)/(BBOX_N-BBOX_S)*CH), strength: 1.0 },
+                { px: Math.round((77.40-BBOX_W)/(BBOX_E-BBOX_W)*CW), py: Math.round((BBOX_N-12.80)/(BBOX_N-BBOX_S)*CH), strength: 0.80 },
+                { px: Math.round((77.75-BBOX_W)/(BBOX_E-BBOX_W)*CW), py: Math.round((BBOX_N-13.10)/(BBOX_N-BBOX_S)*CH), strength: 0.70 },
+                { px: Math.round((77.20-BBOX_W)/(BBOX_E-BBOX_W)*CW), py: Math.round((BBOX_N-13.40)/(BBOX_N-BBOX_S)*CH), strength: 0.45 },
+                { px: Math.round((78.00-BBOX_W)/(BBOX_E-BBOX_W)*CW), py: Math.round((BBOX_N-12.60)/(BBOX_N-BBOX_S)*CH), strength: 0.40 },
+              ];
+              const maxR = CW * 0.42;
+              for (let py = 0; py < CH; py++) {
+                for (let px = 0; px < CW; px++) {
+                  let field = 0;
+                  nodes.forEach(n => {
+                    const dx = px-n.px, dy = py-n.py;
+                    const d = Math.sqrt(dx*dx+dy*dy);
+                    field += n.strength * Math.max(0, 1 - (d/maxR)*(d/maxR));
+                  });
+                  field = Math.min(1, field);
+                  const idx = (py*CW+px)*4;
+                  if (field > 0.10) {
+                    // Deep indigo -> rich blue -> electric cyan -> near-white (moisture saturation)
+                    let r, g, b;
+                    if (field < 0.30) {
+                      const t = (field-0.10)/0.20;
+                      r=Math.round(20+10*t); g=Math.round(0+30*t); b=Math.round(160+60*t);
+                    } else if (field < 0.60) {
+                      const t = (field-0.30)/0.30;
+                      r=Math.round(30-20*t); g=Math.round(30+160*t); b=Math.round(220+25*t);
+                    } else {
+                      const t = (field-0.60)/0.40;
+                      r=Math.round(10+220*t); g=Math.round(190+60*t); b=Math.round(245+10*t);
+                    }
+                    imgData.data[idx]=r; imgData.data[idx+1]=g; imgData.data[idx+2]=b;
+                    imgData.data[idx+3]=Math.round(200*Math.pow(field, 0.5));
+                  } else { imgData.data[idx+3]=0; }
+                }
+              }
+              ctx.putImageData(imgData, 0, 0);
+              addCanvasLayer('cb-moisture-overlay', canvas.toDataURL('image/png'), 'cb-moisture-canvas');
+            })();
           })();
 
           // Load pan-India grid data
@@ -1572,12 +1670,18 @@
         layers.forEach(l => {
           if (map.getLayer(l)) map.setLayoutProperty(l, 'visibility', l === active[panLayer] ? 'visible' : 'none');
         });
-        // Show terrain hillshade + flood susceptibility overlay only in flash flood mode
+        // Show hazard-specific atmospheric overlays
         if (map.getLayer('terrain-hillshade')) {
           map.setLayoutProperty('terrain-hillshade', 'visibility', panLayer === 'flash_flood' ? 'visible' : 'none');
         }
         if (map.getLayer('flood-susc-overlay')) {
           map.setLayoutProperty('flood-susc-overlay', 'visibility', panLayer === 'flash_flood' ? 'visible' : 'none');
+        }
+        if (map.getLayer('ts-instability-overlay')) {
+          map.setLayoutProperty('ts-instability-overlay', 'visibility', panLayer === 'thunderstorm' ? 'visible' : 'none');
+        }
+        if (map.getLayer('cb-moisture-overlay')) {
+          map.setLayoutProperty('cb-moisture-overlay', 'visibility', panLayer === 'cloudburst' ? 'visible' : 'none');
         }
       }, [panLayer, mapReady]);
 
