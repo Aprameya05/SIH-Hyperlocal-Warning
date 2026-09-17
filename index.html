@@ -1204,7 +1204,7 @@
       }, []);
       const isMobile = winW < 640;
 
-      const peakProb = liveData?.peak_probability ?? (slots.length > 0 ? Math.max(...slots.map(s => s.probability || 0)) : 0);
+      const peakProb = slots.length > 0 ? Math.max(...slots.map(s => s.probability || 0)) : (liveData?.peak_probability ?? 0);
       const alertActive = (hazardCfg.summaryKey ? liveData?.hazard_summary?.[hazardCfg.summaryKey]?.alert_active : liveData?.alert_active) ?? (peakProb >= 0.35);
       const peakSlot = slots.length > 0 ? slots.reduce((a, b) => (a.probability > b.probability ? a : b), slots[0]) : null;
       const riskColor = mapRiskColor(peakProb);
@@ -1580,7 +1580,7 @@
           {/* ── TOP BAR ── */}
           <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 42, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px', background: 'rgba(4,7,17,0.88)', backdropFilter: 'blur(14px)', borderBottom: '1px solid rgba(56,189,248,0.1)', zIndex: 20 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-              <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: 4, color: '#38bdf8', fontFamily: 'monospace' }}>IMD TS NOWCAST</span>
+              <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: 4, color: '#38bdf8', fontFamily: 'monospace' }}>IMD {hazardCfg?.shortLabel || 'TS'} NOWCAST</span>
               <span style={{ fontSize: 9, color: '#172338', fontFamily: 'monospace' }}>|</span>
               <span style={{ fontSize: 9, fontFamily: 'monospace', color: '#455a64' }}>VOBL / IMD 43295</span>
               <span style={{ fontSize: 9, color: '#172338', fontFamily: 'monospace' }}>|</span>
@@ -1890,7 +1890,7 @@
               const overrideActive = liveData?.himawari_override_active ?? false;
               const overrideSlots = liveData?.himawari_override_slots ?? [];
               const peakSlot = liveData?.peak_slot ?? null;
-              const peakProb = liveData?.peak_probability ?? 0;
+              const peakProb = slots.length > 0 ? Math.max(...slots.map(s => s.probability || 0)) : (liveData?.peak_probability ?? 0);
               return (
                 <div className={`shimmer-card atc-card atc-card-hover p-4 rounded-xl flex flex-col justify-between min-h-[190px] transition-all duration-300 ${alertActive ? 'alert-glow-card' : ''}`}>
                   <div className="flex items-center gap-2 text-[10px] font-mono text-[#607d8b] font-bold">
