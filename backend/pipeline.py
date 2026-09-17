@@ -25,7 +25,7 @@ from pathlib import Path
 OUT_DIR = Path(__file__).parent.parent / "data"
 OUT_FILE = OUT_DIR / "pan_india_grid.json"
 
-GRID_STEP = 1.0          # degrees; matches existing dashboard grid
+GRID_STEP = 0.25         # degrees; 0.25 = GFS native resolution (16x more cells)
 BOUNDS = {"S": 6, "N": 37, "W": 68, "E": 98}  # all-India coverage
 
 # GFS variables we need (NOMADS filter parameter names)
@@ -373,8 +373,8 @@ def run(cycle_override: str = None, fhour: int = 0):
 
         print("  Computing hazard indices for each grid cell...")
         cells = []
-        lats = list(range(BOUNDS["S"], BOUNDS["N"] + 1, int(GRID_STEP)))
-        lons = list(range(BOUNDS["W"], BOUNDS["E"] + 1, int(GRID_STEP)))
+        lats = [round(v, 4) for v in np.arange(BOUNDS["S"], BOUNDS["N"] + GRID_STEP * 0.5, GRID_STEP)]
+        lons = [round(v, 4) for v in np.arange(BOUNDS["W"], BOUNDS["E"] + GRID_STEP * 0.5, GRID_STEP)]
 
         for lat in lats:
             for lon in lons:
