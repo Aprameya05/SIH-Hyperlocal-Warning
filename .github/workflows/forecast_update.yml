@@ -103,6 +103,10 @@ jobs:
         run: python fetch_himawari_realtime.py
         continue-on-error: true
 
+      - name: Fetch BLR terrain DEM (SRTM via AWS Terrain Tiles)
+        run: python fetch_dem_terrain.py
+        continue-on-error: true
+
       - name: Run forecast pipeline
         run: |
           SLOT_ARG=""
@@ -211,6 +215,7 @@ jobs:
             data/skill_scores.json \
             data/forecast_log.csv \
             data/alert_history.json \
+            data/blr_terrain.json \
             2>/dev/null || true
           git diff --staged --quiet || \
             git commit -m "auto: forecast $(date -u '+%Y-%m-%d %H:%M UTC')"
