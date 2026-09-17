@@ -3528,8 +3528,8 @@
                           }`}>{s.model}</span>
                         </td>
                         <td className={`py-2 pr-3 text-center font-bold ${s.auroc >= 0.87 ? 'text-emerald-400' : 'text-white'}`}>{s.auroc.toFixed(4)}</td>
-                        <td className={`py-2 pr-3 text-center font-bold ${s.pod >= 0.5 ? 'text-emerald-400' : s.pod >= 0.3 ? 'text-amber-400' : 'text-red-400'}`}>{s.pod.toFixed(3)}</td>
-                        <td className={`py-2 pr-3 text-center font-bold ${s.far <= 0.5 ? 'text-emerald-400' : s.far <= 0.7 ? 'text-amber-400' : 'text-red-400'}`}>{s.far.toFixed(3)}</td>
+                        <td className={`py-2 pr-3 text-center font-bold ${s.pod == null ? 'text-[#607d8b]' : s.pod >= 0.5 ? 'text-emerald-400' : s.pod >= 0.3 ? 'text-amber-400' : 'text-red-400'}`}>{s.pod != null ? s.pod.toFixed(3) : '—'}</td>
+                        <td className={`py-2 pr-3 text-center font-bold ${s.far == null ? 'text-[#607d8b]' : s.far <= 0.5 ? 'text-emerald-400' : s.far <= 0.7 ? 'text-amber-400' : 'text-red-400'}`}>{s.far != null ? s.far.toFixed(3) : '—'}</td>
                         <td className="py-2 pr-3 text-center text-[#607d8b]">{(s.threshold * 100).toFixed(0)}%</td>
                         <td className="py-2 text-center text-white">{s.brier !== null ? s.brier.toFixed(4) : '—'}</td>
                       </tr>
