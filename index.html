@@ -1672,6 +1672,7 @@
               ctx.putImageData(imgData, 0, 0);
               addCanvasLayer('cb-moisture-overlay', canvas.toDataURL('image/png'), 'cb-moisture-canvas');
             })();
+          })();
 
           // Load pan-India grid data
           fetch('data/pan_india_grid.json?' + Date.now())
