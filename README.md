@@ -1,5 +1,5 @@
 <div align="center">
-<img src="https://img.shields.io/badge/Smart%20India%20Hackathon-2024-orange?style=for-the-badge" />
+<img src="https://img.shields.io/badge/Smart%20India%20Hackathon-2026-orange?style=for-the-badge" />
 
 # Hyperlocal Weather Warning System
 
