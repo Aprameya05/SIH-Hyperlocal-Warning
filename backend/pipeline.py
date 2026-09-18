@@ -213,11 +213,51 @@ def compute_convergence_grid(u850_arr, v850_arr, lats_1d, lons_1d):
 # ---------------------------------------------------------------------------
 
 def read_grib_fields(grib_path: Path) -> dict:
+    """Read all fields from a GRIB2 file.
+
+    Uses xarray with the cfgrib engine (correct modern API -- cfgrib.open_datasets
+    was removed from recent releases).  Falls back to the raw eccodes reader if
+    xarray/cfgrib is unavailable or fails to parse any messages.
+    """
     try:
-        import cfgrib
+        import xarray as xr
         import numpy as np
 
-        datasets = cfgrib.open_datasets(str(grib_path), indexing_time="valid_time")
+        datasets = []
+        # cfgrib splits one GRIB file into multiple datasets by typeOfLevel.
+        # Iterate over the level types we actually request so we catch every field.
+        for level_type in [
+            "isobaricInhPa",
+            "surface",
+            "heightAboveGround",
+            "atmosphereSingleLayer",
+            "tropopause",
+        ]:
+            try:
+                ds = xr.open_dataset(
+                    str(grib_path),
+                    engine="cfgrib",
+                    backend_kwargs={
+                        "filter_by_keys": {"typeOfLevel": level_type},
+                        "errors": "ignore",
+                    },
+                )
+                datasets.append(ds)
+            except Exception:
+                continue
+
+        # Last resort: open without any filter (works when the file has only one message type)
+        if not datasets:
+            try:
+                ds = xr.open_dataset(
+                    str(grib_path),
+                    engine="cfgrib",
+                    backend_kwargs={"errors": "ignore"},
+                )
+                datasets = [ds]
+            except Exception:
+                pass
+
         fields = {}
         for ds in datasets:
             for var in ds.data_vars:
@@ -234,13 +274,17 @@ def read_grib_fields(grib_path: Path) -> dict:
                         fields[f"{var}_{level_type}_{int(lv)}"] = slice_arr
                 else:
                     fields[f"{var}_{level_type}"] = arr
-        return fields
+
+        if fields:
+            return fields
+        raise ValueError("xarray/cfgrib extracted zero fields")
+
     except ImportError:
-        print("  cfgrib not found -- trying eccodes")
-        return _read_grib_eccodes(grib_path)
+        print("  xarray/cfgrib not found -- trying eccodes")
     except Exception as e:
         print(f"  cfgrib parse error: {e}")
-        return {}
+
+    return _read_grib_eccodes(grib_path)
 
 
 def _read_grib_eccodes(grib_path: Path) -> dict:
