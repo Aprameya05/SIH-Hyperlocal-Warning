@@ -2707,7 +2707,7 @@ function injectDrainageOverlay(map, liveData) {
           </div>
 
           {/* ── HEATMAP LEGEND -- anchored above the right map-control column ── */}
-          <div style={{ position: 'absolute', top: 155, right: 10, zIndex: 20, display: isMobile ? 'none' : undefined, background: 'rgba(4,7,17,0.92)', backdropFilter: 'blur(12px)', border: '1px solid rgba(56,189,248,0.14)', borderRadius: 10, padding: '7px 10px', width: 148 }}>
+          <div style={{ position: 'absolute', top: 55, right: 10, zIndex: 20, display: isMobile ? 'none' : undefined, background: 'rgba(4,7,17,0.92)', backdropFilter: 'blur(12px)', border: '1px solid rgba(56,189,248,0.14)', borderRadius: 10, padding: '7px 10px', width: 148 }}>
             <div style={{ fontSize: 7, fontWeight: 800, letterSpacing: 2, color: '#37474f', fontFamily: 'monospace', marginBottom: 6, whiteSpace: 'nowrap' }}>
               {(panLayer === 'thunderstorm' ? 'TS' : panLayer === 'cloudburst' ? 'CB' : 'FF')} PROBABILITY HEATMAP
             </div>
