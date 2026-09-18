@@ -1345,6 +1345,8 @@ function AlertLogTable() {
 
 function injectIWVTendencyLayer(map, liveData) {
   const history = liveData?.satellite?.history || [];
+  // Always register a no-op toggle so the button doesn't silently fail
+  window.__IWV_TOGGLE__ = () => {};
   if (history.length < 2) return;
 
   // Build tendency frames from BT history (cooler BT = more cloud moisture)
@@ -1430,6 +1432,8 @@ function injectDrainageOverlay(map, liveData) {
   const ffSlots = liveData?.hazard_summary?.flash_flood?.slots || {};
   const maxFF = Math.max(...Object.values(ffSlots).map(Number), 0);
 
+  // Always register a no-op toggle so the button doesn't silently fail
+  window.__DRAINAGE_TOGGLE__ = () => {};
   if (zones.length === 0) return;
 
   const features = zones.map(z => ({
@@ -2098,6 +2102,7 @@ function injectDrainageOverlay(map, liveData) {
             // ── TS overlay: rotating storm cell, legend-aligned colors ─────────────
             // TS overlay: proper storm cell drawn with canvas 2D API — spiral arms + electric core
             (function buildTSOverlay() {
+              return; // removed -- spiral graphic disabled
               const SRC = document.createElement('canvas');
               SRC.width = CW; SRC.height = CH;
               const srcCtx = SRC.getContext('2d');
@@ -2647,7 +2652,6 @@ function injectDrainageOverlay(map, liveData) {
               </div>
             )}
 
-            <CTTTrendCard liveData={liveData} />
             <PersistencePanel slots={slots} hazardCfg={hazardCfg} />
 
             {/* Flash Flood Terrain Risk -- shown when FF hazard active */}
