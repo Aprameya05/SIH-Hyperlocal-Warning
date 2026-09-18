@@ -1064,7 +1064,7 @@ function PersistencePanel({ slots, hazardCfg }) {
   const probKey = hazardCfg?.probKey || 'ts_probability';
   const slotLabels = ['NIGHT', 'MORN', 'AFTN', 'EVE'];
   return (
-    <div className="atc-card rounded-2xl font-mono" style={{ minWidth: 0, padding: '10px 12px' }}>
+    <div className="atc-card rounded-2xl font-mono" style={{ minWidth: 0, padding: '10px 12px', overflow: 'visible' }}>
       <div style={{ fontSize: 8, fontWeight: 800, letterSpacing: 2, color: '#37474f', fontFamily: 'monospace', marginBottom: 7, display: 'flex', justifyContent: 'space-between' }}>
         <span>MODEL vs PERSIST</span><span style={{ color: '#263d55' }}>3h-ago</span>
       </div>
@@ -2706,7 +2706,7 @@ function injectDrainageOverlay(map, liveData) {
           </div>
 
           {/* ── HEATMAP LEGEND (right side, between zoom and India) ── */}
-          <div style={{ position: 'absolute', top: 75, right: 48, zIndex: 20, display: isMobile ? 'none' : undefined, background: 'rgba(4,7,17,0.9)', backdropFilter: 'blur(12px)', border: '1px solid rgba(56,189,248,0.14)', borderRadius: 10, padding: '6px 9px' }}>
+          <div style={{ position: 'absolute', top: 170, right: 10, zIndex: 20, display: isMobile ? 'none' : undefined, background: 'rgba(4,7,17,0.9)', backdropFilter: 'blur(12px)', border: '1px solid rgba(56,189,248,0.14)', borderRadius: 10, padding: '6px 9px' }}>
             <div style={{ fontSize: 7, fontWeight: 800, letterSpacing: 2, color: '#37474f', fontFamily: 'monospace', marginBottom: 6 }}>TS PROBABILITY HEATMAP</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
               {[
