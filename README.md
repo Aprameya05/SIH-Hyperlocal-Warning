@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://img.shields.io/badge/Smart%20India%20Hackathon-2024-orange?style=for-the-badge" />
+<img src="https://img.shields.io/badge/Smart%20India%20Hackathon-2026-orange?style=for-the-badge" />
 &nbsp;
 <img src="https://img.shields.io/badge/Status-Live-brightgreen?style=for-the-badge&logo=cloudflare" />
 
@@ -25,7 +25,7 @@ Real-time hazard probability maps &middot; 2 to 6 hour lead time &middot; Pan-In
 
 <br/>
 
-### [Live Dashboard](https://sih-hyperlocal-warning.pages.dev/#dashboard) &nbsp;&middot;&nbsp; [RAG API](https://csir-thunderstorm-api.onrender.com) &nbsp;&middot;&nbsp; [Lightning Feed](wss://csir-thunderstorm-api.onrender.com/ws/lightning)
+### <a href="https://sih-hyperlocal-warning.pages.dev/#dashboard">Live Dashboard</a> &nbsp;&middot;&nbsp; <a href="https://csir-thunderstorm-api.onrender.com">RAG API</a> &nbsp;&middot;&nbsp; <a href="wss://csir-thunderstorm-api.onrender.com/ws/lightning">Lightning Feed</a>
 
 </div>
 
