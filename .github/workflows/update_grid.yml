@@ -36,6 +36,14 @@ jobs:
       - name: Run pipeline
         run: python backend/pipeline.py
 
+      - name: Dispatch alerts if hazard thresholds exceeded
+        env:
+          TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
+          TWILIO_AUTH_TOKEN:  ${{ secrets.TWILIO_AUTH_TOKEN }}
+          TWILIO_FROM_NUMBER: ${{ secrets.TWILIO_FROM_NUMBER }}
+          ALERT_RECIPIENTS:   ${{ secrets.ALERT_RECIPIENTS }}
+        run: python backend/dispatch_alerts.py
+
       - name: Commit and push updated data files
         run: |
           git config user.name "github-actions[bot]"
