@@ -84,6 +84,7 @@
 
   <!-- Babel Standalone for JSX -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 
   
   <style>
@@ -5468,6 +5469,65 @@ function injectDrainageOverlay(map, liveData) {
         <div className="font-mono space-y-6 max-w-[1750px] mx-auto">
           <SHAPWaterfallCard shapData={liveData?.realtime_shap} slotIdx={2} />
 
+          {/* SHAP plain-language narration */}
+          {(() => {
+            const SLOT_NAMES = ['Night (00-06 UTC)', 'Morning (06-12 UTC)', 'Afternoon (12-18 UTC)', 'Evening (18-00 UTC)'];
+            const shapData = liveData?.realtime_shap;
+            if (!shapData) return null;
+            const slotKeys = Object.keys(shapData).sort();
+            return (
+              <div className="atc-card p-5 rounded-2xl space-y-4">
+                <div className="text-[10px] font-bold text-cyan-300 uppercase tracking-widest border-b border-[#172338] pb-2">
+                  WHY DID EACH SLOT FIRE? — SHAP DRIVER NARRATION
+                </div>
+                {slotKeys.map(sk => {
+                  const entry = shapData[sk];
+                  if (!entry?.top_features) return null;
+                  const slotIdx = parseInt(sk, 10);
+                  const slotName = SLOT_NAMES[slotIdx] || `Slot ${slotIdx}`;
+                  const prob = entry.ts_probability ?? entry.probability ?? 0;
+                  const pct = (prob * 100).toFixed(1);
+                  const sorted = [...entry.top_features].sort((a, b) => Math.abs(b.shap) - Math.abs(a.shap)).slice(0, 3);
+                  const baseRate = (entry.base_rate ?? 0.18) * 100;
+
+                  const featureDesc = (ft) => {
+                    const sign = ft.shap >= 0 ? 'elevated' : 'suppressed';
+                    const mag  = Math.abs(ft.shap);
+                    const strength = mag > 0.15 ? 'strongly' : mag > 0.07 ? 'moderately' : 'slightly';
+                    const valStr = ft.value !== undefined ? ` (${typeof ft.value === 'number' ? ft.value.toFixed(1) : ft.value})` : '';
+                    return `${ft.feature}${valStr} ${strength} ${sign} risk by ${ft.shap >= 0 ? '+' : ''}${ft.shap.toFixed(3)} SHAP`;
+                  };
+
+                  const topDriver = sorted[0];
+                  const isAlert = prob >= 0.35;
+                  const alertWord = prob >= 0.55 ? 'HIGH probability' : prob >= 0.35 ? 'ELEVATED probability' : prob >= 0.15 ? 'LOW-to-MODERATE probability' : 'LOW probability';
+                  const direction = topDriver?.shap >= 0 ? 'above' : 'below';
+
+                  return (
+                    <div key={sk} className="rounded-xl border p-4" style={{
+                      borderColor: isAlert ? 'rgba(239,83,80,0.3)' : 'rgba(56,189,248,0.1)',
+                      background: isAlert ? 'rgba(239,83,80,0.04)' : 'rgba(5,8,17,0.6)',
+                    }}>
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-[9px] font-bold text-[#607d8b] uppercase tracking-widest">{slotName}</span>
+                        <span className="text-[9px] font-bold px-2 py-0.5 rounded" style={{
+                          background: isAlert ? 'rgba(239,83,80,0.15)' : 'rgba(56,189,248,0.1)',
+                          color: isAlert ? '#ef5350' : '#38bdf8',
+                        }}>{pct}%</span>
+                      </div>
+                      <p className="text-[11px] text-[#90a4ae] leading-relaxed">
+                        {`${slotName} shows ${alertWord} at ${pct}% (base rate ${baseRate.toFixed(0)}%). `}
+                        {sorted.length > 0 && `Primary driver: ${featureDesc(sorted[0])}. `}
+                        {sorted.length > 1 && `${featureDesc(sorted[1])}. `}
+                        {sorted.length > 2 && `${featureDesc(sorted[2])}.`}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
+
           <PageHeader
             eyebrow="SHAP · AI RAG EXPLAINABILITY"
             title="Feature Importance & Explainability"
@@ -6061,6 +6121,139 @@ function injectDrainageOverlay(map, liveData) {
             );
           })()}
           </div>
+          {/* Regime Fingerprint Polar Clock */}
+          {(() => {
+            const SLOT_HOURS = [
+              { label: 'Night',     start: 0,  end: 6,  slot: 0 },
+              { label: 'Morning',   start: 6,  end: 12, slot: 1 },
+              { label: 'Afternoon', start: 12, end: 18, slot: 2 },
+              { label: 'Evening',   start: 18, end: 24, slot: 3 },
+            ];
+            const REGIME_COLORS = { R1: '#38bdf8', R2: '#facc15', R3: '#fb923c', R4: '#4ade80', default: '#607d8b' };
+            const activeId = liveData?.synoptic_regime?.regime_id || 'R4';
+            const activeColor = REGIME_COLORS[activeId] || REGIME_COLORS.default;
+            const activeLabel = liveData?.synoptic_regime?.regime_name || 'Dry Synoptic';
+
+            const R = 90, CX = 110, CY = 110;
+            const innerR = 44, outerR = 88;
+
+            // Convert hour to angle (0h = top, clockwise)
+            const hourToAngle = (h) => (h / 24) * 2 * Math.PI - Math.PI / 2;
+            const toXY = (angle, r) => ({ x: CX + r * Math.cos(angle), y: CY + r * Math.sin(angle) });
+
+            const arcPath = (startH, endH, rInner, rOuter) => {
+              const a1 = hourToAngle(startH);
+              const a2 = hourToAngle(endH);
+              const p1 = toXY(a1, rOuter), p2 = toXY(a2, rOuter);
+              const p3 = toXY(a2, rInner), p4 = toXY(a1, rInner);
+              const large = (endH - startH) > 12 ? 1 : 0;
+              return `M ${p1.x} ${p1.y} A ${rOuter} ${rOuter} 0 ${large} 1 ${p2.x} ${p2.y} L ${p3.x} ${p3.y} A ${rInner} ${rInner} 0 ${large} 0 ${p4.x} ${p4.y} Z`;
+            };
+
+            // Slot probabilities for arc brightness
+            const slots = liveData?.slots || [];
+            const getSlotProb = (slotIdx) => {
+              const s = slots.find(s => s.slot === slotIdx);
+              return s ? (s.probability ?? s.ts_prob ?? 0) : 0;
+            };
+
+            // Hour ticks
+            const hourTicks = Array.from({ length: 24 }, (_, h) => h);
+
+            return (
+              <div className="atc-card p-5 rounded-2xl">
+                <div className="text-[10px] font-bold text-cyan-300 uppercase tracking-widest mb-4">
+                  REGIME FINGERPRINT — 24h POLAR CLOCK
+                </div>
+                <div className="flex flex-col sm:flex-row items-center gap-8">
+                  <svg viewBox="0 0 220 220" style={{ width: 220, height: 220, flexShrink: 0 }}>
+                    {/* Background */}
+                    <circle cx={CX} cy={CY} r={R + 18} fill="rgba(5,8,17,0.9)" />
+
+                    {/* Hour tick marks */}
+                    {hourTicks.map(h => {
+                      const angle = hourToAngle(h);
+                      const isMajor = h % 6 === 0;
+                      const inner = isMajor ? R - 4 : R - 2;
+                      const p1 = toXY(angle, inner);
+                      const p2 = toXY(angle, R + 2);
+                      return <line key={h} x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y}
+                        stroke={isMajor ? 'rgba(96,125,139,0.7)' : 'rgba(96,125,139,0.3)'}
+                        strokeWidth={isMajor ? 1.2 : 0.6} />;
+                    })}
+
+                    {/* Slot arcs */}
+                    {SLOT_HOURS.map(slot => {
+                      const prob = getSlotProb(slot.slot);
+                      const opacity = 0.25 + prob * 0.75;
+                      const innerRing = innerR;
+                      const outerRing = innerR + (outerR - innerR) * (0.4 + prob * 0.6);
+                      return (
+                        <g key={slot.slot}>
+                          <path d={arcPath(slot.start, slot.end, innerRing, outerRing)}
+                            fill={activeColor}
+                            opacity={opacity}
+                          />
+                          <path d={arcPath(slot.start, slot.end, innerRing, outerRing)}
+                            fill="none" stroke={activeColor} strokeWidth="1" opacity={0.6 + prob * 0.4}
+                          />
+                        </g>
+                      );
+                    })}
+
+                    {/* Inner circle */}
+                    <circle cx={CX} cy={CY} r={innerR} fill="rgba(5,8,17,0.95)" stroke="rgba(96,125,139,0.2)" strokeWidth="1" />
+
+                    {/* Hour labels */}
+                    {[0, 6, 12, 18].map(h => {
+                      const angle = hourToAngle(h);
+                      const p = toXY(angle, R + 12);
+                      return <text key={h} x={p.x} y={p.y} textAnchor="middle" dominantBaseline="central"
+                        fontSize="9" fill="rgba(144,164,174,0.85)" fontFamily="monospace" fontWeight="bold">{h.toString().padStart(2,'0')}Z</text>;
+                    })}
+
+                    {/* Centre text */}
+                    <text x={CX} y={CY - 6} textAnchor="middle" fontSize="9" fill={activeColor}
+                      fontFamily="monospace" fontWeight="bold">{activeId}</text>
+                    <text x={CX} y={CY + 7} textAnchor="middle" fontSize="7" fill="rgba(96,125,139,0.8)"
+                      fontFamily="monospace">REGIME</text>
+
+                    {/* Current hour hand */}
+                    {(() => {
+                      const nowUTC = new Date();
+                      const h = nowUTC.getUTCHours() + nowUTC.getUTCMinutes() / 60;
+                      const angle = hourToAngle(h);
+                      const tip = toXY(angle, outerR - 2);
+                      return <line x1={CX} y1={CY} x2={tip.x} y2={tip.y}
+                        stroke="#00e676" strokeWidth="2" strokeLinecap="round" />;
+                    })()}
+                    <circle cx={CX} cy={CY} r={3} fill="#00e676" />
+                  </svg>
+
+                  <div className="space-y-3 flex-1">
+                    <div className="text-[10px] text-[#607d8b] uppercase tracking-wider">Active Regime</div>
+                    <div className="text-lg font-bold" style={{ color: activeColor }}>{activeId} — {activeLabel}</div>
+                    <div className="text-[10px] text-[#607d8b] leading-relaxed">
+                      Arc width and opacity represent slot-level TS probability. The green hand marks the current UTC hour.
+                      A wider, brighter arc means the model is more confident about convection in that time window.
+                    </div>
+                    {SLOT_HOURS.map(sl => {
+                      const prob = getSlotProb(sl.slot);
+                      return (
+                        <div key={sl.slot} className="flex items-center gap-2 text-[10px]">
+                          <span className="text-[#607d8b] w-20">{sl.label}</span>
+                          <div className="flex-1 h-1.5 rounded bg-[#0f1729] overflow-hidden">
+                            <div className="h-full rounded transition-all" style={{ width: `${(prob*100).toFixed(0)}%`, background: activeColor, opacity: 0.8 }} />
+                          </div>
+                          <span style={{ color: activeColor }}>{(prob*100).toFixed(0)}%</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
         </div>
       );
     }
@@ -6677,6 +6870,52 @@ function injectDrainageOverlay(map, liveData) {
                           <text x={CX+4} y={CY-r+12} fill="#007030" fontSize="9" fontFamily="monospace">{kmLabels[i]} km</text>
                         </g>
                       ))}
+
+                      {/* Lightning density rings at 25 / 50 / 100 km */}
+                      {(() => {
+                        const RING_KM = [25, 50, 100];
+                        const RING_COLORS = ['rgba(255,23,68,0.55)', 'rgba(255,145,0,0.45)', 'rgba(255,214,0,0.3)'];
+                        const RING_LABELS = ['25 km', '50 km', '100 km'];
+                        const now = Date.now();
+                        const recentStrikes = strikeBuffer.current.filter(s => (now - s.ts) < 300000);
+                        const counts = RING_KM.map((km, idx) => {
+                          const inner = idx === 0 ? 0 : RING_KM[idx - 1];
+                          return recentStrikes.filter(s => s.dist >= inner && s.dist < km).length;
+                        });
+                        const maxCount = Math.max(...counts, 1);
+                        return RING_KM.map((km, idx) => {
+                          const r = km * (MAXR / 200);
+                          const density = counts[idx] / maxCount;
+                          const baseColor = RING_COLORS[idx];
+                          const glow = density > 0.5;
+                          return (
+                            <g key={`density-${km}`}>
+                              <circle
+                                cx={CX} cy={CY} r={r}
+                                fill={density > 0 ? baseColor.replace(')', `,${0.08 + density * 0.22})`.replace('rgba(', 'rgba(')) : 'none'}
+                                style={{ fill: density > 0 ? `rgba(${
+                                  idx===0 ? '255,23,68' : idx===1 ? '255,145,0' : '255,214,0'
+                                },${(0.05 + density * 0.2).toFixed(2)})` : 'none' }}
+                              />
+                              <circle
+                                cx={CX} cy={CY} r={r}
+                                fill="none"
+                                stroke={`rgba(${idx===0?'255,23,68':idx===1?'255,145,0':'255,214,0'},${(0.3 + density * 0.5).toFixed(2)})`}
+                                strokeWidth={glow ? 2 : 1}
+                                strokeDasharray={density > 0 ? 'none' : '3 4'}
+                              />
+                              {counts[idx] > 0 && (
+                                <text
+                                  x={CX + r - 2} y={CY - 3}
+                                  fontSize="8" textAnchor="end"
+                                  fill={`rgba(${idx===0?'255,23,68':idx===1?'255,145,0':'255,214,0'},0.9)`}
+                                  fontFamily="monospace" fontWeight="bold"
+                                >{counts[idx]}⚡ {RING_LABELS[idx]}</text>
+                              )}
+                            </g>
+                          );
+                        });
+                      })()}
 
                       {/* BT field overlay */}
                       <circle cx={CX} cy={CY} r={64} fill="url(#btField)" opacity="0.8" mask="url(#radarMask)" />
@@ -7349,6 +7588,102 @@ function injectDrainageOverlay(map, liveData) {
         try { localStorage.setItem('csir_kb_hint_seen', '1'); } catch {}
       };
 
+      // PDF Forecast Bulletin
+      const downloadPDFBriefing = () => {
+        if (!liveData) return;
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+        const slots = liveData.slots || currentSlots || [];
+        const date  = liveData.date || new Date().toISOString().slice(0, 10);
+        const regime = liveData.monsoon_regime?.regime || liveData.synoptic_regime?.regime_name || 'N/A';
+        const hazard = hazardCfg?.label || 'TS';
+        const slotLabels = ['00-06 UTC (Night)', '06-12 UTC (Morning)', '12-18 UTC (Afternoon)', '18-24 UTC (Evening)'];
+        const riskColor = (p) => p >= 0.55 ? [220,38,38] : p >= 0.35 ? [234,88,12] : p >= 0.15 ? [202,138,4] : [22,163,74];
+
+        // Header bar
+        doc.setFillColor(5, 8, 17);
+        doc.rect(0, 0, 210, 297, 'F');
+        doc.setFillColor(0, 100, 60);
+        doc.rect(0, 0, 210, 22, 'F');
+        doc.setTextColor(0, 230, 118);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(13);
+        doc.text('VOBL HYPERLOCAL HAZARD BULLETIN', 105, 10, { align: 'center' });
+        doc.setFontSize(8);
+        doc.setTextColor(144, 164, 174);
+        doc.text(`Kempegowda International Airport (VOBL/BLR)  |  IMD Station 43295  |  ${date}`, 105, 17, { align: 'center' });
+
+        // Meta row
+        doc.setFontSize(9);
+        doc.setTextColor(96, 125, 139);
+        doc.text(`Synoptic Regime: `, 14, 30);
+        doc.setTextColor(200, 200, 200);
+        doc.text(regime, 55, 30);
+        doc.setTextColor(96, 125, 139);
+        doc.text(`Hazard:`, 120, 30);
+        doc.setTextColor(200, 200, 200);
+        doc.text(hazard, 140, 30);
+        doc.setTextColor(96, 125, 139);
+        doc.text(`Generated (IST): ${new Date().toLocaleString('en-IN',{timeZone:'Asia/Kolkata'})}`, 14, 37);
+
+        // Divider
+        doc.setDrawColor(0, 100, 60);
+        doc.line(14, 41, 196, 41);
+
+        // Slot cards
+        let yOff = 47;
+        slots.slice(0, 4).forEach((s, i) => {
+          const prob = s.probability ?? s.ts_prob ?? 0;
+          const pct  = (prob * 100).toFixed(1);
+          const pred = s.ts_predicted ? 'ALERT' : 'STABLE';
+          const [r, g, b] = riskColor(prob);
+          // Card background
+          doc.setFillColor(15, 23, 42);
+          doc.roundedRect(14, yOff, 182, 36, 3, 3, 'F');
+          doc.setFillColor(r, g, b);
+          doc.roundedRect(14, yOff, 4, 36, 2, 2, 'F');
+          // Slot label
+          doc.setTextColor(144, 164, 174);
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(8);
+          doc.text(`SLOT ${i}  |  ${slotLabels[i] || ''}`, 22, yOff + 8);
+          // Probability ring label
+          doc.setTextColor(r, g, b);
+          doc.setFontSize(22);
+          doc.text(`${pct}%`, 22, yOff + 26);
+          // Status badge
+          doc.setFontSize(8);
+          doc.setTextColor(r, g, b);
+          doc.text(pred, 65, yOff + 26);
+          // SHAP top 3
+          const shapEntry = liveData?.realtime_shap?.[String(i)];
+          if (shapEntry?.top_features) {
+            const top3 = [...shapEntry.top_features]
+              .sort((a, b) => Math.abs(b.shap) - Math.abs(a.shap))
+              .slice(0, 3);
+            doc.setFontSize(7);
+            top3.forEach((ft, fi) => {
+              const sign = ft.shap >= 0 ? '+' : '';
+              const [fr, fg, fb] = ft.shap >= 0 ? [239, 83, 80] : [102, 187, 106];
+              doc.setTextColor(fr, fg, fb);
+              doc.text(`${sign}${ft.shap.toFixed(3)}  ${ft.feature}`, 110, yOff + 10 + fi * 9);
+            });
+          }
+          yOff += 42;
+        });
+
+        // Footer
+        doc.setFontSize(7);
+        doc.setTextColor(96, 125, 139);
+        doc.text('Auto-generated by SIH Hyperlocal Warning System. For official use by ATC and airport met office only.', 105, 285, { align: 'center' });
+        doc.text('Scan for live dashboard:', 14, 278);
+        // Simple QR placeholder text (jsPDF free tier lacks QR; note for user)
+        doc.setTextColor(0, 230, 118);
+        doc.text('sih-hyperlocal-warning.pages.dev', 60, 278);
+
+        doc.save(`VOBL_Bulletin_${date}_${hazard}.pdf`);
+      };
+
       // Copy forecast summary
       const copyForecastSummary = () => {
         if (!liveData) return;
@@ -7517,6 +7852,18 @@ Source: csir-thunderstorm-bengaluru.pages.dev | IMD Station 43295`;
                   }}
                 >
                   {copyFeedback ? '✓ COPIED' : '⎘ COPY FORECAST'}
+                </button>
+                <button
+                  onClick={downloadPDFBriefing}
+                  className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-[10px] font-bold transition-all"
+                  style={{
+                    background:'rgba(0,230,118,0.06)',
+                    border:'1px solid rgba(0,230,118,0.18)',
+                    color:'rgba(0,230,118,0.7)',
+                  }}
+                  title="Download PDF forecast bulletin"
+                >
+                  ⬇ DOWNLOAD BRIEFING
                 </button>
               </div>
             </div>
@@ -7805,6 +8152,24 @@ Source: csir-thunderstorm-bengaluru.pages.dev | IMD Station 43295`;
                     })}
                     {/* 35% threshold line */}
                     {(() => { const y = padT + BAR_H * (1 - 0.35); return <line x1={padL} y1={y} x2={W-padR} y2={y} stroke="rgba(255,152,0,0.4)" strokeWidth="1" strokeDasharray="4 3" />; })()}
+                    {/* CI bands (historical GFS calibration sigma by lead day) */}
+                    {days.map((day, i) => {
+                      const prob = deriveProbability(day);
+                      const SIGMA = [0.05, 0.08, 0.11, 0.14, 0.16, 0.18, 0.20];
+                      const sigma = SIGMA[Math.min(i, SIGMA.length - 1)];
+                      const lo = Math.max(0, prob - sigma);
+                      const hi = Math.min(1, prob + sigma);
+                      const x  = padL + i * barW + barW * 0.15;
+                      const bw = barW * 0.70;
+                      const yHi = padT + BAR_H * (1 - hi);
+                      const yLo = padT + BAR_H * (1 - lo);
+                      const fill = prob >= 0.55 ? 'rgba(220,38,38,0.18)' : prob >= 0.35 ? 'rgba(234,88,12,0.18)' : prob >= 0.15 ? 'rgba(202,138,4,0.18)' : 'rgba(22,163,74,0.18)';
+                      return (
+                        <rect key={`ci-${i}`} x={x} y={yHi} width={bw} height={yLo - yHi}
+                          fill={fill} rx="2" opacity="0.85" />
+                      );
+                    })}
+
                     {/* Bars */}
                     {days.map((day, i) => {
                       const prob = deriveProbability(day);
