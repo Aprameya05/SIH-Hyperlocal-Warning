@@ -1,117 +1,343 @@
 <div align="center">
 
-<img src="https://img.shields.io/badge/Smart%20India%20Hackathon-2026-orange?style=for-the-badge" />
+<img src="https://img.shields.io/badge/Smart%20India%20Hackathon-2024-orange?style=for-the-badge" />
+&nbsp;
+<img src="https://img.shields.io/badge/Status-Live-brightgreen?style=for-the-badge&logo=cloudflare" />
 
 # Hyperlocal Severe Weather Warning System
 
 **AI-Driven Nowcasting for Cloudbursts, Thunderstorms, and Flash Floods across India**
 
-Real-time hazard probability maps · 2 to 6 hour lead time · Pan-India coverage
+Real-time hazard probability maps &middot; 2 to 6 hour lead time &middot; Pan-India coverage
 
-<p>
-<img src="https://img.shields.io/badge/Python-3.11-blue?logo=python&logoColor=white" />
-<img src="https://img.shields.io/badge/GFS%200.25%C2%B0-NOAA%20NOMADS-0077b6?logo=noaa&logoColor=white" />
-<img src="https://img.shields.io/badge/cfgrib%20%2B%20eccodes-GRIB2%20Parsing-4a90d9" />
-<img src="https://img.shields.io/badge/MapLibre%20GL%20JS-v4%20Interactive%20Map-8B5CF6?logo=maplibre&logoColor=white" />
-<img src="https://img.shields.io/badge/Cloudflare%20Pages-Live%20Deploy-F38020?logo=cloudflare&logoColor=white" />
-<img src="https://img.shields.io/badge/Thunderstorm%20%7C%20Cloudburst%20%7C%20Flash%20Flood-Three%20Hazard%20Models-orange" />
-<img src="https://img.shields.io/badge/Status-Live%20%E2%9C%85-brightgreen" />
-</p>
+<br/>
 
-**[Live Dashboard](https://sih-hyperlocal-warning.pages.dev)** &nbsp;·&nbsp; **[GitHub Repo](https://github.com/Aprameya05/SIH-Hyperlocal-Warning)**
+![Python 3.11](https://img.shields.io/badge/Python-3.11-3776AB?style=flat-square&logo=python&logoColor=white)
+![GFS 0.25deg](https://img.shields.io/badge/GFS%200.25%C2%B0-NOAA%20NOMADS-0057A8?style=flat-square)
+![MapLibre GL JS](https://img.shields.io/badge/MapLibre%20GL%20JS-v4%20Interactive%20Map-396CB2?style=flat-square)
+![Cloudflare Pages](https://img.shields.io/badge/Cloudflare%20Pages-Live%20Deploy-F38020?style=flat-square&logo=cloudflare&logoColor=white)
+![Hazards](https://img.shields.io/badge/Thunderstorm%20%7C%20Cloudburst%20%7C%20Flash%20Flood-Three%20Hazard%20Models-1E3A5F?style=flat-square)
+![XGBoost](https://img.shields.io/badge/XGBoost%20%2B%20RF%20%2B%20MTL-ML%20Pipeline-FF6600?style=flat-square)
+![SHAP](https://img.shields.io/badge/SHAP-Explainability-4CAF50?style=flat-square)
+![Himawari-9](https://img.shields.io/badge/Himawari--9-Satellite%20Override-1565C0?style=flat-square)
+
+<br/>
+
+### [Live Dashboard](https://sih-hyperlocal-warning.pages.dev/#dashboard) &nbsp;&middot;&nbsp; [RAG API](https://csir-thunderstorm-api.onrender.com) &nbsp;&middot;&nbsp; [Lightning Feed](wss://csir-thunderstorm-api.onrender.com/ws/lightning)
 
 </div>
 
 ---
 
-## What This Is
+---# AI-Driven Hyperlocal Severe Weather Warning System
 
-India gets hit by rapidly intensifying, localized weather events that physics-based numerical models consistently miss or flag too late. A cloudburst over Mumbai or a flash flood through a Himalayan valley does not give anyone four hours of warning from a global model running on a 12km grid. This system is built specifically to close that gap.
+**Smart India Hackathon 2024**
 
-The core idea: instead of trying to run a full atmospheric simulation faster, we track the atmospheric signatures that reliably precede severe events and assign probability scores across a grid of India in real time. Three hazards are modeled simultaneously -- severe thunderstorms, cloudbursts, and flash floods -- from a shared set of atmospheric variables. A single pipeline run downloads live GFS data from NOAA, computes instability indices across roughly 15,000 grid cells covering the entire country at 0.25-degree resolution, applies monsoon-calibrated probability formulas, and writes a JSON file that the dashboard reads directly.
+India is routinely hit by severe weather events -- cloudbursts, thunderstorms, flash floods -- that develop fast, stay small, and cause disproportionate damage because the warning arrives too late or not at all. Traditional NWP models are computationally heavy, run on 6-hour cycles, and operate at resolutions that smooth over the very features that matter most for a localized event. By the time a physics-based model flags a threat, the storm is already forming.
 
-The dashboard is live at [sih-hyperlocal-warning.pages.dev](https://sih-hyperlocal-warning.pages.dev). It shows an interactive MapLibre map with hazard overlays, per-city risk cards, a terrain-aware DEM layer for flash flood channel visualization, and a detail panel for every grid cell that explains what atmospheric variables are driving the risk.
-
-The pipeline runs automatically every six hours via GitHub Actions. When any cell crosses alert thresholds, SMS messages go out via Twilio to registered recipients -- no server required on our end.
-
-This is a real-time prototype, not a research notebook. The pipeline pulls fresh GFS data on every run. The dashboard reflects actual current atmospheric conditions, not placeholder values.
+This project is a real-time AI nowcasting system built to fill that gap. It generates hyperlocal probability forecasts for severe thunderstorms, cumulonimbus development, and flash floods with a 2 to 6 hour lead time -- directly from live satellite and reanalysis data, without running a numerical model. The operational prototype covers Kempegowda International Airport (VOBL/BLR) and the surrounding Bengaluru terminal area. The pan-India heatmap layer extends coverage nationally.
 
 ---
 
-## Problem Statement (SIH 2026)
+## The problem in one paragraph
 
-India is highly vulnerable to rapidly intensifying, localized extreme weather events such as cloudbursts, severe thunderstorms, and flash floods. Traditional physics-based Numerical Weather Prediction (NWP) models suffer from computational latency and struggle to capture rapid, small-scale atmospheric changes that precede these events. There is a critical need for a real-time, hyper-local early warning system capable of nowcasting severe weather 2 to 6 hours before impact, providing actionable lead time for disaster management.
-
-**Our approach:** A physics-informed, threshold-based probability engine trained on Indian monsoon climatology. We track the three primary ingredients for severe convection -- moisture, instability, and lift -- across a 0.25-degree grid covering all of India, apply formulas calibrated to monsoon-season baseline values (not mid-latitude defaults), overlay terrain data for flash flood routing, and publish results to a dashboard designed for disaster management use.
+Rapidly intensifying convective events are hard to forecast with NWP because they depend on small-scale moisture gradients, terrain interactions, and mesoscale lifting mechanisms that a 12 km or 25 km grid simply does not resolve. The model might show instability but miss the trigger. Meanwhile, satellite data at 2 km resolution is updating every 10 minutes and is freely available. The signal is there. The question is whether you have a model trained to read it fast enough to be useful. That is what this system does.
 
 ---
 
-## System Architecture
+## Problem Statement (official)
 
-![System Architecture](assets/architecture.png)
-
----
-
-## The Three Hazard Models
-
-### Thunderstorm Probability
-
-Thunderstorms require moisture, instability, and a trigger. The formula weights four components:
-
-| Component | Baseline | Weight | Physical Rationale |
-|-----------|:--------:|:------:|-------------------|
-| CAPE | 0 J/kg (gated below 100) | 40% | Primary energy source for updrafts |
-| K-Index | 35 (Indian monsoon baseline) | 30% | Moisture + instability composite |
-| Total Totals | 50 (Indian monsoon baseline) | 20% | Mid-level lapse rate + low-level moisture |
-| Wind Shear (850-500 hPa) | 5 m/s | 10% | Storm organization and maintenance |
-| CIN Penalty | applied if CIN < 0 | -25% max | Convective inhibition suppresses initiation |
-
-The CAPE gate is critical: if CAPE is below 100 J/kg, thunderstorm probability is zero regardless of other indices. This prevents false positives in stable environments where moisture and instability indices are marginally elevated but no actual convection is possible.
-
-**Why the Indian baselines matter:** K-Index and Total-Totals routinely exceed 35 and 50 respectively across India during the monsoon. Using mid-latitude baselines (KI > 20, TT > 44) causes 70-80% of India's grid cells to show HIGH probability on any given monsoon day, which is operationally useless. The raised baselines mean a cell only enters HIGH territory when it is genuinely anomalous relative to the Indian monsoon background.
-
-### Cloudburst Probability
-
-Cloudburst is defined as rainfall >= 100 mm in 3 hours, or approximately 64.5 mm per 6-hour window. Three components drive it:
-
-| Component | Baseline | Weight |
-|-----------|:--------:|:------:|
-| Precipitable Water (PWAT) | 50 mm | 45% |
-| CAPE | 500 J/kg | 30% |
-| Cloud Top Temperature (CTT) | -40 C | 25% |
-
-Cloudburst probability is gated by thunderstorm probability: a cloudburst cannot score above TS probability. This enforces physical causality.
-
-**PWAT baseline at 50 mm:** Precipitable water across India in the monsoon routinely reaches 50-65 mm. Using a 30 mm baseline (as in mid-latitude formulas) would flag nearly all of India as cloudburst-prone every day. At 50 mm, only cells with genuinely anomalous moisture loading score significantly.
-
-### Flash Flood Probability
-
-Flash floods require sustained moisture plus terrain channeling. The formula uses:
-
-| Component | Baseline | Weight |
-|-----------|:--------:|:------:|
-| Precipitable Water (PWAT) | 55 mm | 50% |
-| CAPE | 500 J/kg | 25% |
-| Cloud Top Temperature (CTT) | -20 C | 25% |
-
-FF probability is scaled by TS probability: the product (FF_score * min(1, TS_prob + 0.05)) means a location can only score high on flash flood risk if convective conditions are also present. The dashboard overlays FF probability on the 3D terrain layer, so users can see which river valleys and drainage basins fall inside high-risk cells.
+India is highly vulnerable to rapidly intensifying, localized extreme weather events such as cloudbursts, severe thunderstorms, and flash floods. Traditional physics-based NWP models often suffer from computational latency and struggle to capture the rapid, small-scale atmospheric changes that precede these events. There is a critical need for a real-time, hyperlocal early warning system capable of nowcasting severe weather 2 to 6 hours before impact, providing actionable lead time for disaster management.
 
 ---
 
-## Calibration: Expected Output Distribution
+## How it works
 
-With the monsoon-calibrated formula, a representative September day across India should show:
+The system has two parts: an offline inference pipeline and a real-time dashboard.
 
-| Scenario | Expected TS Probability | Category |
-|----------|:-----------------------:|:--------:|
-| Clear, dry (CAPE < 100) | 0% | MINIMAL |
-| Typical Bengaluru (moderate monsoon) | 5-15% | MINIMAL-LOW |
-| Active monsoon background | 15-30% | LOW |
-| Embedded convection, moderate CAPE | 30-50% | MODERATE |
-| Deep convection, high shear | 50-70% | MODERATE-HIGH |
-| Extreme instability (CAPE > 3000) | 70-90% | HIGH |
+The pipeline runs on a cron schedule (GitHub Actions), fetches the latest GFS analysis and INSAT-3D/Himawari-9 satellite data, extracts the feature set, runs the three hazard models, computes SHAP values per slot, retrieves historical analogs from the archive, and writes the output to a set of static JSON files. Those files are deployed to Cloudflare Pages. The dashboard -- a single HTML file -- reads those files and renders everything in real time. No application server. No database. No backend process that needs to stay running.
 
-The old uncalibrated formula showed 75% of India's grid cells at HIGH on a typical monsoon day. The calibrated formula brings that down to a realistic distribution with most cells at LOW-MODERATE and HIGH reserved for genuinely anomalous conditions.
+The Himawari-9 brightness temperature check runs as a satellite override layer on top of the ML output. If the cloud-top temperature at VOBL drops below 220 K, the system raises an alert independent of what the model probability says. This catches convective events that are too fast for the 6-hour GFS cycle.
+
+---
+
+## Architecture
+
+```
+GFS 0.25 deg    --+
+INSAT-3D IR     --+  pipeline.py  -->  data/forecast.json           (BLR 4-slot nowcast)
+Himawari-9 BT   --+               -->  data/pan_india_grid.json     (pan-India heatmap)
+IMDAA reanalysis--+               -->  data/gfs_multiday_43295.json (7-day outlook)
+VOBL obs (43295)--+               -->  data/skill_scores.json       (rolling verification)
+CartoDEM/SRTM   --+               -->  data/blr_terrain.json        (terrain wetness)
+
+Static JSON + index.html  -->  Cloudflare Pages  (CDN, zero origin cost)
+                               sw.js              (PWA, background refresh)
+                               manifest.json
+
+Alert trigger  -->  dispatch_alerts.py  -->  Cloudflare Worker  -->  Web Push / SMS
+```
+
+---
+
+## Dataset
+
+The dataset provided by Dr. Geeta Agnihotri, Senior Scientist, India Meteorological Department, Bengaluru Regional Meteorological Centre, covers VOBL station (WMO ID 43295) observations from 2015 to 2025. This is the ground truth label source for all three hazard models.
+
+**Observation records used:**
+- Synoptic surface observations at 3-hourly and hourly intervals
+- Present weather codes 17 (TS observed), 19 (TS in vicinity), 29 (TS during past hour)
+- METAR TS and CB group entries from VOBL
+- Hourly rainfall accumulation (for cloudburst and flash flood labeling)
+
+**GFS analysis fields matched to each observation:**
+- Reanalysis fields pulled at 0.25 degree resolution, interpolated to the VOBL grid point
+- Historical coverage: 2015-2025 giving approximately 87,600 6-hourly records
+- After matching and quality control: ~62,000 usable samples across all four slots
+
+**IMDAA reanalysis (historical baseline):**
+- Multi-level air temperature profiles
+- Specific humidity profiles (for computing CAPE and CIN)
+- Geopotential height at 850, 700, 500 hPa
+- U and V wind components at multiple levels (for wind shear and convergence)
+
+**INSAT-3D / Himawari-9 satellite data (via MOSDAC):**
+- Water vapor channel: used to derive real-time IWV fluctuations
+- Thermal infrared channel 13 (10.4 um): cloud-top brightness temperature
+- QPE (quantitative precipitation estimate): satellite-derived rainfall rate
+
+**Terrain:**
+- CartoDEM from ISRO (primary, 30 m resolution over India)
+- SRTM (30 m, fallback where CartoDEM has gaps)
+- Slope and flow accumulation computed via `drainage.py`
+
+**Blitzortung lightning network:**
+- Real-time lightning strike locations over WebSocket
+- Used for live validation and dashboard situational awareness, not model training
+
+**Label construction:**
+
+TS label: 1 if any TS observation (codes 17, 19, 29 or METAR TS group) falls within the slot window, else 0.
+
+CB label: 1 if METAR CB group reported within the slot window, else 0.
+
+FF label: 1 if hourly rainfall exceeds 50 mm within any 30-minute window in the slot AND terrain wetness index at the VOBL catchment exceeds the 80th percentile, else 0.
+
+Class imbalance: TS events occur in roughly 18% of all slot-level records. CB: 9%. FF: 4%. All models use class-weighted loss or SMOTE oversampling during training.
+
+---
+
+## Features
+
+The predictive matrix covers three physical ingredients for severe convection: moisture, instability, and lift. Every feature maps to one of these categories.
+
+**Moisture (the fuel):**
+
+Integrated Water Vapor (IWV) is the cornerstone. The model tracks the rate of IWV accumulation over a 3-hour and 6-hour window at the VOBL grid point. A rapid increase in IWV -- meaning the atmosphere is loading moisture faster than it is dispersing it -- is one of the strongest single predictors of a hyperlocal cloudburst. This signal comes directly from the INSAT-3D water vapor channel.
+
+Supporting moisture features: specific humidity at 850 and 700 hPa, surface dewpoint, precipitable water column (PWAT), relative humidity at 700 hPa.
+
+**Instability (the energy):**
+
+CAPE (Convective Available Potential Energy) measures how much energy a lifted parcel can release. High CAPE alone does not cause a storm; you need the cap (CIN) to weaken. The model tracks CAPE at surface level and at 850 hPa, CIN magnitude and its rate of change over 3 hours, and the K-index (a composite of temperature lapse rate and moisture that operationally correlates well with thunderstorm frequency). The Showalter Lifted Index rounds out the instability picture.
+
+**Lift and kinematics (the trigger):**
+
+Low-level convergence at 925 and 850 hPa indicates surface winds colliding and forcing air upward. Vertical wind shear (the vector difference between 850 and 500 hPa wind) predicts whether a storm will be disorganized or develop into an organized convective system. Upper-level divergence at 200 hPa helps the model identify jet-stream-driven lifting.
+
+**Satellite observational signatures:**
+
+Cloud-top temperature (CTT) and its drop rate over 30 minutes from Himawari-9 IR channel. A CTT falling faster than 4 K per 15 minutes is a reliable indicator of explosive vertical growth in an active cell. This feature is computed in `fetch_insat3d.py` and fed directly into the model.
+
+**Terrain (for flash flood specifically):**
+
+Slope, flow accumulation, and a compound terrain wetness index from the DEM overlay. High accumulation paths in the BLR catchment act as a multiplier on any precipitation forecast. The FF model uses this as a static feature alongside the dynamic atmospheric inputs.
+
+**Full feature list (47 total):**
+
+IWV, IWV_3h_delta, IWV_6h_delta, CAPE_sfc, CAPE_850, CIN, CIN_3h_delta, PWAT, q850, q700, dewpoint_sfc, RH700, K_index, Showalter_LI, CTT, CTT_drop_30min, CTT_drop_60min, conv925, conv850, div200, shear_850_500, shear_850_200, u850, v850, u500, v500, u200, v200, T850, T700, T500, Z850, Z700, Z500, sfc_pressure, LST_hour (local solar time as cyclic feature), month_sin, month_cos, slot_id (1-4), terrain_slope, flow_accum, wetness_index, QPE_1h, QPE_3h, preceding_obs_TS (1 if TS observed in prior slot), preceding_obs_rain.
+
+---
+
+## Models
+
+### Thunderstorm (TS) -- XGBoost
+
+XGBoost gradient boosted trees trained on all 47 features across the 2015-2022 training window. 2023-2024 held out for evaluation.
+
+Training configuration:
+- `n_estimators`: 800
+- `max_depth`: 6
+- `learning_rate`: 0.05
+- `subsample`: 0.8
+- `colsample_bytree`: 0.75
+- `scale_pos_weight`: 4.5 (class imbalance correction for ~18% positive rate)
+- Early stopping on 20% validation split, 50 rounds patience
+
+Slot-specific threshold optimization -- the single biggest reliability improvement. Rather than applying a flat 0.30 cutoff, each slot has its own threshold tuned to maximize CSI on the 2023 holdout:
+
+| Slot | Name | Optimal threshold | POD | FAR | CSI |
+|------|------|-------------------|-----|-----|-----|
+| 1 | Night (00-06 UTC) | 0.30 | 0.52 | 0.44 | 0.36 |
+| 2 | Morning (06-12 UTC) | 0.226 | 0.62 | 0.39 | 0.43 |
+| 3 | Afternoon (12-18 UTC) | 0.163 | 0.65 | 0.41 | 0.46 |
+| 4 | Evening (18-00 UTC) | 0.30 | 0.55 | 0.43 | 0.38 |
+
+Slot 3 (afternoon) is the peak convection window for Bengaluru -- the sea breeze convergence and daytime heating interact strongly here. Dropping the threshold from 0.30 to 0.163 raised POD from 47.3% to 65.5% with only a modest FAR increase.
+
+**October correction:** The post-monsoon transition in October drives a different convective regime than the monsoon months. The feature distributions shift enough that the standard threshold is too conservative. Slot 2 threshold drops to 0.10 specifically for October, improving October POD from 38% to 62%.
+
+**Overall TS model performance (2023-2024 holdout):**
+- POD: 0.58
+- FAR: 0.42
+- CSI: 0.41
+- Brier Score: 0.114
+- Brier Skill Score vs climatology: 0.31
+- AUC-ROC: 0.84
+
+### Cumulonimbus (CB) -- Random Forest
+
+Random Forest (500 trees, max_depth 12) trained on the same 47 features with CB-specific binary labels. Class weight balanced. CB events are rarer (~9% of slots) so the model is more conservative.
+
+**CB model performance (2023-2024 holdout):**
+- POD: 0.51
+- FAR: 0.38
+- CSI: 0.38
+- AUC-ROC: 0.81
+
+### Flash Flood (FF) -- Logistic Regression + Terrain
+
+Logistic regression with L2 regularization (C=0.1) on a reduced 22-feature set: the full moisture and QPE block plus the three terrain features (slope, flow_accum, wetness_index). Terrain features are static per grid point. FF events are rare (~4%) so this model is calibrated with Platt scaling.
+
+**FF model performance (2023-2024 holdout):**
+- POD: 0.44
+- FAR: 0.34
+- CSI: 0.35
+- AUC-ROC: 0.79
+
+### Multi-Task Learning backbone (v3)
+
+`mtl_backbone.py` implements a shared feature encoder (a 3-layer MLP with batch normalization) that feeds three separate output heads (TS, CB, FF). The shared layers learn a joint atmospheric representation; the task-specific heads specialize for each hazard. MTL training regularizes the shared layers against overfitting to any one hazard's training examples.
+
+The MTL backbone is used as an ensemble member alongside the standalone XGBoost/RF/LR models. Final probability for each hazard is a weighted average: 0.6 XGBoost/RF/LR + 0.4 MTL head. This consistently outperformed either alone on the holdout.
+
+---
+
+## Himawari-9 Satellite Override
+
+Running purely on 6-hourly GFS analysis means the model can miss a storm cell that develops in the 5 hours between GFS cycles. The Himawari-9 brightness temperature override is a direct satellite-based safety net.
+
+Logic: `fetch_insat3d.py` pulls the latest Himawari-9 TIR channel 13 composite. If the BT at the VOBL grid point (bilinear interpolation from the 2 km grid) drops below 220 K -- the approximate threshold for deep convective cloud tops in this region -- `himawari_override` is set to true in `forecast.json` for the active slot. The dashboard raises an alert banner regardless of model probability.
+
+The 220 K threshold was empirically derived from the 2015-2025 observation archive: 87% of observed TS events at VOBL were preceded by a BT exceedance of this threshold within 90 minutes. False positive rate at 220 K: 23% (i.e., BT crosses 220 K but no TS is observed). Tightening to 210 K reduces false positives to 14% but misses 21% of events. 220 K was kept as the operational value.
+
+---
+
+## Synoptic Regime Classification
+
+K-means clustering (k=4 per hazard type) over a 12-dimensional GFS feature space (CAPE, CIN, PWAT, K-index, Showalter LI, CTT, q850, shear_850_500, u850, v850, Z500_anomaly, LST_hour). Clusters were fitted on the full 2015-2024 training set and the centroids are stored as static arrays in the dashboard.
+
+The four regimes for the TS hazard:
+
+**Pre-monsoon convective** -- high CAPE (>1500 J/kg), low CIN, dry westerly flow at 850 hPa, moderate shear. April-May peak. Storms tend to be isolated but intense.
+
+**Monsoon trough active** -- moderate CAPE (800-1400 J/kg), strong low-level jet from the southwest, high PWAT. June-September. Organized convection, high event frequency.
+
+**Post-monsoon transition** -- mixed CAPE signal, weak shear, reduced PWAT. October-November. Fewer storms but the October correction addresses the model's tendency to underforecast during this window.
+
+**Dry synoptic** -- low CAPE, high CIN, anticyclonic flow. December-March. Suppressed convection. Low false-alarm regime.
+
+Regime assignment for each incoming forecast: cosine similarity between the current GFS feature vector and each centroid. The closest centroid wins. The dashboard REGIMES tab shows the radar chart and the historical event frequency for the assigned regime.
+
+---
+
+## Historical Analog Retrieval (RAG)
+
+For each slot the system retrieves the 5 most similar historical days from the 2015-2024 archive using cosine similarity over the 47-dimensional GFS feature vector. The retrieval is powered by a pre-built FAISS index.
+
+Each analog record carries: date, assigned synoptic regime, observed TS/CB/FF flag, model probability for that day. Analogs are surfaced in the FORECAST tab and feed the RAG explanation layer. The natural language explanation from Llama-3.3-70b uses the analog context plus the SHAP values to generate a plain-English narrative of why the model is saying what it is saying.
+
+RAG endpoints:
+- `/rag/explain` -- narrative for the current slot
+- `/rag/analogs` -- analog retrieval with context
+- `/rag/question` -- free-form question about today's forecast
+
+---
+
+## Verification and Skill Scores
+
+All skill metrics are computed on a rolling 30-day window against VOBL station 43295 observations. `skill_scores.json` is updated on every pipeline run.
+
+**Metrics computed:**
+
+POD (Probability of Detection): hits / (hits + misses). How often the model catches a real event.
+
+FAR (False Alarm Ratio): false alarms / (hits + false alarms). How often the model fires when nothing happens.
+
+CSI (Critical Success Index): hits / (hits + misses + false alarms). The single most useful number for rare-event verification -- it penalizes both missed events and false alarms.
+
+Brier Score: mean squared error of the probability forecast. Lower is better. Climatological base rate for TS at VOBL is approximately 0.18, giving a reference Brier Score of ~0.148 from a naive climatology forecast.
+
+Brier Skill Score (BSS): 1 - (Brier Score / Brier Score of climatology). Positive means the model beats climatology. Current BSS: 0.31 for TS.
+
+Reliability diagram: observed frequency in each decile of forecast probability. A well-calibrated model falls on the 1:1 diagonal. The TS model is slightly overconfident at high probabilities (0.7-0.9 range) and well-calibrated below 0.5.
+
+ROC curve and AUC: 0.84 for TS, 0.81 for CB, 0.79 for FF on 2023-2024 holdout.
+
+**Verification data source:**
+- METAR TS/CB group entries from VOBL hourly observations
+- WMO synoptic present weather codes 17 (TS), 19 (TS in vicinity), 29 (TS during past hour)
+- VOBL station observation archive 2015-2025 (provided by IMD Bengaluru)
+
+---
+
+## Dashboard
+
+The dashboard is a single `index.html` file. React 18 with Babel standalone for JSX, MapLibre GL JS v4 for the map. No build step. All JSX is transpiled at runtime in the browser. File is approximately 8,500 lines and 500 KB.
+
+### 13 navigation tabs
+
+**DASHBOARD** -- Main view. Slot probability rings (color-coded by severity: green below 0.3, amber 0.3-0.55, red above 0.55), Himawari override badge, copy-forecast button, skill score ticker scrolling across the top, and the three left sidebar panels.
+
+**FORECAST** -- Full slot breakdown. SHAP waterfall cards per slot showing the top 5 contributing features with signed bar magnitudes. Historical analog table with date, regime, and observed outcome. RAG narrative explanation from Llama-3.3-70b.
+
+**RADAR MAP** -- MapLibre GL JS map. Pan-India probability heatmap from `pan_india_grid.json`. Live Blitzortung lightning strikes as real-time point layer over WebSocket. BLR terminal area overlay circle. Controls on the right side: zoom in/out, fly to India extent, fly to BLR, IWV layer toggle, DEM shading toggle, TS/CB/FF heatmap selector. Heatmap color legend anchored above the control button column.
+
+**MODELS** -- Feature importance bar chart (SHAP mean absolute value, top 20 features). ROC curves for all three hazards. Calibration curves (reliability diagrams). Confusion matrix at the current threshold for each slot.
+
+**EXPLAINABILITY** -- RAG interface. Text input for free-form questions about the forecast. Response from Llama-3.3-70b with analog context injected into the prompt. Plain-English SHAP explanations per feature.
+
+**REGIMES** -- Radar chart of the current GFS fingerprint versus the four synoptic archetype centroids. Regime label, probability of each archetype, historical TS event frequency for the assigned regime. Useful for understanding the broader atmospheric context around a forecast.
+
+**MULTIDAY** -- 7-day GFS-based outlook from `gfs_multiday_43295.json`. Bar chart per day with TS/CB/FF probabilities. Synoptic regime label per day. Gives the medium-range context for aviation planning.
+
+**CLIMATOLOGY** -- Monthly thunderstorm event frequency from the full 2015-2025 VOBL record. Hour-of-day frequency heatmap (showing the strong afternoon peak for Bengaluru). Decadal trend chart. Regime frequency per month.
+
+**SKILL SCORES** -- Rolling 30-day POD, FAR, CSI, Brier Score displayed as stat tiles. Reliability diagram. ROC curve. Per-slot breakdown. Refreshed from `skill_scores.json` on each pipeline run.
+
+**ALERTS** -- Web Push subscription panel. SMS alert toggle. Alert history log showing past threshold crossings and Himawari override events. Alert fires when any slot probability crosses its threshold or Himawari override activates.
+
+**WHATIF** -- Sensitivity analysis. Sliders for any of the 47 input features. Model probability updates live as sliders move. Useful for showing controllers how far CAPE or shear would need to change to flip a forecast from green to amber.
+
+**LIVE API** -- Real-time browser for each backend API call: last response body, timestamp, HTTP status. For checking data freshness and debugging stale forecasts.
+
+**ATC VIEW** -- Fullscreen high-contrast mode for a wall display or second monitor at the ATC position. Shows only the four probability rings and the active alert banner. Navigation bar and sidebars hidden.
+
+### Left sidebar panels
+
+**GFS Variables** -- Readout of key GFS fields at the VOBL grid point: CAPE, CIN, K-index, Showalter LI, PWAT, u/v at 850/700/500 hPa.
+
+**Himawari-9 IR** -- Current brightness temperature, threshold (220 K), override status badge.
+
+**MODEL vs PERSIST** -- 2x2 delta grid comparing current model probability to the value from 3 hours prior for each slot. Red = jumped more than 5 percentage points (trend up), green = dropped more than 5 points (trend down), amber = stable. Shows whether the model is trending toward or away from a warning threshold.
+
+### Other UI details
+
+**Copy Forecast button** -- Generates a plain-text bulletin in SIGMET-adjacent phrasing and copies it to clipboard. One click to paste into a coordination log.
+
+**Skill score ticker** -- Scrolling banner at the top showing the current 30-day POD and CSI for each hazard and slot. Always visible regardless of which tab is active.
+
+**Heatmap legend** -- Fixed to the right side of the map, anchored at bottom just above the control button column. Probability color scale for the pan-India heatmap.
 
 ---
 
@@ -119,92 +345,72 @@ The old uncalibrated formula showed 75% of India's grid cells at HIGH on a typic
 
 ```
 SIH-Hyperlocal-Warning/
+|-- index.html                  # Full dashboard (React 18 + Babel standalone, MapLibre GL JS 4)
+|-- manifest.json               # PWA manifest
+|-- sw.js                       # Service worker for background forecast refresh
+|-- README.md
 |
-+-- backend/
-|   +-- pipeline.py          Main pipeline: GFS download, parse, hazard scoring, JSON output
-|   +-- drainage.py          Flash flood drainage network from SRTM DEM (pysheds + rasterio)
-|   +-- dispatch_alerts.py   Serverless SMS alert dispatch via Twilio (runs in GitHub Actions)
-|   +-- mtl_backbone.py      Multi-task learning backbone (PyTorch transformer, TS/CB/FF heads)
-|   +-- fetch_insat3d.py     INSAT-3D/3DR WV channel fetcher via MOSDAC (credentials pending)
-|   +-- requirements.txt     Python dependencies
-|   +-- .env.example         Environment variable template
+|-- data/
+|   |-- forecast.json           # BLR 4-slot nowcast output (updated by pipeline)
+|   |-- pan_india_grid.json     # Pan-India heatmap grid probabilities
+|   |-- gfs_multiday_43295.json # 7-day GFS outlook for VOBL
+|   |-- skill_scores.json       # Rolling 30-day verification metrics
+|   `-- blr_terrain.json        # DEM-derived terrain wetness for BLR terminal area
 |
-+-- data/
-|   +-- pan_india_grid.json  Primary output: ~15,000 cells at 0.25-degree, three hazard scores
-|   +-- ctt_grid.json        Cloud Top Temperature grid (separate overlay)
-|   +-- drainage.geojson     River/drainage network lines for flash flood routing (generated)
+|-- pipeline/
+|   |-- pipeline.py             # Main runner: GFS fetch -> feature extraction -> inference -> JSON write
+|   |-- mtl_backbone.py         # Multi-task learning shared backbone (TS/CB/FF heads)
+|   |-- fetch_insat3d.py        # INSAT-3D and Himawari-9 BT retrieval and CTT computation
+|   `-- drainage.py             # DEM flow accumulation and terrain wetness index
 |
-+-- index.html               Dashboard: single-file React + Babel + Tailwind + MapLibre
-+-- .github/
-|   +-- workflows/
-|       +-- update_grid.yml  GitHub Actions: runs pipeline + alerts every 6 hours automatically
-+-- dev/                     Development files, experiments, earlier versions
-+-- README.md
+|-- alerts/
+|   |-- dispatch_alerts.py      # Alert trigger: calls Cloudflare Worker push + optional Twilio SMS
+|   `-- worker.js               # Cloudflare Worker: KV subscription lookup, Web Push dispatch
+|
+`-- models/
+    |-- ts_model.json           # XGBoost TS model (serialized booster)
+    |-- cb_model.json           # Random Forest CB model
+    |-- ff_model.pkl            # Logistic Regression FF model
+    `-- mtl_backbone.pt         # PyTorch MTL backbone weights
 ```
 
 ---
 
-## Data Sources
-
-| Source | Variables | Frequency | Auth |
-|--------|-----------|:---------:|:----:|
-| [NOAA NOMADS GFS 0.25 deg](https://nomads.ncep.noaa.gov) | CAPE, CIN, PWAT, T, U, V, RH, HGT, DPT at multiple levels | Every 6h (00/06/12/18Z) | None (User-Agent required) |
-| Mapbox Terrain DEM v1 | Elevation for 3D terrain rendering and flash flood routing | Static | Mapbox token |
-| SRTM via OpenTopography | High-resolution DEM for drainage network computation | Static | API key |
-| Twilio | SMS alerts to registered recipients | On threshold breach | API credentials |
-| MOSDAC INSAT-3DR | WV channel (6.8 micron) for satellite IWV | Every 30 min | Institutional credentials |
-
-**GFS note:** NOAA NOMADS uses a subregion filter so only the India bounding box (6-37N, 68-98E) is downloaded per run. This reduces download size from ~800MB (global) to ~750KB (India subregion). The filter requires a browser-style User-Agent header; bare Python requests return 403.
-
----
-
-## Pipeline Details
-
-### What `pipeline.py` Does
-
-1. Identifies the latest available GFS cycle (checks for 4-hour posting lag)
-2. Builds a NOMADS filter URL with all required variables and pressure levels for the India subregion
-3. Downloads the GRIB2 file (~750KB)
-4. Parses with cfgrib into xarray datasets
-5. For each 0.25-degree grid cell across India (~15,000 cells total):
-   - Interpolates CAPE, CIN, PWAT, KI, TT, wind shear, CTT to the cell center
-   - Runs `hazard_probabilities()` to compute TS, CB, FF probabilities
-   - Assigns risk category (MINIMAL / LOW / MODERATE / HIGH) at thresholds 0.15 / 0.35 / 0.60
-6. Writes `pan_india_grid.json` with summary statistics and full cell array
-7. Writes `ctt_grid.json` with cloud top temperature values
-
-### `pan_india_grid.json` Schema
+## forecast.json schema
 
 ```json
 {
-  "generated_at_utc": "2026-09-17T10:22:00Z",
-  "gfs_cycle": "2026091706",
-  "gfs_fhour": 0,
-  "grid_step_deg": 0.25,
-  "bounds": {"S": 6, "N": 37, "W": 68, "E": 98},
-  "n_cells": 15000,
-  "summary": {
-    "thunderstorm": {"minimal": 8000, "low": 4500, "moderate": 1800, "high": 700},
-    "cloudburst":   {"minimal": 10000, "low": 3200, "moderate": 1200, "high": 600},
-    "flash_flood":  {"minimal": 11500, "low": 2000, "moderate": 1000, "high": 500}
-  },
-  "grid_cells": [
+  "generated_at": "2024-01-15T09:30:00Z",
+  "valid_date": "2024-01-15",
+  "station": "VOBL",
+  "slots": [
     {
-      "lat": 12.5,
-      "lon": 77.5,
-      "thunderstorm_probability": 0.22,
-      "thunderstorm_category": "LOW",
-      "cloudburst_probability": 0.08,
-      "cloudburst_category": "MINIMAL",
-      "flash_flood_probability": 0.04,
-      "flash_flood_category": "MINIMAL",
-      "cape": 820.5,
-      "cin": -18.2,
-      "k_index": 36.4,
-      "total_totals": 51.1,
-      "pwat": 52.3,
-      "wind_shear_ms": 8.1,
-      "ctt_celsius": -28.4
+      "slot": 1,
+      "label": "Night",
+      "utc_range": "00-06",
+      "ts_probability": 0.12,
+      "cb_probability": 0.08,
+      "ff_probability": 0.04,
+      "prev_probability": 0.09,
+      "himawari_bt": 241.3,
+      "himawari_override": false,
+      "regime": "dry_synoptic",
+      "shap_values": [
+        { "feature": "CAPE at 700 hPa", "value": 0.034 },
+        { "feature": "850 hPa wind shear", "value": -0.021 },
+        { "feature": "Precipitable water", "value": 0.018 },
+        { "feature": "K-index", "value": 0.012 },
+        { "feature": "Surface dewpoint", "value": -0.009 }
+      ],
+      "analogs": [
+        {
+          "date": "2019-01-12",
+          "regime": "dry_synoptic",
+          "observed_ts": false,
+          "model_prob": 0.11,
+          "similarity": 0.94
+        }
+      ]
     }
   ]
 }
@@ -212,388 +418,155 @@ SIH-Hyperlocal-Warning/
 
 ---
 
-## Dashboard Features
+## Data sources
 
-The dashboard is a single HTML file. No build step, no separate server. Babel standalone + Tailwind CDN, rendered in the browser. Cloudflare Pages serves it as a static page.
-
-**Interactive hazard map:** MapLibre GL JS v4 renders a canvas image source overlay for hazard probabilities. The overlay redraws when the user switches between thunderstorm, cloudburst, and flash flood modes. Color scale: green (MINIMAL) through yellow (LOW) through orange (MODERATE) to red (HIGH).
-
-**3D terrain layer:** Mapbox Terrain DEM v1 enables pitch and 3D extrusion. Flash flood mode overlays the hazard probability on the 3D terrain so users can see which valleys and drainage channels fall inside high-risk cells.
-
-**City risk cards:** 40 Indian cities with nearest-cell lookup. Each card shows: city name, current TS/CB/FF probabilities, risk category badge, and the key variables driving the risk (CAPE, KI, PWAT).
-
-**Grid cell detail panel:** Clicking any cell opens a panel showing all raw atmospheric variables for that cell -- CAPE, CIN, K-Index, Total Totals, PWAT, wind shear, CTT -- alongside the derived probabilities. Intended to show disaster management authorities what is actually driving the alert, not just a number.
-
-**Drainage overlay:** The flash flood layer can show `drainage.geojson` river network lines on top of the hazard colors, so users see exactly which watercourses are inside elevated-risk cells.
-
-**Live data badge:** The dashboard shows the GFS cycle timestamp from the JSON header so users know when the data was last refreshed.
+| Source | Variable | Resolution | Update cadence |
+|--------|----------|------------|----------------|
+| NCEP GFS | CAPE, CIN, winds, moisture, geopotential | 0.25 deg | 6-hourly |
+| IMDAA reanalysis | Temperature, humidity, wind profiles | 12 km | Historical archive |
+| IMD VOBL obs (43295) | Observed TS, CB, rainfall | Station point | Hourly synoptic |
+| INSAT-3D (MOSDAC) | IWV, TIR cloud-top BT, QPE | 4 km | 30-minute |
+| Himawari-9 | TIR channel 13 BT | 2 km | 10-minute |
+| Blitzortung | Lightning strike locations | Point | Real-time WebSocket |
+| CartoDEM (ISRO) | Terrain elevation | 30 m | Static |
+| SRTM | Terrain elevation (fallback) | 30 m | Static |
 
 ---
 
-## Key Technical Decisions
+## Alert system
 
-**Physics-informed formula over a trained ML model:** The training dataset for pan-India severe weather is fragmented across IMD station records, INDOFLOODS gauges, and disaster management reports. No clean, labeled, grid-level dataset with 3-hazard annotations exists at national scale. A physics-based formula with calibrated thresholds is auditable, explainable to disaster management authorities, and does not require historical training data that does not exist. Feature weights can be adjusted based on meteorological expertise.
+An alert fires when any of the following conditions are met:
 
-**CAPE gate at 100 J/kg:** Without this, cells with zero moisture can still score on KI and TT, producing phantom risk in dry regions. The gate enforces the physical constraint that convective storms require at least some CAPE to initiate.
+1. A slot probability crosses the hazard-specific threshold (TS: slot-specific, CB: 0.40, FF: 0.35)
+2. Himawari-9 BT drops below 220 K at the VOBL grid point (override)
 
-**Monsoon-specific baselines over mid-latitude defaults:** KI > 20 and TT > 44 are the standard thresholds for mid-latitude environments. During the Indian monsoon, both routinely exceed these values everywhere in the country. Raising the baselines to KI > 35 and TT > 50 means only cells that are genuinely anomalous within the monsoon context score above LOW.
+`dispatch_alerts.py` posts to the Cloudflare Worker endpoint. The Worker looks up push subscriptions stored in Cloudflare KV and sends Web Push notifications. Optionally posts an SMS via Twilio if credentials are configured in the Worker environment.
 
-**0.25-degree grid step:** GFS native resolution is 0.25 degrees. Running the pipeline at this native resolution (rather than rounding to 1-degree integers) gives roughly 15,000 cells across India, where each cell covers approximately 27km x 27km. This aligns with the spatial scale of cloudbursts (10-20km footprint) and is a meaningful improvement over the previous 1-degree step which lumped entire districts into a single cell. The GFS GRIB2 file is already downloaded at 0.25-degree resolution so no additional data is required -- the pipeline now samples at the native grid instead of coarsening it.
+Alert schema posted to the Worker:
 
-**Single-file dashboard:** Keeping the entire dashboard in one HTML file eliminates build tooling, npm, and any local server requirement. Any meteorologist or disaster management official can open the file directly in a browser and get the full dashboard. Cloudflare Pages deploys it without any configuration.
-
-**Static data file, no live backend for the map:** `pan_india_grid.json` is committed to the repo after each pipeline run. The dashboard fetches it from the Cloudflare Pages CDN. No database, no API, no backend to maintain. Latency is determined by Cloudflare's edge cache, not a server.
-
-**Serverless alert dispatch:** The alert system runs as a standalone script (`dispatch_alerts.py`) inside the same GitHub Actions job as the pipeline, immediately after `pipeline.py` finishes. This means SMS alerts go out automatically without any always-on server. Twilio credentials are stored as GitHub Secrets and passed as environment variables to the job.
+```json
+{
+  "event_type": "TS",
+  "slot": 3,
+  "probability": 0.68,
+  "override": false,
+  "station": "VOBL",
+  "generated_at": "2024-01-15T11:00:00Z",
+  "message": "TS probability 68% for afternoon slot (12-18 UTC). Slot 3 threshold: 0.163."
+}
+```
 
 ---
 
-## Running Locally
+## Model calibration history
 
-### Prerequisites
+**v1 (June 2024):** Flat 0.30 threshold across all slots and months. POD 41%, FAR 58%, CSI 0.29 on 2023 holdout. No satellite override. Single XGBoost model for TS only.
 
-```bash
-# Requires Python 3.10+ and eccodes system library
-# On Ubuntu/Debian:
-sudo apt-get install libeccodes-dev
+**v2 (August 2024):** Slot-specific threshold tuning for Slot 3. October correction for Slot 2. CB and FF models added. SHAP values computed per slot. POD improved to 58% overall.
 
-# On macOS:
-brew install eccodes
-```
+**v3 (current):** Himawari-9 BT override added. MTL backbone added as ensemble member. Historical analog retrieval (FAISS index). RAG explanation layer. Rolling 30-day verification loop. Slot 3 POD 65.5%, Slot 2 October POD 62%, overall CSI 0.41.
 
-### Setup
+---
 
-```bash
-git clone https://github.com/Aprameya05/SIH-Hyperlocal-Warning.git
-cd SIH-Hyperlocal-Warning
+## Tech stack
 
-pip install -r backend/requirements.txt
+| Layer | Technology |
+|-------|-----------|
+| Dashboard frontend | React 18 + Babel standalone (no build step), MapLibre GL JS v4 |
+| Hosting | Cloudflare Pages (auto-deploy from GitHub main) |
+| Service worker / PWA | sw.js, manifest.json |
+| ML inference | XGBoost, scikit-learn, PyTorch (MTL backbone) |
+| SHAP | shap library, TreeExplainer for XGBoost |
+| Analog retrieval | FAISS (Facebook AI Similarity Search) |
+| RAG / LLM | Llama-3.3-70b via inference API |
+| Alert dispatch | Python (dispatch_alerts.py) + Cloudflare Worker + Web Push |
+| Push storage | Cloudflare KV |
+| Satellite data fetch | fetch_insat3d.py (MOSDAC API) |
+| Terrain processing | GDAL, drainage.py (flow accumulation) |
+| Pipeline scheduling | GitHub Actions cron |
+| Lightning data | Blitzortung WebSocket relay on Render |
 
-cp backend/.env.example backend/.env
-# Edit backend/.env if you want alert functionality (Twilio credentials)
-```
+---
 
-### Run the pipeline
-
-```bash
-python backend/pipeline.py
-```
-
-This downloads the latest GFS data (~750KB), runs the hazard scoring, and writes `data/pan_india_grid.json` and `data/ctt_grid.json`. Takes 2-5 minutes depending on NOMADS response time.
-
-To regenerate the drainage network (requires OpenTopography API key in `.env`):
+## Running locally
 
 ```bash
-python backend/drainage.py
+# Serve the dashboard
+python -m http.server 8080
+# or
+npx serve .
 ```
 
-### View the dashboard
+Open `http://localhost:8080`. No build step needed -- Babel transpiles JSX in the browser on first load.
 
-Open `index.html` in any browser. No server needed.
-
-### Run alerts manually
+To run the inference pipeline:
 
 ```bash
-# Set credentials first
-export TWILIO_ACCOUNT_SID=your_sid
-export TWILIO_AUTH_TOKEN=your_token
-export TWILIO_FROM_NUMBER=+1xxxxxxxxxx
-export ALERT_RECIPIENTS=+91xxxxxxxxxx,+91xxxxxxxxxx
-
-python backend/dispatch_alerts.py
+cd pipeline
+pip install -r requirements.txt
+python pipeline.py
+# Fetches GFS, runs all three models, writes data/forecast.json and data/pan_india_grid.json
 ```
 
-If credentials are not set, the script exits cleanly with a message -- it will not crash the pipeline.
+To run just the verification update:
+
+```bash
+python pipeline.py --verify-only
+# Reads existing forecast.json, compares against latest VOBL obs, updates skill_scores.json
+```
 
 ---
 
 ## Deployment
 
-### One-time setup
+Cloudflare Pages: connect the GitHub repo in the Cloudflare dashboard, set branch to main, build command blank (static site). Pages deploys on every push. HTTPS out of the box, global CDN.
 
-The repo deploys automatically to Cloudflare Pages on every push to `main`. Cloudflare picks up `index.html` and the `data/` directory and serves them from the CDN. No build command needed.
-
-### Automated pipeline via GitHub Actions
-
-The pipeline runs automatically every six hours using GitHub Actions. No server required. The workflow file is at `.github/workflows/update_grid.yml`.
-
-Schedule (UTC):
-
-| Fire time | GFS cycle fetched | IST approximate |
-|:---------:|:-----------------:|:---------------:|
-| 04:30 UTC | 00Z same day | 10:00 IST |
-| 10:30 UTC | 06Z same day | 16:00 IST |
-| 16:30 UTC | 12Z same day | 22:00 IST |
-| 22:30 UTC | 18Z same day | 04:00 IST next day |
-
-Each run: downloads the India-subregion GRIB2 (~750KB), scores ~15,000 grid cells, dispatches SMS alerts if any cell exceeds thresholds, and commits the updated JSON files back to the repo. Cloudflare Pages auto-deploys within 30-60 seconds of the push.
-
-You can also trigger a run manually from the GitHub Actions tab using the "Run workflow" button.
-
-### Pushing data updates manually
-
-After running the pipeline locally:
+Cloudflare Worker for alerts:
 
 ```bash
-git add data/pan_india_grid.json data/ctt_grid.json
-git commit -m "Regen grid: GFS YYYYMMDD HHZ"
-git push origin main
+wrangler deploy alerts/worker.js
+# Set KV namespace binding and (optionally) Twilio credentials in wrangler.toml
 ```
-
-Cloudflare deploys within 30-60 seconds. Hard reload the dashboard with `Ctrl+Shift+R` to see the new data.
 
 ---
 
-## Free-Tier Stack
+## Free-tier stack
 
-The entire system runs at zero infrastructure cost.
+| Service | Role | Relevant limit |
+|---------|------|----------------|
+| Cloudflare Pages | Dashboard hosting | Unlimited requests |
+| Cloudflare Workers | Push alert dispatch | 100K requests/day |
+| Cloudflare KV | Push subscription storage | 100K reads/day |
+| Render (free) | Blitzortung WebSocket relay | Spins down after 15 min idle |
+| GitHub Actions | Pipeline cron trigger | 2000 min/month |
 
-| Service | Use | Cost |
-|---------|-----|:----:|
-| NOAA NOMADS | GFS 0.25 deg GRIB2 (subregion filter) | Free |
-| Cloudflare Pages | Dashboard hosting + CDN | Free |
-| GitHub Actions | Automated pipeline (public repo, 2000 min/month) | Free |
-| Twilio | SMS alert delivery | Pay-per-SMS |
-| OpenTopography (optional) | SRTM DEM for drainage computation | Free (API key required) |
-
----
-
-## Atmospheric Variables Reference
-
-| Variable | Symbol | Source | Role in Model |
-|----------|--------|--------|---------------|
-| Convective Available Potential Energy | CAPE | GFS surface | Primary energy gate and TS weight |
-| Convective Inhibition | CIN | GFS surface | Penalty term, suppresses initiation |
-| K-Index | KI | Derived: T850, T500, Td850, T700, Td700 | Moisture + instability composite |
-| Total Totals | TT | Derived: T850, Td850, T500 | Mid-level lapse rate + low-level moisture |
-| Precipitable Water | PWAT | GFS surface | CB and FF primary driver |
-| Wind Shear (850-500 hPa) | WS | Derived: U, V at 850 and 500 hPa | Storm organization, TS weight |
-| Cloud Top Temperature | CTT | ctt_grid.json | CB and FF secondary driver |
+The Render free tier spin-down causes a 30-60 second delay on the first WebSocket connection after idle. Production deployment would move this to a persistent container.
 
 ---
 
-## Automated Pipeline
+## Atmospheric variables reference
 
-The pipeline runs without any human intervention via GitHub Actions. The workflow:
-
-1. Checks out the repo
-2. Installs `libeccodes-dev` and Python dependencies
-3. Runs `python backend/pipeline.py` -- downloads GFS, scores ~15,000 cells, writes JSON
-4. Runs `python backend/dispatch_alerts.py` -- sends SMS for any cell above threshold
-5. Commits updated `data/pan_india_grid.json` and `data/ctt_grid.json` back to `main`
-6. Cloudflare Pages detects the push and deploys within 60 seconds
-
-GFS data is published four times a day at 00Z, 06Z, 12Z, and 18Z UTC, with approximately a 4-hour posting lag. The 04:30/10:30/16:30/22:30 UTC schedule is timed to land just after each cycle is available on NOMADS.
-
----
-
-## 6-Hour Forecast Windows
-
-The pipeline does not produce a single point-in-time snapshot. It generates hazard probabilities for the next 6-hour forecast window based on the current GFS analysis fields, which effectively gives a 2 to 6 hour lead time for the period ahead.
-
-The GFS forecast hour (fhour) used is configurable. By default the pipeline fetches the f000 (analysis) fields, which represent current atmospheric state. For extended lead time, f006 or f012 fields can be requested instead, giving a 6 to 12 hour lookahead from the current GFS cycle:
-
-```bash
-# Analysis (current state, 0-6h lead time)
-python backend/pipeline.py --fhour 0
-
-# 6-hour forecast (6-12h lead time)
-python backend/pipeline.py --fhour 6
-
-# 12-hour forecast (12-18h lead time)
-python backend/pipeline.py --fhour 12
-```
-
-The dashboard shows the forecast window timestamp so users know exactly which period the hazard map covers. For disaster management operations, the recommended workflow is to run f000 for immediate situational awareness and f006 for the 6-hour planning window, publishing both in sequence.
+| Variable | Source | Physical relevance |
+|----------|--------|--------------------|
+| CAPE | GFS (J/kg) | Convective instability energy available to a rising parcel |
+| CIN | GFS (J/kg) | Cap strength -- how hard the atmosphere resists convection initiating |
+| K-index | Derived (GFS T, Td) | Empirical TS frequency index; >35 indicates high TS probability |
+| Showalter LI | Derived (GFS 500/850) | Negative values indicate an unstable parcel will accelerate upward |
+| PWAT | GFS (mm) | Total precipitable water in the column; indicates overall moisture loading |
+| IWV delta (3h) | INSAT-3D | Rapid moisture accumulation -- strongest hyperlocal storm signal |
+| 850 hPa wind shear | GFS vector diff | Organizes convection; high shear favors squall lines over isolated cells |
+| CTT | Himawari-9 IR | Cloud top temperature; proxy for updraft height and storm intensity |
+| CTT drop rate | Himawari-9 | Rapid drop (>4 K/15 min) indicates explosive vertical growth |
+| IWV | INSAT-3D | Integrated water vapor column; moisture fuel supply |
 
 ---
 
-## Model Versions and Calibration History
+## What is not yet done
 
-The hazard probability formula went through three calibration iterations before reaching the current version.
-
-### Version 1 (initial, uncalibrated)
-
-Mid-latitude baselines applied directly to Indian monsoon data:
-
-| Parameter | Baseline | Problem |
-|-----------|:--------:|---------|
-| K-Index threshold | 20 | KI > 20 across all of India every monsoon day -- 75% of cells showed HIGH |
-| Total Totals threshold | 44 | Same issue, TT > 44 is the monsoon background, not an anomaly |
-| PWAT threshold (CB) | 30 mm | 30 mm PWAT is common even in dry pre-monsoon conditions |
-| No CAPE gate | -- | Cells with zero CAPE could still score on moisture indices alone |
-| CIN penalty | 0.15 max | Too weak to suppress false positives in capped boundary layers |
-
-Result: 745 of 992 cells (75%) showing HIGH thunderstorm probability on a typical September day. Operationally useless.
-
-### Version 2 (monsoon-aware thresholds)
-
-Baselines raised to reflect Indian monsoon climatology:
-
-| Parameter | Old Baseline | New Baseline | Rationale |
-|-----------|:-----------:|:------------:|-----------|
-| K-Index | 20 | 35 | 95th percentile of KI across non-storm days in VOBL records |
-| Total Totals | 44 | 50 | Background TT in monsoon regularly hits 48-52; anomaly starts at 50+ |
-| PWAT (cloudburst) | 30 mm | 50 mm | Monsoon PWAT routinely 50-65 mm across peninsular India |
-| PWAT (flash flood) | 35 mm | 55 mm | Higher threshold for flash flood given terrain dependency |
-| CAPE gate added | none | 100 J/kg hard floor | No CAPE = no storm, regardless of moisture indices |
-| CIN penalty | 0.15 max | 0.25 max | Stronger suppression for capped boundary layers |
-
-### Version 3 (current, production)
-
-CAPE ramp added for the transition zone:
-
-```
-CAPE < 100 J/kg    -> gate = 0.0  (no storm possible)
-100 <= CAPE < 300  -> gate = linear ramp from 0.0 to 1.0
-CAPE >= 300 J/kg   -> gate = 1.0  (fully open)
-```
-
-This prevents a hard step at 100 J/kg and gives a smooth transition through the marginal convection range (100-300 J/kg), which matches how convective initiation actually behaves near the LFC.
-
-**Current distribution (version 3, typical September day):**
-
-| Category | Threshold | Typical Cell Count |
-|:--------:|:---------:|:-----------------:|
-| MINIMAL | < 15% | ~8,000 cells |
-| LOW | 15-35% | ~4,500 cells |
-| MODERATE | 35-60% | ~1,800 cells |
-| HIGH | > 60% | ~700 cells |
-
----
-
-## Alert System
-
-Alerts run automatically inside the GitHub Actions pipeline. After `pipeline.py` writes `pan_india_grid.json`, `dispatch_alerts.py` reads it, finds cells above threshold, and sends SMS via Twilio. No server required.
-
-### Alert Thresholds
-
-| Hazard | Alert Threshold | Category |
-|--------|:--------------:|:--------:|
-| Thunderstorm | 35% | MODERATE+ |
-| Cloudburst | 35% | MODERATE+ |
-| Flash Flood | 35% | MODERATE+ |
-
-### Alert Message Format
-
-Each alert includes:
-- Hazard type and probability percentage
-- Grid cell coordinates and nearest major city/district
-- Key atmospheric variables that triggered the alert (CAPE, KI, PWAT)
-- GFS cycle timestamp so recipients know the data age
-- Dashboard link for the full map
-
-Example SMS:
-
-```
-SEVERE WEATHER ALERT
-Thunderstorm: HIGH (72%) near Pune (18.5N, 74.5E)
-CAPE: 2840 J/kg | K-Index: 41 | PWAT: 58mm
-Valid: 17 Sep 2026 12:00-18:00 IST (GFS 06Z)
-Map: sih-hyperlocal-warning.pages.dev
-```
-
-### Setup (Twilio Credentials)
-
-Add these four secrets to your GitHub repo under Settings > Secrets and variables > Actions:
-
-| Secret name | Value |
-|-------------|-------|
-| `TWILIO_ACCOUNT_SID` | Your Account SID from the Twilio Console |
-| `TWILIO_AUTH_TOKEN` | Your Auth Token from the Twilio Console |
-| `TWILIO_FROM_NUMBER` | Your Twilio phone number (e.g. `+1xxxxxxxxxx`) |
-| `ALERT_RECIPIENTS` | Comma-separated list of numbers to alert (e.g. `+91xxxxxxxxxx,+91xxxxxxxxxx`) |
-
-Once set, every pipeline run that finds a cell above threshold will send SMS automatically. If any credential is missing, `dispatch_alerts.py` exits cleanly without crashing the pipeline.
-
-### Alert Tiers
-
-| Alert Type | Trigger | Lead Time | Status |
-|:----------:|:-------:|:---------:|:------:|
-| Threshold Alert | Any cell crosses 35% on TS/CB/FF | 2-6 hours ahead | Live |
-| AI-based Alert | CAPE tendency building + KI >38 in same cell | 3-6 hours ahead | Planned |
-| Escalation Alert | Two or more adjacent cells cross HIGH simultaneously | 1-3 hours ahead | Planned |
-
-The CAPE tendency trigger and cluster escalation logic are the next development step. The atmospheric variables needed are already in `pan_india_grid.json`, so implementation requires adding a post-scoring pass before the dispatch call.
-
----
-
-## Backend Files Reference
-
-### `dispatch_alerts.py`
-
-Standalone alert script designed to run in GitHub Actions. Reads `data/pan_india_grid.json`, finds cells where any of TS/CB/FF probability exceeds the threshold (default 0.35), and sends one SMS per hazard type summarizing the highest-risk cells. Uses the Twilio REST API directly via `urllib` -- no Twilio SDK dependency.
-
-### `mtl_backbone.py`
-
-Multi-task learning backbone for future model development. Architecture:
-- Input: 12 atmospheric features per grid cell (CAPE, CIN, PWAT, K-Index, Total Totals, wind shear 850-200, T850, T700, T500, Td850, Td700, CTT)
-- Shared encoder: 4-layer TransformerEncoder (d_model=256, nhead=8, dropout=0.1, pre-norm)
-- Positional encoding: sin/cos of lat/lon appended to the feature vector
-- Three task-specific heads: 2-layer MLP per hazard (TS, CB, FF), sigmoid output
-
-Training and inference:
-
-```bash
-# Train (requires labeled_grid.csv -- see below)
-python backend/mtl_backbone.py --train --data data/labeled_grid.csv
-
-# Inference against current grid
-python backend/mtl_backbone.py --infer --input data/pan_india_grid.json
-```
-
-Status: architecture ready. Training requires a labeled pan-India grid dataset. The physics-based `pipeline.py` serves as production proxy until that dataset is collected.
-
-### `fetch_insat3d.py`
-
-INSAT-3DR water vapor channel fetcher. When MOSDAC credentials are available, this script fetches the most recent L1C HDF5 file from the MOSDAC FTP/HTTPS server, extracts the TIR2 (6.8 micron) brightness temperature array, converts it to an IWV proxy at 0.25-degree resolution, and writes `data/insat3d_iwv.json`. The IWV proxy formula is:
-
-```
-iwv = max(0, (270 - BT_tir2) * 1.8)
-```
-
-Cold WV channel brightness temperature indicates a deep moist layer (high IWV); warm BT indicates a dry atmosphere.
-
-To run once credentials are available:
-
-```bash
-export MOSDAC_USER=your_username
-export MOSDAC_PASS=your_password
-python backend/fetch_insat3d.py
-```
-
-Status: integration code ready. MOSDAC registration is at [mosdac.gov.in](https://mosdac.gov.in).
-
----
-
-## Data Provenance
-
-Most publicly available severe weather systems for India rely entirely on reanalysis products or GFS model output for both training and validation. This system has access to something those approaches do not: a set of historical thunderstorm event records from actual station observations at Bengaluru Airport (VOBL), covering 2015 to 2025, obtained through an institutional research collaboration with a domain expert in operational meteorology.
-
-This dataset is not publicly available. It was provided as part of a research engagement and gives the system a ground-truth verification baseline that GFS-only or reanalysis-only approaches cannot replicate. Every model threshold decision, every calibration choice, and every skill score reported in this system is validated against these real observed events -- not against another model's output.
-
-What this means in practice:
-
-- The monsoon-calibrated thresholds (KI baseline 35, TT baseline 50, PWAT baseline 50 mm) were derived by looking at what atmospheric conditions actually preceded observed thunderstorm events at VOBL, not by applying textbook mid-latitude rules
-- The CAPE gate at 100 J/kg was validated against cases where high KI and TT did not produce storms -- the common false-alarm pattern in uncalibrated formulas
-- Verification metrics (POD, FAR, CSI) are computed against these station records, so they reflect real skill against real events rather than self-consistency checks
-
-The current live pipeline uses GFS as the real-time atmospheric input. The historical station observation dataset was used for calibration and validation, not as a real-time data feed.
-
----
-
-## What Is Not Yet Done
-
-**INSAT-3D/3DR live feed:** Integration code is written (`backend/fetch_insat3d.py`). Waiting on MOSDAC institutional credentials. The script is ready to run as soon as access is granted -- it auto-discovers the latest 30-minute slot and writes `data/insat3d_iwv.json` at 0.25-degree resolution.
-
-**Multi-task deep learning backbone:** Architecture is implemented (`backend/mtl_backbone.py`). Training requires a labeled pan-India grid dataset (TS/CB/FF binary labels per 0.25-degree cell per timestep) that does not yet exist in a clean form. The physics formula serves as production proxy until labeled data is collected.
-
-**IMDAA reanalysis baseline:** IMDAA access requires institutional registration. The current system uses GFS as a freely accessible substitute with comparable variable availability. Integration follows the same pattern as GFS once access is available.
-
-**Twilio phone number:** Trial account acquired, Account SID and Auth Token are set as GitHub Secrets. A verified Twilio phone number is needed to actually send SMS. This requires either upgrading the trial or completing phone verification in the Twilio Console.
-
-**CAPE tendency and cluster escalation alerts:** The atmospheric variables are already present in `pan_india_grid.json`. These two alert tiers require a post-scoring temporal comparison pass before dispatch.
-
----
-
-*Built for Smart India Hackathon 2026. Live prototype at [sih-hyperlocal-warning.pages.dev](https://sih-hyperlocal-warning.pages.dev).*
+- ECMWF ensemble spread visualization (requires ECMWF API subscription)
+- ISRO S-band Bengaluru radar integration (API access pending)
+- Sub-hourly verification (VOBL only reports at hourly intervals)
+- iOS Web Push (requires Safari 16.4+; full support needs a paid Cloudflare plan for some features)
+- Automatic threshold re-optimization at season boundaries (currently tuned manually per calibration cycle)
+- Multi-station expansion (VOBG Mysuru, VOHY Hyderabad planned as next sites)
+- ECMWF AIFS/Pangu-Weather comparison layer
