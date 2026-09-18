@@ -936,6 +936,578 @@
       );
     }
 
+
+// ===== SIH PATCH COMPONENTS =====
+
+function SkillScoreTicker() {
+  const v = window.__SIH_VERIFICATION__ || {};
+  const pod  = v.pod  != null ? (v.pod  * 100).toFixed(0) + '%' : '--';
+  const far  = v.far  != null ? (v.far  * 100).toFixed(0) + '%' : '--';
+  const csi  = v.csi  != null ? v.csi.toFixed(3) : '--';
+  const brier = v.brier != null ? v.brier.toFixed(3) : '--';
+  const n    = v.n_days || 30;
+
+  const chips = [
+    { label: 'POD',   val: pod,   good: v.pod > 0.5,   tooltip: 'Probability of Detection — fraction of real storms caught' },
+    { label: 'FAR',   val: far,   good: v.far < 0.4,   invert: true, tooltip: 'False Alarm Ratio — lower is better' },
+    { label: 'CSI',   val: csi,   good: v.csi > 0.3,   tooltip: 'Critical Success Index — combined hit/miss/FA score' },
+    { label: 'Brier', val: brier, good: v.brier < 0.1, invert: true, tooltip: 'Brier Score — probability calibration error (lower=better)' },
+  ];
+
+  if (!window.__SIH_VERIFICATION__) return null;
+
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 6,
+      padding: '2px 10px',
+      background: 'rgba(56,189,248,0.05)',
+      borderRadius: 8,
+      border: '1px solid rgba(56,189,248,0.1)',
+      fontSize: 8, fontFamily: 'monospace',
+    }}>
+      <span style={{ color: 'rgba(56,189,248,0.4)', letterSpacing: '0.12em', fontWeight: 700 }}>
+        SKILL {n}d
+      </span>
+      {chips.map(c => (
+        <span key={c.label} title={c.tooltip} style={{
+          display: 'inline-flex', alignItems: 'center', gap: 3,
+          padding: '1px 6px', borderRadius: 5,
+          background: 'rgba(4,8,18,0.7)',
+          border: `1px solid ${c.val === '--' ? 'rgba(56,189,248,0.1)' : (c.good ? 'rgba(76,175,80,0.35)' : 'rgba(239,83,80,0.3)')}`,
+        }}>
+          <span style={{ color: 'rgba(56,189,248,0.5)', fontWeight: 700 }}>{c.label}</span>
+          <span style={{
+            fontWeight: 800,
+            color: c.val === '--' ? '#3d5a72' : (c.good ? '#4caf50' : '#ef5350'),
+          }}>{c.val}</span>
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function CTTTrendCard({ liveData }) {
+  const sat   = liveData?.satellite?.himawari9 || {};
+  const hist  = liveData?.satellite?.history   || [];
+  const bt    = sat.vobl_bt_celsius;
+  const minBT = sat.min_bt_50km;
+  const trend = sat.bt_trend_1h;
+  const ts    = sat.storm_detected;
+  const cold  = sat.cold_pixels_count ?? 0;
+
+  // Derive CTT drop rate from last two history entries
+  let dropRate = liveData?.met_parameters?.ctt_drop_rate_c_per_h;
+  if (dropRate == null && hist.length >= 2) {
+    const last = hist[hist.length - 1];
+    const prev = hist[hist.length - 2];
+    if (last.vobl_bt_celsius != null && prev.vobl_bt_celsius != null) {
+      const dtH = (new Date(last.timestamp_utc) - new Date(prev.timestamp_utc)) / 3600000;
+      if (dtH > 0) dropRate = (last.vobl_bt_celsius - prev.vobl_bt_celsius) / dtH;
+    }
+  }
+
+  const dropColor  = dropRate == null ? '#607d8b'
+    : dropRate < -10 ? '#ef5350'
+    : dropRate < -4  ? '#ff9800'
+    : '#4caf50';
+  const dropLabel  = dropRate == null ? 'N/A'
+    : (dropRate < 0 ? '' : '+') + dropRate.toFixed(1) + ' °C/h';
+  const dropDesc   = dropRate == null ? 'No trend data'
+    : dropRate < -10 ? 'Explosive updraft — severe TS'
+    : dropRate < -4  ? 'Rapid cooling — developing storm'
+    : dropRate < 0   ? 'Slow cooling — weakening cell'
+    : 'Warming — storm dissipating';
+
+  return (
+    <div className="atc-card rounded-2xl p-4 font-mono" style={{ minWidth: 0 }}>
+      <div className="text-[9px] font-bold text-white uppercase tracking-wider mb-3 flex items-center gap-2">
+        <span style={{ color: '#38bdf8' }}>🛰</span> CLOUD TOP TEMPERATURE
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <div className="text-[8px] text-[#607d8b] uppercase mb-1">VOBL BT</div>
+          <div className="text-xl font-extrabold" style={{ color: bt != null && bt < -40 ? '#ef5350' : '#e8eaf6' }}>
+            {bt != null ? bt.toFixed(1) + '°C' : '—'}
+          </div>
+        </div>
+        <div>
+          <div className="text-[8px] text-[#607d8b] uppercase mb-1">MIN BT (50km)</div>
+          <div className="text-xl font-extrabold" style={{ color: minBT != null && minBT < -40 ? '#ef5350' : '#ffc107' }}>
+            {minBT != null ? minBT.toFixed(1) + '°C' : '—'}
+          </div>
+        </div>
+        <div>
+          <div className="text-[8px] text-[#607d8b] uppercase mb-1">CTT DROP RATE</div>
+          <div className="text-lg font-extrabold" style={{ color: dropColor }}>{dropLabel}</div>
+          <div className="text-[8px] mt-0.5" style={{ color: dropColor }}>{dropDesc}</div>
+        </div>
+        <div>
+          <div className="text-[8px] text-[#607d8b] uppercase mb-1">COLD PIXELS</div>
+          <div className="text-lg font-extrabold" style={{ color: cold > 100 ? '#ef5350' : cold > 20 ? '#ff9800' : '#e8eaf6' }}>
+            {cold}
+          </div>
+          <div className="text-[8px] text-[#607d8b]">&lt;{sat.threshold_celsius ?? -40}°C threshold</div>
+        </div>
+      </div>
+      {ts && (
+        <div className="mt-3 px-2 py-1 rounded text-[9px] font-bold"
+          style={{ background: 'rgba(239,83,80,0.12)', border: '1px solid rgba(239,83,80,0.3)', color: '#ef5350' }}>
+          ⚡ STORM DETECTED — Himawari-9 Band 13
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PersistencePanel({ slots, hazardCfg }) {
+  if (!slots || slots.length === 0) return null;
+  const probKey = hazardCfg?.probKey || 'ts_probability';
+  const slotLabels = ['Late Night', 'Morning', 'Afternoon', 'Evening'];
+
+  return (
+    <div className="atc-card rounded-2xl p-4 font-mono" style={{ minWidth: 0 }}>
+      <div className="text-[9px] font-bold text-white uppercase tracking-wider mb-3 flex items-center justify-between">
+        <span>NOWCAST vs PERSISTENCE</span>
+        <span className="text-[8px] text-[#607d8b] normal-case">3h-ago baseline</span>
+      </div>
+      <div className="space-y-2">
+        {slots.map((s, i) => {
+          const current  = s[probKey] ?? 0;
+          const persist  = s.prev_probability ?? current;
+          const delta    = current - persist;
+          const deltaStr = (delta >= 0 ? '+' : '') + (delta * 100).toFixed(1) + '%';
+          const deltaCol = delta > 0.05 ? '#ef5350' : delta < -0.05 ? '#4caf50' : '#ffc107';
+          const barW     = Math.max(current, persist);
+
+          return (
+            <div key={i}>
+              <div className="flex items-center justify-between text-[8px] mb-0.5">
+                <span className="text-[#607d8b]">{slotLabels[i] || s.label}</span>
+                <span style={{ color: deltaCol, fontWeight: 700 }}>
+                  {deltaStr} model vs persistence
+                </span>
+              </div>
+              <div className="relative h-4 rounded overflow-hidden" style={{ background: 'rgba(23,35,56,0.6)' }}>
+                {/* Persistence bar */}
+                <div className="absolute top-0 left-0 h-full rounded"
+                  style={{
+                    width: barW > 0 ? `${(persist / barW) * 100}%` : '0%',
+                    background: 'rgba(96,125,139,0.35)',
+                    transition: 'width 0.7s ease',
+                  }} />
+                {/* Model bar */}
+                <div className="absolute top-0 left-0 h-full rounded"
+                  style={{
+                    width: barW > 0 ? `${(current / barW) * 100}%` : '0%',
+                    background: current > persist ? 'rgba(239,83,80,0.7)' : 'rgba(56,189,248,0.7)',
+                    transition: 'width 0.7s ease',
+                  }} />
+                <div className="absolute inset-0 flex items-center px-2 justify-between">
+                  <span className="text-[8px] font-bold text-white drop-shadow">
+                    {(current * 100).toFixed(0)}%
+                  </span>
+                  <span className="text-[8px] text-[#607d8b]">
+                    persist: {(persist * 100).toFixed(0)}%
+                  </span>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <div className="mt-2 text-[8px] text-[#3d5a72]">
+        Blue = model lower than persistence (improving). Red = model higher (increasing risk). Yellow = within 5%.
+      </div>
+    </div>
+  );
+}
+
+function SHAPWaterfallCard({ shapData, slotIdx }) {
+  if (!shapData) return null;
+  const slotKey = String(slotIdx ?? 2);
+  const entry   = shapData[slotKey];
+  if (!entry) return null;
+
+  const features = [...(entry.top_features || [])]
+    .sort((a, b) => Math.abs(b.shap) - Math.abs(a.shap))
+    .slice(0, 10);
+
+  const maxAbs = Math.max(...features.map(f => Math.abs(f.shap)), 0.01);
+  const baseVal = entry.base_value ?? 0;
+  const prob    = entry.prob ?? 0;
+  const slotNames = ['Late Night', 'Morning', 'Afternoon', 'Evening'];
+
+  const FEATURE_LABELS = {
+    CAPE: 'CAPE (J/kg)', K_INDEX: 'K-Index', LIFTED_INDEX: 'Lifted Index',
+    TOTALS_TOTALS: 'Total-Totals', PRECIP_WATER: 'Precipitable Water',
+    ERA5_T2M: 'Surface Temp (ERA5)', ERA5_u_850hPa: 'U-wind 850hPa',
+    ERA5_v_850hPa: 'V-wind 850hPa', ERA5_CAPE: 'CAPE (ERA5)',
+    ERA5_SP: 'Surface Pressure', RF: 'Rainfall (obs)',
+    rf_std_7d: 'Rainfall StdDev 7d', LABEL_lag1: 'TS Yesterday',
+    cape_x_kindex: 'CAPE × K-Index', MIN: 'Min Temp', MAX: 'Max Temp',
+    MIN_lag1: 'Min Temp (lag1)', MIN_3d_avg: 'Min Temp (3d avg)',
+    MAX_3d_avg: 'Max Temp (3d avg)', EVP: 'Evaporation', SSH: 'Sunshine Hours',
+    DOY_sin: 'Day-of-Year (sin)', doy_sin: 'Day-of-Year (sin)',
+    DRNRF: 'Dry days (no rain)', wet_bulb_potential_temp: 'Wet Bulb Theta',
+    ts_any_yesterday: 'TS any slot yesterday', slot_month_clim: 'Monthly climatology',
+    lapse_rate_850_500: 'Lapse rate 850-500hPa', RF_3d: 'Rainfall (3d)',
+    ERA5_v_700hPa: 'V-wind 700hPa', ERA5_t_500hPa: 'Temp 500hPa (ERA5)',
+    srh_0_3km: 'Storm Rel. Helicity',
+  };
+
+  return (
+    <div className="atc-card rounded-2xl p-4 font-mono">
+      <div className="text-[9px] font-bold text-white uppercase tracking-wider mb-1 flex items-center justify-between">
+        <span>SHAP WATERFALL — SLOT {slotIdx} ({slotNames[slotIdx] || ''})</span>
+        <span className="text-[8px]" style={{ color: prob >= 0.3 ? '#ef5350' : '#4caf50' }}>
+          Final prob: {(prob * 100).toFixed(1)}%
+        </span>
+      </div>
+      <div className="text-[8px] text-[#607d8b] mb-3">
+        Base: {baseVal.toFixed(3)} (log-odds) → each bar shows how much a feature pushed the prediction up or down
+      </div>
+
+      <div className="space-y-1.5">
+        {features.map((f, i) => {
+          const isUp  = f.shap > 0;
+          const pct   = (Math.abs(f.shap) / maxAbs) * 100;
+          const color = isUp ? '#ef5350' : '#4caf50';
+          const label = FEATURE_LABELS[f.feature] || f.feature;
+          const valFmt = Math.abs(f.value) > 1000
+            ? f.value.toExponential(2)
+            : typeof f.value === 'number' ? f.value.toFixed(2) : f.value;
+
+          return (
+            <div key={i} className="flex items-center gap-2">
+              <div className="w-28 text-right text-[8px] shrink-0" style={{ color: '#90a4ae' }}>
+                {label}
+              </div>
+              <div className="flex-1 relative h-5 rounded overflow-hidden"
+                style={{ background: 'rgba(23,35,56,0.5)' }}>
+                {isUp ? (
+                  <div className="absolute top-0 left-1/2 h-full rounded-r"
+                    style={{ width: `${pct / 2}%`, background: `${color}99`, transition: 'width 0.6s ease' }} />
+                ) : (
+                  <div className="absolute top-0 h-full rounded-l"
+                    style={{
+                      right: '50%',
+                      width: `${pct / 2}%`,
+                      background: `${color}99`,
+                      transition: 'width 0.6s ease',
+                    }} />
+                )}
+                <div className="absolute inset-0 flex items-center px-2 justify-between">
+                  <span style={{ color, fontWeight: 700, fontSize: 8 }}>
+                    {isUp ? '▲' : '▼'} {(f.shap >= 0 ? '+' : '')}{f.shap.toFixed(3)}
+                  </span>
+                  <span className="text-[7px] text-[#607d8b]">
+                    val={valFmt}
+                  </span>
+                </div>
+                {/* Center line */}
+                <div className="absolute top-0 bottom-0 left-1/2 w-px"
+                  style={{ background: 'rgba(56,189,248,0.2)' }} />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="mt-3 flex items-center gap-4 text-[8px]">
+        <span className="flex items-center gap-1">
+          <span style={{ color: '#ef5350' }}>▲ red</span>
+          <span className="text-[#607d8b]">= increases storm risk</span>
+        </span>
+        <span className="flex items-center gap-1">
+          <span style={{ color: '#4caf50' }}>▼ green</span>
+          <span className="text-[#607d8b]">= suppresses storm risk</span>
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function AlertLogTable() {
+  const [log, setLog] = React.useState(null);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    fetch('./alert_log.json?_=' + Date.now())
+      .then(r => r.json())
+      .then(d => { setLog(d); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, []);
+
+  if (loading) return (
+    <div className="text-[#607d8b] font-mono text-xs p-4">Loading alert history...</div>
+  );
+  if (!log) return (
+    <div className="text-[#607d8b] font-mono text-xs p-4">No alert log available yet.</div>
+  );
+
+  const events  = log.events || [];
+  const summary = log.summary_30d || {};
+
+  const outcomeStyle = (o) => {
+    if (o === 'HIT')               return { color: '#4caf50', bg: 'rgba(76,175,80,0.1)',   border: 'rgba(76,175,80,0.3)' };
+    if (o === 'FALSE ALARM')       return { color: '#ff9800', bg: 'rgba(255,152,0,0.1)',   border: 'rgba(255,152,0,0.3)' };
+    if (o === 'MISS')              return { color: '#ef5350', bg: 'rgba(239,83,80,0.1)',   border: 'rgba(239,83,80,0.3)' };
+    if (o === 'CORRECT REJECTION') return { color: '#38bdf8', bg: 'rgba(56,189,248,0.07)', border: 'rgba(56,189,248,0.2)' };
+    return { color: '#607d8b', bg: 'rgba(23,35,56,0.3)', border: 'rgba(23,35,56,0.5)' };
+  };
+
+  return (
+    <div className="space-y-4 font-mono">
+      {/* 30-day summary strip */}
+      <div className="atc-card rounded-2xl p-4">
+        <div className="text-[9px] font-bold text-white uppercase tracking-wider mb-3">
+          30-DAY VERIFIED PERFORMANCE
+        </div>
+        <div className="grid grid-cols-4 gap-3">
+          {[
+            { label: 'POD', val: summary.pod != null ? (summary.pod * 100).toFixed(0) + '%' : '--', good: summary.pod > 0.5 },
+            { label: 'FAR', val: summary.far != null ? (summary.far * 100).toFixed(0) + '%' : '--', good: summary.far < 0.3, invert: true },
+            { label: 'CSI', val: summary.csi != null ? summary.csi.toFixed(3) : '--', good: summary.csi > 0.4 },
+            { label: 'Mean Lead', val: summary.mean_lead_time_hr != null ? summary.mean_lead_time_hr + 'h' : '--', good: summary.mean_lead_time_hr > 3 },
+          ].map(chip => (
+            <div key={chip.label} className="text-center p-2 rounded-lg"
+              style={{ background: 'rgba(4,8,18,0.7)', border: `1px solid ${chip.val === '--' ? 'rgba(23,35,56,0.5)' : (chip.good ? 'rgba(76,175,80,0.3)' : 'rgba(239,83,80,0.3)')}` }}>
+              <div className="text-[8px] text-[#607d8b] uppercase">{chip.label}</div>
+              <div className="text-lg font-extrabold"
+                style={{ color: chip.val === '--' ? '#3d5a72' : (chip.good ? '#4caf50' : '#ef5350') }}>
+                {chip.val}
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="mt-2 text-[8px] text-[#3d5a72]">
+          {summary.n_hits} hits · {summary.n_misses} misses · {summary.n_false_alarms} false alarms · {summary.n_correct_rejections} correct rejections
+          &nbsp;|&nbsp; IMD-verified slot-2 events over {summary.n_events} days
+        </div>
+      </div>
+
+      {/* Event log table */}
+      <div className="atc-card rounded-2xl overflow-hidden">
+        <div className="text-[9px] font-bold text-white uppercase tracking-wider p-4 border-b" style={{ borderColor: 'rgba(23,35,56,0.5)' }}>
+          EVENT LOG (newest first)
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-[8px]">
+            <thead>
+              <tr style={{ borderBottom: '1px solid rgba(23,35,56,0.5)' }}>
+                {['Date', 'Slot', 'Alert Issued', 'TS Observed', 'Lead Time', 'Prob', 'Outcome', 'Min BT'].map(h => (
+                  <th key={h} className="px-3 py-2 text-left font-bold uppercase tracking-wider"
+                    style={{ color: 'rgba(56,189,248,0.5)' }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {events.map((e, i) => {
+                const style = outcomeStyle(e.outcome);
+                return (
+                  <tr key={i}
+                    className="transition-colors"
+                    style={{ borderBottom: '1px solid rgba(23,35,56,0.3)' }}
+                    onMouseEnter={ev => ev.currentTarget.style.background = 'rgba(56,189,248,0.04)'}
+                    onMouseLeave={ev => ev.currentTarget.style.background = ''}>
+                    <td className="px-3 py-2 text-[#90a4ae]">{e.date}</td>
+                    <td className="px-3 py-2 text-[#607d8b]">{e.slot_label}</td>
+                    <td className="px-3 py-2 text-[#607d8b]">{e.alert_issued_ist?.slice(11) || '09:40'}</td>
+                    <td className="px-3 py-2"
+                      style={{ color: e.thunderstorm_observed ? '#ef5350' : e.thunderstorm_observed === false ? '#4caf50' : '#607d8b' }}>
+                      {e.thunderstorm_observed === true ? 'YES ⚡' : e.thunderstorm_observed === false ? 'NO' : 'PENDING'}
+                    </td>
+                    <td className="px-3 py-2 font-bold" style={{ color: e.lead_time_min > 240 ? '#4caf50' : '#ffc107' }}>
+                      {e.lead_time_min != null ? Math.floor(e.lead_time_min / 60) + 'h ' + (e.lead_time_min % 60) + 'm' : '—'}
+                    </td>
+                    <td className="px-3 py-2 font-bold" style={{ color: e.model_prob >= 0.3 ? '#ef5350' : '#e8eaf6' }}>
+                      {e.model_prob != null ? (e.model_prob * 100).toFixed(0) + '%' : '—'}
+                    </td>
+                    <td className="px-3 py-2">
+                      <span className="px-2 py-0.5 rounded text-[8px] font-bold"
+                        style={{ color: style.color, background: style.bg, border: `1px solid ${style.border}` }}>
+                        {e.outcome}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2" style={{ color: e.peak_bt_celsius < -40 ? '#ef5350' : '#607d8b' }}>
+                      {e.peak_bt_celsius != null ? e.peak_bt_celsius.toFixed(1) + '°C' : '—'}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function injectIWVTendencyLayer(map, liveData) {
+  const history = liveData?.satellite?.history || [];
+  if (history.length < 2) return;
+
+  // Build tendency frames from BT history (cooler BT = more cloud moisture)
+  // We encode IWV tendency as darkening/intensifying of the heatmap center
+  const frames = history.slice(-6).map((h, i, arr) => {
+    const bt    = h.min_bt_50km ?? 0;
+    const prev  = i > 0 ? (arr[i-1].min_bt_50km ?? bt) : bt;
+    const trend = bt - prev;               // negative = cooling = IWV rising
+    const intensity = Math.min(1, Math.max(0, (-bt) / 70)); // 0 to 1
+    const tendency  = Math.min(1, Math.max(0, (-trend) / 20));
+    return { timestamp: h.timestamp_ist, intensity, tendency, cold_pixels: h.cold_pixels_count ?? 0 };
+  });
+
+  let frameIdx = 0;
+  let animTimer = null;
+
+  const sourceId = 'iwv-tendency-src';
+  const layerId  = 'iwv-tendency-layer';
+
+  // Add a heatmap layer that pulses with each frame
+  const buildGeoJSON = (frame) => {
+    const features = [];
+    const lat0 = 13.1979, lon0 = 77.7063;
+    const sigma = 12 + frame.tendency * 20;  // tighter when tendency high
+    for (let dlat = -0.6; dlat <= 0.6; dlat += 0.05) {
+      for (let dlon = -0.6; dlon <= 0.6; dlon += 0.05) {
+        const lat = lat0 + dlat, lon = lon0 + dlon;
+        const dist = Math.sqrt(dlat**2 + dlon**2) * 111;
+        const v = frame.intensity * Math.exp(-(dist**2) / (2 * sigma**2));
+        if (v > 0.05) features.push({
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: [lon, lat] },
+          properties: { weight: v * (1 + frame.tendency) }
+        });
+      }
+    }
+    return { type: 'FeatureCollection', features };
+  };
+
+  try {
+    if (map.getSource(sourceId)) map.removeLayer(layerId), map.removeSource(sourceId);
+    map.addSource(sourceId, { type: 'geojson', data: buildGeoJSON(frames[0]) });
+    map.addLayer({
+      id: layerId, type: 'heatmap', source: sourceId,
+      layout: { visibility: 'none' },  // starts hidden; toggle button below shows it
+      paint: {
+        'heatmap-weight': ['get', 'weight'],
+        'heatmap-intensity': 2.5,
+        'heatmap-color': [
+          'interpolate', ['linear'], ['heatmap-density'],
+          0, 'rgba(0,0,0,0)',
+          0.2, 'rgba(0,100,255,0.3)',
+          0.5, 'rgba(0,200,255,0.55)',
+          0.8, 'rgba(100,255,200,0.72)',
+          1,   'rgba(255,255,100,0.88)',
+        ],
+        'heatmap-radius': 30,
+        'heatmap-opacity': 0.75,
+      },
+    });
+
+    // Animate frames every 600ms when layer is visible
+    animTimer = setInterval(() => {
+      if (!map.getLayer(layerId)) { clearInterval(animTimer); return; }
+      const vis = map.getLayoutProperty(layerId, 'visibility');
+      if (vis !== 'visible') return;
+      frameIdx = (frameIdx + 1) % frames.length;
+      map.getSource(sourceId)?.setData(buildGeoJSON(frames[frameIdx]));
+    }, 600);
+
+    // Expose toggle for the IWV button
+    window.__IWV_TOGGLE__ = () => {
+      if (!map.getLayer(layerId)) return;
+      const vis = map.getLayoutProperty(layerId, 'visibility');
+      map.setLayoutProperty(layerId, 'visibility', vis === 'visible' ? 'none' : 'visible');
+    };
+    window.__IWV_FRAME_META__ = frames;
+  } catch(e) { console.warn('[IWV layer]', e); }
+}
+
+function injectDrainageOverlay(map, liveData) {
+  const zones = liveData?.terrain?.high_risk_zones || [];
+  const ffSlots = liveData?.hazard_summary?.flash_flood?.slots || {};
+  const maxFF = Math.max(...Object.values(ffSlots).map(Number), 0);
+
+  if (zones.length === 0) return;
+
+  const features = zones.map(z => ({
+    type: 'Feature',
+    geometry: { type: 'Point', coordinates: [z.lon, z.lat] },
+    properties: {
+      susceptibility: z.flood_susceptibility ?? 0.5,
+      elevation_m: z.elevation_m ?? 0,
+      slope_deg: z.slope_deg ?? 0,
+      risk: maxFF > 0 ? maxFF * z.flood_susceptibility : 0,
+    }
+  }));
+
+  const lineFeatures = [];
+  // Connect zones to nearest downstream zone (simple southward flow proxy)
+  const sorted = [...zones].sort((a, b) => b.lat - a.lat);
+  for (let i = 0; i < sorted.length - 1 && i < 5; i++) {
+    lineFeatures.push({
+      type: 'Feature',
+      geometry: {
+        type: 'LineString',
+        coordinates: [
+          [sorted[i].lon, sorted[i].lat],
+          [sorted[i+1].lon, sorted[i+1].lat],
+        ]
+      },
+      properties: { susceptibility: (sorted[i].flood_susceptibility + sorted[i+1].flood_susceptibility) / 2 }
+    });
+  }
+
+  try {
+    map.addSource('drainage-src', {
+      type: 'geojson',
+      data: { type: 'FeatureCollection', features: [...features, ...lineFeatures] }
+    });
+
+    // Drainage path lines
+    map.addLayer({
+      id: 'drainage-lines', type: 'line', source: 'drainage-src',
+      filter: ['==', '$type', 'LineString'],
+      layout: { visibility: 'none', 'line-join': 'round', 'line-cap': 'round' },
+      paint: {
+        'line-color': ['interpolate', ['linear'], ['get', 'susceptibility'],
+          0.5, '#ffc107', 0.8, '#ff5722', 1.0, '#ef5350'],
+        'line-width': 2.5,
+        'line-opacity': 0.8,
+        'line-dasharray': [3, 2],
+      }
+    });
+
+    // High-risk zone circles
+    map.addLayer({
+      id: 'drainage-circles', type: 'circle', source: 'drainage-src',
+      filter: ['==', '$type', 'Point'],
+      layout: { visibility: 'none' },
+      paint: {
+        'circle-radius': ['interpolate', ['linear'], ['get', 'susceptibility'], 0.5, 6, 1.0, 12],
+        'circle-color': ['interpolate', ['linear'], ['get', 'susceptibility'],
+          0.5, '#ffc107', 0.8, '#ff5722', 1.0, '#ef5350'],
+        'circle-opacity': 0.85,
+        'circle-stroke-width': 1.5,
+        'circle-stroke-color': 'rgba(239,83,80,0.5)',
+      }
+    });
+
+    // Expose toggle
+    window.__DRAINAGE_TOGGLE__ = () => {
+      ['drainage-lines', 'drainage-circles'].forEach(id => {
+        if (!map.getLayer(id)) return;
+        const vis = map.getLayoutProperty(id, 'visibility');
+        map.setLayoutProperty(id, 'visibility', vis === 'visible' ? 'none' : 'visible');
+      });
+    };
+  } catch(e) { console.warn('[drainage overlay]', e); }
+}
+
+// ===== END SIH PATCH COMPONENTS =====
+
         function HeaderBar({ liveTime, isLiveData, activeNavTab, onNavTabChange, selectedHazard, onHazardChange }) {
       const hazardCfg = HAZARD_CONFIG[selectedHazard] || HAZARD_CONFIG.ts;
       const navTabs = ['DASHBOARD', 'FORECAST', 'RADAR MAP', 'MODELS', 'EXPLAINABILITY', 'REGIMES', 'MULTIDAY', 'CLIMATOLOGY', 'SKILL SCORES', 'ALERTS', 'WHATIF', 'LIVE API', 'ATC VIEW'];
@@ -1039,6 +1611,7 @@
             {/* Right: hazard switcher + time + live badge + hamburger */}
             <div className="flex items-center gap-3 font-mono">
               <div className="hidden lg:block"><HazardSwitcher selected={selectedHazard} onChange={onHazardChange} /></div>
+              <SkillScoreTicker />
               <div className="hidden sm:flex flex-col items-end gap-0.5">
                 <div className="text-sm font-extrabold text-white tracking-widest neon-cyan" style={{whiteSpace:'nowrap'}}>{liveTime}</div>
                 <div className="text-[9px] text-[#3d5066]">{(() => {
@@ -1750,6 +2323,10 @@
             })
             .catch(() => {});
 
+          // IWV tendency animation + drainage overlay
+          injectIWVTendencyLayer(map, liveData);
+          injectDrainageOverlay(map, liveData);
+
           map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right');
           map.resize();
           setMapReady(true);
@@ -1817,6 +2394,18 @@
               border: '1px solid rgba(99,255,130,0.5)', background: 'rgba(4,7,17,0.85)',
               color: '#63ff82', cursor: 'pointer', backdropFilter: 'blur(8px)', marginBottom: 4
             }}>🌏 India</button>
+            <button onClick={() => window.__IWV_TOGGLE__?.()} style={{
+              fontSize:9, fontWeight:700, padding:'4px 8px', borderRadius:8,
+              background:'rgba(0,200,255,0.12)', border:'1px solid rgba(0,200,255,0.3)',
+              color:'#00c8ff', cursor:'pointer', letterSpacing:'0.06em',
+              fontFamily:'monospace', marginBottom:4
+            }} title="Toggle IWV tendency animation">IWV</button>
+            <button onClick={() => window.__DRAINAGE_TOGGLE__?.()} style={{
+              fontSize:9, fontWeight:700, padding:'4px 8px', borderRadius:8,
+              background:'rgba(239,83,80,0.12)', border:'1px solid rgba(239,83,80,0.3)',
+              color:'#ef5350', cursor:'pointer', letterSpacing:'0.06em',
+              fontFamily:'monospace', marginBottom:4
+            }} title="Toggle flash flood drainage catchment overlay">DEM</button>
             <button onClick={() => { if (mapRef.current) mapRef.current.flyTo({ center: [VOBL.lng, VOBL.lat], zoom: 9, speed: 1.2 }); }} style={{
               padding: '4px 10px', borderRadius: 6, fontSize: 10, fontWeight: 700, fontFamily: 'monospace',
               border: '1px solid rgba(56,189,248,0.5)', background: 'rgba(4,7,17,0.85)',
@@ -2058,6 +2647,9 @@
                 </div>
               </div>
             )}
+
+            <CTTTrendCard liveData={liveData} />
+            <PersistencePanel slots={slots} hazardCfg={hazardCfg} />
 
             {/* Flash Flood Terrain Risk -- shown when FF hazard active */}
             {hazardCfg?.key === 'ff' && liveData?.terrain && (() => {
@@ -4897,6 +5489,8 @@
 
       return (
         <div className="font-mono space-y-6 max-w-[1750px] mx-auto">
+          <SHAPWaterfallCard shapData={liveData?.realtime_shap} slotIdx={2} />
+
           <PageHeader
             eyebrow="SHAP · AI RAG EXPLAINABILITY"
             title="Feature Importance & Explainability"
@@ -6686,6 +7280,7 @@
           const latency = performance.now() - t0;
           setFetchLatencyMs(Math.round(latency));
           setLiveData(json);
+          window.__SIH_VERIFICATION__ = json.verification || {};
           setLastUpdated(json.generated_at || json.date || 'Just now');
           setIsLiveData(true);
           if (Array.isArray(json.slots)) {
@@ -7603,6 +8198,7 @@ Source: csir-thunderstorm-bengaluru.pages.dev | IMD Station 43295`;
 
       return (
         <div className="p-4 lg:p-6 space-y-5">
+          <AlertLogTable />
           <PageHeader
             eyebrow="ALERT SYSTEM · WHATSAPP · BROWSER PUSH"
             title="Thunderstorm Alerts"
