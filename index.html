@@ -1020,8 +1020,8 @@ function CTTTrendCard({ liveData }) {
 
   return (
     <div className="atc-card rounded-2xl p-4 font-mono" style={{ minWidth: 0 }}>
-      <div className="text-[9px] font-bold text-white uppercase tracking-wider mb-3 flex items-center gap-2">
-        <span style={{ color: '#38bdf8' }}>🛰</span> CLOUD TOP TEMPERATURE
+      <div className="text-[9px] font-bold text-white uppercase tracking-wider mb-3 flex items-center gap-1.5 flex-wrap" style={{rowGap:'2px'}}>
+        <span style={{ color: '#38bdf8' }}>🛰</span><span>CLOUD TOP TEMP</span>
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
@@ -1067,7 +1067,7 @@ function PersistencePanel({ slots, hazardCfg }) {
   return (
     <div className="atc-card rounded-2xl p-4 font-mono" style={{ minWidth: 0 }}>
       <div className="text-[9px] font-bold text-white uppercase tracking-wider mb-3 flex items-center justify-between">
-        <span>NOWCAST vs PERSISTENCE</span>
+        <span style={{wordBreak:"break-word",lineHeight:1.2}}>NOWCAST vs PERSISTENCE</span>
         <span className="text-[8px] text-[#607d8b] normal-case">3h-ago baseline</span>
       </div>
       <div className="space-y-2">
@@ -1611,7 +1611,6 @@ function injectDrainageOverlay(map, liveData) {
             {/* Right: hazard switcher + time + live badge + hamburger */}
             <div className="flex items-center gap-3 font-mono">
               <div className="hidden lg:block"><HazardSwitcher selected={selectedHazard} onChange={onHazardChange} /></div>
-              <SkillScoreTicker />
               <div className="hidden sm:flex flex-col items-end gap-0.5">
                 <div className="text-sm font-extrabold text-white tracking-widest neon-cyan" style={{whiteSpace:'nowrap'}}>{liveTime}</div>
                 <div className="text-[9px] text-[#3d5066]">{(() => {
@@ -2190,10 +2189,10 @@ function injectDrainageOverlay(map, liveData) {
                 } catch(e) {}
               }
               animCtx.drawImage(SRC, 0, 0);
-              addCanvasLayer('ts-instability-overlay', ANIM.toDataURL('image/png'), 'ts-instability-canvas');
+              addCanvasLayer('ts-instability-overlay', SRC.toDataURL('image/png'), 'ts-instability-canvas');
               if (!window._overlayAnims) window._overlayAnims = {};
-              window._overlayAnims.startTS = () => { if (!tsTimer) tsTimer = setInterval(drawTSFrame, 80); };
-              window._overlayAnims.stopTS = () => { clearInterval(tsTimer); tsTimer = null; };
+              window._overlayAnims.startTS = () => { /* static – no spin */ };
+              window._overlayAnims.stopTS = () => {};
             })();
 
             // ── CB overlay: scrolling cloud formations across the map ─────────────────
@@ -2729,7 +2728,7 @@ function injectDrainageOverlay(map, liveData) {
           </div>
 
           {/* ── HEATMAP LEGEND (right side, between zoom and India) ── */}
-          <div style={{ position: 'absolute', bottom: 360, right: 12, zIndex: 20, display: isMobile ? 'none' : undefined, background: 'rgba(4,7,17,0.9)', backdropFilter: 'blur(12px)', border: '1px solid rgba(56,189,248,0.14)', borderRadius: 10, padding: '7px 10px' }}>
+          <div style={{ position: 'absolute', bottom: 435, right: 12, zIndex: 20, display: isMobile ? 'none' : undefined, background: 'rgba(4,7,17,0.9)', backdropFilter: 'blur(12px)', border: '1px solid rgba(56,189,248,0.14)', borderRadius: 10, padding: '7px 10px' }}>
             <div style={{ fontSize: 7, fontWeight: 800, letterSpacing: 2, color: '#37474f', fontFamily: 'monospace', marginBottom: 6 }}>TS PROBABILITY HEATMAP</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
               {[
@@ -7523,22 +7522,25 @@ Source: csir-thunderstorm-bengaluru.pages.dev | IMD Station 43295`;
                 <span className="hidden sm:inline" style={{ color:'rgba(56,189,248,0.25)' }}>·</span>
                 <span style={{ color:'rgba(56,189,248,0.4)' }}>VOBL · IMD 43295</span>
               </div>
-              <button
-                onClick={copyForecastSummary}
-                className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-[10px] font-bold transition-all"
-                style={copyFeedback ? {
-                  background:'rgba(76,175,80,0.15)',
-                  border:'1px solid rgba(76,175,80,0.4)',
-                  color:'#4caf50',
-                  textShadow:'0 0 8px rgba(76,175,80,0.5)',
-                } : {
-                  background:'rgba(56,189,248,0.06)',
-                  border:'1px solid rgba(56,189,248,0.15)',
-                  color:'rgba(56,189,248,0.6)',
-                }}
-              >
-                {copyFeedback ? '✓ COPIED' : '⎘ COPY FORECAST'}
-              </button>
+              <div style={{display:'flex',alignItems:'center',gap:8}}>
+                <SkillScoreTicker />
+                <button
+                  onClick={copyForecastSummary}
+                  className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-[10px] font-bold transition-all"
+                  style={copyFeedback ? {
+                    background:'rgba(76,175,80,0.15)',
+                    border:'1px solid rgba(76,175,80,0.4)',
+                    color:'#4caf50',
+                    textShadow:'0 0 8px rgba(76,175,80,0.5)',
+                  } : {
+                    background:'rgba(56,189,248,0.06)',
+                    border:'1px solid rgba(56,189,248,0.15)',
+                    color:'rgba(56,189,248,0.6)',
+                  }}
+                >
+                  {copyFeedback ? '✓ COPIED' : '⎘ COPY FORECAST'}
+                </button>
+              </div>
             </div>
 
             {/* ── KEYBOARD SHORTCUTS OVERLAY ── */}
