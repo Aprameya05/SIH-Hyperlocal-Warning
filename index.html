@@ -2706,24 +2706,26 @@ function injectDrainageOverlay(map, liveData) {
             </div>
           </div>
 
-          {/* ── HEATMAP LEGEND (right side, between zoom and India) ── */}
-          <div style={{ position: 'absolute', top: 110, right: 10, zIndex: 20, display: isMobile ? 'none' : undefined, background: 'rgba(4,7,17,0.9)', backdropFilter: 'blur(12px)', border: '1px solid rgba(56,189,248,0.14)', borderRadius: 10, padding: '6px 9px' }}>
-            <div style={{ fontSize: 7, fontWeight: 800, letterSpacing: 2, color: '#37474f', fontFamily: 'monospace', marginBottom: 6 }}>TS PROBABILITY HEATMAP</div>
+          {/* ── HEATMAP LEGEND -- anchored above the right map-control column ── */}
+          <div style={{ position: 'absolute', bottom: 200, right: 12, zIndex: 20, display: isMobile ? 'none' : undefined, background: 'rgba(4,7,17,0.92)', backdropFilter: 'blur(12px)', border: '1px solid rgba(56,189,248,0.14)', borderRadius: 10, padding: '7px 10px', width: 148 }}>
+            <div style={{ fontSize: 7, fontWeight: 800, letterSpacing: 2, color: '#37474f', fontFamily: 'monospace', marginBottom: 6, whiteSpace: 'nowrap' }}>
+              {(panLayer === 'thunderstorm' ? 'TS' : panLayer === 'cloudburst' ? 'CB' : 'FF')} PROBABILITY HEATMAP
+            </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
               {[
-                { grad: 'linear-gradient(90deg,rgba(220,0,0,0.6),rgba(220,0,0,0.9))', label: 'HIGH  ≥55%', c:'#ef5350' },
-                { grad: 'linear-gradient(90deg,rgba(255,100,0,0.5),rgba(255,100,0,0.85))', label: 'MODERATE  35–55%', c:'#ff9800' },
-                { grad: 'linear-gradient(90deg,rgba(255,213,0,0.4),rgba(255,213,0,0.75))', label: 'LOW  15–35%', c:'#fdd835' },
-                { grad: 'linear-gradient(90deg,rgba(56,189,248,0.25),rgba(56,189,248,0.55))', label: 'MINIMAL  <15%', c:'#38bdf8' },
+                { grad: 'linear-gradient(90deg,rgba(220,0,0,0.6),rgba(220,0,0,0.9))', label: 'HIGH   ≥55%', c:'#ef5350' },
+                { grad: 'linear-gradient(90deg,rgba(255,100,0,0.5),rgba(255,100,0,0.85))', label: 'MOD    35–55%', c:'#ff9800' },
+                { grad: 'linear-gradient(90deg,rgba(255,213,0,0.4),rgba(255,213,0,0.75))', label: 'LOW    15–35%', c:'#fdd835' },
+                { grad: 'linear-gradient(90deg,rgba(56,189,248,0.25),rgba(56,189,248,0.55))', label: 'MIN    <15%', c:'#38bdf8' },
               ].map(({ grad, label, c }) => (
-                <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-                  <div style={{ width: 28, height: 9, borderRadius: 5, background: grad }} />
-                  <span style={{ fontSize: 9, color: '#607d8b', fontFamily: 'monospace' }}>{label}</span>
+                <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                  <div style={{ width: 26, height: 8, borderRadius: 4, background: grad, flexShrink: 0 }} />
+                  <span style={{ fontSize: 9, color: '#607d8b', fontFamily: 'monospace', whiteSpace: 'nowrap' }}>{label}</span>
                 </div>
               ))}
             </div>
-            <div style={{ marginTop: 9, paddingTop: 8, borderTop: '1px solid rgba(56,189,248,0.08)', fontSize: 8, color: '#37474f', fontFamily: 'monospace', lineHeight: 1.6 }}>
-              σ=18km Gaussian · VOBL-centred<br/>13 BLR neighbourhood zones
+            <div style={{ marginTop: 7, paddingTop: 6, borderTop: '1px solid rgba(56,189,248,0.08)', fontSize: 7, color: '#37474f', fontFamily: 'monospace', lineHeight: 1.6, whiteSpace: 'nowrap' }}>
+              σ=18 km Gaussian · VOBL-centred
             </div>
           </div>
 
@@ -7593,9 +7595,11 @@ function injectDrainageOverlay(map, liveData) {
         if (!liveData) return;
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-        const slots = liveData.slots || currentSlots || [];
-        const date  = liveData.date || new Date().toISOString().slice(0, 10);
-        const regime = liveData.monsoon_regime?.regime || liveData.synoptic_regime?.regime_name || 'N/A';
+        // Use currentSlots — these have .probability already mapped to the active hazard
+        const slots = (currentSlots && currentSlots.length > 0) ? currentSlots : (liveData?.slots || []);
+        const probKey = hazardCfg?.probKey || 'ts_probability';
+        const date  = liveData?.date || new Date().toISOString().slice(0, 10);
+        const regime = liveData?.monsoon_regime?.regime || liveData?.synoptic_regime?.regime_name || 'N/A';
         const hazard = hazardCfg?.label || 'TS';
         const slotLabels = ['00-06 UTC (Night)', '06-12 UTC (Morning)', '12-18 UTC (Afternoon)', '18-24 UTC (Evening)'];
         const riskColor = (p) => p >= 0.55 ? [220,38,38] : p >= 0.35 ? [234,88,12] : p >= 0.15 ? [202,138,4] : [22,163,74];
@@ -7633,7 +7637,7 @@ function injectDrainageOverlay(map, liveData) {
         // Slot cards
         let yOff = 47;
         slots.slice(0, 4).forEach((s, i) => {
-          const prob = s.probability ?? s.ts_prob ?? 0;
+          const prob = s.probability ?? s[probKey] ?? s.ts_probability ?? 0;
           const pct  = (prob * 100).toFixed(1);
           const pred = s.ts_predicted ? 'ALERT' : 'STABLE';
           const [r, g, b] = riskColor(prob);
