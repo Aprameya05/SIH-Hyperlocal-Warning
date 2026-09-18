@@ -25,7 +25,7 @@ Real-time hazard probability maps &middot; 2 to 6 hour lead time &middot; Pan-In
 
 <br/>
 
-### <a href="https://sih-hyperlocal-warning.pages.dev/#dashboard">Live Dashboard</a> &nbsp;&middot;&nbsp; <a href="https://csir-thunderstorm-api.onrender.com">RAG API</a> &nbsp;&middot;&nbsp; <a href="wss://csir-thunderstorm-api.onrender.com/ws/lightning">Lightning Feed</a>
+### <a href="https://sih-hyperlocal-warning.pages.dev/#dashboard">Live Dashboard</a> &nbsp;&middot;&nbsp; <a href="https://csir-thunderstorm-api.onrender.com">RAG API</a> &nbsp;&middot;&nbsp; <a href="https://csir-thunderstorm-api.onrender.com/ws/lightning">Lightning Feed</a>
 
 </div>
 
