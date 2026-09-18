@@ -1,35 +1,4 @@
-<div align="center">
-
-<img src="https://img.shields.io/badge/Smart%20India%20Hackathon-2024-orange?style=for-the-badge" />
-&nbsp;
-<img src="https://img.shields.io/badge/Status-Live-brightgreen?style=for-the-badge&logo=cloudflare" />
-
-# Hyperlocal Severe Weather Warning System
-
-**AI-Driven Nowcasting for Cloudbursts, Thunderstorms, and Flash Floods across India**
-
-Real-time hazard probability maps &middot; 2 to 6 hour lead time &middot; Pan-India coverage
-
-<br/>
-
-![Python 3.11](https://img.shields.io/badge/Python-3.11-3776AB?style=flat-square&logo=python&logoColor=white)
-![GFS 0.25deg](https://img.shields.io/badge/GFS%200.25%C2%B0-NOAA%20NOMADS-0057A8?style=flat-square)
-![MapLibre GL JS](https://img.shields.io/badge/MapLibre%20GL%20JS-v4%20Interactive%20Map-396CB2?style=flat-square)
-![Cloudflare Pages](https://img.shields.io/badge/Cloudflare%20Pages-Live%20Deploy-F38020?style=flat-square&logo=cloudflare&logoColor=white)
-![Hazards](https://img.shields.io/badge/Thunderstorm%20%7C%20Cloudburst%20%7C%20Flash%20Flood-Three%20Hazard%20Models-1E3A5F?style=flat-square)
-![XGBoost](https://img.shields.io/badge/XGBoost%20%2B%20RF%20%2B%20MTL-ML%20Pipeline-FF6600?style=flat-square)
-![SHAP](https://img.shields.io/badge/SHAP-Explainability-4CAF50?style=flat-square)
-![Himawari-9](https://img.shields.io/badge/Himawari--9-Satellite%20Override-1565C0?style=flat-square)
-
-<br/>
-
-### <a href="https://sih-hyperlocal-warning.pages.dev/#dashboard">Live Dashboard</a> &nbsp;&middot;&nbsp; <a href="https://csir-thunderstorm-api.onrender.com">RAG API</a> &nbsp;&middot;&nbsp; <a href="https://csir-thunderstorm-api.onrender.com/ws/lightning">Lightning Feed</a>
-
-</div>
-
----
-
----# AI-Driven Hyperlocal Severe Weather Warning System
+# AI-Driven Hyperlocal Severe Weather Warning System
 
 **Smart India Hackathon 2024**
 
