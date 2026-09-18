@@ -146,6 +146,10 @@ jobs:
         run: python populate_skill_scores.py
         continue-on-error: true
 
+      - name: Append alert log entry
+        run: python generate_alert_log.py
+        continue-on-error: true
+        
       - name: Send WhatsApp alerts
         env:
           WORKER_URL: ${{ secrets.WORKER_URL }}
