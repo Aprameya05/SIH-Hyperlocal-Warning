@@ -1062,61 +1062,27 @@ function CTTTrendCard({ liveData }) {
 function PersistencePanel({ slots, hazardCfg }) {
   if (!slots || slots.length === 0) return null;
   const probKey = hazardCfg?.probKey || 'ts_probability';
-  const slotLabels = ['Late Night', 'Morning', 'Afternoon', 'Evening'];
-
+  const slotLabels = ['NIGHT', 'MORN', 'AFTN', 'EVE'];
   return (
-    <div className="atc-card rounded-2xl p-4 font-mono" style={{ minWidth: 0 }}>
-      <div className="text-[9px] font-bold text-white uppercase tracking-wider mb-3 flex items-center justify-between">
-        <span>MODEL vs 3H PERSIST</span>
-        <span className="text-[8px] text-[#607d8b] normal-case">3h-ago baseline</span>
+    <div className="atc-card rounded-2xl font-mono" style={{ minWidth: 0, padding: '10px 12px' }}>
+      <div style={{ fontSize: 8, fontWeight: 800, letterSpacing: 2, color: '#37474f', fontFamily: 'monospace', marginBottom: 7, display: 'flex', justifyContent: 'space-between' }}>
+        <span>MODEL vs PERSIST</span><span style={{ color: '#263d55' }}>3h-ago</span>
       </div>
-      <div className="space-y-2">
-        {slots.map((s, i) => {
-          const current  = s[probKey] ?? 0;
-          const persist  = s.prev_probability ?? current;
-          const delta    = current - persist;
-          const deltaStr = (delta >= 0 ? '+' : '') + (delta * 100).toFixed(1) + '%';
-          const deltaCol = delta > 0.05 ? '#ef5350' : delta < -0.05 ? '#4caf50' : '#ffc107';
-          const barW     = Math.max(current, persist);
-
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 5 }}>
+        {slots.slice(0, 4).map((s, i) => {
+          const cur = s[probKey] ?? 0;
+          const per = s.prev_probability ?? cur;
+          const delta = cur - per;
+          const deltaStr = (delta >= 0 ? '+' : '') + (delta * 100).toFixed(0) + '%';
+          const col = delta > 0.05 ? '#ef5350' : delta < -0.05 ? '#4caf50' : '#ffc107';
           return (
-            <div key={i}>
-              <div className="flex items-center justify-between text-[8px] mb-0.5">
-                <span className="text-[#607d8b]">{slotLabels[i] || s.label}</span>
-                <span style={{ color: deltaCol, fontWeight: 700 }}>
-                  {deltaStr} model vs persistence
-                </span>
-              </div>
-              <div className="relative h-4 rounded overflow-hidden" style={{ background: 'rgba(23,35,56,0.6)' }}>
-                {/* Persistence bar */}
-                <div className="absolute top-0 left-0 h-full rounded"
-                  style={{
-                    width: barW > 0 ? `${(persist / barW) * 100}%` : '0%',
-                    background: 'rgba(96,125,139,0.35)',
-                    transition: 'width 0.7s ease',
-                  }} />
-                {/* Model bar */}
-                <div className="absolute top-0 left-0 h-full rounded"
-                  style={{
-                    width: barW > 0 ? `${(current / barW) * 100}%` : '0%',
-                    background: current > persist ? 'rgba(239,83,80,0.7)' : 'rgba(56,189,248,0.7)',
-                    transition: 'width 0.7s ease',
-                  }} />
-                <div className="absolute inset-0 flex items-center px-2 justify-between">
-                  <span className="text-[8px] font-bold text-white drop-shadow">
-                    {(current * 100).toFixed(0)}%
-                  </span>
-                  <span className="text-[8px] text-[#607d8b]">
-                    persist: {(persist * 100).toFixed(0)}%
-                  </span>
-                </div>
-              </div>
+            <div key={i} style={{ background: 'rgba(13,22,40,0.7)', borderRadius: 8, padding: '5px 7px', border: '1px solid rgba(255,255,255,0.05)' }}>
+              <div style={{ fontSize: 7, color: '#37474f', letterSpacing: 1, marginBottom: 3 }}>{slotLabels[i]}</div>
+              <div style={{ fontSize: 13, fontWeight: 900, color: col, lineHeight: 1 }}>{deltaStr}</div>
+              <div style={{ fontSize: 7, color: '#263d55', marginTop: 2 }}>{(cur*100).toFixed(0)}% vs {(per*100).toFixed(0)}%</div>
             </div>
           );
         })}
-      </div>
-      <div className="mt-2 text-[8px] text-[#3d5a72]">
-        Blue = model lower than persistence (improving). Red = model higher (increasing risk). Yellow = within 5%.
       </div>
     </div>
   );
@@ -2740,7 +2706,7 @@ function injectDrainageOverlay(map, liveData) {
           </div>
 
           {/* ── HEATMAP LEGEND (right side, between zoom and India) ── */}
-          <div style={{ position: 'absolute', bottom: 435, right: 12, zIndex: 20, display: isMobile ? 'none' : undefined, background: 'rgba(4,7,17,0.9)', backdropFilter: 'blur(12px)', border: '1px solid rgba(56,189,248,0.14)', borderRadius: 10, padding: '7px 10px' }}>
+          <div style={{ position: 'absolute', top: 75, right: 48, zIndex: 20, display: isMobile ? 'none' : undefined, background: 'rgba(4,7,17,0.9)', backdropFilter: 'blur(12px)', border: '1px solid rgba(56,189,248,0.14)', borderRadius: 10, padding: '6px 9px' }}>
             <div style={{ fontSize: 7, fontWeight: 800, letterSpacing: 2, color: '#37474f', fontFamily: 'monospace', marginBottom: 6 }}>TS PROBABILITY HEATMAP</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
               {[
