@@ -417,6 +417,63 @@
       color: #38bdf8;
     }
 
+
+    /* == LIGHT MODE ================================================================ */
+    body.light-mode { background: #f0f4fa !important; color: #1a2332 !important; }
+    body.light-mode #root > div { background: #f0f4fa; color: #1a2332; }
+    body.light-mode .atc-card {
+      background: rgba(255,255,255,0.92) !important;
+      border-color: rgba(100,130,170,0.25) !important;
+      color: #1a2332 !important;
+    }
+    body.light-mode header {
+      background: rgba(240,244,250,0.97) !important;
+      border-bottom-color: rgba(100,130,200,0.25) !important;
+    }
+    body.light-mode .slot-bg-common { opacity: 0.05 !important; }
+    body.light-mode .text-\[\#e8eaf6\] { color: #1a2332 !important; }
+    body.light-mode .text-\[\#607d8b\] { color: #455a64 !important; }
+    body.light-mode .text-\[\#90a4ae\] { color: #546e7a !important; }
+    body.light-mode .text-white { color: #1a2332 !important; }
+    body.light-mode .bg-\[\#040711\] { background: #f0f4fa !important; }
+
+    /* == MOBILE LEGIBILITY ========================================================= */
+    @media (max-width: 640px) {
+      .text-\[10px\] { font-size: 12px !important; }
+      .text-xs { font-size: 13px !important; }
+    }
+
+    /* == BOTTOM NAV ================================================================ */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      display: none; z-index: 9000;
+      background: rgba(4,7,17,0.97);
+      border-top: 1px solid rgba(56,189,248,0.18);
+      backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    body.light-mode .bottom-nav {
+      background: rgba(240,244,250,0.97);
+      border-top-color: rgba(100,130,200,0.25);
+    }
+    @media (max-width: 640px) {
+      .bottom-nav { display: flex; }
+      #main-content-area { padding-bottom: 70px !important; }
+    }
+    .bnav-btn {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 8px 4px 6px; font-size: 10px; font-weight: 600;
+      letter-spacing: 0.05em; color: #607d8b; gap: 3px;
+      cursor: pointer; border: none; background: transparent;
+      min-height: 56px; transition: color 0.2s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .bnav-btn.active { color: #38bdf8; }
+    .bnav-btn span.icon { font-size: 20px; line-height: 1; }
+    body.light-mode .bnav-btn { color: #546e7a; }
+    body.light-mode .bnav-btn.active { color: #0284c7; }
+
   </style>
 </head>
 <body class="bg-[#040711] text-[#e8eaf6] antialiased min-h-screen font-sans relative overflow-x-hidden selection:bg-sky-400 selection:text-black">
@@ -425,6 +482,62 @@
 
   <script type="text/babel">
     const { useState, useEffect, useRef, useMemo } = React;
+
+    // == I18N ===========================================================
+    const LANGS = {
+      en: { name: 'English', short: 'EN' },
+      hi: { name: 'हिन्दी', short: 'हि' },
+      kn: { name: 'ಕನ್ನಡ', short: 'ಕನ' },
+      ta: { name: 'தமிழ்', short: 'தமி' },
+      te: { name: 'తెలుగు', short: 'తె' },
+      bn: { name: 'বাংলা', short: 'বা' },
+      mr: { name: 'मराठी', short: 'मर' },
+    };
+    const TR = {
+      DASHBOARD:       { hi:'डैशबोर्ड', kn:'ಡ್ಯಾಶ್‌ಬೋರ್ಡ್', ta:'அடுக்கம்', te:'డ్యాష్‌బోర్డ్', bn:'ড্যাশবোর্ড', mr:'डॅशबोर्ड' },
+      FORECAST:        { hi:'पूर्वानुमान', kn:'ಮುನ್ಸೂಚನೆ', ta:'முன்னரிவு', te:'మున్సూచన', bn:'প্রাক্কলন', mr:'अंदाज' },
+      'RADAR MAP':     { hi:'रडार मानचित्र', kn:'ರೇಡಾರ್ ನಕ್ಷೆ', ta:'ராடார் நக்சை', te:'రేడార్ మాప్', bn:'রাডার ম্যাপ', mr:'रडार नकाशा' },
+      ALERTS:          { hi:'सतर्कता', kn:'ແಚ್ಚರಿಕೆ', ta:'எச்சரிக்கை', te:'హెచ్చరికలు', bn:'সতর্কতা', mr:'सूचना' },
+      'DATA & GRAPHS': { hi:'डेटा और ग्राफ', kn:'ಡೇಟಾ ಮತ್ತು ಗ್ರಾಫ್ಸ್', ta:'தஞ்சு & வரைபடம்', te:'డేటా & గ్రాఫ్స్', bn:'ডেটা ও গ্রাফ', mr:'डेटा आणि आलेख' },
+      CONTACTS:        { hi:'संपर्क', kn:'ಸಂಪರ್ಕ', ta:'தொடர்புகள்', te:'సంపర్కాలు', bn:'যোগাযোগ', mr:'संपर्क' },
+      MODELS:          { hi:'मॉडल', kn:'ಮಾಡಲುಗಳು', ta:'மாடல்கள்', te:'మాడలు', bn:'মডেল', mr:'मॉडेल्स' },
+    };
+    const LangContext = React.createContext({ lang: 'en', setLang: ()=>{} });
+    function t(lang, key, fallback) {
+      if (lang === 'en' || !TR[key] || !TR[key][lang]) return fallback || key;
+      return TR[key][lang];
+    }
+    function LanguageSwitcher() {
+      const { lang, setLang } = React.useContext(LangContext);
+      const [open, setOpen] = React.useState(false);
+      return (
+        <div style={{ position: 'relative' }}>
+          <button onClick={() => setOpen(o => !o)}
+            style={{ display:'flex', alignItems:'center', gap:'5px', padding:'4px 8px', borderRadius:'7px',
+              background:'rgba(56,189,248,0.10)', border:'1px solid rgba(56,189,248,0.22)',
+              color:'#38bdf8', fontSize:'11px', fontWeight:'600', cursor:'pointer', letterSpacing:'0.06em' }}>
+            <span>&#x1F310;</span>
+            <span>{LANGS[lang] ? LANGS[lang].short : 'EN'}</span>
+          </button>
+          {open && (
+            <div style={{ position:'absolute', top:'110%', right:0, zIndex:999, background:'rgba(4,7,17,0.97)',
+              border:'1px solid rgba(56,189,248,0.22)', borderRadius:'10px', overflow:'hidden', minWidth:'130px' }}>
+              {Object.entries(LANGS).map(([code, info]) => (
+                <button key={code} onClick={() => { setLang(code); setOpen(false); }}
+                  style={{ display:'block', width:'100%', textAlign:'left', padding:'8px 12px',
+                    fontSize:'12px', color: lang===code ? '#38bdf8' : '#90a4ae',
+                    background: lang===code ? 'rgba(56,189,248,0.1)' : 'transparent',
+                    border:'none', cursor:'pointer', fontWeight: lang===code ? '700' : '400' }}>
+                  {info.name}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    }
+    // == END I18N ================================================================
+
     const Motion = window.Motion || window.framerMotion || { motion: { div: 'div', button: 'button', nav: 'nav', img: 'img' }, AnimatePresence: ({ children }) => children };
     const { motion, AnimatePresence } = Motion;
 
@@ -1479,9 +1592,10 @@ function injectDrainageOverlay(map, liveData) {
 
 // ===== END SIH PATCH COMPONENTS =====
 
-        function HeaderBar({ liveTime, isLiveData, activeNavTab, onNavTabChange, selectedHazard, onHazardChange }) {
+        function HeaderBar({ liveTime, isLiveData, activeNavTab, onNavTabChange, selectedHazard, onHazardChange, darkMode, onDarkModeToggle }) {
+          const { lang } = React.useContext(LangContext);
       const hazardCfg = HAZARD_CONFIG[selectedHazard] || HAZARD_CONFIG.ts;
-      const navTabs = ['DASHBOARD', 'FORECAST', 'RADAR MAP', 'MODELS', 'EXPLAINABILITY', 'REGIMES', 'MULTIDAY', 'CLIMATOLOGY', 'SKILL SCORES', 'ALERTS', 'WHATIF', 'LIVE API', 'ATC VIEW'];
+      const navTabs = ['DASHBOARD', 'FORECAST', 'RADAR MAP', 'MODELS', 'EXPLAINABILITY', 'REGIMES', 'MULTIDAY', 'CLIMATOLOGY', 'SKILL SCORES', 'ALERTS', 'DATA & GRAPHS', 'CONTACTS', 'WHATIF', 'LIVE API', 'ATC VIEW'];
       const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
       return (
@@ -1563,7 +1677,7 @@ function injectDrainageOverlay(map, liveData) {
                       <span style={{color:'rgba(56,189,248,0.3)',fontSize:7,letterSpacing:'0.18em',marginRight:2,fontWeight:900}}>{group.label}</span>
                       {group.tabs.map(tab => {
                         const isActive = activeNavTab === tab;
-                        const shortLabel = tab === 'EXPLAINABILITY' ? 'EXPLAIN' : tab === 'CLIMATOLOGY' ? 'CLIMAT.' : tab === 'SKILL SCORES' ? 'SCORES' : tab;
+                        const shortLabel = tab === 'EXPLAINABILITY' ? 'EXPLAIN' : tab === 'CLIMATOLOGY' ? 'CLIMAT.' : tab === 'SKILL SCORES' ? 'SCORES' : tab === 'DATA & GRAPHS' ? 'GRAPHS' : tab;
                         return (
                           <button key={tab} onClick={() => onNavTabChange(tab)}
                             className={`relative px-3 py-1.5 rounded-lg tracking-wider transition-all duration-200 ${isActive ? 'nav-tab-active' : 'text-[#4a6880] hover:text-[#90cce8]'}`}
@@ -1582,6 +1696,13 @@ function injectDrainageOverlay(map, liveData) {
             {/* Right: hazard switcher + time + live badge + hamburger */}
             <div className="flex items-center gap-3 font-mono">
               <div className="hidden lg:block"><HazardSwitcher selected={selectedHazard} onChange={onHazardChange} /></div>
+              <div className="hidden lg:block"><LanguageSwitcher /></div>
+              <button onClick={onDarkModeToggle} title={darkMode?"Light Mode":"Dark Mode"}
+                style={{display:"flex",alignItems:"center",justifyContent:"center",width:"30px",height:"30px",
+                  borderRadius:"7px",background:"rgba(56,189,248,0.10)",border:"1px solid rgba(56,189,248,0.22)",
+                  color:"#38bdf8",fontSize:"15px",cursor:"pointer",flexShrink:0}}>
+                {darkMode ? "☀️" : "🌙"}
+              </button>
               <div className="hidden sm:flex flex-col items-end gap-0.5">
                 <div className="text-sm font-extrabold text-white tracking-widest neon-cyan" style={{whiteSpace:'nowrap'}}>{liveTime}</div>
                 <div className="text-[9px] text-[#3d5066]">{(() => {
@@ -7450,13 +7571,13 @@ function injectDrainageOverlay(map, liveData) {
       const [currentSlots, setCurrentSlots] = useState(DEFAULT_SLOTS);
       const [selectedSlotIndex, setSelectedSlotIndex] = useState(() => getInitialSlotByIstTime());
       const [liveTime, setLiveTime] = useState('');
-      const NAV_TAB_LIST = ['DASHBOARD', 'FORECAST', 'RADAR MAP', 'MODELS', 'EXPLAINABILITY', 'REGIMES', 'LIVE API', 'ATC VIEW'];
+      const NAV_TAB_LIST = ['DASHBOARD', 'FORECAST', 'RADAR MAP', 'MODELS', 'EXPLAINABILITY', 'REGIMES', 'LIVE API', 'ATC VIEW', 'DATA & GRAPHS', 'CONTACTS'];
       const hashToTab = (h) => {
-        const map = { '#dashboard':'DASHBOARD','#forecast':'FORECAST','#radar':'RADAR MAP','#models':'MODELS','#explainability':'EXPLAINABILITY','#regimes':'REGIMES','#api':'LIVE API','#atc':'ATC VIEW','#multiday':'MULTIDAY','#climatology':'CLIMATOLOGY','#scores':'SKILL SCORES','#alerts':'ALERTS','#whatif':'WHATIF' };
+        const map = { '#dashboard':'DASHBOARD','#forecast':'FORECAST','#radar':'RADAR MAP','#models':'MODELS','#explainability':'EXPLAINABILITY','#regimes':'REGIMES','#api':'LIVE API','#atc':'ATC VIEW','#multiday':'MULTIDAY','#climatology':'CLIMATOLOGY','#scores':'SKILL SCORES','#alerts':'ALERTS','#graphs':'DATA & GRAPHS','#contacts':'CONTACTS','#whatif':'WHATIF' };
         return map[h.toLowerCase()] || 'DASHBOARD';
       };
       const tabToHash = (t) => {
-        const map = { 'DASHBOARD':'#dashboard','FORECAST':'#forecast','RADAR MAP':'#radar','MODELS':'#models','EXPLAINABILITY':'#explainability','REGIMES':'#regimes','LIVE API':'#api','ATC VIEW':'#atc','MULTIDAY':'#multiday','CLIMATOLOGY':'#climatology','SKILL SCORES':'#scores','ALERTS':'#alerts','WHATIF':'#whatif' };
+        const map = { 'DASHBOARD':'#dashboard','FORECAST':'#forecast','RADAR MAP':'#radar','MODELS':'#models','EXPLAINABILITY':'#explainability','REGIMES':'#regimes','LIVE API':'#api','ATC VIEW':'#atc','MULTIDAY':'#multiday','CLIMATOLOGY':'#climatology','SKILL SCORES':'#scores','ALERTS':'#alerts','DATA & GRAPHS':'#graphs','CONTACTS':'#contacts','WHATIF':'#whatif' };
         return map[t] || '#dashboard';
       };
       const [activeNavTab, setActiveNavTab] = useState(() => {
@@ -7464,6 +7585,11 @@ function injectDrainageOverlay(map, liveData) {
         return 'DASHBOARD';
       });
       const [selectedHazard, setSelectedHazard] = React.useState('ts');
+      const [lang, setLang] = React.useState(() => { try { return localStorage.getItem('sih_lang') || 'en'; } catch { return 'en'; } });
+      const [darkMode, setDarkMode] = React.useState(true);
+      React.useEffect(() => { try { localStorage.setItem('sih_lang', lang); } catch {} }, [lang]);
+      React.useEffect(() => { if (darkMode) { document.body.classList.remove('light-mode'); } else { document.body.classList.add('light-mode'); } }, [darkMode]);
+
       const hazardCfg = HAZARD_CONFIG[selectedHazard] || HAZARD_CONFIG.ts;
       const [isAtcMode, setIsAtcMode] = useState(false);
       const [showKbHint, setShowKbHint] = useState(() => {
@@ -7722,6 +7848,7 @@ Source: csir-thunderstorm-bengaluru.pages.dev | IMD Station 43295`;
       })();
 
       return (
+        <LangContext.Provider value={{ lang, setLang }}>
         <div className="min-h-screen text-[#e8eaf6] relative overflow-hidden">
           
           {/* ALL 4 SLOT BACKGROUND DIVS — overflow:hidden clips parallax movement */}
@@ -7796,6 +7923,8 @@ Source: csir-thunderstorm-bengaluru.pages.dev | IMD Station 43295`;
               selectedHazard={selectedHazard}
               onHazardChange={setSelectedHazard}
               onNavTabChange={handleNavTabClick}
+              darkMode={darkMode}
+              onDarkModeToggle={() => setDarkMode(m => !m)}
             />
 
             {/* ── STALE DATA BANNER ── */}
@@ -7927,7 +8056,7 @@ Source: csir-thunderstorm-bengaluru.pages.dev | IMD Station 43295`;
                 </AnimatePresence>
               </div>
             ) : (
-            <main className="flex-1 px-3 sm:px-4 lg:px-6 pt-4 pb-8 overflow-x-hidden overflow-y-auto page-grid-bg">
+            <main id="main-content-area" className="flex-1 px-3 sm:px-4 lg:px-6 pt-4 pb-8 overflow-x-hidden overflow-y-auto page-grid-bg">
               <AnimatePresence mode="wait">
                 {activeNavTab === 'FORECAST' && (
                   <motion.div key="forecast"
@@ -8021,6 +8150,24 @@ Source: csir-thunderstorm-bengaluru.pages.dev | IMD Station 43295`;
                     exit={{ opacity: 0, y: -16 }}
                     transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}>
                     <AlertsPage liveData={liveData} />
+                  </motion.div>
+                )}
+                {activeNavTab === 'DATA & GRAPHS' && (
+                  <motion.div key="graphs"
+                    initial={{ opacity: 0, y: 24, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -16 }}
+                    transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}>
+                    <DataGraphsPage liveData={liveData} />
+                  </motion.div>
+                )}
+                {activeNavTab === 'CONTACTS' && (
+                  <motion.div key="contacts"
+                    initial={{ opacity: 0, y: 24, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -16 }}
+                    transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}>
+                    <ContactsPage liveData={liveData} />
                   </motion.div>
                 )}
                 {activeNavTab === 'WHATIF' && (
@@ -8492,7 +8639,19 @@ Source: csir-thunderstorm-bengaluru.pages.dev | IMD Station 43295`;
       );
       const [pushThreshold, setPushThreshold] = React.useState(35);
 
+      React.useEffect(() => {
+        if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+        if (maxProb * 100 >= pushThreshold) {
+          const lastFired = (() => { try { return Number(localStorage.getItem('sih_last_auto') || 0); } catch { return 0; } })();
+          if (Date.now() - lastFired > 15 * 60 * 1000) {
+            new Notification('⚡ IMD Alert — VOBL', { body: `Prob: ${Math.round(maxProb*100)}% — exceeds ${pushThreshold}% threshold.`, icon:'/manifest.json', tag:'sih-auto' });
+            try { localStorage.setItem('sih_last_auto', String(Date.now())); } catch {}
+          }
+        }
+      }, [maxProb, pushThreshold]);
+
       const enableNotifications = async () => {
+
         if (typeof Notification === 'undefined') return;
         const perm = await Notification.requestPermission();
         setNotifStatus(perm);
@@ -8868,9 +9027,338 @@ Source: csir-thunderstorm-bengaluru.pages.dev | IMD Station 43295`;
           </div>
         </div>
       );
+        {/* == MOBILE BOTTOM NAV == */}
+        <nav className="bottom-nav">
+          {[
+            { tab:'DASHBOARD',     icon:'🏠', label:'Home' },
+            { tab:'RADAR MAP',     icon:'🗺️',  label:'Radar' },
+            { tab:'DATA & GRAPHS', icon:'📊', label:'Graphs' },
+            { tab:'ALERTS',        icon:'🔔', label:'Alerts' },
+            { tab:'CONTACTS',      icon:'📞', label:'Contacts' },
+          ].map(({tab, icon, label}) => (
+            <button key={tab} className={`bnav-btn${activeNavTab===tab?' active':''}`}
+              onClick={() => handleNavTabClick(tab)}>
+              <span className="icon">{icon}</span>
+              <span>{label}</span>
+            </button>
+          ))}
+        </nav>
+        </LangContext.Provider>
+
+      );
+    }    // ═══════════════════════════════════════════════════════════════════════════
+
+    // == DATA & GRAPHS PAGE ==================================================
+    function DataGraphsPage({ liveData }) {
+      const [history, setHistory] = React.useState(() => {
+        try { return JSON.parse(localStorage.getItem('sih_history') || '[]'); } catch { return []; }
+      });
+      const [selectedMetric, setSelectedMetric] = React.useState('probability');
+
+      React.useEffect(() => {
+        if (!liveData) return;
+        const now = new Date();
+        const istStr = now.toLocaleString('en-IN', { timeZone:'Asia/Kolkata', hour12:false, hour:'2-digit', minute:'2-digit', month:'short', day:'numeric' });
+        const snap = {
+          ts: Date.now(), label: istStr,
+          probability: Math.round((liveData.peak_probability || 0) * 100),
+          iwv:  liveData.gfs?.iwv_kg_m2        != null ? Math.round(liveData.gfs.iwv_kg_m2) : null,
+          cape: liveData.gfs?.ua_cape_jkg       != null ? Math.round(liveData.gfs.ua_cape_jkg) : null,
+          shear:liveData.gfs?.wind_shear_0_6km_ms != null ? Math.round(liveData.gfs.wind_shear_0_6km_ms*10)/10 : null,
+          kidx: liveData.gfs?.ua_k_index        != null ? Math.round(liveData.gfs.ua_k_index) : null,
+        };
+        setHistory(prev => {
+          const last = prev[prev.length - 1];
+          if (last && (snap.ts - last.ts) < 5 * 60 * 1000) return prev;
+          const next = [...prev.slice(-47), snap];
+          try { localStorage.setItem('sih_history', JSON.stringify(next)); } catch {}
+          return next;
+        });
+      }, [liveData]);
+
+      const METRICS = [
+        { key:'probability', label:'Thunderstorm Probability', unit:'%',     color:'#ef5350', max:100,  thresholdLine:35   },
+        { key:'iwv',         label:'Integrated Water Vapour',  unit:'kg/m²',color:'#38bdf8', max:60,   thresholdLine:45   },
+        { key:'cape',        label:'CAPE  (Storm Energy)',      unit:'J/kg',  color:'#ffa726', max:3000, thresholdLine:1500 },
+        { key:'shear',       label:'Wind Shear 0–6 km',       unit:'m/s',   color:'#66bb6a', max:30,   thresholdLine:12   },
+        { key:'kidx',        label:'K-Index',                  unit:'',      color:'#ab47bc', max:50,   thresholdLine:35   },
+      ];
+      const m = METRICS.find(x => x.key === selectedMetric) || METRICS[0];
+      const data = history.filter(h => h[m.key] != null);
+
+      const W=640, H=180, PAD={l:42,r:12,t:16,b:36};
+      const cW=W-PAD.l-PAD.r, cH=H-PAD.t-PAD.b;
+      const toX = i => PAD.l + (data.length<=1 ? cW/2 : (i/(data.length-1))*cW);
+      const toY = v => PAD.t + cH - Math.min(1,Math.max(0,v/(m.max||100)))*cH;
+      const pts  = data.map((d,i)=>`${toX(i)},${toY(d[m.key])}`).join(' ');
+      const poly = data.length>1
+        ? `${PAD.l},${PAD.t+cH} ${data.map((d,i)=>`${toX(i)},${toY(d[m.key])}`).join(' ')} ${toX(data.length-1)},${PAD.t+cH}`
+        : '';
+
+      const cv = liveData ? (() => {
+        if(m.key==='probability') return Math.round((liveData.peak_probability||0)*100);
+        if(m.key==='iwv')   return liveData.gfs?.iwv_kg_m2!=null?Math.round(liveData.gfs.iwv_kg_m2):null;
+        if(m.key==='cape')  return liveData.gfs?.ua_cape_jkg!=null?Math.round(liveData.gfs.ua_cape_jkg):null;
+        if(m.key==='shear') return liveData.gfs?.wind_shear_0_6km_ms!=null?Math.round(liveData.gfs.wind_shear_0_6km_ms*10)/10:null;
+        if(m.key==='kidx')  return liveData.gfs?.ua_k_index!=null?Math.round(liveData.gfs.ua_k_index):null;
+        return null;
+      })() : null;
+      const aboveThresh = m.thresholdLine && cv!=null && cv>=m.thresholdLine;
+
+      return (
+        <div className="p-4 lg:p-6 space-y-5">
+          <PageHeader eyebrow="METEOROLOGICAL TIME SERIES" title="Data & Graphs"
+            subtitle="Atmospheric parameters tracked over time at VOBL/Bengaluru. Readings captured automatically each session."
+            badge="LIVE" badgeColor="sky" />
+
+          <div className="atc-card rounded-2xl p-4">
+            <div className="text-[10px] font-bold tracking-widest text-[#607d8b] mb-3">SELECT PARAMETER</div>
+            <div style={{display:'flex',flexWrap:'wrap',gap:'8px'}}>
+              {METRICS.map(mx=>(
+                <button key={mx.key} onClick={()=>setSelectedMetric(mx.key)}
+                  style={{padding:'6px 14px',borderRadius:'8px',fontSize:'12px',fontWeight:'600',cursor:'pointer',
+                    background: selectedMetric===mx.key?`${mx.color}22`:'rgba(255,255,255,0.04)',
+                    border:`1px solid ${selectedMetric===mx.key?mx.color:'rgba(255,255,255,0.1)'}`,
+                    color: selectedMetric===mx.key?mx.color:'#90a4ae',transition:'all 0.2s'}}>
+                  {mx.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(155px,1fr))',gap:'12px'}}>
+            <div className="atc-card rounded-2xl p-4" style={{borderColor:aboveThresh?'rgba(239,83,80,0.4)':undefined}}>
+              <div className="text-[10px] font-bold tracking-widest text-[#607d8b] mb-1">NOW</div>
+              <div style={{fontSize:'28px',fontWeight:'800',color:aboveThresh?'#ef5350':m.color,fontFamily:'monospace'}}>
+                {cv!=null?cv:'--'}<span style={{fontSize:'13px',color:'#607d8b',marginLeft:'4px'}}>{m.unit}</span>
+              </div>
+              {aboveThresh&&<div style={{fontSize:'10px',color:'#ef5350',marginTop:'4px',fontWeight:'700'}}>ABOVE THRESHOLD ({m.thresholdLine}{m.unit})</div>}
+            </div>
+            {data.length>0&&[
+              {label:'SESSION MAX', val:Math.max(...data.map(d=>d[m.key]))},
+              {label:'SESSION AVG', val:Math.round(data.reduce((a,d)=>a+d[m.key],0)/data.length)},
+            ].map(x=>(
+              <div key={x.label} className="atc-card rounded-2xl p-4">
+                <div className="text-[10px] font-bold tracking-widest text-[#607d8b] mb-1">{x.label}</div>
+                <div style={{fontSize:'28px',fontWeight:'800',color:m.color,fontFamily:'monospace'}}>
+                  {x.val}<span style={{fontSize:'13px',color:'#607d8b',marginLeft:'4px'}}>{m.unit}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="atc-card rounded-2xl p-4">
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'12px'}}>
+              <div>
+                <div className="text-[10px] font-bold tracking-widest text-[#607d8b]">{m.label.toUpperCase()} OVER TIME</div>
+                <div style={{fontSize:'11px',color:'#455a64',marginTop:'2px'}}>{data.length} readings this session</div>
+              </div>
+              {data.length>0&&(
+                <button onClick={()=>{try{localStorage.removeItem('sih_history');}catch{}setHistory([]);}}
+                  style={{fontSize:'10px',color:'#607d8b',background:'transparent',border:'1px solid rgba(255,255,255,0.1)',borderRadius:'6px',padding:'4px 8px',cursor:'pointer'}}>
+                  Clear
+                </button>
+              )}
+            </div>
+            {data.length<2?(
+              <div style={{textAlign:'center',padding:'40px',color:'#607d8b',fontSize:'13px'}}>
+                <div style={{fontSize:'32px',marginBottom:'8px'}}>📊</div>
+                Readings accumulate as you use the dashboard. Check back after a few visits.
+              </div>
+            ):(
+              <div style={{overflowX:'auto'}}>
+                <svg viewBox={`0 0 ${W} ${H}`} style={{width:'100%',minWidth:'300px',height:'auto'}}>
+                  {[0,0.25,0.5,0.75,1].map(f=>{
+                    const y=PAD.t+cH*(1-f), val=Math.round(m.max*f);
+                    return <g key={f}><line x1={PAD.l} x2={PAD.l+cW} y1={y} y2={y} stroke="rgba(255,255,255,0.06)" strokeWidth="1"/><text x={PAD.l-4} y={y+4} textAnchor="end" fontSize="9" fill="#546e7a">{val}</text></g>;
+                  })}
+                  {m.thresholdLine&&(()=>{const ty=toY(m.thresholdLine);return <g><line x1={PAD.l} x2={PAD.l+cW} y1={ty} y2={ty} stroke="#ef5350" strokeWidth="1" strokeDasharray="4,3" opacity="0.6"/><text x={PAD.l+cW} y={ty-3} textAnchor="end" fontSize="9" fill="#ef5350" opacity="0.8">threshold</text></g>;})()}
+                  {poly&&<polygon points={poly} fill={`${m.color}18`}/>}
+                  <polyline points={pts} fill="none" stroke={m.color} strokeWidth="2" strokeLinejoin="round"/>
+                  {data.map((d,i)=><circle key={i} cx={toX(i)} cy={toY(d[m.key])} r="3" fill={m.color}/>)}
+                  {data.filter((_,i)=>i%Math.max(1,Math.floor(data.length/6))===0||i===data.length-1).map(d=>(
+                    <text key={d.ts} x={toX(data.indexOf(d))} y={H-6} textAnchor="middle" fontSize="8" fill="#546e7a">{d.label.split(',')[0]}</text>
+                  ))}
+                  <text x={PAD.l-2} y={PAD.t-4} textAnchor="middle" fontSize="9" fill="#546e7a">{m.unit}</text>
+                </svg>
+              </div>
+            )}
+          </div>
+
+          {data.length>0&&(
+            <div className="atc-card rounded-2xl p-4" style={{overflowX:'auto'}}>
+              <div className="text-[10px] font-bold tracking-widest text-[#607d8b] mb-3">LAST {Math.min(data.length,10)} READINGS</div>
+              <table style={{width:'100%',borderCollapse:'collapse',fontSize:'12px'}}>
+                <thead><tr style={{borderBottom:'1px solid rgba(255,255,255,0.08)'}}>
+                  {['TIME (IST)','PROB %','IWV','CAPE','K-IDX'].map(h=>(
+                    <th key={h} style={{padding:'6px 8px',color:'#607d8b',fontWeight:'600',fontSize:'10px',textAlign:h==='TIME (IST)'?'left':'right',letterSpacing:'0.06em'}}>{h}</th>
+                  ))}
+                </tr></thead>
+                <tbody>
+                  {[...history].reverse().slice(0,10).map((row,i)=>(
+                    <tr key={row.ts} style={{borderBottom:'1px solid rgba(255,255,255,0.04)',background:i%2===0?'rgba(255,255,255,0.02)':'transparent'}}>
+                      <td style={{padding:'6px 8px',color:'#90a4ae',fontFamily:'monospace',fontSize:'11px'}}>{row.label}</td>
+                      <td style={{padding:'6px 8px',textAlign:'right',color:row.probability>=35?'#ef5350':'#e8eaf6',fontWeight:row.probability>=35?'700':'400',fontFamily:'monospace'}}>{row.probability??'--'}</td>
+                      <td style={{padding:'6px 8px',textAlign:'right',color:'#38bdf8',fontFamily:'monospace'}}>{row.iwv??'--'}</td>
+                      <td style={{padding:'6px 8px',textAlign:'right',color:(row.cape||0)>=1500?'#ffa726':'#e8eaf6',fontFamily:'monospace'}}>{row.cape??'--'}</td>
+                      <td style={{padding:'6px 8px',textAlign:'right',color:(row.kidx||0)>=35?'#ab47bc':'#e8eaf6',fontFamily:'monospace'}}>{row.kidx??'--'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      );
     }
 
-    // ═══════════════════════════════════════════════════════════════════════════
+    // == CONTACTS PAGE =======================================================
+    function ContactsPage({ liveData }) {
+      const [contacts, setContacts] = React.useState(() => {
+        try { return JSON.parse(localStorage.getItem('sih_contacts')||'[]'); } catch { return []; }
+      });
+      const [form, setForm] = React.useState({name:'',phone:'',email:'',note:''});
+      const [alertMsg, setAlertMsg] = React.useState('');
+      const [sending, setSending] = React.useState(false);
+      const [sentTo, setSentTo] = React.useState([]);
+
+      const save = (next) => { setContacts(next); try{localStorage.setItem('sih_contacts',JSON.stringify(next));}catch{} };
+
+      const addContact = () => {
+        if (!form.name.trim() || (!form.phone.trim() && !form.email.trim())) {
+          alert('Please enter a name and at least a phone number or email.'); return;
+        }
+        save([...contacts, {...form, id:Date.now()}]);
+        setForm({name:'',phone:'',email:'',note:''});
+      };
+
+      const maxProb = liveData ? Math.max(liveData.peak_probability||0,...(liveData.slots||[]).map(s=>s.probability||0)) : 0;
+      const isAlert = maxProb>=0.35;
+
+      const threshItems = [
+        {label:'Thunderstorm Probability', val:Math.round((liveData?.peak_probability||0)*100), threshold:35, unit:'%', color:'#ef5350'},
+        {label:'Integrated Water Vapour',  val:liveData?.gfs?.iwv_kg_m2!=null?Math.round(liveData.gfs.iwv_kg_m2):null, threshold:45, unit:'kg/m²', color:'#38bdf8'},
+        {label:'CAPE',                     val:liveData?.gfs?.ua_cape_jkg!=null?Math.round(liveData.gfs.ua_cape_jkg):null, threshold:1500, unit:'J/kg', color:'#ffa726'},
+        {label:'K-Index',                  val:liveData?.gfs?.ua_k_index!=null?Math.round(liveData.gfs.ua_k_index):null, threshold:35, unit:'', color:'#ab47bc'},
+      ];
+
+      const sendAlert = () => {
+        if (!contacts.length){alert('No contacts registered yet.');return;}
+        const msg = alertMsg.trim() || `Emergency alert from IMD Hyperlocal Warning System. Current thunderstorm probability at VOBL: ${Math.round(maxProb*100)}%. Please take precautions.`;
+        setSending(true);
+        setTimeout(()=>{
+          setSentTo(contacts.map(c=>c.name));
+          setSending(false); setAlertMsg('');
+          alert('Alert prepared for '+contacts.length+' contact(s):
+
+'+msg+'
+
+(In production this dispatches via SMS/WhatsApp/email through the alert worker.)');
+        },1000);
+      };
+
+      return (
+        <div className="p-4 lg:p-6 space-y-5">
+          <PageHeader eyebrow="EMERGENCY CONTACTS" title="Contacts & Manual Alerts"
+            subtitle="Register emergency contacts and dispatch alerts during severe weather events."
+            badge={isAlert?'ALERT CONDITIONS':'STANDBY'} badgeColor={isAlert?'red':'green'} />
+
+          <div className="atc-card rounded-2xl p-5">
+            <div className="text-[10px] font-bold tracking-widest text-[#607d8b] mb-3">AUTOMATIC THRESHOLD STATUS</div>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(175px,1fr))',gap:'10px'}}>
+              {threshItems.map(item=>{
+                const triggered = item.val!=null && item.val>=item.threshold;
+                return (
+                  <div key={item.label} style={{padding:'12px',borderRadius:'10px',
+                    background:triggered?`${item.color}18`:'rgba(255,255,255,0.03)',
+                    border:`1px solid ${triggered?item.color+'55':'rgba(255,255,255,0.08)'}`}}>
+                    <div style={{fontSize:'10px',color:'#607d8b',fontWeight:'600',letterSpacing:'0.06em',marginBottom:'4px'}}>{item.label}</div>
+                    <div style={{fontSize:'22px',fontWeight:'800',color:triggered?item.color:'#e8eaf6',fontFamily:'monospace'}}>
+                      {item.val!=null?item.val:'--'}<span style={{fontSize:'11px',color:'#607d8b',marginLeft:'3px'}}>{item.unit}</span>
+                    </div>
+                    <div style={{fontSize:'10px',marginTop:'4px',color:triggered?item.color:'#546e7a'}}>
+                      {triggered?'ABOVE THRESHOLD':'OK'} — threshold: {item.threshold}{item.unit}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div style={{marginTop:'10px',fontSize:'11px',color:'#546e7a'}}>
+              Browser push notifications fire automatically when probability exceeds your set threshold. Manual alerts below let you message all registered contacts directly.
+            </div>
+          </div>
+
+          <div className="atc-card rounded-2xl p-5">
+            <div className="text-[10px] font-bold tracking-widest text-[#607d8b] mb-3">SEND MANUAL ALERT TO ALL CONTACTS</div>
+            <textarea value={alertMsg} onChange={e=>setAlertMsg(e.target.value)} rows={3}
+              placeholder={'Custom message (leave blank for default auto-message)'}
+              style={{width:'100%',padding:'10px',borderRadius:'8px',fontSize:'12px',
+                background:'rgba(255,255,255,0.04)',border:'1px solid rgba(56,189,248,0.2)',
+                color:'#e8eaf6',resize:'vertical',outline:'none',fontFamily:'inherit',boxSizing:'border-box'}}/>
+            <div style={{display:'flex',gap:'10px',marginTop:'10px',alignItems:'center',flexWrap:'wrap'}}>
+              <button onClick={sendAlert} disabled={sending}
+                style={{padding:'10px 20px',borderRadius:'8px',fontSize:'13px',fontWeight:'700',cursor:'pointer',
+                  background:isAlert?'rgba(239,83,80,0.85)':'rgba(56,189,248,0.15)',
+                  border:`1px solid ${isAlert?'rgba(239,83,80,0.6)':'rgba(56,189,248,0.35)'}`,
+                  color:isAlert?'#fff':'#38bdf8',opacity:sending?0.6:1}}>
+                {sending?'Sending...':'📢 Send to '+contacts.length+' Contact(s)'}
+              </button>
+              {sentTo.length>0&&<span style={{fontSize:'11px',color:'#4caf50'}}>✔ Sent to: {sentTo.join(', ')}</span>}
+            </div>
+          </div>
+
+          <div className="atc-card rounded-2xl p-5">
+            <div className="text-[10px] font-bold tracking-widest text-[#607d8b] mb-4">REGISTER NEW CONTACT</div>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'10px',marginBottom:'10px'}}>
+              {[{k:'name',p:'Full Name *',t:'text'},{k:'phone',p:'Phone / WhatsApp',t:'tel'},{k:'email',p:'Email Address',t:'email'},{k:'note',p:'Role / Note',t:'text'}].map(f=>(
+                <input key={f.k} type={f.t} placeholder={f.p} value={form[f.k]}
+                  onChange={e=>setForm(x=>({...x,[f.k]:e.target.value}))}
+                  style={{padding:'9px 12px',borderRadius:'8px',fontSize:'13px',
+                    background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.12)',
+                    color:'#e8eaf6',outline:'none',fontFamily:'inherit'}}/>
+              ))}
+            </div>
+            <button onClick={addContact}
+              style={{padding:'9px 20px',borderRadius:'8px',fontSize:'13px',fontWeight:'700',cursor:'pointer',
+                background:'rgba(56,189,248,0.15)',border:'1px solid rgba(56,189,248,0.35)',color:'#38bdf8'}}>
+              + Add Contact
+            </button>
+          </div>
+
+          {contacts.length>0?(
+            <div className="atc-card rounded-2xl p-5">
+              <div className="text-[10px] font-bold tracking-widest text-[#607d8b] mb-3">REGISTERED CONTACTS ({contacts.length})</div>
+              <div style={{display:'flex',flexDirection:'column',gap:'8px'}}>
+                {contacts.map(c=>(
+                  <div key={c.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',
+                    padding:'10px 12px',borderRadius:'8px',background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.08)'}}>
+                    <div>
+                      <div style={{fontWeight:'600',fontSize:'13px',color:'#e8eaf6'}}>{c.name}</div>
+                      <div style={{fontSize:'11px',color:'#607d8b',marginTop:'2px'}}>
+                        {[c.phone&&`📞 ${c.phone}`,c.email&&`✉️ ${c.email}`,c.note&&`📋 ${c.note}`].filter(Boolean).join('  ·  ')}
+                      </div>
+                    </div>
+                    <button onClick={()=>save(contacts.filter(x=>x.id!==c.id))}
+                      style={{padding:'5px 10px',borderRadius:'6px',fontSize:'11px',cursor:'pointer',
+                        background:'rgba(239,83,80,0.1)',border:'1px solid rgba(239,83,80,0.3)',color:'#ef5350',fontWeight:'600'}}>
+                      Remove
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ):(
+            <div className="atc-card rounded-2xl p-5" style={{textAlign:'center',color:'#607d8b',padding:'32px'}}>
+              <div style={{fontSize:'32px',marginBottom:'8px'}}>📞</div>
+              <div style={{fontSize:'13px'}}>No contacts registered yet.</div>
+              <div style={{fontSize:'11px',marginTop:'4px',color:'#455a64'}}>Add emergency contacts above to enable manual alert dispatch.</div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+
     // END NEW FEATURE PAGES
     // ═══════════════════════════════════════════════════════════════════════════
 
