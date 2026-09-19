@@ -510,8 +510,15 @@
     function LanguageSwitcher() {
       const { lang, setLang } = React.useContext(LangContext);
       const [open, setOpen] = React.useState(false);
+      const ref = React.useRef(null);
+      React.useEffect(() => {
+        if (!open) return;
+        function handleClick(e) { if (ref.current && !ref.current.contains(e.target)) setOpen(false); }
+        document.addEventListener('mousedown', handleClick);
+        return () => document.removeEventListener('mousedown', handleClick);
+      }, [open]);
       return (
-        <div style={{ position: 'relative' }}>
+        <div ref={ref} style={{ position: 'relative' }}>
           <button onClick={() => setOpen(o => !o)}
             style={{ display:'flex', alignItems:'center', gap:'5px', padding:'4px 8px', borderRadius:'7px',
               background:'rgba(56,189,248,0.10)', border:'1px solid rgba(56,189,248,0.22)',
@@ -520,8 +527,9 @@
             <span>{LANGS[lang] ? LANGS[lang].short : 'EN'}</span>
           </button>
           {open && (
-            <div style={{ position:'absolute', top:'110%', right:0, zIndex:999, background:'rgba(4,7,17,0.97)',
-              border:'1px solid rgba(56,189,248,0.22)', borderRadius:'10px', overflow:'hidden', minWidth:'130px' }}>
+            <div style={{ position:'absolute', top:'110%', right:0, zIndex:9999, background:'rgba(4,7,17,0.97)',
+              border:'1px solid rgba(56,189,248,0.22)', borderRadius:'10px', overflow:'hidden', minWidth:'130px',
+              boxShadow:'0 8px 32px rgba(0,0,0,0.6)' }}>
               {Object.entries(LANGS).map(([code, info]) => (
                 <button key={code} onClick={() => { setLang(code); setOpen(false); }}
                   style={{ display:'block', width:'100%', textAlign:'left', padding:'8px 12px',
@@ -1697,13 +1705,7 @@ function injectDrainageOverlay(map, liveData) {
             <div className="flex items-center gap-3 font-mono">
               <div className="hidden lg:block"><HazardSwitcher selected={selectedHazard} onChange={onHazardChange} /></div>
               <div className="hidden lg:block"><LanguageSwitcher /></div>
-              <button onClick={onDarkModeToggle} title={darkMode?"Light Mode":"Dark Mode"}
-                style={{display:"flex",alignItems:"center",justifyContent:"center",width:"30px",height:"30px",
-                  borderRadius:"7px",background:"rgba(56,189,248,0.10)",border:"1px solid rgba(56,189,248,0.22)",
-                  color:"#38bdf8",fontSize:"15px",cursor:"pointer",flexShrink:0}}>
-                {darkMode ? "☀️" : "🌙"}
-              </button>
-              <div className="hidden sm:flex flex-col items-end gap-0.5">
+              <div className="flex flex-col items-end gap-0.5">
                 <div className="text-sm font-extrabold text-white tracking-widest neon-cyan" style={{whiteSpace:'nowrap'}}>{liveTime}</div>
                 <div className="text-[9px] text-[#3d5066]">{(() => {
                   const now = new Date();
