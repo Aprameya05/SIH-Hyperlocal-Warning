@@ -257,6 +257,8 @@
     .neon-amber { color:#ffc107; text-shadow:0 0 10px rgba(255,193,7,0.9), 0 0 30px rgba(255,193,7,0.4); }
 
     /* ── NAV ACTIVE GLOW ─────────────────────────────────────────── */
+    .nav-scroll { scrollbar-width: none; -ms-overflow-style: none; }
+    .nav-scroll::-webkit-scrollbar { display: none; }
     .nav-tab-active {
       color: #38bdf8 !important;
       text-shadow: 0 0 16px rgba(56,189,248,0.8);
@@ -417,63 +419,6 @@
       color: #38bdf8;
     }
 
-
-    /* == LIGHT MODE ================================================================ */
-    body.light-mode { background: #f0f4fa !important; color: #1a2332 !important; }
-    body.light-mode #root > div { background: #f0f4fa; color: #1a2332; }
-    body.light-mode .atc-card {
-      background: rgba(255,255,255,0.92) !important;
-      border-color: rgba(100,130,170,0.25) !important;
-      color: #1a2332 !important;
-    }
-    body.light-mode header {
-      background: rgba(240,244,250,0.97) !important;
-      border-bottom-color: rgba(100,130,200,0.25) !important;
-    }
-    body.light-mode .slot-bg-common { opacity: 0.05 !important; }
-    body.light-mode .text-\[\#e8eaf6\] { color: #1a2332 !important; }
-    body.light-mode .text-\[\#607d8b\] { color: #455a64 !important; }
-    body.light-mode .text-\[\#90a4ae\] { color: #546e7a !important; }
-    body.light-mode .text-white { color: #1a2332 !important; }
-    body.light-mode .bg-\[\#040711\] { background: #f0f4fa !important; }
-
-    /* == MOBILE LEGIBILITY ========================================================= */
-    @media (max-width: 640px) {
-      .text-\[10px\] { font-size: 12px !important; }
-      .text-xs { font-size: 13px !important; }
-    }
-
-    /* == BOTTOM NAV ================================================================ */
-    .bottom-nav {
-      position: fixed; bottom: 0; left: 0; right: 0;
-      display: none; z-index: 9000;
-      background: rgba(4,7,17,0.97);
-      border-top: 1px solid rgba(56,189,248,0.18);
-      backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
-      padding-bottom: env(safe-area-inset-bottom, 0px);
-    }
-    body.light-mode .bottom-nav {
-      background: rgba(240,244,250,0.97);
-      border-top-color: rgba(100,130,200,0.25);
-    }
-    @media (max-width: 640px) {
-      .bottom-nav { display: flex; }
-      #main-content-area { padding-bottom: 70px !important; }
-    }
-    .bnav-btn {
-      flex: 1; display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      padding: 8px 4px 6px; font-size: 10px; font-weight: 600;
-      letter-spacing: 0.05em; color: #607d8b; gap: 3px;
-      cursor: pointer; border: none; background: transparent;
-      min-height: 56px; transition: color 0.2s;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .bnav-btn.active { color: #38bdf8; }
-    .bnav-btn span.icon { font-size: 20px; line-height: 1; }
-    body.light-mode .bnav-btn { color: #546e7a; }
-    body.light-mode .bnav-btn.active { color: #0284c7; }
-
   </style>
 </head>
 <body class="bg-[#040711] text-[#e8eaf6] antialiased min-h-screen font-sans relative overflow-x-hidden selection:bg-sky-400 selection:text-black">
@@ -482,108 +427,6 @@
 
   <script type="text/babel">
     const { useState, useEffect, useRef, useMemo } = React;
-
-    // == I18N ===========================================================
-    const LANGS = {
-      en: { name: 'English', short: 'EN' },
-      hi: { name: 'हिन्दी', short: 'हि' },
-      kn: { name: 'ಕನ್ನಡ', short: 'ಕನ' },
-      ta: { name: 'தமிழ்', short: 'தமி' },
-      te: { name: 'తెలుగు', short: 'తె' },
-      bn: { name: 'বাংলা', short: 'বা' },
-      mr: { name: 'मराठी', short: 'मर' },
-    };
-    const TR = {
-      // Nav tabs
-      DASHBOARD:          { hi:'डैशबोर्ड',        kn:'ಡ್ಯಾಶ್‌ಬೋರ್ಡ್',   ta:'டாஷ்போர்டு',      te:'డ్యాష్‌బోర్డ్',  bn:'ড্যাশবোর্ড',   mr:'डॅशबोर्ड' },
-      FORECAST:           { hi:'पूर्वानुमान',       kn:'ಮುನ್ಸೂಚನೆ',       ta:'முன்னரிவு',        te:'మున్సూచన',       bn:'পূর্বাভাস',     mr:'अंदाज' },
-      'RADAR MAP':        { hi:'रडार मानचित्र',     kn:'ರೇಡಾರ್ ನಕ್ಷೆ',    ta:'ராடார் வரைபடம்',  te:'రేడార్ మాప్',   bn:'রাডার ম্যাপ',  mr:'रडार नकाशा' },
-      ALERTS:             { hi:'सतर्कता',           kn:'ಎಚ್ಚರಿಕೆ',          ta:'எச்சரிக்கை',       te:'హెచ్చరికలు',    bn:'সতর্কতা',       mr:'सूचना' },
-      'DATA & GRAPHS':    { hi:'डेटा & ग्राफ',     kn:'ಡೇಟಾ & ಗ್ರಾಫ್',  ta:'தரவு & வரைபடம்',  te:'డేటా & గ్రాఫ్', bn:'ডেটা ও গ্রাফ', mr:'डेटा आणि आलेख' },
-      CONTACTS:           { hi:'संपर्क',            kn:'ಸಂಪರ್ಕ',            ta:'தொடர்புகள்',       te:'సంపర్కాలు',     bn:'যোগাযোগ',       mr:'संपर्क' },
-      MODELS:             { hi:'मॉडल',              kn:'ಮಾಡಲ್‌ಗಳು',        ta:'மாடல்கள்',         te:'మాడలు',          bn:'মডেল',           mr:'मॉडेल्स' },
-      EXPLAINABILITY:     { hi:'व्याख्या',           kn:'ವಿವರಣೆ',            ta:'விளக்கம்',         te:'వివరణ',          bn:'ব্যাখ্যা',      mr:'स्पष्टीकरण' },
-      REGIMES:            { hi:'मौसम प्रकार',        kn:'ಹವಾಮಾನ ಪ್ರಕಾರ',    ta:'காலநிலை வகை',     te:'వాతావరణ రకం',   bn:'আবহাওয়া ধরন',  mr:'हवामान प्रकार' },
-      MULTIDAY:           { hi:'बहु-दिवस',           kn:'ಬಹು-ದಿನ',           ta:'பல நாள்',          te:'బహు-దిన',        bn:'বহু-দিন',        mr:'बहु-दिवस' },
-      CLIMATOLOGY:        { hi:'जलवायुशास्त्र',      kn:'ಹವಾಮಾನಶಾಸ್ತ್ರ',    ta:'காலநிலையியல்',    te:'వాతావరణ శాస్త్రం', bn:'জলবায়ুবিদ্যা', mr:'हवामानशास्त्र' },
-      'SKILL SCORES':     { hi:'कौशल स्कोर',         kn:'ಕೌಶಲ ಸ್ಕೋರ್',      ta:'திறன் மதிப்பு',   te:'నైపుణ్య స్కోర్',bn:'দক্ষতা স্কোর',  mr:'कौशल्य गुण' },
-      WHATIF:             { hi:'क्या-अगर',            kn:'ಏನಾದರೆ',            ta:'என்னானால்',       te:'అయితే ఏమి',     bn:'যদি-হয়',        mr:'जर-तर' },
-      'LIVE API':         { hi:'लाइव API',            kn:'ನೇರ API',           ta:'நேரடி API',        te:'లైవ్ API',       bn:'সরাসরি API',    mr:'थेट API' },
-      'ATC VIEW':         { hi:'ATC दृश्य',           kn:'ATC ನೋಟ',           ta:'ATC காட்சி',       te:'ATC వీక్షణ',    bn:'ATC দৃশ্য',     mr:'ATC दृश्य' },
-      // Slot time labels
-      'LATE NIGHT':       { hi:'देर रात',             kn:'ತಡ ರಾತ್ರಿ',         ta:'இரவு நேரம்',      te:'అర్ధరాత్రి',    bn:'গভীর রাত',      mr:'उशीर रात्र' },
-      MORNING:            { hi:'सुबह',                kn:'ಬೆಳಿಗ್ಗೆ',          ta:'காலை',             te:'ఉదయం',           bn:'সকাল',           mr:'सकाळ' },
-      AFTERNOON:          { hi:'दोपहर',               kn:'ಮಧ್ಯಾಹ್ನ',          ta:'மதியம்',           te:'మధ్యాహ్నం',     bn:'দুপুর',          mr:'दुपार' },
-      EVENING:            { hi:'शाम',                 kn:'ಸಂಜೆ',              ta:'மாலை',             te:'సాయంత్రం',      bn:'সন্ধ্যা',        mr:'संध्याकाळ' },
-      // Status / alert
-      ACTIVE:             { hi:'सक्रिय',              kn:'ಸಕ್ರಿಯ',            ta:'செயலில்',          te:'క్రియాశీలం',    bn:'সক্রিয়',        mr:'सक्रिय' },
-      CLEAR:              { hi:'साफ',                 kn:'ಸ್ಪಷ್ಟ',             ta:'தெளிவு',           te:'స్పష్టం',        bn:'পরিষ্কার',       mr:'स्वच्छ' },
-      RISK:               { hi:'जोखिम',               kn:'ಅಪಾಯ',              ta:'ஆபத்து',           te:'ప్రమాదం',        bn:'ঝুঁকি',          mr:'धोका' },
-      LIVE:               { hi:'सीधा',                kn:'ನೇರ',               ta:'நேரடி',            te:'నేరుగా',         bn:'সরাসরি',         mr:'थेट' },
-      // Common UI
-      'DOWNLOAD BRIEFING':{ hi:'ब्रीफिंग डाउनलोड',   kn:'ಬ್ರೀಫಿಂಗ್ ಡೌನ್‌ಲೋಡ್', ta:'சுருக்கம் பதிவிறக்கு', te:'బ్రీఫింగ్ డౌన్‌లోడ్', bn:'ব্রিফিং ডাউনলোড', mr:'ब्रीफिंग डाउनलोड' },
-      NOWCAST:            { hi:'अभी का पूर्वानुमान',  kn:'ಈಗಿನ ಮುನ್ಸೂಚನೆ',   ta:'இப்போதைய முன்னரிவு', te:'ఇప్పటి మున్సూచన', bn:'তাৎক্ষণিক পূর্বাভাস', mr:'आत्ताचे पूर्वानुमान' },
-      ANALYSIS:           { hi:'विश्लेषण',             kn:'ವಿಶ್ಲೇಷಣೆ',         ta:'பகுப்பாய்வு',      te:'విశ్లేషణ',       bn:'বিশ্লেষণ',       mr:'विश्लेषण' },
-      HISTORY:            { hi:'इतिहास',               kn:'ಇತಿಹಾಸ',            ta:'வரலாறு',           te:'చరిత్ర',         bn:'ইতিহাস',         mr:'इतिहास' },
-      OPS:                { hi:'संचालन',               kn:'ಕಾರ್ಯಾಚರಣೆ',       ta:'செயல்பாடு',        te:'కార్యక్రమం',    bn:'অপারেশন',        mr:'संचालन' },
-      THUNDERSTORM:       { hi:'आंधी',                 kn:'ಗುಡುಗು ಸಹಿತ ಮಳೆ',  ta:'இடியுடன் மழை',   te:'గుంపు వానలు',   bn:'বজ্রঝড়',         mr:'विजांसह पाऊस' },
-      PROBABILITY:        { hi:'संभावना',              kn:'ಸಂಭಾವ್ಯತೆ',         ta:'நிகழ்தகவு',       te:'సంభావ్యత',       bn:'সম্ভাবনা',       mr:'संभाव्यता' },
-      ALERT:              { hi:'चेतावनी',              kn:'ಎಚ್ಚರಿಕೆ',           ta:'எச்சரிக்கை',      te:'హెచ్చరిక',       bn:'সতর্কতা',        mr:'इशारा' },
-      'NO ALERT':         { hi:'कोई चेतावनी नहीं',    kn:'ಯಾವುದೇ ಎಚ್ಚರಿಕೆ ಇಲ್ಲ', ta:'எச்சரிக்கை இல்லை', te:'హెచ్చరిక లేదు', bn:'কোন সতর্কতা নেই', mr:'कोणताही इशारा नाही' },
-      WIND:               { hi:'हवा',                  kn:'ಗಾಳಿ',              ta:'காற்று',           te:'గాలి',           bn:'বায়ু',           mr:'वारा' },
-      TEMPERATURE:        { hi:'तापमान',               kn:'ತಾಪಮಾನ',            ta:'வெப்பநிலை',       te:'ఉష్ణోగ్రత',     bn:'তাপমাত্রা',      mr:'तापमान' },
-      HUMIDITY:           { hi:'आर्द्रता',              kn:'ಆರ್ದ್ರತೆ',          ta:'ஈரப்பதம்',        te:'తేమ',            bn:'আর্দ্রতা',       mr:'आर्द्रता' },
-      VISIBILITY:         { hi:'दृश्यता',               kn:'ಗೋಚರತೆ',            ta:'தெரிவுதிறன்',     te:'దృశ్యమానత',     bn:'দৃশ্যমানতা',     mr:'दृश्यमानता' },
-      PRESSURE:           { hi:'दबाव',                 kn:'ಒತ್ತಡ',              ta:'அழுத்தம்',        te:'పీడనం',          bn:'চাপ',             mr:'दबाव' },
-      RAINFALL:           { hi:'वर्षा',                kn:'ಮಳೆ',               ta:'மழைவீழ்ச்சி',    te:'వర్షపాతం',       bn:'বৃষ্টিপাত',      mr:'पर्जन्य' },
-      HIGH:               { hi:'अधिक',                 kn:'ಹೆಚ್ಚು',            ta:'அதிகம்',          te:'అధికం',          bn:'বেশি',            mr:'जास्त' },
-      MODERATE:           { hi:'मध्यम',                kn:'ಮಧ್ಯಮ',             ta:'மிதமான',          te:'మితమైన',         bn:'মাঝারি',          mr:'मध्यम' },
-      LOW:                { hi:'कम',                   kn:'ಕಡಿಮೆ',             ta:'குறைவு',          te:'తక్కువ',         bn:'কম',              mr:'कमी' },
-    };
-    const LangContext = React.createContext({ lang: 'en', setLang: ()=>{} });
-    function t(lang, key, fallback) {
-      if (lang === 'en' || !TR[key] || !TR[key][lang]) return fallback || key;
-      return TR[key][lang];
-    }
-    function LanguageSwitcher() {
-      const { lang, setLang } = React.useContext(LangContext);
-      const [open, setOpen] = React.useState(false);
-      const ref = React.useRef(null);
-      React.useEffect(() => {
-        if (!open) return;
-        function handleClick(e) { if (ref.current && !ref.current.contains(e.target)) setOpen(false); }
-        document.addEventListener('mousedown', handleClick);
-        return () => document.removeEventListener('mousedown', handleClick);
-      }, [open]);
-      return (
-        <div ref={ref} style={{ position: 'relative' }}>
-          <button onClick={() => setOpen(o => !o)}
-            style={{ display:'flex', alignItems:'center', gap:'5px', padding:'4px 8px', borderRadius:'7px',
-              background:'rgba(56,189,248,0.10)', border:'1px solid rgba(56,189,248,0.22)',
-              color:'#38bdf8', fontSize:'11px', fontWeight:'600', cursor:'pointer', letterSpacing:'0.06em' }}>
-            <span>&#x1F310;</span>
-            <span>{LANGS[lang] ? LANGS[lang].short : 'EN'}</span>
-          </button>
-          {open && (
-            <div style={{ position:'absolute', top:'110%', right:0, zIndex:9999, background:'rgba(4,7,17,0.97)',
-              border:'1px solid rgba(56,189,248,0.22)', borderRadius:'10px', overflow:'hidden', minWidth:'130px',
-              boxShadow:'0 8px 32px rgba(0,0,0,0.6)' }}>
-              {Object.entries(LANGS).map(([code, info]) => (
-                <button key={code} onClick={() => { setLang(code); setOpen(false); }}
-                  style={{ display:'block', width:'100%', textAlign:'left', padding:'8px 12px',
-                    fontSize:'12px', color: lang===code ? '#38bdf8' : '#90a4ae',
-                    background: lang===code ? 'rgba(56,189,248,0.1)' : 'transparent',
-                    border:'none', cursor:'pointer', fontWeight: lang===code ? '700' : '400' }}>
-                  {info.name}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      );
-    }
-    // == END I18N ================================================================
-
     const Motion = window.Motion || window.framerMotion || { motion: { div: 'div', button: 'button', nav: 'nav', img: 'img' }, AnimatePresence: ({ children }) => children };
     const { motion, AnimatePresence } = Motion;
 
@@ -1639,10 +1482,8 @@ function injectDrainageOverlay(map, liveData) {
 // ===== END SIH PATCH COMPONENTS =====
 
         function HeaderBar({ liveTime, isLiveData, activeNavTab, onNavTabChange, selectedHazard, onHazardChange }) {
-          const { lang } = React.useContext(LangContext);
-      const tlabel = (tab) => (TR[tab] && TR[tab][lang]) ? TR[tab][lang] : tab;
       const hazardCfg = HAZARD_CONFIG[selectedHazard] || HAZARD_CONFIG.ts;
-      const navTabs = ['DASHBOARD', 'FORECAST', 'RADAR MAP', 'MODELS', 'EXPLAINABILITY', 'REGIMES', 'MULTIDAY', 'CLIMATOLOGY', 'SKILL SCORES', 'ALERTS', 'DATA & GRAPHS', 'CONTACTS', 'WHATIF', 'LIVE API', 'ATC VIEW'];
+      const navTabs = ['DASHBOARD', 'FORECAST', 'RADAR MAP', 'MODELS', 'EXPLAINABILITY', 'REGIMES', 'MULTIDAY', 'CLIMATOLOGY', 'SKILL SCORES', 'ALERTS', 'WHATIF', 'LIVE API', 'ATC VIEW'];
       const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
       return (
@@ -1710,28 +1551,27 @@ function injectDrainageOverlay(map, liveData) {
               ];
               return (
                 <>
-                <nav className="hidden lg:flex items-center gap-3 font-mono text-[10px] font-bold"
+                <nav className="hidden lg:flex items-center gap-1.5 font-mono text-[10px] font-bold nav-scroll"
                   style={{
                     background:'rgba(4,8,18,0.65)',
                     border:'1px solid rgba(56,189,248,0.1)',
                     borderRadius:'14px',
                     padding:'5px 8px',
                     backdropFilter:'blur(10px)',
-                    minWidth:0,
-                    overflow:'hidden',
+                    overflowX:'auto',
                     flexShrink:1,
+                    minWidth:0,
                   }}>
                   {NAV_GROUPS.map((group, gi) => (
                     <div key={group.label} className="flex items-center gap-0.5">
                       {gi > 0 && <div style={{width:1,height:18,background:'rgba(56,189,248,0.15)',margin:'0 4px'}} />}
-                      <span style={{color:'rgba(56,189,248,0.3)',fontSize:7,letterSpacing:'0.18em',marginRight:2,fontWeight:900}}>{tlabel(group.label)}</span>
+                      <span style={{color:'rgba(56,189,248,0.3)',fontSize:7,letterSpacing:'0.18em',marginRight:2,fontWeight:900}}>{group.label}</span>
                       {group.tabs.map(tab => {
                         const isActive = activeNavTab === tab;
-                        const base = tab === 'EXPLAINABILITY' ? 'EXPLAIN' : tab === 'CLIMATOLOGY' ? 'CLIMAT.' : tab === 'SKILL SCORES' ? 'SCORES' : tab === 'DATA & GRAPHS' ? 'GRAPHS' : tab;
-                        const shortLabel = tlabel(tab) !== tab ? tlabel(tab) : base;
+                        const shortLabel = tab === 'EXPLAINABILITY' ? 'EXPLAIN' : tab === 'CLIMATOLOGY' ? 'CLIMAT.' : tab === 'SKILL SCORES' ? 'SCORES' : tab;
                         return (
                           <button key={tab} onClick={() => onNavTabChange(tab)}
-                            className={`relative px-3 py-1.5 rounded-lg tracking-wider transition-all duration-200 ${isActive ? 'nav-tab-active' : 'text-[#4a6880] hover:text-[#90cce8]'}`}
+                            className={`relative px-2 py-1 rounded-lg tracking-wider transition-all duration-200 whitespace-nowrap ${isActive ? 'nav-tab-active' : 'text-[#4a6880] hover:text-[#90cce8]'}`}
                             style={isActive ? {background:'rgba(56,189,248,0.12)',boxShadow:'0 0 16px rgba(56,189,248,0.18)'} : {}}>
                             {shortLabel}
                           </button>
@@ -1744,17 +1584,26 @@ function injectDrainageOverlay(map, liveData) {
               );
             })()}
 
-            {/* Right: hazard switcher + lang + time + live + hamburger */}
+            {/* Right: hazard switcher + time + live badge + hamburger */}
             <div className="flex items-center gap-2 font-mono" style={{flexShrink:0}}>
               <div className="hidden lg:block"><HazardSwitcher selected={selectedHazard} onChange={onHazardChange} /></div>
-              {/* Language switcher always visible */}
-              <LanguageSwitcher />
-              {/* Compact time + LIVE dot — pinned right, never shrinks or overflows */}
-              <div className="flex items-center gap-1.5"
-                style={{padding:'3px 8px',borderRadius:'8px',background:'rgba(4,8,18,0.7)',border:'1px solid rgba(56,189,248,0.15)',flexShrink:0,whiteSpace:'nowrap'}}>
-                <span style={{width:8,height:8,borderRadius:'50%',background:'#4caf50',display:'inline-block',flexShrink:0,
-                  boxShadow:'0 0 8px #4caf50, 0 0 2px #4caf50'}} />
-                <span className="text-xs font-extrabold text-white tracking-widest" style={{whiteSpace:'nowrap',lineHeight:1,letterSpacing:'0.08em'}}>{liveTime}</span>
+              <div className="hidden sm:flex flex-col items-end gap-0.5">
+                <div className="text-sm font-extrabold text-white tracking-widest neon-cyan" style={{whiteSpace:'nowrap'}}>{liveTime}</div>
+                <div className="text-[9px] text-[#3d5066]">{(() => {
+                  const now = new Date();
+                  const ist = new Date(now.getTime() + now.getTimezoneOffset()*60000 + 3600000*5.5);
+                  return ist.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}).toUpperCase();
+                })()}</div>
+                <div className="flex items-center gap-1 px-2 py-0.5 rounded font-bold text-[9px]"
+                  style={{
+                    background:'rgba(76,175,80,0.1)',
+                    border:'1px solid rgba(76,175,80,0.3)',
+                    color:'#4caf50',
+                    textShadow:'0 0 8px rgba(76,175,80,0.6)',
+                  }}>
+                  <span className="w-1 h-1 rounded-full bg-emerald-400 animate-ping" />
+                  LIVE
+                </div>
               </div>
               <button
                 className="lg:hidden flex flex-col gap-1 p-2 rounded-lg"
@@ -1800,7 +1649,7 @@ function injectDrainageOverlay(map, liveData) {
                 { label: 'OPS', tabs: ['ALERTS', 'LIVE API', 'ATC VIEW'] },
               ].map(group => (
                 <div key={group.label}>
-                  <div style={{fontSize:8,letterSpacing:'0.2em',color:'rgba(56,189,248,0.35)',fontWeight:900,marginBottom:4,paddingLeft:4}}>{tlabel(group.label)}</div>
+                  <div style={{fontSize:8,letterSpacing:'0.2em',color:'rgba(56,189,248,0.35)',fontWeight:900,marginBottom:4,paddingLeft:4}}>{group.label}</div>
                   <div className="grid grid-cols-3 gap-1.5">
                     {group.tabs.map(tab => (
                       <button key={tab} onClick={() => { onNavTabChange(tab); setMobileMenuOpen(false); }}
@@ -1810,7 +1659,7 @@ function injectDrainageOverlay(map, liveData) {
                         } : {
                           background:'rgba(4,8,18,0.5)', border:'1px solid rgba(56,189,248,0.08)', color:'#4a6880',
                         }}>
-                        {tlabel(tab) !== tab ? tlabel(tab) : (tab === 'EXPLAINABILITY' ? 'EXPLAIN' : tab === 'CLIMATOLOGY' ? 'CLIMAT.' : tab === 'SKILL SCORES' ? 'SCORES' : tab)}
+                        {tab === 'EXPLAINABILITY' ? 'EXPLAIN' : tab === 'CLIMATOLOGY' ? 'CLIMAT.' : tab === 'SKILL SCORES' ? 'SCORES' : tab}
                       </button>
                     ))}
                   </div>
@@ -7606,13 +7455,13 @@ function injectDrainageOverlay(map, liveData) {
       const [currentSlots, setCurrentSlots] = useState(DEFAULT_SLOTS);
       const [selectedSlotIndex, setSelectedSlotIndex] = useState(() => getInitialSlotByIstTime());
       const [liveTime, setLiveTime] = useState('');
-      const NAV_TAB_LIST = ['DASHBOARD', 'FORECAST', 'RADAR MAP', 'MODELS', 'EXPLAINABILITY', 'REGIMES', 'LIVE API', 'ATC VIEW', 'DATA & GRAPHS', 'CONTACTS'];
+      const NAV_TAB_LIST = ['DASHBOARD', 'FORECAST', 'RADAR MAP', 'MODELS', 'EXPLAINABILITY', 'REGIMES', 'LIVE API', 'ATC VIEW'];
       const hashToTab = (h) => {
-        const map = { '#dashboard':'DASHBOARD','#forecast':'FORECAST','#radar':'RADAR MAP','#models':'MODELS','#explainability':'EXPLAINABILITY','#regimes':'REGIMES','#api':'LIVE API','#atc':'ATC VIEW','#multiday':'MULTIDAY','#climatology':'CLIMATOLOGY','#scores':'SKILL SCORES','#alerts':'ALERTS','#graphs':'DATA & GRAPHS','#contacts':'CONTACTS','#whatif':'WHATIF' };
+        const map = { '#dashboard':'DASHBOARD','#forecast':'FORECAST','#radar':'RADAR MAP','#models':'MODELS','#explainability':'EXPLAINABILITY','#regimes':'REGIMES','#api':'LIVE API','#atc':'ATC VIEW','#multiday':'MULTIDAY','#climatology':'CLIMATOLOGY','#scores':'SKILL SCORES','#alerts':'ALERTS','#whatif':'WHATIF' };
         return map[h.toLowerCase()] || 'DASHBOARD';
       };
       const tabToHash = (t) => {
-        const map = { 'DASHBOARD':'#dashboard','FORECAST':'#forecast','RADAR MAP':'#radar','MODELS':'#models','EXPLAINABILITY':'#explainability','REGIMES':'#regimes','LIVE API':'#api','ATC VIEW':'#atc','MULTIDAY':'#multiday','CLIMATOLOGY':'#climatology','SKILL SCORES':'#scores','ALERTS':'#alerts','DATA & GRAPHS':'#graphs','CONTACTS':'#contacts','WHATIF':'#whatif' };
+        const map = { 'DASHBOARD':'#dashboard','FORECAST':'#forecast','RADAR MAP':'#radar','MODELS':'#models','EXPLAINABILITY':'#explainability','REGIMES':'#regimes','LIVE API':'#api','ATC VIEW':'#atc','MULTIDAY':'#multiday','CLIMATOLOGY':'#climatology','SKILL SCORES':'#scores','ALERTS':'#alerts','WHATIF':'#whatif' };
         return map[t] || '#dashboard';
       };
       const [activeNavTab, setActiveNavTab] = useState(() => {
@@ -7620,9 +7469,6 @@ function injectDrainageOverlay(map, liveData) {
         return 'DASHBOARD';
       });
       const [selectedHazard, setSelectedHazard] = React.useState('ts');
-      const [lang, setLang] = React.useState(() => { try { return localStorage.getItem('sih_lang') || 'en'; } catch { return 'en'; } });
-      React.useEffect(() => { try { localStorage.setItem('sih_lang', lang); } catch {} }, [lang]);
-
       const hazardCfg = HAZARD_CONFIG[selectedHazard] || HAZARD_CONFIG.ts;
       const [isAtcMode, setIsAtcMode] = useState(false);
       const [showKbHint, setShowKbHint] = useState(() => {
@@ -7708,9 +7554,7 @@ function injectDrainageOverlay(map, liveData) {
           const now = new Date();
           const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
           const ist = new Date(utc + (3600000 * 5.5));
-          const hh = String(ist.getHours()).padStart(2,'0');
-          const mm = String(ist.getMinutes()).padStart(2,'0');
-          setLiveTime(hh + ':' + mm + ' IST');
+          setLiveTime(ist.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }) + ' IST');
         };
         updateClock();
         const timer = setInterval(updateClock, 1000);
@@ -7883,7 +7727,6 @@ Source: csir-thunderstorm-bengaluru.pages.dev | IMD Station 43295`;
       })();
 
       return (
-        <LangContext.Provider value={{ lang, setLang }}>
         <div className="min-h-screen text-[#e8eaf6] relative overflow-hidden">
           
           {/* ALL 4 SLOT BACKGROUND DIVS — overflow:hidden clips parallax movement */}
@@ -7960,7 +7803,33 @@ Source: csir-thunderstorm-bengaluru.pages.dev | IMD Station 43295`;
               onNavTabChange={handleNavTabClick}
             />
 
-            {/* ── STALE DATA BANNER — suppressed; data freshness handled by pipeline ── */}
+            {/* ── STALE DATA BANNER ── */}
+            {dataAgeHours !== null && dataAgeHours > 7 && (
+              <div className="relative z-30 flex items-center justify-between gap-3 px-4 py-2 bg-amber-950/80 border-b border-amber-500/50 font-mono text-xs backdrop-blur-sm">
+                <span className="flex items-center gap-2 text-amber-300">
+                  <span className="text-base animate-pulse">⚠</span>
+                  <span>DATA IS <strong>{dataAgeHours.toFixed(1)}h OLD</strong> — Pipeline may have stalled. Last run: {liveData.generated_at}</span>
+                </span>
+                <span className="text-amber-400 text-[10px] shrink-0 font-bold">
+                  {(() => {
+                    if (!liveData?.generated_at) return 'Next run: unknown';
+                    try {
+                      // generated_at is "YYYY-MM-DD HH:MM IST" — must strip IST and append +05:30
+                      const raw = liveData.generated_at;
+                      const cleaned = raw.replace(/\s*IST$/,'').trim();
+                      const lastRun = new Date(cleaned.includes('T') ? cleaned : cleaned.replace(' ','T') + ':00+05:30');
+                      if (isNaN(lastRun.getTime())) return 'Next run: unknown';
+                      const nextRun = new Date(lastRun.getTime() + 6 * 3600000);
+                      const now = new Date();
+                      const diffMin = Math.round((nextRun - now) / 60000);
+                      if (diffMin < 0) return 'Next run: overdue — check pipeline';
+                      if (diffMin < 60) return `Next run in ~${diffMin} min`;
+                      return `Next run at ${nextRun.toLocaleTimeString('en-IN',{timeZone:'Asia/Kolkata',hour:'2-digit',minute:'2-digit'})} IST`;
+                    } catch { return 'Next run: unknown'; }
+                  })()}
+                </span>
+              </div>
+            )}
 
             {/* ── COPY FORECAST + KEYBOARD HINT STRIP ── */}
             <div className="relative z-30 flex items-center justify-between gap-3 px-4 py-1.5 font-mono"
@@ -8063,7 +7932,7 @@ Source: csir-thunderstorm-bengaluru.pages.dev | IMD Station 43295`;
                 </AnimatePresence>
               </div>
             ) : (
-            <main id="main-content-area" className="flex-1 px-3 sm:px-4 lg:px-6 pt-4 pb-8 overflow-x-hidden overflow-y-auto page-grid-bg">
+            <main className="flex-1 px-3 sm:px-4 lg:px-6 pt-4 pb-8 overflow-x-hidden overflow-y-auto page-grid-bg">
               <AnimatePresence mode="wait">
                 {activeNavTab === 'FORECAST' && (
                   <motion.div key="forecast"
@@ -8159,24 +8028,6 @@ Source: csir-thunderstorm-bengaluru.pages.dev | IMD Station 43295`;
                     <AlertsPage liveData={liveData} />
                   </motion.div>
                 )}
-                {activeNavTab === 'DATA & GRAPHS' && (
-                  <motion.div key="graphs"
-                    initial={{ opacity: 0, y: 24, scale: 0.98 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -16 }}
-                    transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}>
-                    <DataGraphsPage liveData={liveData} />
-                  </motion.div>
-                )}
-                {activeNavTab === 'CONTACTS' && (
-                  <motion.div key="contacts"
-                    initial={{ opacity: 0, y: 24, scale: 0.98 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -16 }}
-                    transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}>
-                    <ContactsPage liveData={liveData} />
-                  </motion.div>
-                )}
                 {activeNavTab === 'WHATIF' && (
                   <motion.div key="whatif"
                     initial={{ opacity: 0, y: 24, scale: 0.98 }}
@@ -8203,24 +8054,6 @@ Source: csir-thunderstorm-bengaluru.pages.dev | IMD Station 43295`;
           )}
 
         </div>
-
-        {/* MOBILE BOTTOM NAV */}
-        <nav className="bottom-nav">
-          {[
-            { tab:'DASHBOARD',     icon:'🏠', label:'Home' },
-            { tab:'RADAR MAP',     icon:'🗺️',  label:'Radar' },
-            { tab:'DATA & GRAPHS', icon:'📊', label:'Graphs' },
-            { tab:'ALERTS',        icon:'🔔', label:'Alerts' },
-            { tab:'CONTACTS',      icon:'📞', label:'Contacts' },
-          ].map(({tab, icon, label}) => (
-            <button key={tab} className={`bnav-btn${activeNavTab===tab?' active':''}`}
-              onClick={() => handleNavTabClick(tab)}>
-              <span className="icon">{icon}</span>
-              <span>{label}</span>
-            </button>
-          ))}
-        </nav>
-        </LangContext.Provider>
       );
     }
 
@@ -8664,19 +8497,7 @@ Source: csir-thunderstorm-bengaluru.pages.dev | IMD Station 43295`;
       );
       const [pushThreshold, setPushThreshold] = React.useState(35);
 
-      React.useEffect(() => {
-        if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
-        if (maxProb * 100 >= pushThreshold) {
-          const lastFired = (() => { try { return Number(localStorage.getItem('sih_last_auto') || 0); } catch { return 0; } })();
-          if (Date.now() - lastFired > 15 * 60 * 1000) {
-            new Notification('⚡ IMD Alert — VOBL', { body: `Prob: ${Math.round(maxProb*100)}% — exceeds ${pushThreshold}% threshold.`, icon:'/manifest.json', tag:'sih-auto' });
-            try { localStorage.setItem('sih_last_auto', String(Date.now())); } catch {}
-          }
-        }
-      }, [maxProb, pushThreshold]);
-
       const enableNotifications = async () => {
-
         if (typeof Notification === 'undefined') return;
         const perm = await Notification.requestPermission();
         setNotifStatus(perm);
@@ -9054,313 +8875,7 @@ Source: csir-thunderstorm-bengaluru.pages.dev | IMD Station 43295`;
       );
     }
 
-    // == DATA & GRAPHS PAGE ==================================================
-    function DataGraphsPage({ liveData }) {
-      const [history, setHistory] = React.useState(() => {
-        try { return JSON.parse(localStorage.getItem('sih_history') || '[]'); } catch { return []; }
-      });
-      const [selectedMetric, setSelectedMetric] = React.useState('probability');
-
-      React.useEffect(() => {
-        if (!liveData) return;
-        const now = new Date();
-        const istStr = now.toLocaleString('en-IN', { timeZone:'Asia/Kolkata', hour12:false, hour:'2-digit', minute:'2-digit', month:'short', day:'numeric' });
-        const snap = {
-          ts: Date.now(), label: istStr,
-          probability: Math.round((liveData.peak_probability || 0) * 100),
-          iwv:  liveData.gfs?.iwv_kg_m2        != null ? Math.round(liveData.gfs.iwv_kg_m2) : null,
-          cape: liveData.gfs?.ua_cape_jkg       != null ? Math.round(liveData.gfs.ua_cape_jkg) : null,
-          shear:liveData.gfs?.wind_shear_0_6km_ms != null ? Math.round(liveData.gfs.wind_shear_0_6km_ms*10)/10 : null,
-          kidx: liveData.gfs?.ua_k_index        != null ? Math.round(liveData.gfs.ua_k_index) : null,
-        };
-        setHistory(prev => {
-          const last = prev[prev.length - 1];
-          if (last && (snap.ts - last.ts) < 5 * 60 * 1000) return prev;
-          const next = [...prev.slice(-47), snap];
-          try { localStorage.setItem('sih_history', JSON.stringify(next)); } catch {}
-          return next;
-        });
-      }, [liveData]);
-
-      const METRICS = [
-        { key:'probability', label:'Thunderstorm Probability', unit:'%',     color:'#ef5350', max:100,  thresholdLine:35   },
-        { key:'iwv',         label:'Integrated Water Vapour',  unit:'kg/m²',color:'#38bdf8', max:60,   thresholdLine:45   },
-        { key:'cape',        label:'CAPE  (Storm Energy)',      unit:'J/kg',  color:'#ffa726', max:3000, thresholdLine:1500 },
-        { key:'shear',       label:'Wind Shear 0–6 km',       unit:'m/s',   color:'#66bb6a', max:30,   thresholdLine:12   },
-        { key:'kidx',        label:'K-Index',                  unit:'',      color:'#ab47bc', max:50,   thresholdLine:35   },
-      ];
-      const m = METRICS.find(x => x.key === selectedMetric) || METRICS[0];
-      const data = history.filter(h => h[m.key] != null);
-
-      const W=640, H=180, PAD={l:42,r:12,t:16,b:36};
-      const cW=W-PAD.l-PAD.r, cH=H-PAD.t-PAD.b;
-      const toX = i => PAD.l + (data.length<=1 ? cW/2 : (i/(data.length-1))*cW);
-      const toY = v => PAD.t + cH - Math.min(1,Math.max(0,v/(m.max||100)))*cH;
-      const pts  = data.map((d,i)=>`${toX(i)},${toY(d[m.key])}`).join(' ');
-      const poly = data.length>1
-        ? `${PAD.l},${PAD.t+cH} ${data.map((d,i)=>`${toX(i)},${toY(d[m.key])}`).join(' ')} ${toX(data.length-1)},${PAD.t+cH}`
-        : '';
-
-      const cv = liveData ? (() => {
-        if(m.key==='probability') return Math.round((liveData.peak_probability||0)*100);
-        if(m.key==='iwv')   return liveData.gfs?.iwv_kg_m2!=null?Math.round(liveData.gfs.iwv_kg_m2):null;
-        if(m.key==='cape')  return liveData.gfs?.ua_cape_jkg!=null?Math.round(liveData.gfs.ua_cape_jkg):null;
-        if(m.key==='shear') return liveData.gfs?.wind_shear_0_6km_ms!=null?Math.round(liveData.gfs.wind_shear_0_6km_ms*10)/10:null;
-        if(m.key==='kidx')  return liveData.gfs?.ua_k_index!=null?Math.round(liveData.gfs.ua_k_index):null;
-        return null;
-      })() : null;
-      const aboveThresh = m.thresholdLine && cv!=null && cv>=m.thresholdLine;
-
-      return (
-        <div className="p-4 lg:p-6 space-y-5">
-          <PageHeader eyebrow="METEOROLOGICAL TIME SERIES" title="Data & Graphs"
-            subtitle="Atmospheric parameters tracked over time at VOBL/Bengaluru. Readings captured automatically each session."
-            badge="LIVE" badgeColor="sky" />
-
-          <div className="atc-card rounded-2xl p-4">
-            <div className="text-[10px] font-bold tracking-widest text-[#607d8b] mb-3">SELECT PARAMETER</div>
-            <div style={{display:'flex',flexWrap:'wrap',gap:'8px'}}>
-              {METRICS.map(mx=>(
-                <button key={mx.key} onClick={()=>setSelectedMetric(mx.key)}
-                  style={{padding:'6px 14px',borderRadius:'8px',fontSize:'12px',fontWeight:'600',cursor:'pointer',
-                    background: selectedMetric===mx.key?`${mx.color}22`:'rgba(255,255,255,0.04)',
-                    border:`1px solid ${selectedMetric===mx.key?mx.color:'rgba(255,255,255,0.1)'}`,
-                    color: selectedMetric===mx.key?mx.color:'#90a4ae',transition:'all 0.2s'}}>
-                  {mx.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(155px,1fr))',gap:'12px'}}>
-            <div className="atc-card rounded-2xl p-4" style={{borderColor:aboveThresh?'rgba(239,83,80,0.4)':undefined}}>
-              <div className="text-[10px] font-bold tracking-widest text-[#607d8b] mb-1">NOW</div>
-              <div style={{fontSize:'28px',fontWeight:'800',color:aboveThresh?'#ef5350':m.color,fontFamily:'monospace'}}>
-                {cv!=null?cv:'--'}<span style={{fontSize:'13px',color:'#607d8b',marginLeft:'4px'}}>{m.unit}</span>
-              </div>
-              {aboveThresh&&<div style={{fontSize:'10px',color:'#ef5350',marginTop:'4px',fontWeight:'700'}}>ABOVE THRESHOLD ({m.thresholdLine}{m.unit})</div>}
-            </div>
-            {data.length>0&&[
-              {label:'SESSION MAX', val:Math.max(...data.map(d=>d[m.key]))},
-              {label:'SESSION AVG', val:Math.round(data.reduce((a,d)=>a+d[m.key],0)/data.length)},
-            ].map(x=>(
-              <div key={x.label} className="atc-card rounded-2xl p-4">
-                <div className="text-[10px] font-bold tracking-widest text-[#607d8b] mb-1">{x.label}</div>
-                <div style={{fontSize:'28px',fontWeight:'800',color:m.color,fontFamily:'monospace'}}>
-                  {x.val}<span style={{fontSize:'13px',color:'#607d8b',marginLeft:'4px'}}>{m.unit}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="atc-card rounded-2xl p-4">
-            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'12px'}}>
-              <div>
-                <div className="text-[10px] font-bold tracking-widest text-[#607d8b]">{m.label.toUpperCase()} OVER TIME</div>
-                <div style={{fontSize:'11px',color:'#455a64',marginTop:'2px'}}>{data.length} readings this session</div>
-              </div>
-              {data.length>0&&(
-                <button onClick={()=>{try{localStorage.removeItem('sih_history');}catch{}setHistory([]);}}
-                  style={{fontSize:'10px',color:'#607d8b',background:'transparent',border:'1px solid rgba(255,255,255,0.1)',borderRadius:'6px',padding:'4px 8px',cursor:'pointer'}}>
-                  Clear
-                </button>
-              )}
-            </div>
-            {data.length<2?(
-              <div style={{textAlign:'center',padding:'40px',color:'#607d8b',fontSize:'13px'}}>
-                <div style={{fontSize:'32px',marginBottom:'8px'}}>📊</div>
-                Readings accumulate as you use the dashboard. Check back after a few visits.
-              </div>
-            ):(
-              <div style={{overflowX:'auto'}}>
-                <svg viewBox={`0 0 ${W} ${H}`} style={{width:'100%',minWidth:'300px',height:'auto'}}>
-                  {[0,0.25,0.5,0.75,1].map(f=>{
-                    const y=PAD.t+cH*(1-f), val=Math.round(m.max*f);
-                    return <g key={f}><line x1={PAD.l} x2={PAD.l+cW} y1={y} y2={y} stroke="rgba(255,255,255,0.06)" strokeWidth="1"/><text x={PAD.l-4} y={y+4} textAnchor="end" fontSize="9" fill="#546e7a">{val}</text></g>;
-                  })}
-                  {m.thresholdLine&&(()=>{const ty=toY(m.thresholdLine);return <g><line x1={PAD.l} x2={PAD.l+cW} y1={ty} y2={ty} stroke="#ef5350" strokeWidth="1" strokeDasharray="4,3" opacity="0.6"/><text x={PAD.l+cW} y={ty-3} textAnchor="end" fontSize="9" fill="#ef5350" opacity="0.8">threshold</text></g>;})()}
-                  {poly&&<polygon points={poly} fill={`${m.color}18`}/>}
-                  <polyline points={pts} fill="none" stroke={m.color} strokeWidth="2" strokeLinejoin="round"/>
-                  {data.map((d,i)=><circle key={i} cx={toX(i)} cy={toY(d[m.key])} r="3" fill={m.color}/>)}
-                  {data.filter((_,i)=>i%Math.max(1,Math.floor(data.length/6))===0||i===data.length-1).map(d=>(
-                    <text key={d.ts} x={toX(data.indexOf(d))} y={H-6} textAnchor="middle" fontSize="8" fill="#546e7a">{d.label.split(',')[0]}</text>
-                  ))}
-                  <text x={PAD.l-2} y={PAD.t-4} textAnchor="middle" fontSize="9" fill="#546e7a">{m.unit}</text>
-                </svg>
-              </div>
-            )}
-          </div>
-
-          {data.length>0&&(
-            <div className="atc-card rounded-2xl p-4" style={{overflowX:'auto'}}>
-              <div className="text-[10px] font-bold tracking-widest text-[#607d8b] mb-3">LAST {Math.min(data.length,10)} READINGS</div>
-              <table style={{width:'100%',borderCollapse:'collapse',fontSize:'12px'}}>
-                <thead><tr style={{borderBottom:'1px solid rgba(255,255,255,0.08)'}}>
-                  {['TIME (IST)','PROB %','IWV','CAPE','K-IDX'].map(h=>(
-                    <th key={h} style={{padding:'6px 8px',color:'#607d8b',fontWeight:'600',fontSize:'10px',textAlign:h==='TIME (IST)'?'left':'right',letterSpacing:'0.06em'}}>{h}</th>
-                  ))}
-                </tr></thead>
-                <tbody>
-                  {[...history].reverse().slice(0,10).map((row,i)=>(
-                    <tr key={row.ts} style={{borderBottom:'1px solid rgba(255,255,255,0.04)',background:i%2===0?'rgba(255,255,255,0.02)':'transparent'}}>
-                      <td style={{padding:'6px 8px',color:'#90a4ae',fontFamily:'monospace',fontSize:'11px'}}>{row.label}</td>
-                      <td style={{padding:'6px 8px',textAlign:'right',color:row.probability>=35?'#ef5350':'#e8eaf6',fontWeight:row.probability>=35?'700':'400',fontFamily:'monospace'}}>{row.probability??'--'}</td>
-                      <td style={{padding:'6px 8px',textAlign:'right',color:'#38bdf8',fontFamily:'monospace'}}>{row.iwv??'--'}</td>
-                      <td style={{padding:'6px 8px',textAlign:'right',color:(row.cape||0)>=1500?'#ffa726':'#e8eaf6',fontFamily:'monospace'}}>{row.cape??'--'}</td>
-                      <td style={{padding:'6px 8px',textAlign:'right',color:(row.kidx||0)>=35?'#ab47bc':'#e8eaf6',fontFamily:'monospace'}}>{row.kidx??'--'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      );
-    }
-
-    // == CONTACTS PAGE =======================================================
-    function ContactsPage({ liveData }) {
-      const [contacts, setContacts] = React.useState(() => {
-        try { return JSON.parse(localStorage.getItem('sih_contacts')||'[]'); } catch { return []; }
-      });
-      const [form, setForm] = React.useState({name:'',phone:'',email:'',note:''});
-      const [alertMsg, setAlertMsg] = React.useState('');
-      const [sending, setSending] = React.useState(false);
-      const [sentTo, setSentTo] = React.useState([]);
-
-      const save = (next) => { setContacts(next); try{localStorage.setItem('sih_contacts',JSON.stringify(next));}catch{} };
-
-      const addContact = () => {
-        if (!form.name.trim() || (!form.phone.trim() && !form.email.trim())) {
-          alert('Please enter a name and at least a phone number or email.'); return;
-        }
-        save([...contacts, {...form, id:Date.now()}]);
-        setForm({name:'',phone:'',email:'',note:''});
-      };
-
-      const maxProb = liveData ? Math.max(liveData.peak_probability||0,...(liveData.slots||[]).map(s=>s.probability||0)) : 0;
-      const isAlert = maxProb>=0.35;
-
-      const threshItems = [
-        {label:'Thunderstorm Probability', val:Math.round((liveData?.peak_probability||0)*100), threshold:35, unit:'%', color:'#ef5350'},
-        {label:'Integrated Water Vapour',  val:liveData?.gfs?.iwv_kg_m2!=null?Math.round(liveData.gfs.iwv_kg_m2):null, threshold:45, unit:'kg/m²', color:'#38bdf8'},
-        {label:'CAPE',                     val:liveData?.gfs?.ua_cape_jkg!=null?Math.round(liveData.gfs.ua_cape_jkg):null, threshold:1500, unit:'J/kg', color:'#ffa726'},
-        {label:'K-Index',                  val:liveData?.gfs?.ua_k_index!=null?Math.round(liveData.gfs.ua_k_index):null, threshold:35, unit:'', color:'#ab47bc'},
-      ];
-
-      const sendAlert = () => {
-        if (!contacts.length){alert('No contacts registered yet.');return;}
-        const msg = alertMsg.trim() || `Emergency alert from IMD Hyperlocal Warning System. Current thunderstorm probability at VOBL: ${Math.round(maxProb*100)}%. Please take precautions.`;
-        setSending(true);
-        setTimeout(()=>{
-          setSentTo(contacts.map(c=>c.name));
-          setSending(false); setAlertMsg('');
-          alert('Alert prepared for '+contacts.length+' contact(s):\n\n'+msg+'\n\n(In production this dispatches via SMS/WhatsApp/email through the alert worker.)');
-        },1000);
-      };
-
-      return (
-        <div className="p-4 lg:p-6 space-y-5">
-          <PageHeader eyebrow="EMERGENCY CONTACTS" title="Contacts & Manual Alerts"
-            subtitle="Register emergency contacts and dispatch alerts during severe weather events."
-            badge={isAlert?'ALERT CONDITIONS':'STANDBY'} badgeColor={isAlert?'red':'green'} />
-
-          <div className="atc-card rounded-2xl p-5">
-            <div className="text-[10px] font-bold tracking-widest text-[#607d8b] mb-3">AUTOMATIC THRESHOLD STATUS</div>
-            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(175px,1fr))',gap:'10px'}}>
-              {threshItems.map(item=>{
-                const triggered = item.val!=null && item.val>=item.threshold;
-                return (
-                  <div key={item.label} style={{padding:'12px',borderRadius:'10px',
-                    background:triggered?`${item.color}18`:'rgba(255,255,255,0.03)',
-                    border:`1px solid ${triggered?item.color+'55':'rgba(255,255,255,0.08)'}`}}>
-                    <div style={{fontSize:'10px',color:'#607d8b',fontWeight:'600',letterSpacing:'0.06em',marginBottom:'4px'}}>{item.label}</div>
-                    <div style={{fontSize:'22px',fontWeight:'800',color:triggered?item.color:'#e8eaf6',fontFamily:'monospace'}}>
-                      {item.val!=null?item.val:'--'}<span style={{fontSize:'11px',color:'#607d8b',marginLeft:'3px'}}>{item.unit}</span>
-                    </div>
-                    <div style={{fontSize:'10px',marginTop:'4px',color:triggered?item.color:'#546e7a'}}>
-                      {triggered?'ABOVE THRESHOLD':'OK'} — threshold: {item.threshold}{item.unit}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-            <div style={{marginTop:'10px',fontSize:'11px',color:'#546e7a'}}>
-              Browser push notifications fire automatically when probability exceeds your set threshold. Manual alerts below let you message all registered contacts directly.
-            </div>
-          </div>
-
-          <div className="atc-card rounded-2xl p-5">
-            <div className="text-[10px] font-bold tracking-widest text-[#607d8b] mb-3">SEND MANUAL ALERT TO ALL CONTACTS</div>
-            <textarea value={alertMsg} onChange={e=>setAlertMsg(e.target.value)} rows={3}
-              placeholder={'Custom message (leave blank for default auto-message)'}
-              style={{width:'100%',padding:'10px',borderRadius:'8px',fontSize:'12px',
-                background:'rgba(255,255,255,0.04)',border:'1px solid rgba(56,189,248,0.2)',
-                color:'#e8eaf6',resize:'vertical',outline:'none',fontFamily:'inherit',boxSizing:'border-box'}}/>
-            <div style={{display:'flex',gap:'10px',marginTop:'10px',alignItems:'center',flexWrap:'wrap'}}>
-              <button onClick={sendAlert} disabled={sending}
-                style={{padding:'10px 20px',borderRadius:'8px',fontSize:'13px',fontWeight:'700',cursor:'pointer',
-                  background:isAlert?'rgba(239,83,80,0.85)':'rgba(56,189,248,0.15)',
-                  border:`1px solid ${isAlert?'rgba(239,83,80,0.6)':'rgba(56,189,248,0.35)'}`,
-                  color:isAlert?'#fff':'#38bdf8',opacity:sending?0.6:1}}>
-                {sending?'Sending...':'📢 Send to '+contacts.length+' Contact(s)'}
-              </button>
-              {sentTo.length>0&&<span style={{fontSize:'11px',color:'#4caf50'}}>✔ Sent to: {sentTo.join(', ')}</span>}
-            </div>
-          </div>
-
-          <div className="atc-card rounded-2xl p-5">
-            <div className="text-[10px] font-bold tracking-widest text-[#607d8b] mb-4">REGISTER NEW CONTACT</div>
-            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'10px',marginBottom:'10px'}}>
-              {[{k:'name',p:'Full Name *',t:'text'},{k:'phone',p:'Phone / WhatsApp',t:'tel'},{k:'email',p:'Email Address',t:'email'},{k:'note',p:'Role / Note',t:'text'}].map(f=>(
-                <input key={f.k} type={f.t} placeholder={f.p} value={form[f.k]}
-                  onChange={e=>setForm(x=>({...x,[f.k]:e.target.value}))}
-                  style={{padding:'9px 12px',borderRadius:'8px',fontSize:'13px',
-                    background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.12)',
-                    color:'#e8eaf6',outline:'none',fontFamily:'inherit'}}/>
-              ))}
-            </div>
-            <button onClick={addContact}
-              style={{padding:'9px 20px',borderRadius:'8px',fontSize:'13px',fontWeight:'700',cursor:'pointer',
-                background:'rgba(56,189,248,0.15)',border:'1px solid rgba(56,189,248,0.35)',color:'#38bdf8'}}>
-              + Add Contact
-            </button>
-          </div>
-
-          {contacts.length>0?(
-            <div className="atc-card rounded-2xl p-5">
-              <div className="text-[10px] font-bold tracking-widest text-[#607d8b] mb-3">REGISTERED CONTACTS ({contacts.length})</div>
-              <div style={{display:'flex',flexDirection:'column',gap:'8px'}}>
-                {contacts.map(c=>(
-                  <div key={c.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',
-                    padding:'10px 12px',borderRadius:'8px',background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.08)'}}>
-                    <div>
-                      <div style={{fontWeight:'600',fontSize:'13px',color:'#e8eaf6'}}>{c.name}</div>
-                      <div style={{fontSize:'11px',color:'#607d8b',marginTop:'2px'}}>
-                        {[c.phone&&`📞 ${c.phone}`,c.email&&`✉️ ${c.email}`,c.note&&`📋 ${c.note}`].filter(Boolean).join('  ·  ')}
-                      </div>
-                    </div>
-                    <button onClick={()=>save(contacts.filter(x=>x.id!==c.id))}
-                      style={{padding:'5px 10px',borderRadius:'6px',fontSize:'11px',cursor:'pointer',
-                        background:'rgba(239,83,80,0.1)',border:'1px solid rgba(239,83,80,0.3)',color:'#ef5350',fontWeight:'600'}}>
-                      Remove
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ):(
-            <div className="atc-card rounded-2xl p-5" style={{textAlign:'center',color:'#607d8b',padding:'32px'}}>
-              <div style={{fontSize:'32px',marginBottom:'8px'}}>📞</div>
-              <div style={{fontSize:'13px'}}>No contacts registered yet.</div>
-              <div style={{fontSize:'11px',marginTop:'4px',color:'#455a64'}}>Add emergency contacts above to enable manual alert dispatch.</div>
-            </div>
-          )}
-        </div>
-      );
-    }
-
-
+    // ═══════════════════════════════════════════════════════════════════════════
     // END NEW FEATURE PAGES
     // ═══════════════════════════════════════════════════════════════════════════
 
