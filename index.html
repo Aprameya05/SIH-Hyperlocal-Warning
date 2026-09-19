@@ -9247,11 +9247,7 @@ Source: csir-thunderstorm-bengaluru.pages.dev | IMD Station 43295`;
         setTimeout(()=>{
           setSentTo(contacts.map(c=>c.name));
           setSending(false); setAlertMsg('');
-          alert('Alert prepared for '+contacts.length+' contact(s):
-
-'+msg+'
-
-(In production this dispatches via SMS/WhatsApp/email through the alert worker.)');
+          alert('Alert prepared for '+contacts.length+' contact(s):\n\n'+msg+'\n\n(In production this dispatches via SMS/WhatsApp/email through the alert worker.)');
         },1000);
       };
 
