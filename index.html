@@ -425,6 +425,144 @@
     .text-\[10px\] { font-size: 11px !important; }
     .text-\[11px\] { font-size: 12px !important; }
 
+/* ── LIGHT MODE OVERRIDES ─────────────────────────────────────── */
+html.light {
+  --bg-primary: #f0f4f8;
+  --bg-panel: rgba(255,255,255,0.95);
+  --bg-panel-solid: #ffffff;
+  --border-color: rgba(203,213,225,0.9);
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+  --text-faint: #94a3b8;
+}
+html.light body {
+  background-color: #f0f4f8 !important;
+  color: #0f172a !important;
+}
+html.light .bg-\[\#040711\] { background-color: #f0f4f8 !important; }
+html.light .text-\[\#e8eaf6\] { color: #0f172a !important; }
+html.light .text-\[\#607d8b\] { color: #475569 !important; }
+html.light .text-\[\#3d5a72\] { color: #475569 !important; }
+html.light .text-\[\#3d5066\] { color: #64748b !important; }
+html.light .text-\[\#4a6880\] { color: #374151 !important; }
+html.light .text-\[\#90a4ae\] { color: #6b7280 !important; }
+html.light .text-\[\#cfd8dc\] { color: #334155 !important; }
+html.light .text-white { color: #0f172a !important; }
+html.light .border-\[\#172338\] { border-color: #cbd5e1 !important; }
+html.light .bg-\[\#172338\] { background-color: #e2e8f0 !important; }
+
+/* Panels and cards */
+html.light .atc-card {
+  background: rgba(255,255,255,0.95) !important;
+  border-color: rgba(148,163,184,0.4) !important;
+  box-shadow: 0 1px 8px rgba(0,0,0,0.08) !important;
+}
+html.light .atc-card:hover {
+  border-color: rgba(2,132,199,0.35) !important;
+  box-shadow: 0 0 18px rgba(2,132,199,0.12), 0 4px 24px rgba(0,0,0,0.1) !important;
+}
+html.light .atc-card::before {
+  background: linear-gradient(135deg,rgba(2,132,199,0.03) 0%,transparent 55%,rgba(139,92,246,0.03) 100%) !important;
+}
+
+/* Page backgrounds */
+html.light .page-grid-bg {
+  background-color: #f0f4f8 !important;
+  background-image: radial-gradient(rgba(2,132,199,0.09) 1px, transparent 1px) !important;
+}
+html.light .page-hero-banner {
+  background: linear-gradient(135deg, rgba(241,245,249,0.98) 0%, rgba(226,232,240,0.98) 100%) !important;
+  border-color: rgba(148,163,184,0.35) !important;
+}
+
+/* Header */
+html.light header[class*="sticky"] {
+  background: rgba(248,250,252,0.92) !important;
+  border-bottom: 1px solid rgba(203,213,225,0.8) !important;
+}
+html.light .header-gradient-border {
+  background: linear-gradient(90deg,rgba(2,132,199,0.12),rgba(139,92,246,0.08),rgba(2,132,199,0.12)) !important;
+}
+
+/* Nav pill */
+html.light nav[class*="hidden lg:flex"] {
+  background: rgba(241,245,249,0.9) !important;
+  border-color: rgba(203,213,225,0.7) !important;
+}
+html.light .nav-tab-active {
+  color: #0284c7 !important;
+  text-shadow: 0 0 12px rgba(2,132,199,0.5) !important;
+}
+html.light .nav-tab-active::after {
+  background: linear-gradient(90deg,transparent,#0284c7,#7c3aed,#0284c7,transparent) !important;
+}
+
+/* Slot bg overlay */
+html.light .overlay { background: rgba(240,244,248,0.55) !important; }
+html.light .scan-line { opacity: 0.25 !important; }
+html.light #csir-particles { opacity: 0.18 !important; }
+
+/* Neon text — muted for light bg */
+html.light .neon-cyan  { color:#0284c7 !important; text-shadow:0 0 6px rgba(2,132,199,0.4) !important; }
+html.light .neon-red   { color:#dc2626 !important; text-shadow:0 0 6px rgba(220,38,38,0.4) !important; }
+html.light .neon-green { color:#16a34a !important; text-shadow:0 0 6px rgba(22,163,74,0.3) !important; }
+html.light .neon-amber { color:#d97706 !important; text-shadow:0 0 6px rgba(217,119,6,0.3) !important; }
+
+/* Gradient text — keep but shift tone */
+html.light .gradient-text {
+  background: linear-gradient(135deg, #0284c7 0%, #7c3aed 45%, #0284c7 100%) !important;
+  background-size: 200% 200% !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+}
+
+/* Scrollbar */
+html.light ::-webkit-scrollbar-track { background: #e2e8f0 !important; }
+html.light ::-webkit-scrollbar-thumb { background: #94a3b8 !important; }
+html.light ::-webkit-scrollbar-thumb:hover { background: #0284c7 !important; }
+
+/* Slot active ring */
+html.light .slot-active-teal {
+  border-color: #0284c7 !important;
+  box-shadow: 0 0 18px rgba(2,132,199,0.3), inset 0 0 10px rgba(2,132,199,0.1) !important;
+  background: rgba(224,242,254,0.92) !important;
+}
+
+/* Tailwind bg utilities used inside components */
+html.light .bg-gray-900,
+html.light .bg-slate-900,
+html.light [class*="bg-slate-8"],
+html.light [class*="bg-gray-8"] { background-color: #f1f5f9 !important; }
+
+/* Tables and rows */
+html.light table { color: #0f172a !important; }
+html.light td, html.light th { border-color: #e2e8f0 !important; color: #334155 !important; }
+html.light .text-\[\#90a4ae\] { color: #64748b !important; }
+
+/* Light mode toggle button */
+.theme-toggle-btn {
+  display: flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; border-radius: 50%;
+  border: 1px solid rgba(56,189,248,0.3);
+  background: rgba(56,189,248,0.08);
+  cursor: pointer; font-size: 15px;
+  transition: all 0.25s;
+  flex-shrink: 0;
+}
+.theme-toggle-btn:hover {
+  background: rgba(56,189,248,0.18);
+  border-color: rgba(56,189,248,0.55);
+}
+html.light .theme-toggle-btn {
+  border-color: rgba(2,132,199,0.35) !important;
+  background: rgba(2,132,199,0.1) !important;
+}
+html.light .theme-toggle-btn:hover {
+  background: rgba(2,132,199,0.2) !important;
+}
+
   </style>
 </head>
 <body class="bg-[#040711] text-[#e8eaf6] antialiased min-h-screen font-sans relative overflow-x-hidden selection:bg-sky-400 selection:text-black">
@@ -1487,7 +1625,7 @@ function injectDrainageOverlay(map, liveData) {
 
 // ===== END SIH PATCH COMPONENTS =====
 
-        function HeaderBar({ liveTime, isLiveData, activeNavTab, onNavTabChange, selectedHazard, onHazardChange }) {
+        function HeaderBar({ liveTime, isLiveData, activeNavTab, onNavTabChange, selectedHazard, onHazardChange, isDark, onToggleTheme }) {
       const hazardCfg = HAZARD_CONFIG[selectedHazard] || HAZARD_CONFIG.ts;
       const navTabs = ['DASHBOARD', 'FORECAST', 'RADAR MAP', 'MODELS', 'EXPLAINABILITY', 'REGIMES', 'MULTIDAY', 'CLIMATOLOGY', 'SKILL SCORES', 'ALERTS', 'WHATIF', 'LIVE API', 'ATC VIEW'];
       const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
@@ -1590,9 +1728,16 @@ function injectDrainageOverlay(map, liveData) {
               );
             })()}
 
-            {/* Right: hazard switcher + time + live badge + hamburger */}
+            {/* Right: hazard switcher + time + live badge + theme toggle + hamburger */}
             <div className="flex items-center gap-2 font-mono" style={{flexShrink:0}}>
 <div className="hidden lg:block"><HazardSwitcher selected={selectedHazard} onChange={onHazardChange} /></div>
+              <button
+                className="theme-toggle-btn"
+                onClick={onToggleTheme}
+                title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+              >
+                {isDark ? '☀️' : '🌙'}
+              </button>
               <div className="hidden sm:flex flex-col items-end gap-0.5">
                 <div className="text-sm font-extrabold text-white tracking-widest neon-cyan" style={{whiteSpace:'nowrap'}}>{liveTime}</div>
                 <div className="text-[9px] text-[#3d5066]">{(() => {
@@ -7454,6 +7599,24 @@ function injectDrainageOverlay(map, liveData) {
 
     // --- MAIN APP COMPONENT ---
     function App() {
+      const [isDark, setIsDark] = useState(() => {
+        try { return localStorage.getItem('sih_theme') !== 'light'; } catch { return true; }
+      });
+
+      React.useEffect(() => {
+        const html = document.documentElement;
+        if (isDark) {
+          html.classList.add('dark');
+          html.classList.remove('light');
+        } else {
+          html.classList.remove('dark');
+          html.classList.add('light');
+        }
+        try { localStorage.setItem('sih_theme', isDark ? 'dark' : 'light'); } catch {}
+      }, [isDark]);
+
+      const toggleTheme = () => setIsDark(p => !p);
+
       const [liveData, setLiveData] = useState(null);
       const [isLiveData, setIsLiveData] = useState(false);
       const [lastUpdated, setLastUpdated] = useState('');
@@ -7807,6 +7970,8 @@ Source: csir-thunderstorm-bengaluru.pages.dev | IMD Station 43295`;
               selectedHazard={selectedHazard}
               onHazardChange={setSelectedHazard}
               onNavTabChange={handleNavTabClick}
+              isDark={isDark}
+              onToggleTheme={toggleTheme}
             />
 
             {/* ── STALE DATA BANNER ── */}
