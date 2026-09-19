@@ -563,6 +563,280 @@ html.light .theme-toggle-btn:hover {
   background: rgba(2,132,199,0.2) !important;
 }
 
+/* ============================================================
+   COMPREHENSIVE LIGHT MODE FIXES - ROUND 2
+   Targeting inline-styled components, invisible text, dark cards
+   ============================================================ */
+
+/* --- TOP-RIGHT HEADER: time, date, LIVE badge --- */
+html.light header .text-white,
+html.light header [class*="text-white"],
+html.light header span,
+html.light header p,
+html.light header div { color: #0f172a !important; }
+html.light header .neon-cyan { color: #0284c7 !important; }
+html.light header [class*="text-sky"], html.light header [class*="text-blue"] { color: #0369a1 !important; }
+html.light header [class*="bg-red"], html.light header [class*="bg-green"] { opacity: 1 !important; }
+
+/* --- SECOND STICKY TOOLBAR (skill badges row, COPY FORECAST, DOWNLOAD BRIEFING) --- */
+html.light div[style*="background: rgba(4"] ,
+html.light div[style*="background:rgba(4"] ,
+html.light div[style*="background: rgba(6"] ,
+html.light div[style*="background:rgba(6"] ,
+html.light div[style*="background: rgba(10"] ,
+html.light div[style*="background:rgba(10"] ,
+html.light div[style*="background: rgba(8,"] ,
+html.light div[style*="background:rgba(8,"] ,
+html.light div[style*="background: rgba(12"] ,
+html.light div[style*="background:rgba(12"] ,
+html.light div[style*="background: rgba(15"] ,
+html.light div[style*="background:rgba(15"] ,
+html.light div[style*="background: rgba(20"] ,
+html.light div[style*="background:rgba(20"] ,
+html.light div[style*="background: rgba(22"] ,
+html.light div[style*="background:rgba(22"] ,
+html.light div[style*="background: rgba(24"] ,
+html.light div[style*="background:rgba(24"] {
+  background: rgba(241,245,249,0.97) !important;
+  border-color: rgba(148,163,184,0.4) !important;
+}
+html.light div[style*="background: rgba(4"] *,
+html.light div[style*="background:rgba(4"] *,
+html.light div[style*="background: rgba(6"] *,
+html.light div[style*="background:rgba(6"] *,
+html.light div[style*="background: rgba(10"] *,
+html.light div[style*="background:rgba(10"] * {
+  color: #0f172a !important;
+}
+
+/* --- FORCE ALL inline-style dark backgrounds to light --- */
+html.light [style*="background: rgba(4,7,17"],
+html.light [style*="background:rgba(4,7,17"],
+html.light [style*="background: rgba(5,10,20"],
+html.light [style*="background:rgba(5,10,20"],
+html.light [style*="background: rgba(3,5,14"],
+html.light [style*="background:rgba(3,5,14"],
+html.light [style*="background: rgba(8,14,30"],
+html.light [style*="background:rgba(8,14,30"],
+html.light [style*="background: rgba(7,12,25"],
+html.light [style*="background:rgba(7,12,25"],
+html.light [style*="background: rgba(6,10,22"],
+html.light [style*="background:rgba(6,10,22"],
+html.light [style*="background: rgba(10,17,35"],
+html.light [style*="background:rgba(10,17,35"],
+html.light [style*="background: rgba(12,20,40"],
+html.light [style*="background:rgba(12,20,40"],
+html.light [style*="background: rgba(15,25,50"],
+html.light [style*="background:rgba(15,25,50"],
+html.light [style*="background: rgba(20,30,60"],
+html.light [style*="background:rgba(20,30,60"],
+html.light [style*="background: rgba(14,22,45"],
+html.light [style*="background:rgba(14,22,45"],
+html.light [style*="background: rgba(9,16,32"],
+html.light [style*="background:rgba(9,16,32"],
+html.light [style*="background: rgba(16,24,48"],
+html.light [style*="background:rgba(16,24,48"],
+html.light [style*="background: rgba(18,28,56"],
+html.light [style*="background:rgba(18,28,56"],
+html.light [style*="background: rgba(2,5,12"],
+html.light [style*="background:rgba(2,5,12"] {
+  background: rgba(255,255,255,0.95) !important;
+  border-color: rgba(148,163,184,0.35) !important;
+}
+
+/* --- PAGE HERO BANNER: force visible text --- */
+html.light .page-hero-banner { background: linear-gradient(135deg, #e0e7ef 0%, #c7d4e3 100%) !important; color: #0f172a !important; }
+html.light .page-hero-banner h1,
+html.light .page-hero-banner h2,
+html.light .page-hero-banner h3,
+html.light .page-hero-banner p,
+html.light .page-hero-banner span,
+html.light .page-hero-banner div { color: #0f172a !important; -webkit-text-fill-color: #0f172a !important; }
+html.light .page-hero-banner .gradient-text,
+html.light .page-hero-banner [class*="gradient"] {
+  background: linear-gradient(135deg, #0369a1 0%, #6d28d9 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+}
+html.light .page-hero-banner .neon-cyan { color: #0284c7 !important; -webkit-text-fill-color: #0284c7 !important; }
+
+/* --- LEFT SIDEBAR PANEL CARDS (scrolled sections) --- */
+html.light aside .atc-card,
+html.light aside div[class*="rounded"],
+html.light aside div[class*="border"] { background: rgba(255,255,255,0.92) !important; border-color: rgba(148,163,184,0.4) !important; }
+html.light aside * { color: #334155 !important; }
+html.light aside .neon-cyan { color: #0284c7 !important; }
+html.light aside .neon-green { color: #16a34a !important; }
+html.light aside .neon-red { color: #dc2626 !important; }
+html.light aside .neon-amber { color: #d97706 !important; }
+
+/* --- SLOT PREDICTION CARDS (bottom 4 tiles) --- */
+html.light [style*="background: linear-gradient"] { background: linear-gradient(135deg, rgba(241,245,249,0.98) 0%, rgba(226,232,240,0.98) 100%) !important; }
+/* More specific slot card targeting */
+html.light div[class*="rounded"][style*="border:"],
+html.light div[class*="rounded"][style*="border :"] { background: rgba(248,250,252,0.97) !important; }
+
+/* --- MODEL CARDS (Forecast tab, Models tab) --- */
+html.light div[class*="model"],
+html.light div[class*="Model"] { background: rgba(248,250,252,0.97) !important; border-color: rgba(148,163,184,0.4) !important; color: #0f172a !important; }
+html.light div[class*="model"] *,
+html.light div[class*="Model"] * { color: #334155 !important; }
+
+/* --- RADAR MAP: section header + satellite cards --- */
+html.light div[style*="background: linear-gradient(135deg, rgba(0,150,255"],
+html.light div[style*="background:linear-gradient(135deg, rgba(0,150,255"],
+html.light div[style*="background: linear-gradient(135deg, #0066"],
+html.light div[style*="background: linear-gradient(to right, #00"],
+html.light div[style*="background: rgba(0,100,200"],
+html.light div[style*="background:rgba(0,100,200"] {
+  background: linear-gradient(135deg, #0369a1 0%, #1d4ed8 100%) !important;
+  color: #ffffff !important;
+}
+html.light div[style*="background: linear-gradient(135deg, rgba(0,150,255"] *,
+html.light div[style*="background: linear-gradient(to right, #00"] * { color: #ffffff !important; }
+
+/* --- EXPLAINABILITY TAB: SHAP waterfall + narration boxes --- */
+html.light div[class*="shap"],
+html.light div[class*="SHAP"],
+html.light div[id*="shap"],
+html.light [class*="narration"],
+html.light [class*="explanation"] {
+  background: rgba(255,255,255,0.95) !important;
+  color: #0f172a !important;
+  border-color: rgba(148,163,184,0.4) !important;
+}
+/* WHY DID EACH SLOT FIRE section */
+html.light div[style*="color: #90a4ae"],
+html.light div[style*="color:#90a4ae"],
+html.light p[style*="color: #90a4ae"],
+html.light p[style*="color:#90a4ae"],
+html.light span[style*="color: #90a4ae"],
+html.light span[style*="color:#90a4ae"] { color: #475569 !important; }
+html.light [style*="color: #607d8b"],
+html.light [style*="color:#607d8b"] { color: #374151 !important; }
+html.light [style*="color: #b0bec5"],
+html.light [style*="color:#b0bec5"] { color: #475569 !important; }
+html.light [style*="color: #cfd8dc"],
+html.light [style*="color:#cfd8dc"] { color: #334155 !important; }
+html.light [style*="color: #eceff1"],
+html.light [style*="color:#eceff1"] { color: #0f172a !important; }
+html.light [style*="color: #e8eaf6"],
+html.light [style*="color:#e8eaf6"] { color: #0f172a !important; }
+html.light [style*="color: white"],
+html.light [style*="color:white"] { color: #0f172a !important; }
+html.light [style*="color: #fff"],
+html.light [style*="color:#fff"] { color: #0f172a !important; }
+html.light [style*="color: rgba(232,234,246"],
+html.light [style*="color:rgba(232,234,246"] { color: #0f172a !important; }
+
+/* --- SCORES TAB: blue section headers + Historical Trends --- */
+html.light [style*="color: #78909c"],
+html.light [style*="color:#78909c"] { color: #374151 !important; }
+html.light [style*="color: #546e7a"],
+html.light [style*="color:#546e7a"] { color: #1e293b !important; }
+html.light [style*="color: #455a64"],
+html.light [style*="color:#455a64"] { color: #1e293b !important; }
+html.light [style*="color: #37474f"],
+html.light [style*="color:#37474f"] { color: #0f172a !important; }
+
+/* --- ALERTS TAB: 30-Day Verified Performance metric card headings --- */
+html.light div[style*="background: rgba(30,41"],
+html.light div[style*="background:rgba(30,41"],
+html.light div[style*="background: rgba(25,35"],
+html.light div[style*="background:rgba(25,35"],
+html.light div[style*="background: rgba(35,45"],
+html.light div[style*="background:rgba(35,45"],
+html.light div[style*="background: rgba(20,28"],
+html.light div[style*="background:rgba(20,28"],
+html.light div[style*="background: rgba(28,38"],
+html.light div[style*="background:rgba(28,38"] {
+  background: rgba(248,250,252,0.97) !important;
+  border-color: rgba(148,163,184,0.4) !important;
+}
+html.light div[style*="background: rgba(30,41"] *,
+html.light div[style*="background:rgba(30,41"] *,
+html.light div[style*="background: rgba(25,35"] *,
+html.light div[style*="background:rgba(25,35"] * { color: #0f172a !important; }
+
+/* --- CONTACTS TAB: Contact Registry darker text --- */
+html.light [class*="contact"],
+html.light [class*="Contact"],
+html.light [id*="contact"],
+html.light [id*="Contact"] { color: #1e293b !important; }
+html.light [class*="registry"],
+html.light [class*="Registry"] { color: #1e293b !important; }
+html.light td { color: #1e293b !important; }
+
+/* --- LIVE API TAB: FastAPI REST Interface grey header --- */
+html.light [style*="background: #1e"],
+html.light [style*="background:#1e"],
+html.light [style*="background: #2d"],
+html.light [style*="background:#2d"],
+html.light [style*="background: #1a"],
+html.light [style*="background:#1a"],
+html.light [style*="background: #111"],
+html.light [style*="background:#111"],
+html.light [style*="background: #222"],
+html.light [style*="background:#222"],
+html.light [style*="background: #333"],
+html.light [style*="background:#333"],
+html.light [style*="background: #0d"],
+html.light [style*="background:#0d"],
+html.light [style*="background: #13"],
+html.light [style*="background:#13"],
+html.light [style*="background: #16"],
+html.light [style*="background:#16"] {
+  background: rgba(241,245,249,0.97) !important;
+  border-color: rgba(148,163,184,0.4) !important;
+  color: #0f172a !important;
+}
+
+/* --- MULTIDAY TAB: Tomorrow/+2 day grey number values --- */
+html.light [style*="color: rgba(176,190,197"],
+html.light [style*="color:rgba(176,190,197"] { color: #334155 !important; }
+html.light [style*="color: rgba(144,164,174"],
+html.light [style*="color:rgba(144,164,174"] { color: #374151 !important; }
+html.light [style*="color: rgba(96,125,139"],
+html.light [style*="color:rgba(96,125,139"] { color: #1e293b !important; }
+
+/* --- GLOBAL FALLBACK: any remaining dark inline bg --- */
+html.light [style*="background-color: #040711"],
+html.light [style*="background-color:#040711"],
+html.light [style*="background-color: #030509"],
+html.light [style*="background-color:#030509"],
+html.light [style*="background-color: #0a0f1e"],
+html.light [style*="background-color:#0a0f1e"],
+html.light [style*="background-color: rgb(4,7,17"],
+html.light [style*="background-color:rgb(4,7,17"] {
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+/* --- GLOBAL TEXT: any remaining very-light inline text color --- */
+html.light * { scrollbar-color: #94a3b8 #e2e8f0; }
+
+/* Section header bands (blue gradient banners in Regimes, WhatIf, Climatology, Scores) */
+html.light div[style*="background: linear-gradient(90deg"],
+html.light div[style*="background:linear-gradient(90deg"] {
+  background: linear-gradient(90deg, #0369a1 0%, #1d4ed8 100%) !important;
+  color: #ffffff !important;
+}
+html.light div[style*="background: linear-gradient(90deg"] *,
+html.light div[style*="background:linear-gradient(90deg"] * { color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; }
+
+/* Ensure gradient-text in dark bands stays white */
+html.light div[style*="background: linear-gradient(90deg"] .gradient-text,
+html.light div[style*="background:linear-gradient(90deg"] .gradient-text { -webkit-text-fill-color: #ffffff !important; background: none !important; }
+
+/* --- HISTORICAL TRENDS: make grey darker --- */
+html.light [style*="color: rgba(148,163,184"],
+html.light [style*="color:rgba(148,163,184"] { color: #475569 !important; }
+html.light [style*="color: rgba(100,116,139"],
+html.light [style*="color:rgba(100,116,139"] { color: #334155 !important; }
+html.light [style*="color: rgba(71,85,105"],
+html.light [style*="color:rgba(71,85,105"] { color: #1e293b !important; }
+
   </style>
 </head>
 <body class="bg-[#040711] text-[#e8eaf6] antialiased min-h-screen font-sans relative overflow-x-hidden selection:bg-sky-400 selection:text-black">
