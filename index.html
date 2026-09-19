@@ -85,6 +85,7 @@
   <!-- Babel Standalone for JSX -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
   
   <style>
@@ -418,6 +419,11 @@
       background: rgba(56,189,248,0.08);
       color: #38bdf8;
     }
+
+/* ── LEGIBILITY BUMPS — readable minimum sizes ─────────────────── */
+    .text-\[9px\]  { font-size: 10px !important; }
+    .text-\[10px\] { font-size: 11px !important; }
+    .text-\[11px\] { font-size: 12px !important; }
 
   </style>
 </head>
@@ -1546,8 +1552,8 @@ function injectDrainageOverlay(map, liveData) {
               const NAV_GROUPS = [
                 { label: 'NOWCAST', tabs: ['DASHBOARD', 'FORECAST', 'RADAR MAP'] },
                 { label: 'ANALYSIS', tabs: ['MODELS', 'EXPLAINABILITY', 'REGIMES', 'WHATIF'] },
-                { label: 'HISTORY', tabs: ['MULTIDAY', 'CLIMATOLOGY', 'SKILL SCORES'] },
-                { label: 'OPS', tabs: ['ALERTS', 'LIVE API', 'ATC VIEW'] },
+                { label: 'HISTORY', tabs: ['MULTIDAY', 'CLIMATOLOGY', 'SKILL SCORES', 'DATA & GRAPHS'] },
+                { label: 'OPS', tabs: ['ALERTS', 'CONTACTS', 'LIVE API', 'ATC VIEW'] },
               ];
               return (
                 <>
@@ -1568,7 +1574,7 @@ function injectDrainageOverlay(map, liveData) {
                       <span style={{color:'rgba(56,189,248,0.3)',fontSize:7,letterSpacing:'0.18em',marginRight:2,fontWeight:900}}>{group.label}</span>
                       {group.tabs.map(tab => {
                         const isActive = activeNavTab === tab;
-                        const shortLabel = tab === 'EXPLAINABILITY' ? 'EXPLAIN' : tab === 'CLIMATOLOGY' ? 'CLIMAT.' : tab === 'SKILL SCORES' ? 'SCORES' : tab;
+                        const shortLabel = tab === 'EXPLAINABILITY' ? 'EXPLAIN' : tab === 'CLIMATOLOGY' ? 'CLIMAT.' : tab === 'SKILL SCORES' ? 'SCORES' : tab === 'DATA & GRAPHS' ? 'GRAPHS' : tab;
                         return (
                           <button key={tab} onClick={() => onNavTabChange(tab)}
                             className={`relative px-2 py-1 rounded-lg tracking-wider transition-all duration-200 whitespace-nowrap ${isActive ? 'nav-tab-active' : 'text-[#4a6880] hover:text-[#90cce8]'}`}
@@ -1586,7 +1592,7 @@ function injectDrainageOverlay(map, liveData) {
 
             {/* Right: hazard switcher + time + live badge + hamburger */}
             <div className="flex items-center gap-2 font-mono" style={{flexShrink:0}}>
-              <div className="hidden lg:block"><HazardSwitcher selected={selectedHazard} onChange={onHazardChange} /></div>
+<div className="hidden lg:block"><HazardSwitcher selected={selectedHazard} onChange={onHazardChange} /></div>
               <div className="hidden sm:flex flex-col items-end gap-0.5">
                 <div className="text-sm font-extrabold text-white tracking-widest neon-cyan" style={{whiteSpace:'nowrap'}}>{liveTime}</div>
                 <div className="text-[9px] text-[#3d5066]">{(() => {
@@ -7455,13 +7461,13 @@ function injectDrainageOverlay(map, liveData) {
       const [currentSlots, setCurrentSlots] = useState(DEFAULT_SLOTS);
       const [selectedSlotIndex, setSelectedSlotIndex] = useState(() => getInitialSlotByIstTime());
       const [liveTime, setLiveTime] = useState('');
-      const NAV_TAB_LIST = ['DASHBOARD', 'FORECAST', 'RADAR MAP', 'MODELS', 'EXPLAINABILITY', 'REGIMES', 'LIVE API', 'ATC VIEW'];
+      const NAV_TAB_LIST = ['DASHBOARD', 'FORECAST', 'RADAR MAP', 'MODELS', 'EXPLAINABILITY', 'REGIMES', 'LIVE API', 'ATC VIEW', 'MULTIDAY', 'CLIMATOLOGY', 'SKILL SCORES', 'ALERTS', 'WHATIF', 'DATA & GRAPHS', 'CONTACTS'];
       const hashToTab = (h) => {
-        const map = { '#dashboard':'DASHBOARD','#forecast':'FORECAST','#radar':'RADAR MAP','#models':'MODELS','#explainability':'EXPLAINABILITY','#regimes':'REGIMES','#api':'LIVE API','#atc':'ATC VIEW','#multiday':'MULTIDAY','#climatology':'CLIMATOLOGY','#scores':'SKILL SCORES','#alerts':'ALERTS','#whatif':'WHATIF' };
+        const map = { '#dashboard':'DASHBOARD','#forecast':'FORECAST','#radar':'RADAR MAP','#models':'MODELS','#explainability':'EXPLAINABILITY','#regimes':'REGIMES','#api':'LIVE API','#atc':'ATC VIEW','#multiday':'MULTIDAY','#climatology':'CLIMATOLOGY','#scores':'SKILL SCORES','#alerts':'ALERTS','#whatif':'WHATIF','#graphs':'DATA & GRAPHS','#contacts':'CONTACTS' };
         return map[h.toLowerCase()] || 'DASHBOARD';
       };
       const tabToHash = (t) => {
-        const map = { 'DASHBOARD':'#dashboard','FORECAST':'#forecast','RADAR MAP':'#radar','MODELS':'#models','EXPLAINABILITY':'#explainability','REGIMES':'#regimes','LIVE API':'#api','ATC VIEW':'#atc','MULTIDAY':'#multiday','CLIMATOLOGY':'#climatology','SKILL SCORES':'#scores','ALERTS':'#alerts','WHATIF':'#whatif' };
+        const map = { 'DASHBOARD':'#dashboard','FORECAST':'#forecast','RADAR MAP':'#radar','MODELS':'#models','EXPLAINABILITY':'#explainability','REGIMES':'#regimes','LIVE API':'#api','ATC VIEW':'#atc','MULTIDAY':'#multiday','CLIMATOLOGY':'#climatology','SKILL SCORES':'#scores','ALERTS':'#alerts','WHATIF':'#whatif','DATA & GRAPHS':'#graphs','CONTACTS':'#contacts' };
         return map[t] || '#dashboard';
       };
       const [activeNavTab, setActiveNavTab] = useState(() => {
@@ -7794,9 +7800,9 @@ Source: csir-thunderstorm-bengaluru.pages.dev | IMD Station 43295`;
           <div className="relative z-20 flex flex-col h-screen overflow-hidden">
             
             {/* Header Bar */}
-            <HeaderBar 
-              liveTime={liveTime} 
-              isLiveData={isLiveData} 
+            <HeaderBar
+              liveTime={liveTime}
+              isLiveData={isLiveData}
               activeNavTab={activeNavTab}
               selectedHazard={selectedHazard}
               onHazardChange={setSelectedHazard}
@@ -8035,6 +8041,24 @@ Source: csir-thunderstorm-bengaluru.pages.dev | IMD Station 43295`;
                     exit={{ opacity: 0, y: -16 }}
                     transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}>
                     <WhatIfPage hazardCfg={hazardCfg} liveData={liveData} />
+                  </motion.div>
+                )}
+                {activeNavTab === 'DATA & GRAPHS' && (
+                  <motion.div key="graphs"
+                    initial={{ opacity: 0, y: 24, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -16 }}
+                    transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}>
+                    <DataGraphsPage liveData={liveData} />
+                  </motion.div>
+                )}
+                {activeNavTab === 'CONTACTS' && (
+                  <motion.div key="contacts"
+                    initial={{ opacity: 0, y: 24, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -16 }}
+                    transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}>
+                    <ContactsPage liveData={liveData} />
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -8878,6 +8902,504 @@ Source: csir-thunderstorm-bengaluru.pages.dev | IMD Station 43295`;
     // ═══════════════════════════════════════════════════════════════════════════
     // END NEW FEATURE PAGES
     // ═══════════════════════════════════════════════════════════════════════════
+
+    // ── DATA & GRAPHS PAGE ────────────────────────────────────────────────────
+    function DataGraphsPage({ liveData }) {
+      const [log, setLog] = React.useState([]);
+      const [loading, setLoading] = React.useState(true);
+      const [lastRefresh, setLastRefresh] = React.useState(null);
+      const chartRefs = React.useRef({});
+
+      const parseCSV = (text) => {
+        const lines = text.trim().split('\n');
+        if (lines.length < 2) return [];
+        const headers = lines[0].split(',').map(h => h.trim());
+        return lines.slice(1).map(line => {
+          const vals = line.split(',');
+          const row = {};
+          headers.forEach((h, i) => { row[h] = vals[i]?.trim() || ''; });
+          return row;
+        }).filter(r => r.timestamp || r.date || r.generated_at_utc);
+      };
+
+      const loadData = () => {
+        setLoading(true);
+        fetch('./data/forecast_log.csv?' + Date.now(), { cache: 'no-cache' })
+          .then(r => r.text())
+          .then(text => {
+            const rows = parseCSV(text);
+            setLog(rows.slice(-120)); // last 120 entries (~30 days at 4/day)
+            setLastRefresh(new Date().toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' }));
+            setLoading(false);
+          })
+          .catch(() => setLoading(false));
+      };
+
+      React.useEffect(() => {
+        loadData();
+        const interval = setInterval(loadData, 60000); // refresh every 60s
+        return () => clearInterval(interval);
+      }, []);
+
+      // Build SVG mini-chart
+      function SparkLine({ data, color, label, unit, yMin, yMax }) {
+        if (!data || data.length < 2) return (
+          <div style={{height:120, display:'flex', alignItems:'center', justifyContent:'center', color:'#607d8b', fontSize:12}}>
+            No data available
+          </div>
+        );
+        const [hovered, setHovered] = React.useState(null);
+        const W = 700, H = 110, PAD = {l:40, r:12, t:12, b:28};
+        const nums = data.map(d => parseFloat(d.val));
+        const lo = yMin !== undefined ? yMin : Math.min(...nums);
+        const hi = yMax !== undefined ? yMax : Math.max(...nums);
+        const range = hi - lo || 1;
+        const sx = (i) => PAD.l + (i / (data.length - 1)) * (W - PAD.l - PAD.r);
+        const sy = (v) => PAD.t + (1 - (v - lo) / range) * (H - PAD.t - PAD.b);
+        const pts = data.map((d, i) => `${sx(i)},${sy(parseFloat(d.val))}`).join(' ');
+        // every ~20th label
+        const xLabels = data.filter((_, i) => i % Math.max(1, Math.floor(data.length / 6)) === 0);
+
+        return (
+          <div style={{position:'relative', width:'100%', overflowX:'auto'}}>
+            {hovered && (
+              <div style={{
+                position:'absolute', top:8, left:'50%', transform:'translateX(-50%)',
+                background:'rgba(10,20,40,0.92)', border:'1px solid rgba(56,189,248,0.4)',
+                borderRadius:8, padding:'4px 12px', pointerEvents:'none', zIndex:10,
+                fontSize:12, fontFamily:'JetBrains Mono, monospace', color:'#e2e8f0', whiteSpace:'nowrap'
+              }}>
+                {hovered.label} &nbsp;|&nbsp; <span style={{color}}>{hovered.val} {unit}</span>
+              </div>
+            )}
+            <svg viewBox={`0 0 ${W} ${H}`} style={{width:'100%', minWidth:320, height:H+4}} onMouseLeave={() => setHovered(null)}>
+              {/* grid lines */}
+              {[0, 0.25, 0.5, 0.75, 1].map(f => {
+                const y = PAD.t + f * (H - PAD.t - PAD.b);
+                const val = hi - f * range;
+                return (
+                  <g key={f}>
+                    <line x1={PAD.l} y1={y} x2={W - PAD.r} y2={y} stroke="rgba(255,255,255,0.05)" strokeWidth={1} />
+                    <text x={PAD.l - 4} y={y + 4} textAnchor="end" fontSize={9} fill="#607d8b">{val.toFixed(1)}</text>
+                  </g>
+                );
+              })}
+              {/* x labels */}
+              {xLabels.map((d, i) => {
+                const idx = data.indexOf(d);
+                return (
+                  <text key={i} x={sx(idx)} y={H - 4} textAnchor="middle" fontSize={8} fill="#607d8b">
+                    {(d.label || '').slice(0, 10)}
+                  </text>
+                );
+              })}
+              {/* area fill */}
+              <defs>
+                <linearGradient id={`fill-${label}`} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={color} stopOpacity="0.25" />
+                  <stop offset="100%" stopColor={color} stopOpacity="0.02" />
+                </linearGradient>
+              </defs>
+              <polygon
+                points={`${sx(0)},${H - PAD.b} ${pts} ${sx(data.length - 1)},${H - PAD.b}`}
+                fill={`url(#fill-${label})`}
+              />
+              {/* line */}
+              <polyline points={pts} fill="none" stroke={color} strokeWidth={2} strokeLinejoin="round" />
+              {/* hover dots */}
+              {data.map((d, i) => (
+                <circle key={i} cx={sx(i)} cy={sy(parseFloat(d.val))} r={hovered?.i === i ? 5 : 3}
+                  fill={hovered?.i === i ? color : 'transparent'}
+                  stroke={hovered?.i === i ? color : 'transparent'}
+                  style={{cursor:'crosshair'}}
+                  onMouseEnter={() => setHovered({ i, label: d.label, val: parseFloat(d.val).toFixed(2) })}
+                />
+              ))}
+            </svg>
+          </div>
+        );
+      }
+
+      // Extract series from log rows
+      const tsKey = log[0] && (log[0].timestamp ? 'timestamp' : log[0].generated_at_utc ? 'generated_at_utc' : 'date');
+      const fmtTime = (ts) => {
+        try {
+          const d = new Date(ts);
+          if (isNaN(d)) return ts?.slice(0,16) || ts;
+          return d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',timeZone:'Asia/Kolkata'}) + ' ' +
+            d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:false,timeZone:'Asia/Kolkata'});
+        } catch { return ts?.slice(0,16) || ts; }
+      };
+
+      const series = {
+        prob: log.map(r => ({ label: fmtTime(r[tsKey]), val: Math.round((parseFloat(r.peak_probability || r.probability || 0)) * 100) })),
+        cape: log.map(r => ({ label: fmtTime(r[tsKey]), val: parseFloat(r.cape || r.gfs_cape || r.cape_jkg || 0) })),
+        kIdx: log.map(r => ({ label: fmtTime(r[tsKey]), val: parseFloat(r.k_index || r.k_idx || 0) })),
+        li:   log.map(r => ({ label: fmtTime(r[tsKey]), val: parseFloat(r.lifted_index || r.li || 0) })),
+        pwat: log.map(r => ({ label: fmtTime(r[tsKey]), val: parseFloat(r.precip_water || r.pwat || 0) })),
+      };
+
+      const panels = [
+        { key: 'prob',  label: 'Thunderstorm Probability (%)',   color: '#ef5350', unit: '%',    yMin: 0, yMax: 100 },
+        { key: 'cape',  label: 'CAPE (J/kg)',                    color: '#ff9800', unit: 'J/kg', yMin: 0 },
+        { key: 'kIdx',  label: 'K-Index',                        color: '#38bdf8', unit: '',     yMin: 0, yMax: 50 },
+        { key: 'li',    label: 'Lifted Index',                   color: '#a78bfa', unit: '' },
+        { key: 'pwat',  label: 'Precipitable Water (mm)',        color: '#4ade80', unit: 'mm',   yMin: 0 },
+      ];
+
+      // Current values from liveData for quick-stat row
+      const stats = [
+        { label: 'Peak Prob', val: liveData ? Math.round((liveData.peak_probability||0)*100) + '%' : '--', color: '#ef5350' },
+        { label: 'CAPE', val: liveData ? Math.round(liveData.gfs_cape || liveData.cape_jkg || 0) + ' J/kg' : '--', color: '#ff9800' },
+        { label: 'K-Index', val: liveData ? Math.round(liveData.k_index || liveData.k_idx || 0) : '--', color: '#38bdf8' },
+        { label: 'Lifted Idx', val: liveData ? (liveData.lifted_index || liveData.li || 0).toFixed(1) : '--', color: '#a78bfa' },
+        { label: 'Prec. Water', val: liveData ? Math.round(liveData.precip_water || 0) + ' mm' : '--', color: '#4ade80' },
+        { label: 'Flight Cat', val: liveData?.flight_category || '--', color: '#fbbf24' },
+      ];
+
+      return (
+        <div className="p-4 lg:p-6 space-y-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <div style={{fontSize:11,fontWeight:700,letterSpacing:'0.18em',color:'#607d8b',marginBottom:4}}>DATA &amp; GRAPHS · VOBL/BLR · STATION 43295</div>
+              <div style={{fontSize:22,fontWeight:900,color:'#e2e8f0',fontFamily:'Plus Jakarta Sans,sans-serif'}}>Historical Trends</div>
+              <div style={{fontSize:12,color:'#607d8b',marginTop:2}}>Live time-series from the forecast pipeline · auto-refreshes every 60 s</div>
+            </div>
+            <div className="flex items-center gap-3">
+              {lastRefresh && <span style={{fontSize:11,color:'#38bdf8',fontFamily:'JetBrains Mono,monospace'}}>Updated {lastRefresh} IST</span>}
+              <button onClick={loadData} style={{
+                padding:'6px 14px', borderRadius:8, fontSize:12, fontWeight:700, cursor:'pointer',
+                background:'rgba(56,189,248,0.10)', border:'1px solid rgba(56,189,248,0.3)', color:'#38bdf8'
+              }}>
+                {loading ? '⟳ Loading…' : '⟳ Refresh'}
+              </button>
+            </div>
+          </div>
+
+          {/* Current value stat row */}
+          <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(130px,1fr))', gap:10}}>
+            {stats.map(s => (
+              <div key={s.label} className="atc-card rounded-xl p-3 text-center">
+                <div style={{fontSize:10,fontWeight:700,letterSpacing:'0.12em',color:'#607d8b',marginBottom:4}}>{s.label}</div>
+                <div style={{fontSize:20,fontWeight:900,color:s.color,fontFamily:'JetBrains Mono,monospace'}}>{s.val}</div>
+                <div style={{fontSize:9,color:'#607d8b',marginTop:2}}>NOW</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Auto-threshold banner */}
+          {liveData && (liveData.peak_probability || 0) >= 0.35 && (
+            <div style={{
+              background:'rgba(239,83,80,0.12)', border:'1px solid rgba(239,83,80,0.4)',
+              borderRadius:12, padding:'12px 18px', display:'flex', alignItems:'center', gap:12
+            }}>
+              <span style={{fontSize:22}}>⚡</span>
+              <div>
+                <div style={{fontWeight:700, color:'#ef5350', fontSize:14}}>AUTO THRESHOLD BREACHED</div>
+                <div style={{fontSize:12, color:'#ef9a9a', marginTop:2}}>
+                  Peak probability {Math.round((liveData.peak_probability||0)*100)}% has crossed the 35% alert threshold.
+                  Subscribers are notified automatically by the pipeline.
+                </div>
+              </div>
+            </div>
+          )}
+
+          {loading && log.length === 0 ? (
+            <div className="atc-card rounded-2xl p-10 text-center" style={{color:'#607d8b', fontSize:13}}>
+              Loading forecast history…
+            </div>
+          ) : log.length === 0 ? (
+            <div className="atc-card rounded-2xl p-10 text-center" style={{color:'#607d8b', fontSize:13}}>
+              No forecast_log.csv data found. The pipeline appends one row per run; data will appear after the next pipeline run.
+            </div>
+          ) : (
+            panels.map(p => (
+              <div key={p.key} className="atc-card rounded-2xl p-5">
+                <div style={{fontSize:11,fontWeight:700,letterSpacing:'0.14em',color:'#607d8b',marginBottom:12}}>
+                  {p.label} &nbsp;
+                  <span style={{fontSize:10,fontWeight:400,color:'#455a64'}}>Last {log.length} pipeline runs</span>
+                </div>
+                <SparkLine data={series[p.key]} color={p.color} label={p.key} unit={p.unit} yMin={p.yMin} yMax={p.yMax} />
+              </div>
+            ))
+          )}
+        </div>
+      );
+    }
+
+    // ── CONTACTS PAGE ─────────────────────────────────────────────────────────
+    function ContactsPage({ liveData }) {
+      const STORAGE_KEY = 'sih_contacts_v1';
+      const load = () => { try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch { return []; } };
+      const save = (c) => { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(c)); } catch {} };
+
+      const [contacts, setContacts] = React.useState(load);
+      const [form, setForm] = React.useState({ name:'', email:'', phone:'', role:'', notes:'' });
+      const [editId, setEditId] = React.useState(null);
+      const [showForm, setShowForm] = React.useState(false);
+      const [alertForm, setAlertForm] = React.useState({ msg:'', severity:'WARNING', selected:[] });
+      const [alertSent, setAlertSent] = React.useState(false);
+      const [showAlert, setShowAlert] = React.useState(false);
+
+      const peakProb = liveData ? Math.round((liveData.peak_probability||0)*100) : '--';
+      const cape = liveData ? Math.round(liveData.gfs_cape || liveData.cape_jkg || 0) : '--';
+      const mlPrediction = liveData?.ml_prediction || (liveData?.peak_probability >= 0.35 ? 'CONVECTIVE' : 'STABLE');
+
+      const update = (c) => { setContacts(c); save(c); };
+
+      const handleSave = () => {
+        if (!form.name.trim()) return;
+        if (editId !== null) {
+          update(contacts.map(c => c.id === editId ? { ...c, ...form } : c));
+          setEditId(null);
+        } else {
+          update([...contacts, { ...form, id: Date.now() }]);
+        }
+        setForm({ name:'', email:'', phone:'', role:'', notes:'' });
+        setShowForm(false);
+      };
+
+      const handleEdit = (c) => { setForm(c); setEditId(c.id); setShowForm(true); };
+      const handleDelete = (id) => update(contacts.filter(c => c.id !== id));
+
+      const toggleSelect = (id) => setAlertForm(f => ({
+        ...f, selected: f.selected.includes(id) ? f.selected.filter(x => x !== id) : [...f.selected, id]
+      }));
+
+      const handleSendAlert = () => {
+        // Compose the full alert text and open mailto links for email contacts
+        const recipients = contacts.filter(c => alertForm.selected.includes(c.id));
+        const body = [
+          `[${alertForm.severity}] Manual Alert from VOBL Thunderstorm Nowcast`,
+          '',
+          alertForm.msg,
+          '',
+          `--- Current Model Status ---`,
+          `ML Prediction: ${mlPrediction}`,
+          `Peak Probability: ${peakProb}%`,
+          `CAPE: ${cape} J/kg`,
+          `Generated: ${liveData?.generated_at_ist || new Date().toLocaleString('en-IN',{timeZone:'Asia/Kolkata'})}`,
+          '',
+          'This alert was sent manually from the VOBL Hyperlocal Warning System.',
+        ].join('\n');
+
+        recipients.filter(r => r.email).forEach(r => {
+          const mailto = `mailto:${r.email}?subject=${encodeURIComponent(`[${alertForm.severity}] Thunderstorm Alert — VOBL/BLR`)}&body=${encodeURIComponent(body)}`;
+          window.open(mailto, '_blank');
+        });
+
+        setAlertSent(true);
+        setTimeout(() => setAlertSent(false), 4000);
+      };
+
+      const inputStyle = {
+        background:'rgba(255,255,255,0.05)', border:'1px solid rgba(56,189,248,0.2)',
+        borderRadius:8, padding:'8px 12px', fontSize:13, color:'#e2e8f0',
+        width:'100%', outline:'none', fontFamily:'JetBrains Mono,monospace'
+      };
+
+      const severityColors = { WARNING: '#ff9800', CRITICAL: '#ef5350', INFO: '#38bdf8' };
+
+      return (
+        <div className="p-4 lg:p-6 space-y-5">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div>
+              <div style={{fontSize:11,fontWeight:700,letterSpacing:'0.18em',color:'#607d8b',marginBottom:4}}>OPS · ALERT CONTACTS</div>
+              <div style={{fontSize:22,fontWeight:900,color:'#e2e8f0',fontFamily:'Plus Jakarta Sans,sans-serif'}}>Contact Registry</div>
+              <div style={{fontSize:12,color:'#607d8b',marginTop:2}}>Register contacts for manual emergency alerts. Email links open in your mail client.</div>
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => { setShowAlert(s => !s); }} style={{
+                padding:'8px 16px', borderRadius:8, fontSize:12, fontWeight:700, cursor:'pointer',
+                background: showAlert ? 'rgba(239,83,80,0.15)' : 'rgba(239,83,80,0.08)',
+                border:'1px solid rgba(239,83,80,0.4)', color:'#ef5350'
+              }}>
+                ⚡ Send Alert
+              </button>
+              <button onClick={() => { setShowForm(s => !s); setEditId(null); setForm({ name:'', email:'', phone:'', role:'', notes:'' }); }} style={{
+                padding:'8px 16px', borderRadius:8, fontSize:12, fontWeight:700, cursor:'pointer',
+                background:'rgba(56,189,248,0.10)', border:'1px solid rgba(56,189,248,0.3)', color:'#38bdf8'
+              }}>
+                + Add Contact
+              </button>
+            </div>
+          </div>
+
+          {/* ML Prediction status bar */}
+          <div className="atc-card rounded-xl p-4" style={{display:'flex',alignItems:'center',gap:16,flexWrap:'wrap'}}>
+            <div style={{fontSize:11,fontWeight:700,letterSpacing:'0.14em',color:'#607d8b'}}>CURRENT ML STATUS</div>
+            <div style={{padding:'3px 10px',borderRadius:6,fontSize:12,fontWeight:700,
+              background: mlPrediction==='CONVECTIVE' ? 'rgba(239,83,80,0.15)' : 'rgba(76,175,80,0.12)',
+              border:`1px solid ${mlPrediction==='CONVECTIVE' ? 'rgba(239,83,80,0.4)' : 'rgba(76,175,80,0.3)'}`,
+              color: mlPrediction==='CONVECTIVE' ? '#ef5350' : '#4caf50'
+            }}>
+              {mlPrediction}
+            </div>
+            <div style={{fontSize:12,color:'#90cce8',fontFamily:'JetBrains Mono,monospace'}}>
+              Peak {peakProb}% · CAPE {cape} J/kg
+            </div>
+          </div>
+
+          {/* Manual alert composer */}
+          {showAlert && (
+            <div className="atc-card rounded-2xl p-5 space-y-4">
+              <div style={{fontSize:11,fontWeight:700,letterSpacing:'0.14em',color:'#607d8b'}}>COMPOSE MANUAL ALERT</div>
+
+              {/* Severity */}
+              <div className="flex gap-2">
+                {['INFO','WARNING','CRITICAL'].map(s => (
+                  <button key={s} onClick={() => setAlertForm(f => ({...f, severity: s}))} style={{
+                    padding:'5px 14px', borderRadius:6, fontSize:11, fontWeight:700, cursor:'pointer',
+                    background: alertForm.severity === s ? `${severityColors[s]}22` : 'rgba(255,255,255,0.04)',
+                    border:`1px solid ${alertForm.severity === s ? severityColors[s] : 'rgba(255,255,255,0.1)'}`,
+                    color: alertForm.severity === s ? severityColors[s] : '#607d8b'
+                  }}>{s}</button>
+                ))}
+              </div>
+
+              {/* Message */}
+              <div>
+                <div style={{fontSize:10,fontWeight:700,letterSpacing:'0.12em',color:'#607d8b',marginBottom:4}}>ALERT MESSAGE</div>
+                <textarea rows={3} placeholder="Describe the emergency situation…" value={alertForm.msg}
+                  onChange={e => setAlertForm(f => ({...f, msg: e.target.value}))}
+                  style={{...inputStyle, resize:'vertical'}} />
+              </div>
+
+              {/* ML context preview */}
+              <div style={{background:'rgba(0,0,0,0.3)', borderRadius:8, padding:'10px 14px',
+                fontSize:11, fontFamily:'JetBrains Mono,monospace', color:'#90cce8', lineHeight:1.7}}>
+                Will include: ML Prediction: {mlPrediction} · Peak Prob: {peakProb}% · CAPE: {cape} J/kg · Generated: {liveData?.generated_at_ist || 'now'}
+              </div>
+
+              {/* Contact selection */}
+              <div>
+                <div style={{fontSize:10,fontWeight:700,letterSpacing:'0.12em',color:'#607d8b',marginBottom:8}}>
+                  SELECT RECIPIENTS ({alertForm.selected.length} selected)
+                </div>
+                {contacts.length === 0 ? (
+                  <div style={{color:'#607d8b',fontSize:12}}>No contacts yet — add some below.</div>
+                ) : (
+                  <div style={{display:'flex',flexWrap:'wrap',gap:8}}>
+                    {contacts.map(c => (
+                      <button key={c.id} onClick={() => toggleSelect(c.id)} style={{
+                        padding:'5px 12px', borderRadius:20, fontSize:12, fontWeight:600, cursor:'pointer',
+                        background: alertForm.selected.includes(c.id) ? 'rgba(239,83,80,0.15)' : 'rgba(255,255,255,0.05)',
+                        border:`1px solid ${alertForm.selected.includes(c.id) ? 'rgba(239,83,80,0.5)' : 'rgba(255,255,255,0.12)'}`,
+                        color: alertForm.selected.includes(c.id) ? '#ef9a9a' : '#90a4ae'
+                      }}>
+                        {alertForm.selected.includes(c.id) ? '✓ ' : ''}{c.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <button onClick={handleSendAlert}
+                disabled={alertForm.selected.length === 0 || !alertForm.msg.trim()}
+                style={{
+                  width:'100%', padding:'10px', borderRadius:8, fontSize:13, fontWeight:700, cursor:'pointer',
+                  background: alertSent ? 'rgba(76,175,80,0.15)' : 'rgba(239,83,80,0.12)',
+                  border:`1px solid ${alertSent ? 'rgba(76,175,80,0.4)' : 'rgba(239,83,80,0.4)'}`,
+                  color: alertSent ? '#4caf50' : '#ef5350',
+                  opacity: (alertForm.selected.length === 0 || !alertForm.msg.trim()) ? 0.4 : 1
+                }}>
+                {alertSent ? '✅ Alert Sent — check your email client' : `⚡ Send ${alertForm.severity} Alert to ${alertForm.selected.length} Contact(s)`}
+              </button>
+            </div>
+          )}
+
+          {/* Add/Edit contact form */}
+          {showForm && (
+            <div className="atc-card rounded-2xl p-5">
+              <div style={{fontSize:11,fontWeight:700,letterSpacing:'0.14em',color:'#607d8b',marginBottom:12}}>
+                {editId ? 'EDIT CONTACT' : 'NEW CONTACT'}
+              </div>
+              <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:10}}>
+                {[
+                  { key:'name', label:'FULL NAME', placeholder:'Name' },
+                  { key:'role', label:'ROLE / TEAM', placeholder:'ATC, Met, Ops…' },
+                  { key:'email', label:'EMAIL ADDRESS', placeholder:'name@org.in', type:'email' },
+                  { key:'phone', label:'PHONE / WHATSAPP', placeholder:'+91 98765 43210', type:'tel' },
+                ].map(f => (
+                  <div key={f.key}>
+                    <div style={{fontSize:10,fontWeight:700,letterSpacing:'0.12em',color:'#607d8b',marginBottom:4}}>{f.label}</div>
+                    <input type={f.type||'text'} placeholder={f.placeholder} value={form[f.key]}
+                      onChange={e => setForm(p => ({...p, [f.key]: e.target.value}))}
+                      style={inputStyle} />
+                  </div>
+                ))}
+              </div>
+              <div style={{marginTop:10}}>
+                <div style={{fontSize:10,fontWeight:700,letterSpacing:'0.12em',color:'#607d8b',marginBottom:4}}>NOTES (optional)</div>
+                <input placeholder="Any notes…" value={form.notes}
+                  onChange={e => setForm(p => ({...p, notes: e.target.value}))}
+                  style={inputStyle} />
+              </div>
+              <div className="flex gap-2 mt-4">
+                <button onClick={handleSave} style={{
+                  padding:'8px 20px', borderRadius:8, fontSize:12, fontWeight:700, cursor:'pointer',
+                  background:'rgba(56,189,248,0.12)', border:'1px solid rgba(56,189,248,0.4)', color:'#38bdf8'
+                }}>{editId ? 'Save Changes' : 'Add Contact'}</button>
+                <button onClick={() => { setShowForm(false); setEditId(null); }} style={{
+                  padding:'8px 20px', borderRadius:8, fontSize:12, fontWeight:700, cursor:'pointer',
+                  background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.1)', color:'#607d8b'
+                }}>Cancel</button>
+              </div>
+            </div>
+          )}
+
+          {/* Contact list */}
+          {contacts.length === 0 ? (
+            <div className="atc-card rounded-2xl p-10 text-center" style={{color:'#607d8b', fontSize:13}}>
+              No contacts yet. Click "Add Contact" to register your first emergency contact.
+            </div>
+          ) : (
+            <div className="atc-card rounded-2xl overflow-hidden">
+              <div style={{overflowX:'auto'}}>
+                <table style={{width:'100%', borderCollapse:'collapse', fontSize:13}}>
+                  <thead>
+                    <tr style={{borderBottom:'1px solid rgba(56,189,248,0.15)'}}>
+                      {['Name','Role','Email','Phone','Notes','Actions'].map(h => (
+                        <th key={h} style={{padding:'10px 14px', textAlign:'left', fontSize:10, fontWeight:700,
+                          letterSpacing:'0.12em', color:'#607d8b'}}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {contacts.map((c, i) => (
+                      <tr key={c.id} style={{borderBottom:'1px solid rgba(255,255,255,0.04)',
+                        background: i%2===0 ? 'transparent' : 'rgba(255,255,255,0.02)'}}>
+                        <td style={{padding:'10px 14px', color:'#e2e8f0', fontWeight:600}}>{c.name}</td>
+                        <td style={{padding:'10px 14px', color:'#90a4ae'}}>{c.role || '--'}</td>
+                        <td style={{padding:'10px 14px', color:'#38bdf8', fontFamily:'JetBrains Mono,monospace', fontSize:12}}>{c.email || '--'}</td>
+                        <td style={{padding:'10px 14px', color:'#90cce8', fontFamily:'JetBrains Mono,monospace', fontSize:12}}>{c.phone || '--'}</td>
+                        <td style={{padding:'10px 14px', color:'#607d8b', fontSize:12}}>{c.notes || '--'}</td>
+                        <td style={{padding:'10px 14px'}}>
+                          <div className="flex gap-2">
+                            <button onClick={() => handleEdit(c)} style={{
+                              padding:'3px 10px', borderRadius:5, fontSize:11, fontWeight:600, cursor:'pointer',
+                              background:'rgba(56,189,248,0.1)', border:'1px solid rgba(56,189,248,0.3)', color:'#38bdf8'
+                            }}>Edit</button>
+                            <button onClick={() => handleDelete(c.id)} style={{
+                              padding:'3px 10px', borderRadius:5, fontSize:11, fontWeight:600, cursor:'pointer',
+                              background:'rgba(239,83,80,0.08)', border:'1px solid rgba(239,83,80,0.3)', color:'#ef5350'
+                            }}>Remove</button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          <div style={{fontSize:11, color:'#455a64', padding:'8px 4px'}}>
+            Contacts are stored locally in your browser. The "Send Alert" button opens your email client with a pre-filled message including the current ML prediction. No data is sent to any server.
+          </div>
+        </div>
+      );
+    }
 
     class ErrorBoundary extends React.Component {
       constructor(props) { super(props); this.state = { error: null }; }
