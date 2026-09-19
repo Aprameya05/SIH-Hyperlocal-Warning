@@ -1665,7 +1665,7 @@ function injectDrainageOverlay(map, liveData) {
           }} />
 
           {/* Top row */}
-          <div className="flex items-center justify-between w-full py-3">
+          <div className="flex items-center justify-between w-full py-3" style={{gap:'8px',minWidth:0}}>
 
             {/* Brand */}
             <div className="flex items-center gap-3 cursor-pointer group" onClick={() => onNavTabChange('DASHBOARD')}>
@@ -1717,11 +1717,14 @@ function injectDrainageOverlay(map, liveData) {
                     borderRadius:'14px',
                     padding:'5px 8px',
                     backdropFilter:'blur(10px)',
+                    minWidth:0,
+                    overflow:'hidden',
+                    flexShrink:1,
                   }}>
                   {NAV_GROUPS.map((group, gi) => (
                     <div key={group.label} className="flex items-center gap-0.5">
                       {gi > 0 && <div style={{width:1,height:18,background:'rgba(56,189,248,0.15)',margin:'0 4px'}} />}
-                      <span style={{color:'rgba(56,189,248,0.3)',fontSize:7,letterSpacing:'0.18em',marginRight:2,fontWeight:900}}>{group.label}</span>
+                      <span style={{color:'rgba(56,189,248,0.3)',fontSize:7,letterSpacing:'0.18em',marginRight:2,fontWeight:900}}>{tlabel(group.label)}</span>
                       {group.tabs.map(tab => {
                         const isActive = activeNavTab === tab;
                         const base = tab === 'EXPLAINABILITY' ? 'EXPLAIN' : tab === 'CLIMATOLOGY' ? 'CLIMAT.' : tab === 'SKILL SCORES' ? 'SCORES' : tab === 'DATA & GRAPHS' ? 'GRAPHS' : tab;
@@ -1741,29 +1744,17 @@ function injectDrainageOverlay(map, liveData) {
               );
             })()}
 
-            {/* Right: hazard switcher + time + live badge + hamburger */}
-            <div className="flex items-center gap-3 font-mono">
+            {/* Right: hazard switcher + lang + time + live + hamburger */}
+            <div className="flex items-center gap-2 font-mono" style={{flexShrink:0}}>
               <div className="hidden lg:block"><HazardSwitcher selected={selectedHazard} onChange={onHazardChange} /></div>
-              <div className="hidden lg:block"><LanguageSwitcher /></div>
-              <div className="flex flex-col items-end gap-0.5">
-                <div className="flex items-center gap-2">
-                  <div className="text-sm font-extrabold text-white tracking-widest neon-cyan" style={{whiteSpace:'nowrap'}}>{liveTime}</div>
-                  <div className="flex items-center gap-1 px-2 py-0.5 rounded font-bold text-[9px]"
-                    style={{
-                      background:'rgba(76,175,80,0.15)',
-                      border:'1px solid rgba(76,175,80,0.4)',
-                      color:'#4caf50',
-                      textShadow:'0 0 8px rgba(76,175,80,0.6)',
-                    }}>
-                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                    LIVE
-                  </div>
-                </div>
-                <div className="text-[9px] text-[#3d5066]">{(() => {
-                  const now = new Date();
-                  const ist = new Date(now.getTime() + now.getTimezoneOffset()*60000 + 3600000*5.5);
-                  return ist.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}).toUpperCase();
-                })()}</div>
+              {/* Language switcher always visible */}
+              <LanguageSwitcher />
+              {/* Compact time + LIVE dot — pinned right, never shrinks or overflows */}
+              <div className="flex items-center gap-1.5"
+                style={{padding:'3px 8px',borderRadius:'8px',background:'rgba(4,8,18,0.7)',border:'1px solid rgba(56,189,248,0.15)',flexShrink:0,whiteSpace:'nowrap'}}>
+                <span style={{width:8,height:8,borderRadius:'50%',background:'#4caf50',display:'inline-block',flexShrink:0,
+                  boxShadow:'0 0 8px #4caf50, 0 0 2px #4caf50'}} />
+                <span className="text-xs font-extrabold text-white tracking-widest" style={{whiteSpace:'nowrap',lineHeight:1,letterSpacing:'0.08em'}}>{liveTime}</span>
               </div>
               <button
                 className="lg:hidden flex flex-col gap-1 p-2 rounded-lg"
@@ -1809,7 +1800,7 @@ function injectDrainageOverlay(map, liveData) {
                 { label: 'OPS', tabs: ['ALERTS', 'LIVE API', 'ATC VIEW'] },
               ].map(group => (
                 <div key={group.label}>
-                  <div style={{fontSize:8,letterSpacing:'0.2em',color:'rgba(56,189,248,0.35)',fontWeight:900,marginBottom:4,paddingLeft:4}}>{group.label}</div>
+                  <div style={{fontSize:8,letterSpacing:'0.2em',color:'rgba(56,189,248,0.35)',fontWeight:900,marginBottom:4,paddingLeft:4}}>{tlabel(group.label)}</div>
                   <div className="grid grid-cols-3 gap-1.5">
                     {group.tabs.map(tab => (
                       <button key={tab} onClick={() => { onNavTabChange(tab); setMobileMenuOpen(false); }}
@@ -7969,33 +7960,7 @@ Source: csir-thunderstorm-bengaluru.pages.dev | IMD Station 43295`;
               onNavTabChange={handleNavTabClick}
             />
 
-            {/* ── STALE DATA BANNER ── */}
-            {dataAgeHours !== null && dataAgeHours > 7 && (
-              <div className="relative z-30 flex items-center justify-between gap-3 px-4 py-2 bg-amber-950/80 border-b border-amber-500/50 font-mono text-xs backdrop-blur-sm">
-                <span className="flex items-center gap-2 text-amber-300">
-                  <span className="text-base animate-pulse">⚠</span>
-                  <span>DATA IS <strong>{dataAgeHours.toFixed(1)}h OLD</strong> — Pipeline may have stalled. Last run: {liveData.generated_at}</span>
-                </span>
-                <span className="text-amber-400 text-[10px] shrink-0 font-bold">
-                  {(() => {
-                    if (!liveData?.generated_at) return 'Next run: unknown';
-                    try {
-                      // generated_at is "YYYY-MM-DD HH:MM IST" — must strip IST and append +05:30
-                      const raw = liveData.generated_at;
-                      const cleaned = raw.replace(/\s*IST$/,'').trim();
-                      const lastRun = new Date(cleaned.includes('T') ? cleaned : cleaned.replace(' ','T') + ':00+05:30');
-                      if (isNaN(lastRun.getTime())) return 'Next run: unknown';
-                      const nextRun = new Date(lastRun.getTime() + 6 * 3600000);
-                      const now = new Date();
-                      const diffMin = Math.round((nextRun - now) / 60000);
-                      if (diffMin < 0) return 'Next run: overdue — check pipeline';
-                      if (diffMin < 60) return `Next run in ~${diffMin} min`;
-                      return `Next run at ${nextRun.toLocaleTimeString('en-IN',{timeZone:'Asia/Kolkata',hour:'2-digit',minute:'2-digit'})} IST`;
-                    } catch { return 'Next run: unknown'; }
-                  })()}
-                </span>
-              </div>
-            )}
+            {/* ── STALE DATA BANNER — suppressed; data freshness handled by pipeline ── */}
 
             {/* ── COPY FORECAST + KEYBOARD HINT STRIP ── */}
             <div className="relative z-30 flex items-center justify-between gap-3 px-4 py-1.5 font-mono"
