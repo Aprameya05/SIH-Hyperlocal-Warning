@@ -837,6 +837,114 @@ html.light [style*="color:rgba(100,116,139"] { color: #334155 !important; }
 html.light [style*="color: rgba(71,85,105"],
 html.light [style*="color:rgba(71,85,105"] { color: #1e293b !important; }
 
+/* ============================================================
+   LIGHT MODE FIXES - ROUND 3
+   Use exact inline rgba values WITH spaces (as React renders them)
+   ============================================================ */
+
+/* --- Exact dark backgrounds used as inline styles --- */
+html.light [style*="rgba(8, 13, 26"] {
+  background: rgba(248,250,252,0.97) !important;
+  background-color: rgba(248,250,252,0.97) !important;
+}
+html.light [style*="rgba(2, 4, 12"] {
+  background: rgba(241,245,249,0.97) !important;
+  background-color: rgba(241,245,249,0.97) !important;
+}
+html.light [style*="rgba(4, 8, 18"] {
+  background: rgba(248,250,252,0.97) !important;
+  background-color: rgba(248,250,252,0.97) !important;
+}
+html.light [style*="rgb(8, 12, 24"] {
+  background: rgba(241,245,249,0.97) !important;
+  background-color: rgba(241,245,249,0.97) !important;
+}
+html.light [style*="rgba(4, 7, 17"] {
+  background: rgba(248,250,252,0.95) !important;
+  background-color: rgba(248,250,252,0.95) !important;
+}
+html.light [style*="rgba(5, 8, 18"] {
+  background: rgba(248,250,252,0.97) !important;
+  background-color: rgba(248,250,252,0.97) !important;
+}
+html.light [style*="rgba(13, 22, 40"] {
+  background: rgba(241,245,249,0.97) !important;
+  background-color: rgba(241,245,249,0.97) !important;
+}
+html.light [style*="rgb(8, 13, 26"] {
+  background: rgba(248,250,252,0.97) !important;
+  background-color: rgba(248,250,252,0.97) !important;
+}
+html.light [style*="rgb(10, 22, 40"] {
+  background: rgba(241,245,249,0.97) !important;
+  background-color: rgba(241,245,249,0.97) !important;
+}
+html.light .bg-\[\#172338\] { background-color: #e2e8f0 !important; }
+
+/* --- Gradient overlays: lighten instead of darken --- */
+html.light [style*="linear-gradient(to right, rgba(4, 7, 17"] {
+  background: linear-gradient(to right, rgba(241,245,249,0.93) 0%, rgba(241,245,249,0.65) 240px, rgba(241,245,249,0.1) 420px) !important;
+}
+html.light [style*="linear-gradient(to top, rgb(4, 7, 17"] {
+  background: linear-gradient(to top, rgba(241,245,249,0.97) 0%, rgba(241,245,249,0) 100%) !important;
+}
+html.light [style*="linear-gradient(rgba(4, 7, 17"] {
+  background: linear-gradient(rgba(241,245,249,0.7) 0%, rgba(241,245,249,0) 100%) !important;
+}
+html.light [style*="radial-gradient(transparent 40%, rgba(4, 7, 17"] {
+  background: radial-gradient(transparent 40%, rgba(241,245,249,0.3) 100%) !important;
+}
+
+/* --- Translucent black overlays: lighten --- */
+html.light [style*="rgba(0, 0, 0, 0.3"] {
+  background: rgba(148,163,184,0.12) !important;
+  background-color: rgba(148,163,184,0.12) !important;
+}
+html.light [style*="rgba(0, 0, 0, 0.4"] {
+  background: rgba(148,163,184,0.18) !important;
+  background-color: rgba(148,163,184,0.18) !important;
+}
+
+/* --- Force text color on ALL children of the dark bg elements --- */
+html.light [style*="rgba(4, 7, 17"] *,
+html.light [style*="rgba(8, 13, 26"] *,
+html.light [style*="rgba(2, 4, 12"] *,
+html.light [style*="rgba(5, 8, 18"] *,
+html.light [style*="rgb(8, 12, 24"] *,
+html.light [style*="rgba(4, 8, 18"] *,
+html.light [style*="rgba(13, 22, 40"] * {
+  color: #0f172a !important;
+}
+/* Restore neon accent colors inside those sections */
+html.light [style*="rgba(4, 7, 17"] .neon-cyan,
+html.light [style*="rgba(8, 13, 26"] .neon-cyan,
+html.light [style*="rgba(2, 4, 12"] .neon-cyan { color: #0284c7 !important; }
+html.light [style*="rgba(4, 7, 17"] .neon-green,
+html.light [style*="rgba(8, 13, 26"] .neon-green { color: #16a34a !important; }
+html.light [style*="rgba(4, 7, 17"] .neon-red { color: #dc2626 !important; }
+html.light [style*="rgba(4, 7, 17"] .neon-amber { color: #d97706 !important; }
+
+/* --- Tailwind dark background classes --- */
+html.light .bg-\[\#050811\] { background-color: #f1f5f9 !important; color: #0f172a !important; }
+html.light .bg-\[\#020409\] { background-color: #f1f5f9 !important; color: #0f172a !important; }
+html.light .bg-\[\#080d1a\] { background-color: #f1f5f9 !important; color: #0f172a !important; }
+html.light .bg-\[\#040711\] { background-color: #f0f4f8 !important; color: #0f172a !important; }
+html.light .bg-\[\#050811\] *, html.light .bg-\[\#020409\] *, html.light .bg-\[\#080d1a\] *, html.light .bg-\[\#040711\] * { color: #0f172a !important; }
+
+/* --- Text colors with spaces (exact as React renders) --- */
+html.light [style*="color: rgb(144, 164, 174"] { color: #475569 !important; }
+html.light [style*="color: rgb(176, 190, 197"] { color: #334155 !important; }
+html.light [style*="color: rgb(96, 125, 139"] { color: #1e293b !important; }
+html.light [style*="color: rgba(144, 164, 174"] { color: #475569 !important; }
+html.light [style*="color: rgba(176, 190, 197"] { color: #334155 !important; }
+html.light [style*="color: rgb(207, 216, 220"] { color: #334155 !important; }
+html.light [style*="color: rgb(144, 164, 174"] { color: #475569 !important; }
+html.light [style*="color: rgb(232, 234, 246"] { color: #0f172a !important; }
+html.light [style*="color: rgba(232, 234, 246"] { color: #0f172a !important; }
+html.light [style*="color: white"] { color: #0f172a !important; }
+html.light [style*="color: rgb(255, 255, 255"] { color: #0f172a !important; }
+html.light [style*="color: rgba(255, 255, 255"] { color: #0f172a !important; }
+
   </style>
 </head>
 <body class="bg-[#040711] text-[#e8eaf6] antialiased min-h-screen font-sans relative overflow-x-hidden selection:bg-sky-400 selection:text-black">
