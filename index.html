@@ -1600,8 +1600,9 @@ function injectDrainageOverlay(map, liveData) {
 
 // ===== END SIH PATCH COMPONENTS =====
 
-        function HeaderBar({ liveTime, isLiveData, activeNavTab, onNavTabChange, selectedHazard, onHazardChange, darkMode, onDarkModeToggle }) {
+        function HeaderBar({ liveTime, isLiveData, activeNavTab, onNavTabChange, selectedHazard, onHazardChange }) {
           const { lang } = React.useContext(LangContext);
+      const tlabel = (tab) => (TR[tab] && TR[tab][lang]) ? TR[tab][lang] : tab;
       const hazardCfg = HAZARD_CONFIG[selectedHazard] || HAZARD_CONFIG.ts;
       const navTabs = ['DASHBOARD', 'FORECAST', 'RADAR MAP', 'MODELS', 'EXPLAINABILITY', 'REGIMES', 'MULTIDAY', 'CLIMATOLOGY', 'SKILL SCORES', 'ALERTS', 'DATA & GRAPHS', 'CONTACTS', 'WHATIF', 'LIVE API', 'ATC VIEW'];
       const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
@@ -1685,7 +1686,8 @@ function injectDrainageOverlay(map, liveData) {
                       <span style={{color:'rgba(56,189,248,0.3)',fontSize:7,letterSpacing:'0.18em',marginRight:2,fontWeight:900}}>{group.label}</span>
                       {group.tabs.map(tab => {
                         const isActive = activeNavTab === tab;
-                        const shortLabel = tab === 'EXPLAINABILITY' ? 'EXPLAIN' : tab === 'CLIMATOLOGY' ? 'CLIMAT.' : tab === 'SKILL SCORES' ? 'SCORES' : tab === 'DATA & GRAPHS' ? 'GRAPHS' : tab;
+                        const base = tab === 'EXPLAINABILITY' ? 'EXPLAIN' : tab === 'CLIMATOLOGY' ? 'CLIMAT.' : tab === 'SKILL SCORES' ? 'SCORES' : tab === 'DATA & GRAPHS' ? 'GRAPHS' : tab;
+                        const shortLabel = tlabel(tab) !== tab ? tlabel(tab) : base;
                         return (
                           <button key={tab} onClick={() => onNavTabChange(tab)}
                             className={`relative px-3 py-1.5 rounded-lg tracking-wider transition-all duration-200 ${isActive ? 'nav-tab-active' : 'text-[#4a6880] hover:text-[#90cce8]'}`}
@@ -1706,22 +1708,24 @@ function injectDrainageOverlay(map, liveData) {
               <div className="hidden lg:block"><HazardSwitcher selected={selectedHazard} onChange={onHazardChange} /></div>
               <div className="hidden lg:block"><LanguageSwitcher /></div>
               <div className="flex flex-col items-end gap-0.5">
-                <div className="text-sm font-extrabold text-white tracking-widest neon-cyan" style={{whiteSpace:'nowrap'}}>{liveTime}</div>
+                <div className="flex items-center gap-2">
+                  <div className="text-sm font-extrabold text-white tracking-widest neon-cyan" style={{whiteSpace:'nowrap'}}>{liveTime}</div>
+                  <div className="flex items-center gap-1 px-2 py-0.5 rounded font-bold text-[9px]"
+                    style={{
+                      background:'rgba(76,175,80,0.15)',
+                      border:'1px solid rgba(76,175,80,0.4)',
+                      color:'#4caf50',
+                      textShadow:'0 0 8px rgba(76,175,80,0.6)',
+                    }}>
+                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    LIVE
+                  </div>
+                </div>
                 <div className="text-[9px] text-[#3d5066]">{(() => {
                   const now = new Date();
                   const ist = new Date(now.getTime() + now.getTimezoneOffset()*60000 + 3600000*5.5);
                   return ist.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}).toUpperCase();
                 })()}</div>
-                <div className="flex items-center gap-1 px-2 py-0.5 rounded font-bold text-[9px]"
-                  style={{
-                    background:'rgba(76,175,80,0.1)',
-                    border:'1px solid rgba(76,175,80,0.3)',
-                    color:'#4caf50',
-                    textShadow:'0 0 8px rgba(76,175,80,0.6)',
-                  }}>
-                  <span className="w-1 h-1 rounded-full bg-emerald-400 animate-ping" />
-                  LIVE
-                </div>
               </div>
               <button
                 className="lg:hidden flex flex-col gap-1 p-2 rounded-lg"
@@ -1777,7 +1781,7 @@ function injectDrainageOverlay(map, liveData) {
                         } : {
                           background:'rgba(4,8,18,0.5)', border:'1px solid rgba(56,189,248,0.08)', color:'#4a6880',
                         }}>
-                        {tab === 'EXPLAINABILITY' ? 'EXPLAIN' : tab === 'CLIMATOLOGY' ? 'CLIMAT.' : tab === 'SKILL SCORES' ? 'SCORES' : tab}
+                        {tlabel(tab) !== tab ? tlabel(tab) : (tab === 'EXPLAINABILITY' ? 'EXPLAIN' : tab === 'CLIMATOLOGY' ? 'CLIMAT.' : tab === 'SKILL SCORES' ? 'SCORES' : tab)}
                       </button>
                     ))}
                   </div>
@@ -7588,9 +7592,7 @@ function injectDrainageOverlay(map, liveData) {
       });
       const [selectedHazard, setSelectedHazard] = React.useState('ts');
       const [lang, setLang] = React.useState(() => { try { return localStorage.getItem('sih_lang') || 'en'; } catch { return 'en'; } });
-      const [darkMode, setDarkMode] = React.useState(true);
       React.useEffect(() => { try { localStorage.setItem('sih_lang', lang); } catch {} }, [lang]);
-      React.useEffect(() => { if (darkMode) { document.body.classList.remove('light-mode'); } else { document.body.classList.add('light-mode'); } }, [darkMode]);
 
       const hazardCfg = HAZARD_CONFIG[selectedHazard] || HAZARD_CONFIG.ts;
       const [isAtcMode, setIsAtcMode] = useState(false);
@@ -7677,7 +7679,9 @@ function injectDrainageOverlay(map, liveData) {
           const now = new Date();
           const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
           const ist = new Date(utc + (3600000 * 5.5));
-          setLiveTime(ist.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }) + ' IST');
+          const hh = String(ist.getHours()).padStart(2,'0');
+          const mm = String(ist.getMinutes()).padStart(2,'0');
+          setLiveTime(hh + ':' + mm + ' IST');
         };
         updateClock();
         const timer = setInterval(updateClock, 1000);
@@ -7925,8 +7929,6 @@ Source: csir-thunderstorm-bengaluru.pages.dev | IMD Station 43295`;
               selectedHazard={selectedHazard}
               onHazardChange={setSelectedHazard}
               onNavTabChange={handleNavTabClick}
-              darkMode={darkMode}
-              onDarkModeToggle={() => setDarkMode(m => !m)}
             />
 
             {/* ── STALE DATA BANNER ── */}
