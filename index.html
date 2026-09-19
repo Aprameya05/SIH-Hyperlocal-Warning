@@ -8196,6 +8196,24 @@ Source: csir-thunderstorm-bengaluru.pages.dev | IMD Station 43295`;
           )}
 
         </div>
+
+        {/* MOBILE BOTTOM NAV */}
+        <nav className="bottom-nav">
+          {[
+            { tab:'DASHBOARD',     icon:'🏠', label:'Home' },
+            { tab:'RADAR MAP',     icon:'🗺️',  label:'Radar' },
+            { tab:'DATA & GRAPHS', icon:'📊', label:'Graphs' },
+            { tab:'ALERTS',        icon:'🔔', label:'Alerts' },
+            { tab:'CONTACTS',      icon:'📞', label:'Contacts' },
+          ].map(({tab, icon, label}) => (
+            <button key={tab} className={`bnav-btn${activeNavTab===tab?' active':''}`}
+              onClick={() => handleNavTabClick(tab)}>
+              <span className="icon">{icon}</span>
+              <span>{label}</span>
+            </button>
+          ))}
+        </nav>
+        </LangContext.Provider>
       );
     }
 
@@ -9027,26 +9045,6 @@ Source: csir-thunderstorm-bengaluru.pages.dev | IMD Station 43295`;
           </div>
         </div>
       );
-        {/* == MOBILE BOTTOM NAV == */}
-        <nav className="bottom-nav">
-          {[
-            { tab:'DASHBOARD',     icon:'🏠', label:'Home' },
-            { tab:'RADAR MAP',     icon:'🗺️',  label:'Radar' },
-            { tab:'DATA & GRAPHS', icon:'📊', label:'Graphs' },
-            { tab:'ALERTS',        icon:'🔔', label:'Alerts' },
-            { tab:'CONTACTS',      icon:'📞', label:'Contacts' },
-          ].map(({tab, icon, label}) => (
-            <button key={tab} className={`bnav-btn${activeNavTab===tab?' active':''}`}
-              onClick={() => handleNavTabClick(tab)}>
-              <span className="icon">{icon}</span>
-              <span>{label}</span>
-            </button>
-          ))}
-        </nav>
-        </LangContext.Provider>
-
-      );
-    }    // ═══════════════════════════════════════════════════════════════════════════
 
     // == DATA & GRAPHS PAGE ==================================================
     function DataGraphsPage({ liveData }) {
