@@ -727,7 +727,7 @@
               <AnimatedNumber value={probability * 100} decimals={1} suffix="%" />
             </span>
             <span className="text-[9px] font-mono text-[#607d8b] uppercase tracking-wider">
-              LIMIT: {(threshold * 100).toFixed(0)}%
+              THRESH: {(threshold * 100).toFixed(0)}%
             </span>
           </div>
         </div>
@@ -2565,14 +2565,15 @@ function injectDrainageOverlay(map, liveData) {
               <div style={{ fontSize: 8, fontWeight: 800, letterSpacing: 3.5, color: '#37474f', fontFamily: 'monospace', marginBottom: 10 }}>GFS STABILITY</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
                 {[
-                  { k: 'CAPE', v: gfs.ua_cape_jkg != null ? `${Math.round(gfs.ua_cape_jkg)}` : '—', u: 'J/kg', hi: (gfs.ua_cape_jkg || 0) > 1500 },
-                  { k: 'K-IDX', v: gfs.ua_k_index != null ? gfs.ua_k_index.toFixed(1) : '—', u: '', hi: (gfs.ua_k_index || 0) > 35 },
-                  { k: 'LI', v: gfs.ua_lifted_index != null ? gfs.ua_lifted_index.toFixed(1) : '—', u: '', hi: (gfs.ua_lifted_index || 0) < -3 },
-                  { k: 'TT', v: gfs.ua_totals_totals != null ? gfs.ua_totals_totals.toFixed(1) : '—', u: '', hi: (gfs.ua_totals_totals || 0) > 50 },
-                  { k: 'IWV', v: gfs.iwv_mm != null ? gfs.iwv_mm.toFixed(1) : '—', u: 'mm', hi: (gfs.iwv_mm || 0) > 50 },
+                  { k: 'CAPE', sub: 'Storm energy', v: gfs.ua_cape_jkg != null ? `${Math.round(gfs.ua_cape_jkg)}` : '—', u: 'J/kg', hi: (gfs.ua_cape_jkg || 0) > 1500 },
+                  { k: 'K-IDX', sub: 'Thunderstorm index', v: gfs.ua_k_index != null ? gfs.ua_k_index.toFixed(1) : '—', u: '', hi: (gfs.ua_k_index || 0) > 35 },
+                  { k: 'LI', sub: 'Lift index', v: gfs.ua_lifted_index != null ? gfs.ua_lifted_index.toFixed(1) : '—', u: '', hi: (gfs.ua_lifted_index || 0) < -3 },
+                  { k: 'TT', sub: 'Totals-totals', v: gfs.ua_totals_totals != null ? gfs.ua_totals_totals.toFixed(1) : '—', u: '', hi: (gfs.ua_totals_totals || 0) > 50 },
+                  { k: 'IWV', sub: 'Moisture column', v: gfs.iwv_mm != null ? gfs.iwv_mm.toFixed(1) : '—', u: 'mm', hi: (gfs.iwv_mm || 0) > 50 },
                 ].map(r => (
                   <div key={r.k} style={{ background: 'rgba(0,0,0,0.35)', borderRadius: 9, padding: '7px 9px', border: r.hi ? '1px solid rgba(255,152,0,0.3)' : '1px solid transparent' }}>
-                    <div style={{ fontSize: 8, color: '#37474f', fontFamily: 'monospace', marginBottom: 3 }}>{r.k}</div>
+                    <div style={{ fontSize: 8, color: '#37474f', fontFamily: 'monospace', marginBottom: 1 }}>{r.k}</div>
+                    <div style={{ fontSize: 7, color: '#546e7a', fontFamily: 'monospace', marginBottom: 3, lineHeight: 1.2 }}>{r.sub}</div>
                     <div style={{ fontSize: 12, fontWeight: 800, color: r.hi ? '#ff9800' : '#78909c', fontFamily: 'monospace' }}>{r.v}<span style={{ fontSize: 8, opacity: 0.6 }}>{r.u}</span></div>
                   </div>
                 ))}
@@ -8518,8 +8519,8 @@ Source: csir-thunderstorm-bengaluru.pages.dev | IMD Station 43295`;
           setSubState('error');
           return;
         }
-        if (!WORKER_URL) {
-          setSubMsg('Alert backend not yet configured. Please ask the dashboard admin to deploy the Cloudflare Worker.');
+        if (!WORKER_URL || WORKER_URL === 'WORKER_URL_PLACEHOLDER') {
+          setSubMsg('Alert push is not active in this deployment. The system runs in read-only / display mode — all predictions and maps are live.');
           setSubState('error');
           return;
         }
@@ -8577,7 +8578,7 @@ Source: csir-thunderstorm-bengaluru.pages.dev | IMD Station 43295`;
                 </div>
                 {slots.length > 0 && (
                   <div className="text-[10px] font-mono text-[#607d8b] mt-1">
-                    {slots.map(s => `${s.slot_label||s.slot_id}: ${Math.round((s.probability||0)*100)}%`).join(' · ')}
+                    {slots.map(s => `${s.label||s.slot}: ${Math.round((s.probability||0)*100)}%`).join(' · ')}
                   </div>
                 )}
               </div>
