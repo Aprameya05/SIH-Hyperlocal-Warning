@@ -3271,7 +3271,7 @@ function injectDrainageOverlay(map, liveData) {
           {/* ── SLOT CARDS ── */}
           <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap: isMobile ? 5 : 8, padding: isMobile ? '8px 8px 10px' : '10px 14px 14px', zIndex: 20 }}>
             {slots.slice(0, 4).map((s, i) => {
-              const p = s.probability || 0;
+              const p = s.probability ?? 0;
               const col = mapRiskColor(p);
               const risk = mapRiskLabel(p);
               const isSelected = i === selectedSlotIndex;
@@ -8068,7 +8068,7 @@ function injectDrainageOverlay(map, liveData) {
                 ts_probability: s.ts_probability ?? 0,
                 cb_probability: s.cb_probability ?? 0,
                 ff_probability: s.ff_probability ?? 0,
-                probability: s[hCfg.probKey] ?? s.probability ?? 0,
+                probability: s[hCfg.probKey] ?? 0,
                 ts_predicted: s.ts_predicted,
                 threshold: s.threshold,
                 icon: s.slot === 0 ? "🌙" : s.slot === 1 ? "☀️" : s.slot === 2 ? "⛅" : "🌆"
