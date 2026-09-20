@@ -1176,16 +1176,21 @@ def main():
             metar_ts_override = True
             alert_active      = True   # force alert regardless of model
             forecast["alert_active"] = True
-            # Boost current-window slot probability to at minimum 0.85
+            # Boost only the CURRENT time-window slot to at minimum 0.85
+            ist_minutes = now.hour * 60 + now.minute
+            slot_ranges = {0: (1, 360), 1: (361, 720), 2: (721, 1080), 3: (1081, 1440)}
+            active_slot = next(
+                (sid for sid, (lo, hi) in slot_ranges.items() if lo <= ist_minutes <= hi), 2
+            )
             for s in forecast["slots"]:
-                if s.get("ts_probability", 0) < 0.85:
+                if s.get("slot") == active_slot and s.get("ts_probability", 0) < 0.85:
                     s["ts_probability_pre_metar"] = s["ts_probability"]
                     s["ts_probability"]  = 0.85
                     s["ts_predicted"]    = True
                     s["metar_override"]  = True
             forecast["metar_ts_override"] = True
             print(f"  ⚡ METAR ACTIVE TS — override: alert_active forced TRUE, "
-                  f"slot probs floored at 0.85")
+                  f"slot {active_slot} prob floored at 0.85")
 
     # ── SIGMET bulletin ───────────────────────────────────────────────────────
     sigmet_text = None
