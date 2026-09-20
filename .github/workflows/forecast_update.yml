@@ -106,6 +106,10 @@ jobs:
       - name: Fetch BLR terrain DEM (SRTM via AWS Terrain Tiles)
         run: python fetch_dem_terrain.py
         continue-on-error: true
+        
+      - name: Fetch live METAR (VOBL)
+        run: python fetch_metar.py
+        continue-on-error: true
 
       - name: Run forecast pipeline
         run: |
@@ -129,10 +133,6 @@ jobs:
               if age > 3:
                   print('WARNING: forecast.json older than 3h')
           "
-
-      - name: Fetch live METAR (VOBL)
-        run: python fetch_metar.py
-        continue-on-error: true
 
       - name: Compute real-time SHAP
         run: python compute_realtime_shap.py
