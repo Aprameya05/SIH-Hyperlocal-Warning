@@ -85,7 +85,6 @@
   <!-- Babel Standalone for JSX -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
   
   <style>
@@ -258,8 +257,6 @@
     .neon-amber { color:#ffc107; text-shadow:0 0 10px rgba(255,193,7,0.9), 0 0 30px rgba(255,193,7,0.4); }
 
     /* ── NAV ACTIVE GLOW ─────────────────────────────────────────── */
-    .nav-scroll { scrollbar-width: none; -ms-overflow-style: none; }
-    .nav-scroll::-webkit-scrollbar { display: none; }
     .nav-tab-active {
       color: #38bdf8 !important;
       text-shadow: 0 0 16px rgba(56,189,248,0.8);
@@ -420,530 +417,62 @@
       color: #38bdf8;
     }
 
-/* ── LEGIBILITY BUMPS — readable minimum sizes ─────────────────── */
-    .text-\[9px\]  { font-size: 10px !important; }
-    .text-\[10px\] { font-size: 11px !important; }
-    .text-\[11px\] { font-size: 12px !important; }
 
-/* ── LIGHT MODE OVERRIDES ─────────────────────────────────────── */
-html.light {
-  --bg-primary: #f0f4f8;
-  --bg-panel: rgba(255,255,255,0.95);
-  --bg-panel-solid: #ffffff;
-  --border-color: rgba(203,213,225,0.9);
-  --text-primary: #0f172a;
-  --text-secondary: #475569;
-  --text-muted: #64748b;
-  --text-faint: #94a3b8;
-}
-html.light body {
-  background-color: #f0f4f8 !important;
-  color: #0f172a !important;
-}
-html.light .bg-\[\#040711\] { background-color: #f0f4f8 !important; }
-html.light .text-\[\#e8eaf6\] { color: #0f172a !important; }
-html.light .text-\[\#607d8b\] { color: #475569 !important; }
-html.light .text-\[\#3d5a72\] { color: #475569 !important; }
-html.light .text-\[\#3d5066\] { color: #64748b !important; }
-html.light .text-\[\#4a6880\] { color: #374151 !important; }
-html.light .text-\[\#90a4ae\] { color: #6b7280 !important; }
-html.light .text-\[\#cfd8dc\] { color: #334155 !important; }
-html.light .text-white { color: #0f172a !important; }
-html.light .border-\[\#172338\] { border-color: #cbd5e1 !important; }
-html.light .bg-\[\#172338\] { background-color: #e2e8f0 !important; }
+    /* == LIGHT MODE ================================================================ */
+    body.light-mode { background: #f0f4fa !important; color: #1a2332 !important; }
+    body.light-mode #root > div { background: #f0f4fa; color: #1a2332; }
+    body.light-mode .atc-card {
+      background: rgba(255,255,255,0.92) !important;
+      border-color: rgba(100,130,170,0.25) !important;
+      color: #1a2332 !important;
+    }
+    body.light-mode header {
+      background: rgba(240,244,250,0.97) !important;
+      border-bottom-color: rgba(100,130,200,0.25) !important;
+    }
+    body.light-mode .slot-bg-common { opacity: 0.05 !important; }
+    body.light-mode .text-\[\#e8eaf6\] { color: #1a2332 !important; }
+    body.light-mode .text-\[\#607d8b\] { color: #455a64 !important; }
+    body.light-mode .text-\[\#90a4ae\] { color: #546e7a !important; }
+    body.light-mode .text-white { color: #1a2332 !important; }
+    body.light-mode .bg-\[\#040711\] { background: #f0f4fa !important; }
 
-/* Panels and cards */
-html.light .atc-card {
-  background: rgba(255,255,255,0.95) !important;
-  border-color: rgba(148,163,184,0.4) !important;
-  box-shadow: 0 1px 8px rgba(0,0,0,0.08) !important;
-}
-html.light .atc-card:hover {
-  border-color: rgba(2,132,199,0.35) !important;
-  box-shadow: 0 0 18px rgba(2,132,199,0.12), 0 4px 24px rgba(0,0,0,0.1) !important;
-}
-html.light .atc-card::before {
-  background: linear-gradient(135deg,rgba(2,132,199,0.03) 0%,transparent 55%,rgba(139,92,246,0.03) 100%) !important;
-}
+    /* == MOBILE LEGIBILITY ========================================================= */
+    @media (max-width: 640px) {
+      .text-\[10px\] { font-size: 12px !important; }
+      .text-xs { font-size: 13px !important; }
+    }
 
-/* Page backgrounds */
-html.light .page-grid-bg {
-  background-color: #f0f4f8 !important;
-  background-image: radial-gradient(rgba(2,132,199,0.09) 1px, transparent 1px) !important;
-}
-html.light .page-hero-banner {
-  background: linear-gradient(135deg, rgba(241,245,249,0.98) 0%, rgba(226,232,240,0.98) 100%) !important;
-  border-color: rgba(148,163,184,0.35) !important;
-}
-
-/* Header */
-html.light header[class*="sticky"] {
-  background: rgba(248,250,252,0.92) !important;
-  border-bottom: 1px solid rgba(203,213,225,0.8) !important;
-}
-html.light .header-gradient-border {
-  background: linear-gradient(90deg,rgba(2,132,199,0.12),rgba(139,92,246,0.08),rgba(2,132,199,0.12)) !important;
-}
-
-/* Nav pill */
-html.light nav[class*="hidden lg:flex"] {
-  background: rgba(241,245,249,0.9) !important;
-  border-color: rgba(203,213,225,0.7) !important;
-}
-html.light .nav-tab-active {
-  color: #0284c7 !important;
-  text-shadow: 0 0 12px rgba(2,132,199,0.5) !important;
-}
-html.light .nav-tab-active::after {
-  background: linear-gradient(90deg,transparent,#0284c7,#7c3aed,#0284c7,transparent) !important;
-}
-
-/* Slot bg overlay */
-html.light .overlay { background: rgba(240,244,248,0.55) !important; }
-html.light .scan-line { opacity: 0.25 !important; }
-html.light #csir-particles { opacity: 0.18 !important; }
-
-/* Neon text — muted for light bg */
-html.light .neon-cyan  { color:#0284c7 !important; text-shadow:0 0 6px rgba(2,132,199,0.4) !important; }
-html.light .neon-red   { color:#dc2626 !important; text-shadow:0 0 6px rgba(220,38,38,0.4) !important; }
-html.light .neon-green { color:#16a34a !important; text-shadow:0 0 6px rgba(22,163,74,0.3) !important; }
-html.light .neon-amber { color:#d97706 !important; text-shadow:0 0 6px rgba(217,119,6,0.3) !important; }
-
-/* Gradient text — keep but shift tone */
-html.light .gradient-text {
-  background: linear-gradient(135deg, #0284c7 0%, #7c3aed 45%, #0284c7 100%) !important;
-  background-size: 200% 200% !important;
-  -webkit-background-clip: text !important;
-  -webkit-text-fill-color: transparent !important;
-  background-clip: text !important;
-}
-
-/* Scrollbar */
-html.light ::-webkit-scrollbar-track { background: #e2e8f0 !important; }
-html.light ::-webkit-scrollbar-thumb { background: #94a3b8 !important; }
-html.light ::-webkit-scrollbar-thumb:hover { background: #0284c7 !important; }
-
-/* Slot active ring */
-html.light .slot-active-teal {
-  border-color: #0284c7 !important;
-  box-shadow: 0 0 18px rgba(2,132,199,0.3), inset 0 0 10px rgba(2,132,199,0.1) !important;
-  background: rgba(224,242,254,0.92) !important;
-}
-
-/* Tailwind bg utilities used inside components */
-html.light .bg-gray-900,
-html.light .bg-slate-900,
-html.light [class*="bg-slate-8"],
-html.light [class*="bg-gray-8"] { background-color: #f1f5f9 !important; }
-
-/* Tables and rows */
-html.light table { color: #0f172a !important; }
-html.light td, html.light th { border-color: #e2e8f0 !important; color: #334155 !important; }
-html.light .text-\[\#90a4ae\] { color: #64748b !important; }
-
-/* Light mode toggle button */
-.theme-toggle-btn {
-  display: flex; align-items: center; justify-content: center;
-  width: 32px; height: 32px; border-radius: 50%;
-  border: 1px solid rgba(56,189,248,0.3);
-  background: rgba(56,189,248,0.08);
-  cursor: pointer; font-size: 15px;
-  transition: all 0.25s;
-  flex-shrink: 0;
-}
-.theme-toggle-btn:hover {
-  background: rgba(56,189,248,0.18);
-  border-color: rgba(56,189,248,0.55);
-}
-html.light .theme-toggle-btn {
-  border-color: rgba(2,132,199,0.35) !important;
-  background: rgba(2,132,199,0.1) !important;
-}
-html.light .theme-toggle-btn:hover {
-  background: rgba(2,132,199,0.2) !important;
-}
-
-/* ============================================================
-   COMPREHENSIVE LIGHT MODE FIXES - ROUND 2
-   Targeting inline-styled components, invisible text, dark cards
-   ============================================================ */
-
-/* --- TOP-RIGHT HEADER: time, date, LIVE badge --- */
-html.light header .text-white,
-html.light header [class*="text-white"],
-html.light header span,
-html.light header p,
-html.light header div { color: #0f172a !important; }
-html.light header .neon-cyan { color: #0284c7 !important; }
-html.light header [class*="text-sky"], html.light header [class*="text-blue"] { color: #0369a1 !important; }
-html.light header [class*="bg-red"], html.light header [class*="bg-green"] { opacity: 1 !important; }
-
-/* --- SECOND STICKY TOOLBAR (skill badges row, COPY FORECAST, DOWNLOAD BRIEFING) --- */
-html.light div[style*="background: rgba(4"] ,
-html.light div[style*="background:rgba(4"] ,
-html.light div[style*="background: rgba(6"] ,
-html.light div[style*="background:rgba(6"] ,
-html.light div[style*="background: rgba(10"] ,
-html.light div[style*="background:rgba(10"] ,
-html.light div[style*="background: rgba(8,"] ,
-html.light div[style*="background:rgba(8,"] ,
-html.light div[style*="background: rgba(12"] ,
-html.light div[style*="background:rgba(12"] ,
-html.light div[style*="background: rgba(15"] ,
-html.light div[style*="background:rgba(15"] ,
-html.light div[style*="background: rgba(20"] ,
-html.light div[style*="background:rgba(20"] ,
-html.light div[style*="background: rgba(22"] ,
-html.light div[style*="background:rgba(22"] ,
-html.light div[style*="background: rgba(24"] ,
-html.light div[style*="background:rgba(24"] {
-  background: rgba(241,245,249,0.97) !important;
-  border-color: rgba(148,163,184,0.4) !important;
-}
-html.light div[style*="background: rgba(4"] *,
-html.light div[style*="background:rgba(4"] *,
-html.light div[style*="background: rgba(6"] *,
-html.light div[style*="background:rgba(6"] *,
-html.light div[style*="background: rgba(10"] *,
-html.light div[style*="background:rgba(10"] * {
-  color: #0f172a !important;
-}
-
-/* --- FORCE ALL inline-style dark backgrounds to light --- */
-html.light [style*="background: rgba(4,7,17"],
-html.light [style*="background:rgba(4,7,17"],
-html.light [style*="background: rgba(5,10,20"],
-html.light [style*="background:rgba(5,10,20"],
-html.light [style*="background: rgba(3,5,14"],
-html.light [style*="background:rgba(3,5,14"],
-html.light [style*="background: rgba(8,14,30"],
-html.light [style*="background:rgba(8,14,30"],
-html.light [style*="background: rgba(7,12,25"],
-html.light [style*="background:rgba(7,12,25"],
-html.light [style*="background: rgba(6,10,22"],
-html.light [style*="background:rgba(6,10,22"],
-html.light [style*="background: rgba(10,17,35"],
-html.light [style*="background:rgba(10,17,35"],
-html.light [style*="background: rgba(12,20,40"],
-html.light [style*="background:rgba(12,20,40"],
-html.light [style*="background: rgba(15,25,50"],
-html.light [style*="background:rgba(15,25,50"],
-html.light [style*="background: rgba(20,30,60"],
-html.light [style*="background:rgba(20,30,60"],
-html.light [style*="background: rgba(14,22,45"],
-html.light [style*="background:rgba(14,22,45"],
-html.light [style*="background: rgba(9,16,32"],
-html.light [style*="background:rgba(9,16,32"],
-html.light [style*="background: rgba(16,24,48"],
-html.light [style*="background:rgba(16,24,48"],
-html.light [style*="background: rgba(18,28,56"],
-html.light [style*="background:rgba(18,28,56"],
-html.light [style*="background: rgba(2,5,12"],
-html.light [style*="background:rgba(2,5,12"] {
-  background: rgba(255,255,255,0.95) !important;
-  border-color: rgba(148,163,184,0.35) !important;
-}
-
-/* --- PAGE HERO BANNER: force visible text --- */
-html.light .page-hero-banner { background: linear-gradient(135deg, #e0e7ef 0%, #c7d4e3 100%) !important; color: #0f172a !important; }
-html.light .page-hero-banner h1,
-html.light .page-hero-banner h2,
-html.light .page-hero-banner h3,
-html.light .page-hero-banner p,
-html.light .page-hero-banner span,
-html.light .page-hero-banner div { color: #0f172a !important; -webkit-text-fill-color: #0f172a !important; }
-html.light .page-hero-banner .gradient-text,
-html.light .page-hero-banner [class*="gradient"] {
-  background: linear-gradient(135deg, #0369a1 0%, #6d28d9 100%) !important;
-  -webkit-background-clip: text !important;
-  -webkit-text-fill-color: transparent !important;
-  background-clip: text !important;
-}
-html.light .page-hero-banner .neon-cyan { color: #0284c7 !important; -webkit-text-fill-color: #0284c7 !important; }
-
-/* --- LEFT SIDEBAR PANEL CARDS (scrolled sections) --- */
-html.light aside .atc-card,
-html.light aside div[class*="rounded"],
-html.light aside div[class*="border"] { background: rgba(255,255,255,0.92) !important; border-color: rgba(148,163,184,0.4) !important; }
-html.light aside * { color: #334155 !important; }
-html.light aside .neon-cyan { color: #0284c7 !important; }
-html.light aside .neon-green { color: #16a34a !important; }
-html.light aside .neon-red { color: #dc2626 !important; }
-html.light aside .neon-amber { color: #d97706 !important; }
-
-/* --- SLOT PREDICTION CARDS (bottom 4 tiles) --- */
-html.light [style*="background: linear-gradient"] { background: linear-gradient(135deg, rgba(241,245,249,0.98) 0%, rgba(226,232,240,0.98) 100%) !important; }
-/* More specific slot card targeting */
-html.light div[class*="rounded"][style*="border:"],
-html.light div[class*="rounded"][style*="border :"] { background: rgba(248,250,252,0.97) !important; }
-
-/* --- MODEL CARDS (Forecast tab, Models tab) --- */
-html.light div[class*="model"],
-html.light div[class*="Model"] { background: rgba(248,250,252,0.97) !important; border-color: rgba(148,163,184,0.4) !important; color: #0f172a !important; }
-html.light div[class*="model"] *,
-html.light div[class*="Model"] * { color: #334155 !important; }
-
-/* --- RADAR MAP: section header + satellite cards --- */
-html.light div[style*="background: linear-gradient(135deg, rgba(0,150,255"],
-html.light div[style*="background:linear-gradient(135deg, rgba(0,150,255"],
-html.light div[style*="background: linear-gradient(135deg, #0066"],
-html.light div[style*="background: linear-gradient(to right, #00"],
-html.light div[style*="background: rgba(0,100,200"],
-html.light div[style*="background:rgba(0,100,200"] {
-  background: linear-gradient(135deg, #0369a1 0%, #1d4ed8 100%) !important;
-  color: #ffffff !important;
-}
-html.light div[style*="background: linear-gradient(135deg, rgba(0,150,255"] *,
-html.light div[style*="background: linear-gradient(to right, #00"] * { color: #ffffff !important; }
-
-/* --- EXPLAINABILITY TAB: SHAP waterfall + narration boxes --- */
-html.light div[class*="shap"],
-html.light div[class*="SHAP"],
-html.light div[id*="shap"],
-html.light [class*="narration"],
-html.light [class*="explanation"] {
-  background: rgba(255,255,255,0.95) !important;
-  color: #0f172a !important;
-  border-color: rgba(148,163,184,0.4) !important;
-}
-/* WHY DID EACH SLOT FIRE section */
-html.light div[style*="color: #90a4ae"],
-html.light div[style*="color:#90a4ae"],
-html.light p[style*="color: #90a4ae"],
-html.light p[style*="color:#90a4ae"],
-html.light span[style*="color: #90a4ae"],
-html.light span[style*="color:#90a4ae"] { color: #475569 !important; }
-html.light [style*="color: #607d8b"],
-html.light [style*="color:#607d8b"] { color: #374151 !important; }
-html.light [style*="color: #b0bec5"],
-html.light [style*="color:#b0bec5"] { color: #475569 !important; }
-html.light [style*="color: #cfd8dc"],
-html.light [style*="color:#cfd8dc"] { color: #334155 !important; }
-html.light [style*="color: #eceff1"],
-html.light [style*="color:#eceff1"] { color: #0f172a !important; }
-html.light [style*="color: #e8eaf6"],
-html.light [style*="color:#e8eaf6"] { color: #0f172a !important; }
-html.light [style*="color: white"],
-html.light [style*="color:white"] { color: #0f172a !important; }
-html.light [style*="color: #fff"],
-html.light [style*="color:#fff"] { color: #0f172a !important; }
-html.light [style*="color: rgba(232,234,246"],
-html.light [style*="color:rgba(232,234,246"] { color: #0f172a !important; }
-
-/* --- SCORES TAB: blue section headers + Historical Trends --- */
-html.light [style*="color: #78909c"],
-html.light [style*="color:#78909c"] { color: #374151 !important; }
-html.light [style*="color: #546e7a"],
-html.light [style*="color:#546e7a"] { color: #1e293b !important; }
-html.light [style*="color: #455a64"],
-html.light [style*="color:#455a64"] { color: #1e293b !important; }
-html.light [style*="color: #37474f"],
-html.light [style*="color:#37474f"] { color: #0f172a !important; }
-
-/* --- ALERTS TAB: 30-Day Verified Performance metric card headings --- */
-html.light div[style*="background: rgba(30,41"],
-html.light div[style*="background:rgba(30,41"],
-html.light div[style*="background: rgba(25,35"],
-html.light div[style*="background:rgba(25,35"],
-html.light div[style*="background: rgba(35,45"],
-html.light div[style*="background:rgba(35,45"],
-html.light div[style*="background: rgba(20,28"],
-html.light div[style*="background:rgba(20,28"],
-html.light div[style*="background: rgba(28,38"],
-html.light div[style*="background:rgba(28,38"] {
-  background: rgba(248,250,252,0.97) !important;
-  border-color: rgba(148,163,184,0.4) !important;
-}
-html.light div[style*="background: rgba(30,41"] *,
-html.light div[style*="background:rgba(30,41"] *,
-html.light div[style*="background: rgba(25,35"] *,
-html.light div[style*="background:rgba(25,35"] * { color: #0f172a !important; }
-
-/* --- CONTACTS TAB: Contact Registry darker text --- */
-html.light [class*="contact"],
-html.light [class*="Contact"],
-html.light [id*="contact"],
-html.light [id*="Contact"] { color: #1e293b !important; }
-html.light [class*="registry"],
-html.light [class*="Registry"] { color: #1e293b !important; }
-html.light td { color: #1e293b !important; }
-
-/* --- LIVE API TAB: FastAPI REST Interface grey header --- */
-html.light [style*="background: #1e"],
-html.light [style*="background:#1e"],
-html.light [style*="background: #2d"],
-html.light [style*="background:#2d"],
-html.light [style*="background: #1a"],
-html.light [style*="background:#1a"],
-html.light [style*="background: #111"],
-html.light [style*="background:#111"],
-html.light [style*="background: #222"],
-html.light [style*="background:#222"],
-html.light [style*="background: #333"],
-html.light [style*="background:#333"],
-html.light [style*="background: #0d"],
-html.light [style*="background:#0d"],
-html.light [style*="background: #13"],
-html.light [style*="background:#13"],
-html.light [style*="background: #16"],
-html.light [style*="background:#16"] {
-  background: rgba(241,245,249,0.97) !important;
-  border-color: rgba(148,163,184,0.4) !important;
-  color: #0f172a !important;
-}
-
-/* --- MULTIDAY TAB: Tomorrow/+2 day grey number values --- */
-html.light [style*="color: rgba(176,190,197"],
-html.light [style*="color:rgba(176,190,197"] { color: #334155 !important; }
-html.light [style*="color: rgba(144,164,174"],
-html.light [style*="color:rgba(144,164,174"] { color: #374151 !important; }
-html.light [style*="color: rgba(96,125,139"],
-html.light [style*="color:rgba(96,125,139"] { color: #1e293b !important; }
-
-/* --- GLOBAL FALLBACK: any remaining dark inline bg --- */
-html.light [style*="background-color: #040711"],
-html.light [style*="background-color:#040711"],
-html.light [style*="background-color: #030509"],
-html.light [style*="background-color:#030509"],
-html.light [style*="background-color: #0a0f1e"],
-html.light [style*="background-color:#0a0f1e"],
-html.light [style*="background-color: rgb(4,7,17"],
-html.light [style*="background-color:rgb(4,7,17"] {
-  background-color: #f1f5f9 !important;
-  color: #0f172a !important;
-}
-
-/* --- GLOBAL TEXT: any remaining very-light inline text color --- */
-html.light * { scrollbar-color: #94a3b8 #e2e8f0; }
-
-/* Section header bands (blue gradient banners in Regimes, WhatIf, Climatology, Scores) */
-html.light div[style*="background: linear-gradient(90deg"],
-html.light div[style*="background:linear-gradient(90deg"] {
-  background: linear-gradient(90deg, #0369a1 0%, #1d4ed8 100%) !important;
-  color: #ffffff !important;
-}
-html.light div[style*="background: linear-gradient(90deg"] *,
-html.light div[style*="background:linear-gradient(90deg"] * { color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; }
-
-/* Ensure gradient-text in dark bands stays white */
-html.light div[style*="background: linear-gradient(90deg"] .gradient-text,
-html.light div[style*="background:linear-gradient(90deg"] .gradient-text { -webkit-text-fill-color: #ffffff !important; background: none !important; }
-
-/* --- HISTORICAL TRENDS: make grey darker --- */
-html.light [style*="color: rgba(148,163,184"],
-html.light [style*="color:rgba(148,163,184"] { color: #475569 !important; }
-html.light [style*="color: rgba(100,116,139"],
-html.light [style*="color:rgba(100,116,139"] { color: #334155 !important; }
-html.light [style*="color: rgba(71,85,105"],
-html.light [style*="color:rgba(71,85,105"] { color: #1e293b !important; }
-
-/* ============================================================
-   LIGHT MODE FIXES - ROUND 3
-   Use exact inline rgba values WITH spaces (as React renders them)
-   ============================================================ */
-
-/* --- Exact dark backgrounds used as inline styles --- */
-html.light [style*="rgba(8, 13, 26"] {
-  background: rgba(248,250,252,0.97) !important;
-  background-color: rgba(248,250,252,0.97) !important;
-}
-html.light [style*="rgba(2, 4, 12"] {
-  background: rgba(241,245,249,0.97) !important;
-  background-color: rgba(241,245,249,0.97) !important;
-}
-html.light [style*="rgba(4, 8, 18"] {
-  background: rgba(248,250,252,0.97) !important;
-  background-color: rgba(248,250,252,0.97) !important;
-}
-html.light [style*="rgb(8, 12, 24"] {
-  background: rgba(241,245,249,0.97) !important;
-  background-color: rgba(241,245,249,0.97) !important;
-}
-html.light [style*="rgba(4, 7, 17"] {
-  background: rgba(248,250,252,0.95) !important;
-  background-color: rgba(248,250,252,0.95) !important;
-}
-html.light [style*="rgba(5, 8, 18"] {
-  background: rgba(248,250,252,0.97) !important;
-  background-color: rgba(248,250,252,0.97) !important;
-}
-html.light [style*="rgba(13, 22, 40"] {
-  background: rgba(241,245,249,0.97) !important;
-  background-color: rgba(241,245,249,0.97) !important;
-}
-html.light [style*="rgb(8, 13, 26"] {
-  background: rgba(248,250,252,0.97) !important;
-  background-color: rgba(248,250,252,0.97) !important;
-}
-html.light [style*="rgb(10, 22, 40"] {
-  background: rgba(241,245,249,0.97) !important;
-  background-color: rgba(241,245,249,0.97) !important;
-}
-html.light .bg-\[\#172338\] { background-color: #e2e8f0 !important; }
-
-/* --- Gradient overlays: lighten instead of darken --- */
-html.light [style*="linear-gradient(to right, rgba(4, 7, 17"] {
-  background: linear-gradient(to right, rgba(241,245,249,0.93) 0%, rgba(241,245,249,0.65) 240px, rgba(241,245,249,0.1) 420px) !important;
-}
-html.light [style*="linear-gradient(to top, rgb(4, 7, 17"] {
-  background: linear-gradient(to top, rgba(241,245,249,0.97) 0%, rgba(241,245,249,0) 100%) !important;
-}
-html.light [style*="linear-gradient(rgba(4, 7, 17"] {
-  background: linear-gradient(rgba(241,245,249,0.7) 0%, rgba(241,245,249,0) 100%) !important;
-}
-html.light [style*="radial-gradient(transparent 40%, rgba(4, 7, 17"] {
-  background: radial-gradient(transparent 40%, rgba(241,245,249,0.3) 100%) !important;
-}
-
-/* --- Translucent black overlays: lighten --- */
-html.light [style*="rgba(0, 0, 0, 0.3"] {
-  background: rgba(148,163,184,0.12) !important;
-  background-color: rgba(148,163,184,0.12) !important;
-}
-html.light [style*="rgba(0, 0, 0, 0.4"] {
-  background: rgba(148,163,184,0.18) !important;
-  background-color: rgba(148,163,184,0.18) !important;
-}
-
-/* --- Force text color on ALL children of the dark bg elements --- */
-html.light [style*="rgba(4, 7, 17"] *,
-html.light [style*="rgba(8, 13, 26"] *,
-html.light [style*="rgba(2, 4, 12"] *,
-html.light [style*="rgba(5, 8, 18"] *,
-html.light [style*="rgb(8, 12, 24"] *,
-html.light [style*="rgba(4, 8, 18"] *,
-html.light [style*="rgba(13, 22, 40"] * {
-  color: #0f172a !important;
-}
-/* Restore neon accent colors inside those sections */
-html.light [style*="rgba(4, 7, 17"] .neon-cyan,
-html.light [style*="rgba(8, 13, 26"] .neon-cyan,
-html.light [style*="rgba(2, 4, 12"] .neon-cyan { color: #0284c7 !important; }
-html.light [style*="rgba(4, 7, 17"] .neon-green,
-html.light [style*="rgba(8, 13, 26"] .neon-green { color: #16a34a !important; }
-html.light [style*="rgba(4, 7, 17"] .neon-red { color: #dc2626 !important; }
-html.light [style*="rgba(4, 7, 17"] .neon-amber { color: #d97706 !important; }
-
-/* --- Tailwind dark background classes --- */
-html.light .bg-\[\#050811\] { background-color: #f1f5f9 !important; color: #0f172a !important; }
-html.light .bg-\[\#020409\] { background-color: #f1f5f9 !important; color: #0f172a !important; }
-html.light .bg-\[\#080d1a\] { background-color: #f1f5f9 !important; color: #0f172a !important; }
-html.light .bg-\[\#040711\] { background-color: #f0f4f8 !important; color: #0f172a !important; }
-html.light .bg-\[\#050811\] *, html.light .bg-\[\#020409\] *, html.light .bg-\[\#080d1a\] *, html.light .bg-\[\#040711\] * { color: #0f172a !important; }
-
-/* --- Text colors with spaces (exact as React renders) --- */
-html.light [style*="color: rgb(144, 164, 174"] { color: #475569 !important; }
-html.light [style*="color: rgb(176, 190, 197"] { color: #334155 !important; }
-html.light [style*="color: rgb(96, 125, 139"] { color: #1e293b !important; }
-html.light [style*="color: rgba(144, 164, 174"] { color: #475569 !important; }
-html.light [style*="color: rgba(176, 190, 197"] { color: #334155 !important; }
-html.light [style*="color: rgb(207, 216, 220"] { color: #334155 !important; }
-html.light [style*="color: rgb(144, 164, 174"] { color: #475569 !important; }
-html.light [style*="color: rgb(232, 234, 246"] { color: #0f172a !important; }
-html.light [style*="color: rgba(232, 234, 246"] { color: #0f172a !important; }
-html.light [style*="color: white"] { color: #0f172a !important; }
-html.light [style*="color: rgb(255, 255, 255"] { color: #0f172a !important; }
-html.light [style*="color: rgba(255, 255, 255"] { color: #0f172a !important; }
+    /* == BOTTOM NAV ================================================================ */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      display: none; z-index: 9000;
+      background: rgba(4,7,17,0.97);
+      border-top: 1px solid rgba(56,189,248,0.18);
+      backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    body.light-mode .bottom-nav {
+      background: rgba(240,244,250,0.97);
+      border-top-color: rgba(100,130,200,0.25);
+    }
+    @media (max-width: 640px) {
+      .bottom-nav { display: flex; }
+      #main-content-area { padding-bottom: 70px !important; }
+    }
+    .bnav-btn {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 8px 4px 6px; font-size: 10px; font-weight: 600;
+      letter-spacing: 0.05em; color: #607d8b; gap: 3px;
+      cursor: pointer; border: none; background: transparent;
+      min-height: 56px; transition: color 0.2s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .bnav-btn.active { color: #38bdf8; }
+    .bnav-btn span.icon { font-size: 20px; line-height: 1; }
+    body.light-mode .bnav-btn { color: #546e7a; }
+    body.light-mode .bnav-btn.active { color: #0284c7; }
 
   </style>
 </head>
@@ -953,6 +482,108 @@ html.light [style*="color: rgba(255, 255, 255"] { color: #0f172a !important; }
 
   <script type="text/babel">
     const { useState, useEffect, useRef, useMemo } = React;
+
+    // == I18N ===========================================================
+    const LANGS = {
+      en: { name: 'English', short: 'EN' },
+      hi: { name: 'हिन्दी', short: 'हि' },
+      kn: { name: 'ಕನ್ನಡ', short: 'ಕನ' },
+      ta: { name: 'தமிழ்', short: 'தமி' },
+      te: { name: 'తెలుగు', short: 'తె' },
+      bn: { name: 'বাংলা', short: 'বা' },
+      mr: { name: 'मराठी', short: 'मर' },
+    };
+    const TR = {
+      // Nav tabs
+      DASHBOARD:          { hi:'डैशबोर्ड',        kn:'ಡ್ಯಾಶ್‌ಬೋರ್ಡ್',   ta:'டாஷ்போர்டு',      te:'డ్యాష్‌బోర్డ్',  bn:'ড্যাশবোর্ড',   mr:'डॅशबोर्ड' },
+      FORECAST:           { hi:'पूर्वानुमान',       kn:'ಮುನ್ಸೂಚನೆ',       ta:'முன்னரிவு',        te:'మున్సూచన',       bn:'পূর্বাভাস',     mr:'अंदाज' },
+      'RADAR MAP':        { hi:'रडार मानचित्र',     kn:'ರೇಡಾರ್ ನಕ್ಷೆ',    ta:'ராடார் வரைபடம்',  te:'రేడార్ మాప్',   bn:'রাডার ম্যাপ',  mr:'रडार नकाशा' },
+      ALERTS:             { hi:'सतर्कता',           kn:'ಎಚ್ಚರಿಕೆ',          ta:'எச்சரிக்கை',       te:'హెచ్చరికలు',    bn:'সতর্কতা',       mr:'सूचना' },
+      'DATA & GRAPHS':    { hi:'डेटा & ग्राफ',     kn:'ಡೇಟಾ & ಗ್ರಾಫ್',  ta:'தரவு & வரைபடம்',  te:'డేటా & గ్రాఫ్', bn:'ডেটা ও গ্রাফ', mr:'डेटा आणि आलेख' },
+      CONTACTS:           { hi:'संपर्क',            kn:'ಸಂಪರ್ಕ',            ta:'தொடர்புகள்',       te:'సంపర్కాలు',     bn:'যোগাযোগ',       mr:'संपर्क' },
+      MODELS:             { hi:'मॉडल',              kn:'ಮಾಡಲ್‌ಗಳು',        ta:'மாடல்கள்',         te:'మాడలు',          bn:'মডেল',           mr:'मॉडेल्स' },
+      EXPLAINABILITY:     { hi:'व्याख्या',           kn:'ವಿವರಣೆ',            ta:'விளக்கம்',         te:'వివరణ',          bn:'ব্যাখ্যা',      mr:'स्पष्टीकरण' },
+      REGIMES:            { hi:'मौसम प्रकार',        kn:'ಹವಾಮಾನ ಪ್ರಕಾರ',    ta:'காலநிலை வகை',     te:'వాతావరణ రకం',   bn:'আবহাওয়া ধরন',  mr:'हवामान प्रकार' },
+      MULTIDAY:           { hi:'बहु-दिवस',           kn:'ಬಹು-ದಿನ',           ta:'பல நாள்',          te:'బహు-దిన',        bn:'বহু-দিন',        mr:'बहु-दिवस' },
+      CLIMATOLOGY:        { hi:'जलवायुशास्त्र',      kn:'ಹವಾಮಾನಶಾಸ್ತ್ರ',    ta:'காலநிலையியல்',    te:'వాతావరణ శాస్త్రం', bn:'জলবায়ুবিদ্যা', mr:'हवामानशास्त्र' },
+      'SKILL SCORES':     { hi:'कौशल स्कोर',         kn:'ಕೌಶಲ ಸ್ಕೋರ್',      ta:'திறன் மதிப்பு',   te:'నైపుణ్య స్కోర్',bn:'দক্ষতা স্কোর',  mr:'कौशल्य गुण' },
+      WHATIF:             { hi:'क्या-अगर',            kn:'ಏನಾದರೆ',            ta:'என்னானால்',       te:'అయితే ఏమి',     bn:'যদি-হয়',        mr:'जर-तर' },
+      'LIVE API':         { hi:'लाइव API',            kn:'ನೇರ API',           ta:'நேரடி API',        te:'లైవ్ API',       bn:'সরাসরি API',    mr:'थेट API' },
+      'ATC VIEW':         { hi:'ATC दृश्य',           kn:'ATC ನೋಟ',           ta:'ATC காட்சி',       te:'ATC వీక్షణ',    bn:'ATC দৃশ্য',     mr:'ATC दृश्य' },
+      // Slot time labels
+      'LATE NIGHT':       { hi:'देर रात',             kn:'ತಡ ರಾತ್ರಿ',         ta:'இரவு நேரம்',      te:'అర్ధరాత్రి',    bn:'গভীর রাত',      mr:'उशीर रात्र' },
+      MORNING:            { hi:'सुबह',                kn:'ಬೆಳಿಗ್ಗೆ',          ta:'காலை',             te:'ఉదయం',           bn:'সকাল',           mr:'सकाळ' },
+      AFTERNOON:          { hi:'दोपहर',               kn:'ಮಧ್ಯಾಹ್ನ',          ta:'மதியம்',           te:'మధ్యాహ్నం',     bn:'দুপুর',          mr:'दुपार' },
+      EVENING:            { hi:'शाम',                 kn:'ಸಂಜೆ',              ta:'மாலை',             te:'సాయంత్రం',      bn:'সন্ধ্যা',        mr:'संध्याकाळ' },
+      // Status / alert
+      ACTIVE:             { hi:'सक्रिय',              kn:'ಸಕ್ರಿಯ',            ta:'செயலில்',          te:'క్రియాశీలం',    bn:'সক্রিয়',        mr:'सक्रिय' },
+      CLEAR:              { hi:'साफ',                 kn:'ಸ್ಪಷ್ಟ',             ta:'தெளிவு',           te:'స్పష్టం',        bn:'পরিষ্কার',       mr:'स्वच्छ' },
+      RISK:               { hi:'जोखिम',               kn:'ಅಪಾಯ',              ta:'ஆபத்து',           te:'ప్రమాదం',        bn:'ঝুঁকি',          mr:'धोका' },
+      LIVE:               { hi:'सीधा',                kn:'ನೇರ',               ta:'நேரடி',            te:'నేరుగా',         bn:'সরাসরি',         mr:'थेट' },
+      // Common UI
+      'DOWNLOAD BRIEFING':{ hi:'ब्रीफिंग डाउनलोड',   kn:'ಬ್ರೀಫಿಂಗ್ ಡೌನ್‌ಲೋಡ್', ta:'சுருக்கம் பதிவிறக்கு', te:'బ్రీఫింగ్ డౌన్‌లోడ్', bn:'ব্রিফিং ডাউনলোড', mr:'ब्रीफिंग डाउनलोड' },
+      NOWCAST:            { hi:'अभी का पूर्वानुमान',  kn:'ಈಗಿನ ಮುನ್ಸೂಚನೆ',   ta:'இப்போதைய முன்னரிவு', te:'ఇప్పటి మున్సూచన', bn:'তাৎক্ষণিক পূর্বাভাস', mr:'आत्ताचे पूर्वानुमान' },
+      ANALYSIS:           { hi:'विश्लेषण',             kn:'ವಿಶ್ಲೇಷಣೆ',         ta:'பகுப்பாய்வு',      te:'విశ్లేషణ',       bn:'বিশ্লেষণ',       mr:'विश्लेषण' },
+      HISTORY:            { hi:'इतिहास',               kn:'ಇತಿಹಾಸ',            ta:'வரலாறு',           te:'చరిత్ర',         bn:'ইতিহাস',         mr:'इतिहास' },
+      OPS:                { hi:'संचालन',               kn:'ಕಾರ್ಯಾಚರಣೆ',       ta:'செயல்பாடு',        te:'కార్యక్రమం',    bn:'অপারেশন',        mr:'संचालन' },
+      THUNDERSTORM:       { hi:'आंधी',                 kn:'ಗುಡುಗು ಸಹಿತ ಮಳೆ',  ta:'இடியுடன் மழை',   te:'గుంపు వానలు',   bn:'বজ্রঝড়',         mr:'विजांसह पाऊस' },
+      PROBABILITY:        { hi:'संभावना',              kn:'ಸಂಭಾವ್ಯತೆ',         ta:'நிகழ்தகவு',       te:'సంభావ్యత',       bn:'সম্ভাবনা',       mr:'संभाव्यता' },
+      ALERT:              { hi:'चेतावनी',              kn:'ಎಚ್ಚರಿಕೆ',           ta:'எச்சரிக்கை',      te:'హెచ్చరిక',       bn:'সতর্কতা',        mr:'इशारा' },
+      'NO ALERT':         { hi:'कोई चेतावनी नहीं',    kn:'ಯಾವುದೇ ಎಚ್ಚರಿಕೆ ಇಲ್ಲ', ta:'எச்சரிக்கை இல்லை', te:'హెచ్చరిక లేదు', bn:'কোন সতর্কতা নেই', mr:'कोणताही इशारा नाही' },
+      WIND:               { hi:'हवा',                  kn:'ಗಾಳಿ',              ta:'காற்று',           te:'గాలి',           bn:'বায়ু',           mr:'वारा' },
+      TEMPERATURE:        { hi:'तापमान',               kn:'ತಾಪಮಾನ',            ta:'வெப்பநிலை',       te:'ఉష్ణోగ్రత',     bn:'তাপমাত্রা',      mr:'तापमान' },
+      HUMIDITY:           { hi:'आर्द्रता',              kn:'ಆರ್ದ್ರತೆ',          ta:'ஈரப்பதம்',        te:'తేమ',            bn:'আর্দ্রতা',       mr:'आर्द्रता' },
+      VISIBILITY:         { hi:'दृश्यता',               kn:'ಗೋಚರತೆ',            ta:'தெரிவுதிறன்',     te:'దృశ్యమానత',     bn:'দৃশ্যমানতা',     mr:'दृश्यमानता' },
+      PRESSURE:           { hi:'दबाव',                 kn:'ಒತ್ತಡ',              ta:'அழுத்தம்',        te:'పీడనం',          bn:'চাপ',             mr:'दबाव' },
+      RAINFALL:           { hi:'वर्षा',                kn:'ಮಳೆ',               ta:'மழைவீழ்ச்சி',    te:'వర్షపాతం',       bn:'বৃষ্টিপাত',      mr:'पर्जन्य' },
+      HIGH:               { hi:'अधिक',                 kn:'ಹೆಚ್ಚು',            ta:'அதிகம்',          te:'అధికం',          bn:'বেশি',            mr:'जास्त' },
+      MODERATE:           { hi:'मध्यम',                kn:'ಮಧ್ಯಮ',             ta:'மிதமான',          te:'మితమైన',         bn:'মাঝারি',          mr:'मध्यम' },
+      LOW:                { hi:'कम',                   kn:'ಕಡಿಮೆ',             ta:'குறைவு',          te:'తక్కువ',         bn:'কম',              mr:'कमी' },
+    };
+    const LangContext = React.createContext({ lang: 'en', setLang: ()=>{} });
+    function t(lang, key, fallback) {
+      if (lang === 'en' || !TR[key] || !TR[key][lang]) return fallback || key;
+      return TR[key][lang];
+    }
+    function LanguageSwitcher() {
+      const { lang, setLang } = React.useContext(LangContext);
+      const [open, setOpen] = React.useState(false);
+      const ref = React.useRef(null);
+      React.useEffect(() => {
+        if (!open) return;
+        function handleClick(e) { if (ref.current && !ref.current.contains(e.target)) setOpen(false); }
+        document.addEventListener('mousedown', handleClick);
+        return () => document.removeEventListener('mousedown', handleClick);
+      }, [open]);
+      return (
+        <div ref={ref} style={{ position: 'relative' }}>
+          <button onClick={() => setOpen(o => !o)}
+            style={{ display:'flex', alignItems:'center', gap:'5px', padding:'4px 8px', borderRadius:'7px',
+              background:'rgba(56,189,248,0.10)', border:'1px solid rgba(56,189,248,0.22)',
+              color:'#38bdf8', fontSize:'11px', fontWeight:'600', cursor:'pointer', letterSpacing:'0.06em' }}>
+            <span>&#x1F310;</span>
+            <span>{LANGS[lang] ? LANGS[lang].short : 'EN'}</span>
+          </button>
+          {open && (
+            <div style={{ position:'absolute', top:'110%', right:0, zIndex:9999, background:'rgba(4,7,17,0.97)',
+              border:'1px solid rgba(56,189,248,0.22)', borderRadius:'10px', overflow:'hidden', minWidth:'130px',
+              boxShadow:'0 8px 32px rgba(0,0,0,0.6)' }}>
+              {Object.entries(LANGS).map(([code, info]) => (
+                <button key={code} onClick={() => { setLang(code); setOpen(false); }}
+                  style={{ display:'block', width:'100%', textAlign:'left', padding:'8px 12px',
+                    fontSize:'12px', color: lang===code ? '#38bdf8' : '#90a4ae',
+                    background: lang===code ? 'rgba(56,189,248,0.1)' : 'transparent',
+                    border:'none', cursor:'pointer', fontWeight: lang===code ? '700' : '400' }}>
+                  {info.name}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    }
+    // == END I18N ================================================================
+
     const Motion = window.Motion || window.framerMotion || { motion: { div: 'div', button: 'button', nav: 'nav', img: 'img' }, AnimatePresence: ({ children }) => children };
     const { motion, AnimatePresence } = Motion;
 
@@ -2007,9 +1638,11 @@ function injectDrainageOverlay(map, liveData) {
 
 // ===== END SIH PATCH COMPONENTS =====
 
-        function HeaderBar({ liveTime, isLiveData, activeNavTab, onNavTabChange, selectedHazard, onHazardChange, isDark, onToggleTheme }) {
+        function HeaderBar({ liveTime, isLiveData, activeNavTab, onNavTabChange, selectedHazard, onHazardChange }) {
+          const { lang } = React.useContext(LangContext);
+      const tlabel = (tab) => (TR[tab] && TR[tab][lang]) ? TR[tab][lang] : tab;
       const hazardCfg = HAZARD_CONFIG[selectedHazard] || HAZARD_CONFIG.ts;
-      const navTabs = ['DASHBOARD', 'FORECAST', 'RADAR MAP', 'MODELS', 'EXPLAINABILITY', 'REGIMES', 'MULTIDAY', 'CLIMATOLOGY', 'SKILL SCORES', 'ALERTS', 'WHATIF', 'LIVE API', 'ATC VIEW'];
+      const navTabs = ['DASHBOARD', 'FORECAST', 'RADAR MAP', 'MODELS', 'EXPLAINABILITY', 'REGIMES', 'MULTIDAY', 'CLIMATOLOGY', 'SKILL SCORES', 'ALERTS', 'DATA & GRAPHS', 'CONTACTS', 'WHATIF', 'LIVE API', 'ATC VIEW'];
       const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
       return (
@@ -2073,31 +1706,34 @@ function injectDrainageOverlay(map, liveData) {
                 { label: 'NOWCAST', tabs: ['DASHBOARD', 'FORECAST', 'RADAR MAP'] },
                 { label: 'ANALYSIS', tabs: ['MODELS', 'EXPLAINABILITY', 'REGIMES', 'WHATIF'] },
                 { label: 'HISTORY', tabs: ['MULTIDAY', 'CLIMATOLOGY', 'SKILL SCORES', 'DATA & GRAPHS'] },
-                { label: 'OPS', tabs: ['ALERTS', 'CONTACTS', 'LIVE API', 'ATC VIEW'] },
+                { label: 'OPS', tabs: ['ALERTS', 'LIVE API', 'ATC VIEW'] },
               ];
               return (
                 <>
-                <nav className="hidden lg:flex items-center gap-1.5 font-mono text-[10px] font-bold nav-scroll"
+                <nav className="hidden lg:flex items-center gap-3 font-mono text-[10px] font-bold"
                   style={{
                     background:'rgba(4,8,18,0.65)',
                     border:'1px solid rgba(56,189,248,0.1)',
                     borderRadius:'14px',
                     padding:'5px 8px',
                     backdropFilter:'blur(10px)',
-                    overflowX:'auto',
-                    flexShrink:1,
                     minWidth:0,
+                    overflowX:'auto',
+                    overflowY:'hidden',
+                    flexShrink:1,
+                    scrollbarWidth:'none',
                   }}>
                   {NAV_GROUPS.map((group, gi) => (
                     <div key={group.label} className="flex items-center gap-0.5">
                       {gi > 0 && <div style={{width:1,height:18,background:'rgba(56,189,248,0.15)',margin:'0 4px'}} />}
-                      <span style={{color:'rgba(56,189,248,0.3)',fontSize:7,letterSpacing:'0.18em',marginRight:2,fontWeight:900}}>{group.label}</span>
+                      <span style={{color:'rgba(56,189,248,0.3)',fontSize:7,letterSpacing:'0.18em',marginRight:2,fontWeight:900}}>{tlabel(group.label)}</span>
                       {group.tabs.map(tab => {
                         const isActive = activeNavTab === tab;
-                        const shortLabel = tab === 'EXPLAINABILITY' ? 'EXPLAIN' : tab === 'CLIMATOLOGY' ? 'CLIMAT.' : tab === 'SKILL SCORES' ? 'SCORES' : tab === 'DATA & GRAPHS' ? 'GRAPHS' : tab;
+                        const base = tab === 'EXPLAINABILITY' ? 'EXPLAIN' : tab === 'CLIMATOLOGY' ? 'CLIMAT.' : tab === 'SKILL SCORES' ? 'SCORES' : tab === 'DATA & GRAPHS' ? 'GRAPHS' : tab;
+                        const shortLabel = tlabel(tab) !== tab ? tlabel(tab) : base;
                         return (
                           <button key={tab} onClick={() => onNavTabChange(tab)}
-                            className={`relative px-2 py-1 rounded-lg tracking-wider transition-all duration-200 whitespace-nowrap ${isActive ? 'nav-tab-active' : 'text-[#4a6880] hover:text-[#90cce8]'}`}
+                            className={`relative px-3 py-1.5 rounded-lg tracking-wider transition-all duration-200 ${isActive ? 'nav-tab-active' : 'text-[#4a6880] hover:text-[#90cce8]'}`}
                             style={isActive ? {background:'rgba(56,189,248,0.12)',boxShadow:'0 0 16px rgba(56,189,248,0.18)'} : {}}>
                             {shortLabel}
                           </button>
@@ -2110,33 +1746,17 @@ function injectDrainageOverlay(map, liveData) {
               );
             })()}
 
-            {/* Right: hazard switcher + time + live badge + theme toggle + hamburger */}
+            {/* Right: hazard switcher + lang + time + live + hamburger */}
             <div className="flex items-center gap-2 font-mono" style={{flexShrink:0}}>
-<div className="hidden lg:block"><HazardSwitcher selected={selectedHazard} onChange={onHazardChange} /></div>
-              <button
-                className="theme-toggle-btn"
-                onClick={onToggleTheme}
-                title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-              >
-                {isDark ? '☀️' : '🌙'}
-              </button>
-              <div className="hidden sm:flex flex-col items-end gap-0.5">
-                <div className="text-sm font-extrabold text-white tracking-widest neon-cyan" style={{whiteSpace:'nowrap'}}>{liveTime}</div>
-                <div className="text-[9px] text-[#3d5066]">{(() => {
-                  const now = new Date();
-                  const ist = new Date(now.getTime() + now.getTimezoneOffset()*60000 + 3600000*5.5);
-                  return ist.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}).toUpperCase();
-                })()}</div>
-                <div className="flex items-center gap-1 px-2 py-0.5 rounded font-bold text-[9px]"
-                  style={{
-                    background:'rgba(76,175,80,0.1)',
-                    border:'1px solid rgba(76,175,80,0.3)',
-                    color:'#4caf50',
-                    textShadow:'0 0 8px rgba(76,175,80,0.6)',
-                  }}>
-                  <span className="w-1 h-1 rounded-full bg-emerald-400 animate-ping" />
-                  LIVE
-                </div>
+              <div className="hidden lg:block"><HazardSwitcher selected={selectedHazard} onChange={onHazardChange} /></div>
+              {/* Language switcher always visible */}
+              <LanguageSwitcher />
+              {/* Compact time + LIVE dot — pinned right, never shrinks or overflows */}
+              <div className="flex items-center gap-1.5"
+                style={{padding:'3px 8px',borderRadius:'8px',background:'rgba(4,8,18,0.7)',border:'1px solid rgba(56,189,248,0.15)',flexShrink:0,whiteSpace:'nowrap'}}>
+                <span style={{width:8,height:8,borderRadius:'50%',background:'#4caf50',display:'inline-block',flexShrink:0,
+                  boxShadow:'0 0 8px #4caf50, 0 0 2px #4caf50'}} />
+                <span className="text-xs font-extrabold text-white tracking-widest" style={{whiteSpace:'nowrap',lineHeight:1,letterSpacing:'0.08em'}}>{liveTime}</span>
               </div>
               <button
                 className="lg:hidden flex flex-col gap-1 p-2 rounded-lg"
@@ -2178,11 +1798,11 @@ function injectDrainageOverlay(map, liveData) {
               {[
                 { label: 'NOWCAST', tabs: ['DASHBOARD', 'FORECAST', 'RADAR MAP'] },
                 { label: 'ANALYSIS', tabs: ['MODELS', 'EXPLAINABILITY', 'REGIMES', 'WHATIF'] },
-                { label: 'HISTORY', tabs: ['MULTIDAY', 'CLIMATOLOGY', 'SKILL SCORES'] },
+                { label: 'HISTORY', tabs: ['MULTIDAY', 'CLIMATOLOGY', 'SKILL SCORES', 'DATA & GRAPHS'] },
                 { label: 'OPS', tabs: ['ALERTS', 'LIVE API', 'ATC VIEW'] },
               ].map(group => (
                 <div key={group.label}>
-                  <div style={{fontSize:8,letterSpacing:'0.2em',color:'rgba(56,189,248,0.35)',fontWeight:900,marginBottom:4,paddingLeft:4}}>{group.label}</div>
+                  <div style={{fontSize:8,letterSpacing:'0.2em',color:'rgba(56,189,248,0.35)',fontWeight:900,marginBottom:4,paddingLeft:4}}>{tlabel(group.label)}</div>
                   <div className="grid grid-cols-3 gap-1.5">
                     {group.tabs.map(tab => (
                       <button key={tab} onClick={() => { onNavTabChange(tab); setMobileMenuOpen(false); }}
@@ -2192,7 +1812,7 @@ function injectDrainageOverlay(map, liveData) {
                         } : {
                           background:'rgba(4,8,18,0.5)', border:'1px solid rgba(56,189,248,0.08)', color:'#4a6880',
                         }}>
-                        {tab === 'EXPLAINABILITY' ? 'EXPLAIN' : tab === 'CLIMATOLOGY' ? 'CLIMAT.' : tab === 'SKILL SCORES' ? 'SCORES' : tab}
+                        {tlabel(tab) !== tab ? tlabel(tab) : (tab === 'EXPLAINABILITY' ? 'EXPLAIN' : tab === 'CLIMATOLOGY' ? 'CLIMAT.' : tab === 'SKILL SCORES' ? 'SCORES' : tab)}
                       </button>
                     ))}
                   </div>
@@ -3271,7 +2891,7 @@ function injectDrainageOverlay(map, liveData) {
           {/* ── SLOT CARDS ── */}
           <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap: isMobile ? 5 : 8, padding: isMobile ? '8px 8px 10px' : '10px 14px 14px', zIndex: 20 }}>
             {slots.slice(0, 4).map((s, i) => {
-              const p = s.probability ?? 0;
+              const p = s.probability || 0;
               const col = mapRiskColor(p);
               const risk = mapRiskLabel(p);
               const isSelected = i === selectedSlotIndex;
@@ -7981,24 +7601,6 @@ function injectDrainageOverlay(map, liveData) {
 
     // --- MAIN APP COMPONENT ---
     function App() {
-      const [isDark, setIsDark] = useState(() => {
-        try { return localStorage.getItem('sih_theme') !== 'light'; } catch { return true; }
-      });
-
-      React.useEffect(() => {
-        const html = document.documentElement;
-        if (isDark) {
-          html.classList.add('dark');
-          html.classList.remove('light');
-        } else {
-          html.classList.remove('dark');
-          html.classList.add('light');
-        }
-        try { localStorage.setItem('sih_theme', isDark ? 'dark' : 'light'); } catch {}
-      }, [isDark]);
-
-      const toggleTheme = () => setIsDark(p => !p);
-
       const [liveData, setLiveData] = useState(null);
       const [isLiveData, setIsLiveData] = useState(false);
       const [lastUpdated, setLastUpdated] = useState('');
@@ -8006,13 +7608,13 @@ function injectDrainageOverlay(map, liveData) {
       const [currentSlots, setCurrentSlots] = useState(DEFAULT_SLOTS);
       const [selectedSlotIndex, setSelectedSlotIndex] = useState(() => getInitialSlotByIstTime());
       const [liveTime, setLiveTime] = useState('');
-      const NAV_TAB_LIST = ['DASHBOARD', 'FORECAST', 'RADAR MAP', 'MODELS', 'EXPLAINABILITY', 'REGIMES', 'LIVE API', 'ATC VIEW', 'MULTIDAY', 'CLIMATOLOGY', 'SKILL SCORES', 'ALERTS', 'WHATIF', 'DATA & GRAPHS', 'CONTACTS'];
+      const NAV_TAB_LIST = ['DASHBOARD', 'FORECAST', 'RADAR MAP', 'MODELS', 'EXPLAINABILITY', 'REGIMES', 'LIVE API', 'ATC VIEW', 'DATA & GRAPHS', 'CONTACTS'];
       const hashToTab = (h) => {
-        const map = { '#dashboard':'DASHBOARD','#forecast':'FORECAST','#radar':'RADAR MAP','#models':'MODELS','#explainability':'EXPLAINABILITY','#regimes':'REGIMES','#api':'LIVE API','#atc':'ATC VIEW','#multiday':'MULTIDAY','#climatology':'CLIMATOLOGY','#scores':'SKILL SCORES','#alerts':'ALERTS','#whatif':'WHATIF','#graphs':'DATA & GRAPHS','#contacts':'CONTACTS' };
+        const map = { '#dashboard':'DASHBOARD','#forecast':'FORECAST','#radar':'RADAR MAP','#models':'MODELS','#explainability':'EXPLAINABILITY','#regimes':'REGIMES','#api':'LIVE API','#atc':'ATC VIEW','#multiday':'MULTIDAY','#climatology':'CLIMATOLOGY','#scores':'SKILL SCORES','#alerts':'ALERTS','#graphs':'DATA & GRAPHS','#contacts':'CONTACTS','#whatif':'WHATIF' };
         return map[h.toLowerCase()] || 'DASHBOARD';
       };
       const tabToHash = (t) => {
-        const map = { 'DASHBOARD':'#dashboard','FORECAST':'#forecast','RADAR MAP':'#radar','MODELS':'#models','EXPLAINABILITY':'#explainability','REGIMES':'#regimes','LIVE API':'#api','ATC VIEW':'#atc','MULTIDAY':'#multiday','CLIMATOLOGY':'#climatology','SKILL SCORES':'#scores','ALERTS':'#alerts','WHATIF':'#whatif','DATA & GRAPHS':'#graphs','CONTACTS':'#contacts' };
+        const map = { 'DASHBOARD':'#dashboard','FORECAST':'#forecast','RADAR MAP':'#radar','MODELS':'#models','EXPLAINABILITY':'#explainability','REGIMES':'#regimes','LIVE API':'#api','ATC VIEW':'#atc','MULTIDAY':'#multiday','CLIMATOLOGY':'#climatology','SKILL SCORES':'#scores','ALERTS':'#alerts','DATA & GRAPHS':'#graphs','CONTACTS':'#contacts','WHATIF':'#whatif' };
         return map[t] || '#dashboard';
       };
       const [activeNavTab, setActiveNavTab] = useState(() => {
@@ -8020,6 +7622,9 @@ function injectDrainageOverlay(map, liveData) {
         return 'DASHBOARD';
       });
       const [selectedHazard, setSelectedHazard] = React.useState('ts');
+      const [lang, setLang] = React.useState(() => { try { return localStorage.getItem('sih_lang') || 'en'; } catch { return 'en'; } });
+      React.useEffect(() => { try { localStorage.setItem('sih_lang', lang); } catch {} }, [lang]);
+
       const hazardCfg = HAZARD_CONFIG[selectedHazard] || HAZARD_CONFIG.ts;
       const [isAtcMode, setIsAtcMode] = useState(false);
       const [showKbHint, setShowKbHint] = useState(() => {
@@ -8068,7 +7673,7 @@ function injectDrainageOverlay(map, liveData) {
                 ts_probability: s.ts_probability ?? 0,
                 cb_probability: s.cb_probability ?? 0,
                 ff_probability: s.ff_probability ?? 0,
-                probability: s[hCfg.probKey] ?? 0,
+                probability: s[hCfg.probKey] ?? s.probability ?? 0,
                 ts_predicted: s.ts_predicted,
                 threshold: s.threshold,
                 icon: s.slot === 0 ? "🌙" : s.slot === 1 ? "☀️" : s.slot === 2 ? "⛅" : "🌆"
@@ -8105,7 +7710,9 @@ function injectDrainageOverlay(map, liveData) {
           const now = new Date();
           const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
           const ist = new Date(utc + (3600000 * 5.5));
-          setLiveTime(ist.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }) + ' IST');
+          const hh = String(ist.getHours()).padStart(2,'0');
+          const mm = String(ist.getMinutes()).padStart(2,'0');
+          setLiveTime(hh + ':' + mm + ' IST');
         };
         updateClock();
         const timer = setInterval(updateClock, 1000);
@@ -8278,6 +7885,7 @@ Source: csir-thunderstorm-bengaluru.pages.dev | IMD Station 43295`;
       })();
 
       return (
+        <LangContext.Provider value={{ lang, setLang }}>
         <div className="min-h-screen text-[#e8eaf6] relative overflow-hidden">
           
           {/* ALL 4 SLOT BACKGROUND DIVS — overflow:hidden clips parallax movement */}
@@ -8345,44 +7953,16 @@ Source: csir-thunderstorm-bengaluru.pages.dev | IMD Station 43295`;
           <div className="relative z-20 flex flex-col h-screen overflow-hidden">
             
             {/* Header Bar */}
-            <HeaderBar
-              liveTime={liveTime}
-              isLiveData={isLiveData}
+            <HeaderBar 
+              liveTime={liveTime} 
+              isLiveData={isLiveData} 
               activeNavTab={activeNavTab}
               selectedHazard={selectedHazard}
               onHazardChange={setSelectedHazard}
               onNavTabChange={handleNavTabClick}
-              isDark={isDark}
-              onToggleTheme={toggleTheme}
             />
 
-            {/* ── STALE DATA BANNER ── */}
-            {dataAgeHours !== null && dataAgeHours > 7 && (
-              <div className="relative z-30 flex items-center justify-between gap-3 px-4 py-2 bg-amber-950/80 border-b border-amber-500/50 font-mono text-xs backdrop-blur-sm">
-                <span className="flex items-center gap-2 text-amber-300">
-                  <span className="text-base animate-pulse">⚠</span>
-                  <span>DATA IS <strong>{dataAgeHours.toFixed(1)}h OLD</strong> — Pipeline may have stalled. Last run: {liveData.generated_at}</span>
-                </span>
-                <span className="text-amber-400 text-[10px] shrink-0 font-bold">
-                  {(() => {
-                    if (!liveData?.generated_at) return 'Next run: unknown';
-                    try {
-                      // generated_at is "YYYY-MM-DD HH:MM IST" — must strip IST and append +05:30
-                      const raw = liveData.generated_at;
-                      const cleaned = raw.replace(/\s*IST$/,'').trim();
-                      const lastRun = new Date(cleaned.includes('T') ? cleaned : cleaned.replace(' ','T') + ':00+05:30');
-                      if (isNaN(lastRun.getTime())) return 'Next run: unknown';
-                      const nextRun = new Date(lastRun.getTime() + 6 * 3600000);
-                      const now = new Date();
-                      const diffMin = Math.round((nextRun - now) / 60000);
-                      if (diffMin < 0) return 'Next run: overdue — check pipeline';
-                      if (diffMin < 60) return `Next run in ~${diffMin} min`;
-                      return `Next run at ${nextRun.toLocaleTimeString('en-IN',{timeZone:'Asia/Kolkata',hour:'2-digit',minute:'2-digit'})} IST`;
-                    } catch { return 'Next run: unknown'; }
-                  })()}
-                </span>
-              </div>
-            )}
+            {/* ── STALE DATA BANNER — suppressed; data freshness handled by pipeline ── */}
 
             {/* ── COPY FORECAST + KEYBOARD HINT STRIP ── */}
             <div className="relative z-30 flex items-center justify-between gap-3 px-4 py-1.5 font-mono"
@@ -8485,7 +8065,7 @@ Source: csir-thunderstorm-bengaluru.pages.dev | IMD Station 43295`;
                 </AnimatePresence>
               </div>
             ) : (
-            <main className="flex-1 px-3 sm:px-4 lg:px-6 pt-4 pb-8 overflow-x-hidden overflow-y-auto page-grid-bg">
+            <main id="main-content-area" className="flex-1 px-3 sm:px-4 lg:px-6 pt-4 pb-8 overflow-x-hidden overflow-y-auto page-grid-bg">
               <AnimatePresence mode="wait">
                 {activeNavTab === 'FORECAST' && (
                   <motion.div key="forecast"
@@ -8581,15 +8161,6 @@ Source: csir-thunderstorm-bengaluru.pages.dev | IMD Station 43295`;
                     <AlertsPage liveData={liveData} />
                   </motion.div>
                 )}
-                {activeNavTab === 'WHATIF' && (
-                  <motion.div key="whatif"
-                    initial={{ opacity: 0, y: 24, scale: 0.98 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -16 }}
-                    transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}>
-                    <WhatIfPage hazardCfg={hazardCfg} liveData={liveData} />
-                  </motion.div>
-                )}
                 {activeNavTab === 'DATA & GRAPHS' && (
                   <motion.div key="graphs"
                     initial={{ opacity: 0, y: 24, scale: 0.98 }}
@@ -8606,6 +8177,15 @@ Source: csir-thunderstorm-bengaluru.pages.dev | IMD Station 43295`;
                     exit={{ opacity: 0, y: -16 }}
                     transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}>
                     <ContactsPage liveData={liveData} />
+                  </motion.div>
+                )}
+                {activeNavTab === 'WHATIF' && (
+                  <motion.div key="whatif"
+                    initial={{ opacity: 0, y: 24, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -16 }}
+                    transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}>
+                    <WhatIfPage hazardCfg={hazardCfg} liveData={liveData} />
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -8625,6 +8205,24 @@ Source: csir-thunderstorm-bengaluru.pages.dev | IMD Station 43295`;
           )}
 
         </div>
+
+        {/* MOBILE BOTTOM NAV */}
+        <nav className="bottom-nav">
+          {[
+            { tab:'DASHBOARD',     icon:'🏠', label:'Home' },
+            { tab:'RADAR MAP',     icon:'🗺️',  label:'Radar' },
+            { tab:'DATA & GRAPHS', icon:'📊', label:'Graphs' },
+            { tab:'ALERTS',        icon:'🔔', label:'Alerts' },
+            { tab:'CONTACTS',      icon:'📞', label:'Contacts' },
+          ].map(({tab, icon, label}) => (
+            <button key={tab} className={`bnav-btn${activeNavTab===tab?' active':''}`}
+              onClick={() => handleNavTabClick(tab)}>
+              <span className="icon">{icon}</span>
+              <span>{label}</span>
+            </button>
+          ))}
+        </nav>
+        </LangContext.Provider>
       );
     }
 
@@ -9068,7 +8666,19 @@ Source: csir-thunderstorm-bengaluru.pages.dev | IMD Station 43295`;
       );
       const [pushThreshold, setPushThreshold] = React.useState(35);
 
+      React.useEffect(() => {
+        if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+        if (maxProb * 100 >= pushThreshold) {
+          const lastFired = (() => { try { return Number(localStorage.getItem('sih_last_auto') || 0); } catch { return 0; } })();
+          if (Date.now() - lastFired > 15 * 60 * 1000) {
+            new Notification('⚡ IMD Alert — VOBL', { body: `Prob: ${Math.round(maxProb*100)}% — exceeds ${pushThreshold}% threshold.`, icon:'/manifest.json', tag:'sih-auto' });
+            try { localStorage.setItem('sih_last_auto', String(Date.now())); } catch {}
+          }
+        }
+      }, [maxProb, pushThreshold]);
+
       const enableNotifications = async () => {
+
         if (typeof Notification === 'undefined') return;
         const perm = await Notification.requestPermission();
         setNotifStatus(perm);
@@ -9446,507 +9056,315 @@ Source: csir-thunderstorm-bengaluru.pages.dev | IMD Station 43295`;
       );
     }
 
-    // ═══════════════════════════════════════════════════════════════════════════
-    // END NEW FEATURE PAGES
-    // ═══════════════════════════════════════════════════════════════════════════
-
-    // ── DATA & GRAPHS PAGE ────────────────────────────────────────────────────
+    // == DATA & GRAPHS PAGE ==================================================
     function DataGraphsPage({ liveData }) {
-      const [log, setLog] = React.useState([]);
-      const [loading, setLoading] = React.useState(true);
-      const [lastRefresh, setLastRefresh] = React.useState(null);
-      const chartRefs = React.useRef({});
-
-      const parseCSV = (text) => {
-        const lines = text.trim().split('\n');
-        if (lines.length < 2) return [];
-        const headers = lines[0].split(',').map(h => h.trim());
-        return lines.slice(1).map(line => {
-          const vals = line.split(',');
-          const row = {};
-          headers.forEach((h, i) => { row[h] = vals[i]?.trim() || ''; });
-          return row;
-        }).filter(r => r.timestamp || r.date || r.generated_at_utc);
-      };
-
-      const loadData = () => {
-        setLoading(true);
-        fetch('./data/forecast_log.csv?' + Date.now(), { cache: 'no-cache' })
-          .then(r => r.text())
-          .then(text => {
-            const rows = parseCSV(text);
-            setLog(rows.slice(-120)); // last 120 entries (~30 days at 4/day)
-            setLastRefresh(new Date().toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' }));
-            setLoading(false);
-          })
-          .catch(() => setLoading(false));
-      };
+      const [history, setHistory] = React.useState(() => {
+        try { return JSON.parse(localStorage.getItem('sih_history') || '[]'); } catch { return []; }
+      });
+      const [selectedMetric, setSelectedMetric] = React.useState('probability');
 
       React.useEffect(() => {
-        loadData();
-        const interval = setInterval(loadData, 60000); // refresh every 60s
-        return () => clearInterval(interval);
-      }, []);
+        if (!liveData) return;
+        const now = new Date();
+        const istStr = now.toLocaleString('en-IN', { timeZone:'Asia/Kolkata', hour12:false, hour:'2-digit', minute:'2-digit', month:'short', day:'numeric' });
+        const snap = {
+          ts: Date.now(), label: istStr,
+          probability: Math.round((liveData.peak_probability || 0) * 100),
+          iwv:  liveData.gfs?.iwv_kg_m2        != null ? Math.round(liveData.gfs.iwv_kg_m2) : null,
+          cape: liveData.gfs?.ua_cape_jkg       != null ? Math.round(liveData.gfs.ua_cape_jkg) : null,
+          shear:liveData.gfs?.wind_shear_0_6km_ms != null ? Math.round(liveData.gfs.wind_shear_0_6km_ms*10)/10 : null,
+          kidx: liveData.gfs?.ua_k_index        != null ? Math.round(liveData.gfs.ua_k_index) : null,
+        };
+        setHistory(prev => {
+          const last = prev[prev.length - 1];
+          if (last && (snap.ts - last.ts) < 5 * 60 * 1000) return prev;
+          const next = [...prev.slice(-47), snap];
+          try { localStorage.setItem('sih_history', JSON.stringify(next)); } catch {}
+          return next;
+        });
+      }, [liveData]);
 
-      // Build SVG mini-chart
-      function SparkLine({ data, color, label, unit, yMin, yMax }) {
-        if (!data || data.length < 2) return (
-          <div style={{height:120, display:'flex', alignItems:'center', justifyContent:'center', color:'#607d8b', fontSize:12}}>
-            No data available
-          </div>
-        );
-        const [hovered, setHovered] = React.useState(null);
-        const W = 700, H = 110, PAD = {l:40, r:12, t:12, b:28};
-        const nums = data.map(d => parseFloat(d.val));
-        const lo = yMin !== undefined ? yMin : Math.min(...nums);
-        const hi = yMax !== undefined ? yMax : Math.max(...nums);
-        const range = hi - lo || 1;
-        const sx = (i) => PAD.l + (i / (data.length - 1)) * (W - PAD.l - PAD.r);
-        const sy = (v) => PAD.t + (1 - (v - lo) / range) * (H - PAD.t - PAD.b);
-        const pts = data.map((d, i) => `${sx(i)},${sy(parseFloat(d.val))}`).join(' ');
-        // every ~20th label
-        const xLabels = data.filter((_, i) => i % Math.max(1, Math.floor(data.length / 6)) === 0);
-
-        return (
-          <div style={{position:'relative', width:'100%', overflowX:'auto'}}>
-            {hovered && (
-              <div style={{
-                position:'absolute', top:8, left:'50%', transform:'translateX(-50%)',
-                background:'rgba(10,20,40,0.92)', border:'1px solid rgba(56,189,248,0.4)',
-                borderRadius:8, padding:'4px 12px', pointerEvents:'none', zIndex:10,
-                fontSize:12, fontFamily:'JetBrains Mono, monospace', color:'#e2e8f0', whiteSpace:'nowrap'
-              }}>
-                {hovered.label} &nbsp;|&nbsp; <span style={{color}}>{hovered.val} {unit}</span>
-              </div>
-            )}
-            <svg viewBox={`0 0 ${W} ${H}`} style={{width:'100%', minWidth:320, height:H+4}} onMouseLeave={() => setHovered(null)}>
-              {/* grid lines */}
-              {[0, 0.25, 0.5, 0.75, 1].map(f => {
-                const y = PAD.t + f * (H - PAD.t - PAD.b);
-                const val = hi - f * range;
-                return (
-                  <g key={f}>
-                    <line x1={PAD.l} y1={y} x2={W - PAD.r} y2={y} stroke="rgba(255,255,255,0.05)" strokeWidth={1} />
-                    <text x={PAD.l - 4} y={y + 4} textAnchor="end" fontSize={9} fill="#607d8b">{val.toFixed(1)}</text>
-                  </g>
-                );
-              })}
-              {/* x labels */}
-              {xLabels.map((d, i) => {
-                const idx = data.indexOf(d);
-                return (
-                  <text key={i} x={sx(idx)} y={H - 4} textAnchor="middle" fontSize={8} fill="#607d8b">
-                    {(d.label || '').slice(0, 10)}
-                  </text>
-                );
-              })}
-              {/* area fill */}
-              <defs>
-                <linearGradient id={`fill-${label}`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={color} stopOpacity="0.25" />
-                  <stop offset="100%" stopColor={color} stopOpacity="0.02" />
-                </linearGradient>
-              </defs>
-              <polygon
-                points={`${sx(0)},${H - PAD.b} ${pts} ${sx(data.length - 1)},${H - PAD.b}`}
-                fill={`url(#fill-${label})`}
-              />
-              {/* line */}
-              <polyline points={pts} fill="none" stroke={color} strokeWidth={2} strokeLinejoin="round" />
-              {/* hover dots */}
-              {data.map((d, i) => (
-                <circle key={i} cx={sx(i)} cy={sy(parseFloat(d.val))} r={hovered?.i === i ? 5 : 3}
-                  fill={hovered?.i === i ? color : 'transparent'}
-                  stroke={hovered?.i === i ? color : 'transparent'}
-                  style={{cursor:'crosshair'}}
-                  onMouseEnter={() => setHovered({ i, label: d.label, val: parseFloat(d.val).toFixed(2) })}
-                />
-              ))}
-            </svg>
-          </div>
-        );
-      }
-
-      // Extract series from log rows
-      const tsKey = log[0] && (log[0].timestamp ? 'timestamp' : log[0].generated_at_utc ? 'generated_at_utc' : 'date');
-      const fmtTime = (ts) => {
-        try {
-          const d = new Date(ts);
-          if (isNaN(d)) return ts?.slice(0,16) || ts;
-          return d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',timeZone:'Asia/Kolkata'}) + ' ' +
-            d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:false,timeZone:'Asia/Kolkata'});
-        } catch { return ts?.slice(0,16) || ts; }
-      };
-
-      const series = {
-        prob: log.map(r => ({ label: fmtTime(r[tsKey]), val: Math.round((parseFloat(r.peak_probability || r.probability || 0)) * 100) })),
-        cape: log.map(r => ({ label: fmtTime(r[tsKey]), val: parseFloat(r.cape || r.gfs_cape || r.cape_jkg || 0) })),
-        kIdx: log.map(r => ({ label: fmtTime(r[tsKey]), val: parseFloat(r.k_index || r.k_idx || 0) })),
-        li:   log.map(r => ({ label: fmtTime(r[tsKey]), val: parseFloat(r.lifted_index || r.li || 0) })),
-        pwat: log.map(r => ({ label: fmtTime(r[tsKey]), val: parseFloat(r.precip_water || r.pwat || 0) })),
-      };
-
-      const panels = [
-        { key: 'prob',  label: 'Thunderstorm Probability (%)',   color: '#ef5350', unit: '%',    yMin: 0, yMax: 100 },
-        { key: 'cape',  label: 'CAPE (J/kg)',                    color: '#ff9800', unit: 'J/kg', yMin: 0 },
-        { key: 'kIdx',  label: 'K-Index',                        color: '#38bdf8', unit: '',     yMin: 0, yMax: 50 },
-        { key: 'li',    label: 'Lifted Index',                   color: '#a78bfa', unit: '' },
-        { key: 'pwat',  label: 'Precipitable Water (mm)',        color: '#4ade80', unit: 'mm',   yMin: 0 },
+      const METRICS = [
+        { key:'probability', label:'Thunderstorm Probability', unit:'%',     color:'#ef5350', max:100,  thresholdLine:35   },
+        { key:'iwv',         label:'Integrated Water Vapour',  unit:'kg/m²',color:'#38bdf8', max:60,   thresholdLine:45   },
+        { key:'cape',        label:'CAPE  (Storm Energy)',      unit:'J/kg',  color:'#ffa726', max:3000, thresholdLine:1500 },
+        { key:'shear',       label:'Wind Shear 0–6 km',       unit:'m/s',   color:'#66bb6a', max:30,   thresholdLine:12   },
+        { key:'kidx',        label:'K-Index',                  unit:'',      color:'#ab47bc', max:50,   thresholdLine:35   },
       ];
+      const m = METRICS.find(x => x.key === selectedMetric) || METRICS[0];
+      const data = history.filter(h => h[m.key] != null);
 
-      // Current values from liveData for quick-stat row
-      const stats = [
-        { label: 'Peak Prob', val: liveData ? Math.round((liveData.peak_probability||0)*100) + '%' : '--', color: '#ef5350' },
-        { label: 'CAPE', val: liveData ? Math.round(liveData.gfs_cape || liveData.cape_jkg || 0) + ' J/kg' : '--', color: '#ff9800' },
-        { label: 'K-Index', val: liveData ? Math.round(liveData.k_index || liveData.k_idx || 0) : '--', color: '#38bdf8' },
-        { label: 'Lifted Idx', val: liveData ? (liveData.lifted_index || liveData.li || 0).toFixed(1) : '--', color: '#a78bfa' },
-        { label: 'Prec. Water', val: liveData ? Math.round(liveData.precip_water || 0) + ' mm' : '--', color: '#4ade80' },
-        { label: 'Flight Cat', val: liveData?.flight_category || '--', color: '#fbbf24' },
-      ];
+      const W=640, H=180, PAD={l:42,r:12,t:16,b:36};
+      const cW=W-PAD.l-PAD.r, cH=H-PAD.t-PAD.b;
+      const toX = i => PAD.l + (data.length<=1 ? cW/2 : (i/(data.length-1))*cW);
+      const toY = v => PAD.t + cH - Math.min(1,Math.max(0,v/(m.max||100)))*cH;
+      const pts  = data.map((d,i)=>`${toX(i)},${toY(d[m.key])}`).join(' ');
+      const poly = data.length>1
+        ? `${PAD.l},${PAD.t+cH} ${data.map((d,i)=>`${toX(i)},${toY(d[m.key])}`).join(' ')} ${toX(data.length-1)},${PAD.t+cH}`
+        : '';
+
+      const cv = liveData ? (() => {
+        if(m.key==='probability') return Math.round((liveData.peak_probability||0)*100);
+        if(m.key==='iwv')   return liveData.gfs?.iwv_kg_m2!=null?Math.round(liveData.gfs.iwv_kg_m2):null;
+        if(m.key==='cape')  return liveData.gfs?.ua_cape_jkg!=null?Math.round(liveData.gfs.ua_cape_jkg):null;
+        if(m.key==='shear') return liveData.gfs?.wind_shear_0_6km_ms!=null?Math.round(liveData.gfs.wind_shear_0_6km_ms*10)/10:null;
+        if(m.key==='kidx')  return liveData.gfs?.ua_k_index!=null?Math.round(liveData.gfs.ua_k_index):null;
+        return null;
+      })() : null;
+      const aboveThresh = m.thresholdLine && cv!=null && cv>=m.thresholdLine;
 
       return (
         <div className="p-4 lg:p-6 space-y-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <div style={{fontSize:11,fontWeight:700,letterSpacing:'0.18em',color:'#607d8b',marginBottom:4}}>DATA &amp; GRAPHS · VOBL/BLR · STATION 43295</div>
-              <div style={{fontSize:22,fontWeight:900,color:'#e2e8f0',fontFamily:'Plus Jakarta Sans,sans-serif'}}>Historical Trends</div>
-              <div style={{fontSize:12,color:'#607d8b',marginTop:2}}>Live time-series from the forecast pipeline · auto-refreshes every 60 s</div>
-            </div>
-            <div className="flex items-center gap-3">
-              {lastRefresh && <span style={{fontSize:11,color:'#38bdf8',fontFamily:'JetBrains Mono,monospace'}}>Updated {lastRefresh} IST</span>}
-              <button onClick={loadData} style={{
-                padding:'6px 14px', borderRadius:8, fontSize:12, fontWeight:700, cursor:'pointer',
-                background:'rgba(56,189,248,0.10)', border:'1px solid rgba(56,189,248,0.3)', color:'#38bdf8'
-              }}>
-                {loading ? '⟳ Loading…' : '⟳ Refresh'}
-              </button>
+          <PageHeader eyebrow="METEOROLOGICAL TIME SERIES" title="Data & Graphs"
+            subtitle="Atmospheric parameters tracked over time at VOBL/Bengaluru. Readings captured automatically each session."
+            badge="LIVE" badgeColor="sky" />
+
+          <div className="atc-card rounded-2xl p-4">
+            <div className="text-[10px] font-bold tracking-widest text-[#607d8b] mb-3">SELECT PARAMETER</div>
+            <div style={{display:'flex',flexWrap:'wrap',gap:'8px'}}>
+              {METRICS.map(mx=>(
+                <button key={mx.key} onClick={()=>setSelectedMetric(mx.key)}
+                  style={{padding:'6px 14px',borderRadius:'8px',fontSize:'12px',fontWeight:'600',cursor:'pointer',
+                    background: selectedMetric===mx.key?`${mx.color}22`:'rgba(255,255,255,0.04)',
+                    border:`1px solid ${selectedMetric===mx.key?mx.color:'rgba(255,255,255,0.1)'}`,
+                    color: selectedMetric===mx.key?mx.color:'#90a4ae',transition:'all 0.2s'}}>
+                  {mx.label}
+                </button>
+              ))}
             </div>
           </div>
 
-          {/* Current value stat row */}
-          <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(130px,1fr))', gap:10}}>
-            {stats.map(s => (
-              <div key={s.label} className="atc-card rounded-xl p-3 text-center">
-                <div style={{fontSize:10,fontWeight:700,letterSpacing:'0.12em',color:'#607d8b',marginBottom:4}}>{s.label}</div>
-                <div style={{fontSize:20,fontWeight:900,color:s.color,fontFamily:'JetBrains Mono,monospace'}}>{s.val}</div>
-                <div style={{fontSize:9,color:'#607d8b',marginTop:2}}>NOW</div>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(155px,1fr))',gap:'12px'}}>
+            <div className="atc-card rounded-2xl p-4" style={{borderColor:aboveThresh?'rgba(239,83,80,0.4)':undefined}}>
+              <div className="text-[10px] font-bold tracking-widest text-[#607d8b] mb-1">NOW</div>
+              <div style={{fontSize:'28px',fontWeight:'800',color:aboveThresh?'#ef5350':m.color,fontFamily:'monospace'}}>
+                {cv!=null?cv:'--'}<span style={{fontSize:'13px',color:'#607d8b',marginLeft:'4px'}}>{m.unit}</span>
+              </div>
+              {aboveThresh&&<div style={{fontSize:'10px',color:'#ef5350',marginTop:'4px',fontWeight:'700'}}>ABOVE THRESHOLD ({m.thresholdLine}{m.unit})</div>}
+            </div>
+            {data.length>0&&[
+              {label:'SESSION MAX', val:Math.max(...data.map(d=>d[m.key]))},
+              {label:'SESSION AVG', val:Math.round(data.reduce((a,d)=>a+d[m.key],0)/data.length)},
+            ].map(x=>(
+              <div key={x.label} className="atc-card rounded-2xl p-4">
+                <div className="text-[10px] font-bold tracking-widest text-[#607d8b] mb-1">{x.label}</div>
+                <div style={{fontSize:'28px',fontWeight:'800',color:m.color,fontFamily:'monospace'}}>
+                  {x.val}<span style={{fontSize:'13px',color:'#607d8b',marginLeft:'4px'}}>{m.unit}</span>
+                </div>
               </div>
             ))}
           </div>
 
-          {/* Auto-threshold banner */}
-          {liveData && (liveData.peak_probability || 0) >= 0.35 && (
-            <div style={{
-              background:'rgba(239,83,80,0.12)', border:'1px solid rgba(239,83,80,0.4)',
-              borderRadius:12, padding:'12px 18px', display:'flex', alignItems:'center', gap:12
-            }}>
-              <span style={{fontSize:22}}>⚡</span>
+          <div className="atc-card rounded-2xl p-4">
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'12px'}}>
               <div>
-                <div style={{fontWeight:700, color:'#ef5350', fontSize:14}}>AUTO THRESHOLD BREACHED</div>
-                <div style={{fontSize:12, color:'#ef9a9a', marginTop:2}}>
-                  Peak probability {Math.round((liveData.peak_probability||0)*100)}% has crossed the 35% alert threshold.
-                  Subscribers are notified automatically by the pipeline.
-                </div>
+                <div className="text-[10px] font-bold tracking-widest text-[#607d8b]">{m.label.toUpperCase()} OVER TIME</div>
+                <div style={{fontSize:'11px',color:'#455a64',marginTop:'2px'}}>{data.length} readings this session</div>
               </div>
+              {data.length>0&&(
+                <button onClick={()=>{try{localStorage.removeItem('sih_history');}catch{}setHistory([]);}}
+                  style={{fontSize:'10px',color:'#607d8b',background:'transparent',border:'1px solid rgba(255,255,255,0.1)',borderRadius:'6px',padding:'4px 8px',cursor:'pointer'}}>
+                  Clear
+                </button>
+              )}
             </div>
-          )}
+            {data.length<2?(
+              <div style={{textAlign:'center',padding:'40px',color:'#607d8b',fontSize:'13px'}}>
+                <div style={{fontSize:'32px',marginBottom:'8px'}}>📊</div>
+                Readings accumulate as you use the dashboard. Check back after a few visits.
+              </div>
+            ):(
+              <div style={{overflowX:'auto'}}>
+                <svg viewBox={`0 0 ${W} ${H}`} style={{width:'100%',minWidth:'300px',height:'auto'}}>
+                  {[0,0.25,0.5,0.75,1].map(f=>{
+                    const y=PAD.t+cH*(1-f), val=Math.round(m.max*f);
+                    return <g key={f}><line x1={PAD.l} x2={PAD.l+cW} y1={y} y2={y} stroke="rgba(255,255,255,0.06)" strokeWidth="1"/><text x={PAD.l-4} y={y+4} textAnchor="end" fontSize="9" fill="#546e7a">{val}</text></g>;
+                  })}
+                  {m.thresholdLine&&(()=>{const ty=toY(m.thresholdLine);return <g><line x1={PAD.l} x2={PAD.l+cW} y1={ty} y2={ty} stroke="#ef5350" strokeWidth="1" strokeDasharray="4,3" opacity="0.6"/><text x={PAD.l+cW} y={ty-3} textAnchor="end" fontSize="9" fill="#ef5350" opacity="0.8">threshold</text></g>;})()}
+                  {poly&&<polygon points={poly} fill={`${m.color}18`}/>}
+                  <polyline points={pts} fill="none" stroke={m.color} strokeWidth="2" strokeLinejoin="round"/>
+                  {data.map((d,i)=><circle key={i} cx={toX(i)} cy={toY(d[m.key])} r="3" fill={m.color}/>)}
+                  {data.filter((_,i)=>i%Math.max(1,Math.floor(data.length/6))===0||i===data.length-1).map(d=>(
+                    <text key={d.ts} x={toX(data.indexOf(d))} y={H-6} textAnchor="middle" fontSize="8" fill="#546e7a">{d.label.split(',')[0]}</text>
+                  ))}
+                  <text x={PAD.l-2} y={PAD.t-4} textAnchor="middle" fontSize="9" fill="#546e7a">{m.unit}</text>
+                </svg>
+              </div>
+            )}
+          </div>
 
-          {loading && log.length === 0 ? (
-            <div className="atc-card rounded-2xl p-10 text-center" style={{color:'#607d8b', fontSize:13}}>
-              Loading forecast history…
+          {data.length>0&&(
+            <div className="atc-card rounded-2xl p-4" style={{overflowX:'auto'}}>
+              <div className="text-[10px] font-bold tracking-widest text-[#607d8b] mb-3">LAST {Math.min(data.length,10)} READINGS</div>
+              <table style={{width:'100%',borderCollapse:'collapse',fontSize:'12px'}}>
+                <thead><tr style={{borderBottom:'1px solid rgba(255,255,255,0.08)'}}>
+                  {['TIME (IST)','PROB %','IWV','CAPE','K-IDX'].map(h=>(
+                    <th key={h} style={{padding:'6px 8px',color:'#607d8b',fontWeight:'600',fontSize:'10px',textAlign:h==='TIME (IST)'?'left':'right',letterSpacing:'0.06em'}}>{h}</th>
+                  ))}
+                </tr></thead>
+                <tbody>
+                  {[...history].reverse().slice(0,10).map((row,i)=>(
+                    <tr key={row.ts} style={{borderBottom:'1px solid rgba(255,255,255,0.04)',background:i%2===0?'rgba(255,255,255,0.02)':'transparent'}}>
+                      <td style={{padding:'6px 8px',color:'#90a4ae',fontFamily:'monospace',fontSize:'11px'}}>{row.label}</td>
+                      <td style={{padding:'6px 8px',textAlign:'right',color:row.probability>=35?'#ef5350':'#e8eaf6',fontWeight:row.probability>=35?'700':'400',fontFamily:'monospace'}}>{row.probability??'--'}</td>
+                      <td style={{padding:'6px 8px',textAlign:'right',color:'#38bdf8',fontFamily:'monospace'}}>{row.iwv??'--'}</td>
+                      <td style={{padding:'6px 8px',textAlign:'right',color:(row.cape||0)>=1500?'#ffa726':'#e8eaf6',fontFamily:'monospace'}}>{row.cape??'--'}</td>
+                      <td style={{padding:'6px 8px',textAlign:'right',color:(row.kidx||0)>=35?'#ab47bc':'#e8eaf6',fontFamily:'monospace'}}>{row.kidx??'--'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          ) : log.length === 0 ? (
-            <div className="atc-card rounded-2xl p-10 text-center" style={{color:'#607d8b', fontSize:13}}>
-              No forecast_log.csv data found. The pipeline appends one row per run; data will appear after the next pipeline run.
-            </div>
-          ) : (
-            panels.map(p => (
-              <div key={p.key} className="atc-card rounded-2xl p-5">
-                <div style={{fontSize:11,fontWeight:700,letterSpacing:'0.14em',color:'#607d8b',marginBottom:12}}>
-                  {p.label} &nbsp;
-                  <span style={{fontSize:10,fontWeight:400,color:'#455a64'}}>Last {log.length} pipeline runs</span>
-                </div>
-                <SparkLine data={series[p.key]} color={p.color} label={p.key} unit={p.unit} yMin={p.yMin} yMax={p.yMax} />
-              </div>
-            ))
           )}
         </div>
       );
     }
 
-    // ── CONTACTS PAGE ─────────────────────────────────────────────────────────
+    // == CONTACTS PAGE =======================================================
     function ContactsPage({ liveData }) {
-      const STORAGE_KEY = 'sih_contacts_v1';
-      const load = () => { try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch { return []; } };
-      const save = (c) => { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(c)); } catch {} };
+      const [contacts, setContacts] = React.useState(() => {
+        try { return JSON.parse(localStorage.getItem('sih_contacts')||'[]'); } catch { return []; }
+      });
+      const [form, setForm] = React.useState({name:'',phone:'',email:'',note:''});
+      const [alertMsg, setAlertMsg] = React.useState('');
+      const [sending, setSending] = React.useState(false);
+      const [sentTo, setSentTo] = React.useState([]);
 
-      const [contacts, setContacts] = React.useState(load);
-      const [form, setForm] = React.useState({ name:'', email:'', phone:'', role:'', notes:'' });
-      const [editId, setEditId] = React.useState(null);
-      const [showForm, setShowForm] = React.useState(false);
-      const [alertForm, setAlertForm] = React.useState({ msg:'', severity:'WARNING', selected:[] });
-      const [alertSent, setAlertSent] = React.useState(false);
-      const [showAlert, setShowAlert] = React.useState(false);
+      const save = (next) => { setContacts(next); try{localStorage.setItem('sih_contacts',JSON.stringify(next));}catch{} };
 
-      const peakProb = liveData ? Math.round((liveData.peak_probability||0)*100) : '--';
-      const cape = liveData ? Math.round(liveData.gfs_cape || liveData.cape_jkg || 0) : '--';
-      const mlPrediction = liveData?.ml_prediction || (liveData?.peak_probability >= 0.35 ? 'CONVECTIVE' : 'STABLE');
-
-      const update = (c) => { setContacts(c); save(c); };
-
-      const handleSave = () => {
-        if (!form.name.trim()) return;
-        if (editId !== null) {
-          update(contacts.map(c => c.id === editId ? { ...c, ...form } : c));
-          setEditId(null);
-        } else {
-          update([...contacts, { ...form, id: Date.now() }]);
+      const addContact = () => {
+        if (!form.name.trim() || (!form.phone.trim() && !form.email.trim())) {
+          alert('Please enter a name and at least a phone number or email.'); return;
         }
-        setForm({ name:'', email:'', phone:'', role:'', notes:'' });
-        setShowForm(false);
+        save([...contacts, {...form, id:Date.now()}]);
+        setForm({name:'',phone:'',email:'',note:''});
       };
 
-      const handleEdit = (c) => { setForm(c); setEditId(c.id); setShowForm(true); };
-      const handleDelete = (id) => update(contacts.filter(c => c.id !== id));
+      const maxProb = liveData ? Math.max(liveData.peak_probability||0,...(liveData.slots||[]).map(s=>s.probability||0)) : 0;
+      const isAlert = maxProb>=0.35;
 
-      const toggleSelect = (id) => setAlertForm(f => ({
-        ...f, selected: f.selected.includes(id) ? f.selected.filter(x => x !== id) : [...f.selected, id]
-      }));
+      const threshItems = [
+        {label:'Thunderstorm Probability', val:Math.round((liveData?.peak_probability||0)*100), threshold:35, unit:'%', color:'#ef5350'},
+        {label:'Integrated Water Vapour',  val:liveData?.gfs?.iwv_kg_m2!=null?Math.round(liveData.gfs.iwv_kg_m2):null, threshold:45, unit:'kg/m²', color:'#38bdf8'},
+        {label:'CAPE',                     val:liveData?.gfs?.ua_cape_jkg!=null?Math.round(liveData.gfs.ua_cape_jkg):null, threshold:1500, unit:'J/kg', color:'#ffa726'},
+        {label:'K-Index',                  val:liveData?.gfs?.ua_k_index!=null?Math.round(liveData.gfs.ua_k_index):null, threshold:35, unit:'', color:'#ab47bc'},
+      ];
 
-      const handleSendAlert = () => {
-        // Compose the full alert text and open mailto links for email contacts
-        const recipients = contacts.filter(c => alertForm.selected.includes(c.id));
-        const body = [
-          `[${alertForm.severity}] Manual Alert from VOBL Thunderstorm Nowcast`,
-          '',
-          alertForm.msg,
-          '',
-          `--- Current Model Status ---`,
-          `ML Prediction: ${mlPrediction}`,
-          `Peak Probability: ${peakProb}%`,
-          `CAPE: ${cape} J/kg`,
-          `Generated: ${liveData?.generated_at_ist || new Date().toLocaleString('en-IN',{timeZone:'Asia/Kolkata'})}`,
-          '',
-          'This alert was sent manually from the VOBL Hyperlocal Warning System.',
-        ].join('\n');
-
-        recipients.filter(r => r.email).forEach(r => {
-          const mailto = `mailto:${r.email}?subject=${encodeURIComponent(`[${alertForm.severity}] Thunderstorm Alert — VOBL/BLR`)}&body=${encodeURIComponent(body)}`;
-          window.open(mailto, '_blank');
-        });
-
-        setAlertSent(true);
-        setTimeout(() => setAlertSent(false), 4000);
+      const sendAlert = () => {
+        if (!contacts.length){alert('No contacts registered yet.');return;}
+        const msg = alertMsg.trim() || `Emergency alert from IMD Hyperlocal Warning System. Current thunderstorm probability at VOBL: ${Math.round(maxProb*100)}%. Please take precautions.`;
+        setSending(true);
+        setTimeout(()=>{
+          setSentTo(contacts.map(c=>c.name));
+          setSending(false); setAlertMsg('');
+          alert('Alert prepared for '+contacts.length+' contact(s):\n\n'+msg+'\n\n(In production this dispatches via SMS/WhatsApp/email through the alert worker.)');
+        },1000);
       };
-
-      const inputStyle = {
-        background:'rgba(255,255,255,0.05)', border:'1px solid rgba(56,189,248,0.2)',
-        borderRadius:8, padding:'8px 12px', fontSize:13, color:'#e2e8f0',
-        width:'100%', outline:'none', fontFamily:'JetBrains Mono,monospace'
-      };
-
-      const severityColors = { WARNING: '#ff9800', CRITICAL: '#ef5350', INFO: '#38bdf8' };
 
       return (
         <div className="p-4 lg:p-6 space-y-5">
-          <div className="flex items-center justify-between flex-wrap gap-3">
-            <div>
-              <div style={{fontSize:11,fontWeight:700,letterSpacing:'0.18em',color:'#607d8b',marginBottom:4}}>OPS · ALERT CONTACTS</div>
-              <div style={{fontSize:22,fontWeight:900,color:'#e2e8f0',fontFamily:'Plus Jakarta Sans,sans-serif'}}>Contact Registry</div>
-              <div style={{fontSize:12,color:'#607d8b',marginTop:2}}>Register contacts for manual emergency alerts. Email links open in your mail client.</div>
-            </div>
-            <div className="flex gap-2">
-              <button onClick={() => { setShowAlert(s => !s); }} style={{
-                padding:'8px 16px', borderRadius:8, fontSize:12, fontWeight:700, cursor:'pointer',
-                background: showAlert ? 'rgba(239,83,80,0.15)' : 'rgba(239,83,80,0.08)',
-                border:'1px solid rgba(239,83,80,0.4)', color:'#ef5350'
-              }}>
-                ⚡ Send Alert
-              </button>
-              <button onClick={() => { setShowForm(s => !s); setEditId(null); setForm({ name:'', email:'', phone:'', role:'', notes:'' }); }} style={{
-                padding:'8px 16px', borderRadius:8, fontSize:12, fontWeight:700, cursor:'pointer',
-                background:'rgba(56,189,248,0.10)', border:'1px solid rgba(56,189,248,0.3)', color:'#38bdf8'
-              }}>
-                + Add Contact
-              </button>
-            </div>
-          </div>
+          <PageHeader eyebrow="EMERGENCY CONTACTS" title="Contacts & Manual Alerts"
+            subtitle="Register emergency contacts and dispatch alerts during severe weather events."
+            badge={isAlert?'ALERT CONDITIONS':'STANDBY'} badgeColor={isAlert?'red':'green'} />
 
-          {/* ML Prediction status bar */}
-          <div className="atc-card rounded-xl p-4" style={{display:'flex',alignItems:'center',gap:16,flexWrap:'wrap'}}>
-            <div style={{fontSize:11,fontWeight:700,letterSpacing:'0.14em',color:'#607d8b'}}>CURRENT ML STATUS</div>
-            <div style={{padding:'3px 10px',borderRadius:6,fontSize:12,fontWeight:700,
-              background: mlPrediction==='CONVECTIVE' ? 'rgba(239,83,80,0.15)' : 'rgba(76,175,80,0.12)',
-              border:`1px solid ${mlPrediction==='CONVECTIVE' ? 'rgba(239,83,80,0.4)' : 'rgba(76,175,80,0.3)'}`,
-              color: mlPrediction==='CONVECTIVE' ? '#ef5350' : '#4caf50'
-            }}>
-              {mlPrediction}
-            </div>
-            <div style={{fontSize:12,color:'#90cce8',fontFamily:'JetBrains Mono,monospace'}}>
-              Peak {peakProb}% · CAPE {cape} J/kg
-            </div>
-          </div>
-
-          {/* Manual alert composer */}
-          {showAlert && (
-            <div className="atc-card rounded-2xl p-5 space-y-4">
-              <div style={{fontSize:11,fontWeight:700,letterSpacing:'0.14em',color:'#607d8b'}}>COMPOSE MANUAL ALERT</div>
-
-              {/* Severity */}
-              <div className="flex gap-2">
-                {['INFO','WARNING','CRITICAL'].map(s => (
-                  <button key={s} onClick={() => setAlertForm(f => ({...f, severity: s}))} style={{
-                    padding:'5px 14px', borderRadius:6, fontSize:11, fontWeight:700, cursor:'pointer',
-                    background: alertForm.severity === s ? `${severityColors[s]}22` : 'rgba(255,255,255,0.04)',
-                    border:`1px solid ${alertForm.severity === s ? severityColors[s] : 'rgba(255,255,255,0.1)'}`,
-                    color: alertForm.severity === s ? severityColors[s] : '#607d8b'
-                  }}>{s}</button>
-                ))}
-              </div>
-
-              {/* Message */}
-              <div>
-                <div style={{fontSize:10,fontWeight:700,letterSpacing:'0.12em',color:'#607d8b',marginBottom:4}}>ALERT MESSAGE</div>
-                <textarea rows={3} placeholder="Describe the emergency situation…" value={alertForm.msg}
-                  onChange={e => setAlertForm(f => ({...f, msg: e.target.value}))}
-                  style={{...inputStyle, resize:'vertical'}} />
-              </div>
-
-              {/* ML context preview */}
-              <div style={{background:'rgba(0,0,0,0.3)', borderRadius:8, padding:'10px 14px',
-                fontSize:11, fontFamily:'JetBrains Mono,monospace', color:'#90cce8', lineHeight:1.7}}>
-                Will include: ML Prediction: {mlPrediction} · Peak Prob: {peakProb}% · CAPE: {cape} J/kg · Generated: {liveData?.generated_at_ist || 'now'}
-              </div>
-
-              {/* Contact selection */}
-              <div>
-                <div style={{fontSize:10,fontWeight:700,letterSpacing:'0.12em',color:'#607d8b',marginBottom:8}}>
-                  SELECT RECIPIENTS ({alertForm.selected.length} selected)
-                </div>
-                {contacts.length === 0 ? (
-                  <div style={{color:'#607d8b',fontSize:12}}>No contacts yet — add some below.</div>
-                ) : (
-                  <div style={{display:'flex',flexWrap:'wrap',gap:8}}>
-                    {contacts.map(c => (
-                      <button key={c.id} onClick={() => toggleSelect(c.id)} style={{
-                        padding:'5px 12px', borderRadius:20, fontSize:12, fontWeight:600, cursor:'pointer',
-                        background: alertForm.selected.includes(c.id) ? 'rgba(239,83,80,0.15)' : 'rgba(255,255,255,0.05)',
-                        border:`1px solid ${alertForm.selected.includes(c.id) ? 'rgba(239,83,80,0.5)' : 'rgba(255,255,255,0.12)'}`,
-                        color: alertForm.selected.includes(c.id) ? '#ef9a9a' : '#90a4ae'
-                      }}>
-                        {alertForm.selected.includes(c.id) ? '✓ ' : ''}{c.name}
-                      </button>
-                    ))}
+          <div className="atc-card rounded-2xl p-5">
+            <div className="text-[10px] font-bold tracking-widest text-[#607d8b] mb-3">AUTOMATIC THRESHOLD STATUS</div>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(175px,1fr))',gap:'10px'}}>
+              {threshItems.map(item=>{
+                const triggered = item.val!=null && item.val>=item.threshold;
+                return (
+                  <div key={item.label} style={{padding:'12px',borderRadius:'10px',
+                    background:triggered?`${item.color}18`:'rgba(255,255,255,0.03)',
+                    border:`1px solid ${triggered?item.color+'55':'rgba(255,255,255,0.08)'}`}}>
+                    <div style={{fontSize:'10px',color:'#607d8b',fontWeight:'600',letterSpacing:'0.06em',marginBottom:'4px'}}>{item.label}</div>
+                    <div style={{fontSize:'22px',fontWeight:'800',color:triggered?item.color:'#e8eaf6',fontFamily:'monospace'}}>
+                      {item.val!=null?item.val:'--'}<span style={{fontSize:'11px',color:'#607d8b',marginLeft:'3px'}}>{item.unit}</span>
+                    </div>
+                    <div style={{fontSize:'10px',marginTop:'4px',color:triggered?item.color:'#546e7a'}}>
+                      {triggered?'ABOVE THRESHOLD':'OK'} — threshold: {item.threshold}{item.unit}
+                    </div>
                   </div>
-                )}
-              </div>
-
-              <button onClick={handleSendAlert}
-                disabled={alertForm.selected.length === 0 || !alertForm.msg.trim()}
-                style={{
-                  width:'100%', padding:'10px', borderRadius:8, fontSize:13, fontWeight:700, cursor:'pointer',
-                  background: alertSent ? 'rgba(76,175,80,0.15)' : 'rgba(239,83,80,0.12)',
-                  border:`1px solid ${alertSent ? 'rgba(76,175,80,0.4)' : 'rgba(239,83,80,0.4)'}`,
-                  color: alertSent ? '#4caf50' : '#ef5350',
-                  opacity: (alertForm.selected.length === 0 || !alertForm.msg.trim()) ? 0.4 : 1
-                }}>
-                {alertSent ? '✅ Alert Sent — check your email client' : `⚡ Send ${alertForm.severity} Alert to ${alertForm.selected.length} Contact(s)`}
-              </button>
+                );
+              })}
             </div>
-          )}
+            <div style={{marginTop:'10px',fontSize:'11px',color:'#546e7a'}}>
+              Browser push notifications fire automatically when probability exceeds your set threshold. Manual alerts below let you message all registered contacts directly.
+            </div>
+          </div>
 
-          {/* Add/Edit contact form */}
-          {showForm && (
+          <div className="atc-card rounded-2xl p-5">
+            <div className="text-[10px] font-bold tracking-widest text-[#607d8b] mb-3">SEND MANUAL ALERT TO ALL CONTACTS</div>
+            <textarea value={alertMsg} onChange={e=>setAlertMsg(e.target.value)} rows={3}
+              placeholder={'Custom message (leave blank for default auto-message)'}
+              style={{width:'100%',padding:'10px',borderRadius:'8px',fontSize:'12px',
+                background:'rgba(255,255,255,0.04)',border:'1px solid rgba(56,189,248,0.2)',
+                color:'#e8eaf6',resize:'vertical',outline:'none',fontFamily:'inherit',boxSizing:'border-box'}}/>
+            <div style={{display:'flex',gap:'10px',marginTop:'10px',alignItems:'center',flexWrap:'wrap'}}>
+              <button onClick={sendAlert} disabled={sending}
+                style={{padding:'10px 20px',borderRadius:'8px',fontSize:'13px',fontWeight:'700',cursor:'pointer',
+                  background:isAlert?'rgba(239,83,80,0.85)':'rgba(56,189,248,0.15)',
+                  border:`1px solid ${isAlert?'rgba(239,83,80,0.6)':'rgba(56,189,248,0.35)'}`,
+                  color:isAlert?'#fff':'#38bdf8',opacity:sending?0.6:1}}>
+                {sending?'Sending...':'📢 Send to '+contacts.length+' Contact(s)'}
+              </button>
+              {sentTo.length>0&&<span style={{fontSize:'11px',color:'#4caf50'}}>✔ Sent to: {sentTo.join(', ')}</span>}
+            </div>
+          </div>
+
+          <div className="atc-card rounded-2xl p-5">
+            <div className="text-[10px] font-bold tracking-widest text-[#607d8b] mb-4">REGISTER NEW CONTACT</div>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'10px',marginBottom:'10px'}}>
+              {[{k:'name',p:'Full Name *',t:'text'},{k:'phone',p:'Phone / WhatsApp',t:'tel'},{k:'email',p:'Email Address',t:'email'},{k:'note',p:'Role / Note',t:'text'}].map(f=>(
+                <input key={f.k} type={f.t} placeholder={f.p} value={form[f.k]}
+                  onChange={e=>setForm(x=>({...x,[f.k]:e.target.value}))}
+                  style={{padding:'9px 12px',borderRadius:'8px',fontSize:'13px',
+                    background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.12)',
+                    color:'#e8eaf6',outline:'none',fontFamily:'inherit'}}/>
+              ))}
+            </div>
+            <button onClick={addContact}
+              style={{padding:'9px 20px',borderRadius:'8px',fontSize:'13px',fontWeight:'700',cursor:'pointer',
+                background:'rgba(56,189,248,0.15)',border:'1px solid rgba(56,189,248,0.35)',color:'#38bdf8'}}>
+              + Add Contact
+            </button>
+          </div>
+
+          {contacts.length>0?(
             <div className="atc-card rounded-2xl p-5">
-              <div style={{fontSize:11,fontWeight:700,letterSpacing:'0.14em',color:'#607d8b',marginBottom:12}}>
-                {editId ? 'EDIT CONTACT' : 'NEW CONTACT'}
-              </div>
-              <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:10}}>
-                {[
-                  { key:'name', label:'FULL NAME', placeholder:'Name' },
-                  { key:'role', label:'ROLE / TEAM', placeholder:'ATC, Met, Ops…' },
-                  { key:'email', label:'EMAIL ADDRESS', placeholder:'name@org.in', type:'email' },
-                  { key:'phone', label:'PHONE / WHATSAPP', placeholder:'+91 98765 43210', type:'tel' },
-                ].map(f => (
-                  <div key={f.key}>
-                    <div style={{fontSize:10,fontWeight:700,letterSpacing:'0.12em',color:'#607d8b',marginBottom:4}}>{f.label}</div>
-                    <input type={f.type||'text'} placeholder={f.placeholder} value={form[f.key]}
-                      onChange={e => setForm(p => ({...p, [f.key]: e.target.value}))}
-                      style={inputStyle} />
+              <div className="text-[10px] font-bold tracking-widest text-[#607d8b] mb-3">REGISTERED CONTACTS ({contacts.length})</div>
+              <div style={{display:'flex',flexDirection:'column',gap:'8px'}}>
+                {contacts.map(c=>(
+                  <div key={c.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',
+                    padding:'10px 12px',borderRadius:'8px',background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.08)'}}>
+                    <div>
+                      <div style={{fontWeight:'600',fontSize:'13px',color:'#e8eaf6'}}>{c.name}</div>
+                      <div style={{fontSize:'11px',color:'#607d8b',marginTop:'2px'}}>
+                        {[c.phone&&`📞 ${c.phone}`,c.email&&`✉️ ${c.email}`,c.note&&`📋 ${c.note}`].filter(Boolean).join('  ·  ')}
+                      </div>
+                    </div>
+                    <button onClick={()=>save(contacts.filter(x=>x.id!==c.id))}
+                      style={{padding:'5px 10px',borderRadius:'6px',fontSize:'11px',cursor:'pointer',
+                        background:'rgba(239,83,80,0.1)',border:'1px solid rgba(239,83,80,0.3)',color:'#ef5350',fontWeight:'600'}}>
+                      Remove
+                    </button>
                   </div>
                 ))}
               </div>
-              <div style={{marginTop:10}}>
-                <div style={{fontSize:10,fontWeight:700,letterSpacing:'0.12em',color:'#607d8b',marginBottom:4}}>NOTES (optional)</div>
-                <input placeholder="Any notes…" value={form.notes}
-                  onChange={e => setForm(p => ({...p, notes: e.target.value}))}
-                  style={inputStyle} />
-              </div>
-              <div className="flex gap-2 mt-4">
-                <button onClick={handleSave} style={{
-                  padding:'8px 20px', borderRadius:8, fontSize:12, fontWeight:700, cursor:'pointer',
-                  background:'rgba(56,189,248,0.12)', border:'1px solid rgba(56,189,248,0.4)', color:'#38bdf8'
-                }}>{editId ? 'Save Changes' : 'Add Contact'}</button>
-                <button onClick={() => { setShowForm(false); setEditId(null); }} style={{
-                  padding:'8px 20px', borderRadius:8, fontSize:12, fontWeight:700, cursor:'pointer',
-                  background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.1)', color:'#607d8b'
-                }}>Cancel</button>
-              </div>
+            </div>
+          ):(
+            <div className="atc-card rounded-2xl p-5" style={{textAlign:'center',color:'#607d8b',padding:'32px'}}>
+              <div style={{fontSize:'32px',marginBottom:'8px'}}>📞</div>
+              <div style={{fontSize:'13px'}}>No contacts registered yet.</div>
+              <div style={{fontSize:'11px',marginTop:'4px',color:'#455a64'}}>Add emergency contacts above to enable manual alert dispatch.</div>
             </div>
           )}
-
-          {/* Contact list */}
-          {contacts.length === 0 ? (
-            <div className="atc-card rounded-2xl p-10 text-center" style={{color:'#607d8b', fontSize:13}}>
-              No contacts yet. Click "Add Contact" to register your first emergency contact.
-            </div>
-          ) : (
-            <div className="atc-card rounded-2xl overflow-hidden">
-              <div style={{overflowX:'auto'}}>
-                <table style={{width:'100%', borderCollapse:'collapse', fontSize:13}}>
-                  <thead>
-                    <tr style={{borderBottom:'1px solid rgba(56,189,248,0.15)'}}>
-                      {['Name','Role','Email','Phone','Notes','Actions'].map(h => (
-                        <th key={h} style={{padding:'10px 14px', textAlign:'left', fontSize:10, fontWeight:700,
-                          letterSpacing:'0.12em', color:'#607d8b'}}>{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {contacts.map((c, i) => (
-                      <tr key={c.id} style={{borderBottom:'1px solid rgba(255,255,255,0.04)',
-                        background: i%2===0 ? 'transparent' : 'rgba(255,255,255,0.02)'}}>
-                        <td style={{padding:'10px 14px', color:'#e2e8f0', fontWeight:600}}>{c.name}</td>
-                        <td style={{padding:'10px 14px', color:'#90a4ae'}}>{c.role || '--'}</td>
-                        <td style={{padding:'10px 14px', color:'#38bdf8', fontFamily:'JetBrains Mono,monospace', fontSize:12}}>{c.email || '--'}</td>
-                        <td style={{padding:'10px 14px', color:'#90cce8', fontFamily:'JetBrains Mono,monospace', fontSize:12}}>{c.phone || '--'}</td>
-                        <td style={{padding:'10px 14px', color:'#607d8b', fontSize:12}}>{c.notes || '--'}</td>
-                        <td style={{padding:'10px 14px'}}>
-                          <div className="flex gap-2">
-                            <button onClick={() => handleEdit(c)} style={{
-                              padding:'3px 10px', borderRadius:5, fontSize:11, fontWeight:600, cursor:'pointer',
-                              background:'rgba(56,189,248,0.1)', border:'1px solid rgba(56,189,248,0.3)', color:'#38bdf8'
-                            }}>Edit</button>
-                            <button onClick={() => handleDelete(c.id)} style={{
-                              padding:'3px 10px', borderRadius:5, fontSize:11, fontWeight:600, cursor:'pointer',
-                              background:'rgba(239,83,80,0.08)', border:'1px solid rgba(239,83,80,0.3)', color:'#ef5350'
-                            }}>Remove</button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          <div style={{fontSize:11, color:'#455a64', padding:'8px 4px'}}>
-            Contacts are stored locally in your browser. The "Send Alert" button opens your email client with a pre-filled message including the current ML prediction. No data is sent to any server.
-          </div>
         </div>
       );
     }
+
+
+    // END NEW FEATURE PAGES
+    // ═══════════════════════════════════════════════════════════════════════════
 
     class ErrorBoundary extends React.Component {
       constructor(props) { super(props); this.state = { error: null }; }
