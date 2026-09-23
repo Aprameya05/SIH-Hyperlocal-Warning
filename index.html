@@ -2897,13 +2897,13 @@ function injectDrainageOverlay(map, liveData) {
             <div style={{ background: 'rgba(5,8,18,0.92)', backdropFilter: 'blur(16px)', border: `1px solid ${alertActive ? 'rgba(239,83,80,0.55)' : 'rgba(56,189,248,0.18)'}`, borderLeft: `4px solid ${riskColor}`, borderRadius: 12, padding: '10px 12px', boxShadow: `0 0 28px ${riskColor}22, inset 0 0 40px rgba(0,0,0,0.4)` }}>
               {/* Header row */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, paddingBottom: 6, borderBottom: '1px solid rgba(56,189,248,0.1)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
                   <div style={{ width: 3, height: 12, borderRadius: 2, background: riskColor, boxShadow: `0 0 6px ${riskColor}` }} />
                   <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: 3, color: '#6899b8', fontFamily: 'monospace' }}>PEAK PROBABILITY</span>
                 </div>
                 <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.5, color: '#2a4a5e', fontFamily: 'monospace', border: '1px solid rgba(56,189,248,0.15)', borderRadius: 4, padding: '1px 5px' }}>VOBL</div>
               </div>
-              {/* Big value + arc indicator */}
+              {/* Big value */}
               <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 6 }}>
                 <div>
                   <div style={{ fontSize: 46, fontWeight: 900, fontFamily: 'monospace', color: riskColor, lineHeight: 1, textShadow: `0 0 30px ${riskColor}88` }}>
@@ -2912,18 +2912,6 @@ function injectDrainageOverlay(map, liveData) {
                   <div style={{ marginTop: 6, display: 'flex', alignItems: 'center', gap: 5 }}>
                     <div style={{ width: 7, height: 7, borderRadius: '50%', background: riskColor, boxShadow: `0 0 8px ${riskColor}`, animation: alertActive ? 'pulse 1.5s infinite' : 'none' }} />
                     <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: 2.5, color: riskColor, fontFamily: 'monospace' }}>{riskLabel} RISK</span>
-                  </div>
-                </div>
-                {/* Circular gauge */}
-                <div style={{ position: 'relative', width: 48, height: 48, flexShrink: 0, marginBottom: 4 }}>
-                  <svg width="48" height="48" viewBox="0 0 48 48" style={{ transform: 'rotate(-90deg)' }}>
-                    <circle cx="24" cy="24" r="19" fill="none" stroke="rgba(56,189,248,0.08)" strokeWidth="4"/>
-                    <circle cx="24" cy="24" r="19" fill="none" stroke={riskColor} strokeWidth="4"
-                      strokeDasharray={`${119.38 * Math.min(peakProb,1)} 119.38`}
-                      strokeLinecap="round" style={{ transition: 'stroke-dasharray 1s ease', filter: `drop-shadow(0 0 4px ${riskColor})` }}/>
-                  </svg>
-                  <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 800, color: riskColor, fontFamily: 'monospace' }}>
-                    {(peakProb * 100).toFixed(0)}
                   </div>
                 </div>
               </div>
@@ -2936,7 +2924,7 @@ function injectDrainageOverlay(map, liveData) {
             {/* GFS Stability */}
             <div style={{ background: 'rgba(5,8,18,0.92)', backdropFilter: 'blur(16px)', border: '1px solid rgba(56,189,248,0.1)', borderLeft: '4px solid rgba(56,189,248,0.5)', borderRadius: 12, padding: '8px 10px' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, paddingBottom: 5, borderBottom: '1px solid rgba(56,189,248,0.08)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
                   <div style={{ width: 3, height: 10, borderRadius: 2, background: 'rgba(56,189,248,0.7)' }} />
                   <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: 3, color: '#6899b8', fontFamily: 'monospace' }}>GFS STABILITY</span>
                 </div>
@@ -2972,7 +2960,7 @@ function injectDrainageOverlay(map, liveData) {
               return (
                 <div style={{ background: 'rgba(5,8,18,0.92)', backdropFilter: 'blur(16px)', border: `1px solid ${catColor}22`, borderLeft: `4px solid ${catColor}`, borderRadius: 12, padding: '10px 12px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 7, paddingBottom: 5, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
                       <div style={{ width: 3, height: 10, borderRadius: 2, background: catColor }} />
                       <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: 2.5, color: '#6899b8', fontFamily: 'monospace' }}>IWV MOISTURE</span>
                     </div>
@@ -3006,7 +2994,7 @@ function injectDrainageOverlay(map, liveData) {
             {sat.available && (
               <div style={{ background: 'rgba(5,8,18,0.92)', backdropFilter: 'blur(16px)', border: '1px solid rgba(126,87,194,0.15)', borderLeft: '4px solid rgba(126,87,194,0.7)', borderRadius: 12, padding: '10px 12px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, paddingBottom: 5, borderBottom: '1px solid rgba(126,87,194,0.1)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
                     <div style={{ width: 3, height: 10, borderRadius: 2, background: 'rgba(126,87,194,0.9)' }} />
                     <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: 2.5, color: '#6899b8', fontFamily: 'monospace' }}>HIMAWARI-9 IR</span>
                   </div>
@@ -3108,7 +3096,7 @@ function injectDrainageOverlay(map, liveData) {
           </div>
 
           {/* ── HEATMAP LEGEND -- anchored above the right map-control column ── */}
-          <div style={{ position: 'absolute', bottom: 230, right: 320, zIndex: 20, display: isMobile ? 'none' : undefined, background: 'rgba(4,7,17,0.88)', backdropFilter: 'blur(12px)', border: '1px solid rgba(56,189,248,0.12)', borderRadius: 8, padding: '5px 8px', width: 118 }}>
+          <div style={{ position: 'absolute', bottom: 185, right: 100, zIndex: 20, display: isMobile ? 'none' : undefined, background: 'rgba(4,7,17,0.88)', backdropFilter: 'blur(12px)', border: '1px solid rgba(56,189,248,0.12)', borderRadius: 8, padding: '5px 8px', width: 118 }}>
             <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 1.5, color: '#6899b8', fontFamily: 'monospace', marginBottom: 4, whiteSpace: 'nowrap' }}>
               {(panLayer === 'thunderstorm' ? 'TS' : panLayer === 'cloudburst' ? 'CB' : 'FF')} HEATMAP
             </div>
