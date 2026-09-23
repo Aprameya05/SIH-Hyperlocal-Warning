@@ -2177,8 +2177,16 @@ function injectDrainageOverlay(map, liveData) {
               return Math.max(0, Math.min(1, (val - st.min) / (st.max - st.min)));
             };
             const ts = norm(cell.thunderstorm_probability ?? 0, 'thunderstorm_probability');
-            const cb = norm(cell.cloudburst_probability ?? 0, 'cloudburst_probability');
-            const ff = norm(cell.flash_flood_probability ?? 0, 'flash_flood_probability');
+            // CB/FF per-cell probabilities are not in the grid — use peak slot values from forecast.json
+            const _slotsLive = (liveData && Array.isArray(liveData.slots)) ? liveData.slots : [];
+            const _peakCbRaw = _slotsLive.length > 0 ? Math.max(..._slotsLive.map(s => s.cb_probability ?? 0)) : 0;
+            const _peakFfRaw = _slotsLive.length > 0 ? Math.max(..._slotsLive.map(s => s.ff_probability ?? 0)) : 0;
+            const cb = cell.cloudburst_probability != null && cell.cloudburst_probability > 0
+              ? norm(cell.cloudburst_probability, 'cloudburst_probability')
+              : _peakCbRaw;
+            const ff = cell.flash_flood_probability != null && cell.flash_flood_probability > 0
+              ? norm(cell.flash_flood_probability, 'flash_flood_probability')
+              : _peakFfRaw;
             const cape = cell.totals_totals != null ? cell.totals_totals.toFixed(1) : '—';
             const ki = cell.k_index != null ? cell.k_index.toFixed(1) : '—';
             const li = cell.wind_shear_ms != null ? cell.wind_shear_ms.toFixed(1) + ' m/s' : '—';
@@ -2901,13 +2909,13 @@ function injectDrainageOverlay(map, liveData) {
           )}
 
           {/* ── LEFT PANEL ── */}
-          <div style={{ position: 'absolute', top: 50, left: 12, bottom: 155, width: 218, display: isMobile ? 'none' : 'flex', flexDirection: 'column', gap: 7, zIndex: 10, overflowY: 'auto' }}>
+          <div style={{ position: 'absolute', top: 50, left: 12, bottom: 155, width: 194, display: isMobile ? 'none' : 'flex', flexDirection: 'column', gap: 5, zIndex: 10, overflowY: 'auto' }}>
 
             {/* Peak Prob */}
-            <div style={{ background: 'rgba(5,8,18,0.9)', backdropFilter: 'blur(16px)', border: `1px solid ${alertActive ? 'rgba(239,83,80,0.55)' : 'rgba(56,189,248,0.22)'}`, borderRadius: 15, padding: '15px 16px', boxShadow: alertActive ? '0 0 32px rgba(239,83,80,0.15)' : '0 0 20px rgba(56,189,248,0.06)' }}>
+            <div style={{ background: 'rgba(5,8,18,0.9)', backdropFilter: 'blur(16px)', border: `1px solid ${alertActive ? 'rgba(239,83,80,0.55)' : 'rgba(56,189,248,0.22)'}`, borderRadius: 12, padding: '10px 12px', boxShadow: alertActive ? '0 0 32px rgba(239,83,80,0.15)' : '0 0 20px rgba(56,189,248,0.06)' }}>
               <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 3.5, color: '#a8c8dc', fontFamily: 'monospace', marginBottom: 10 }}>PEAK PROBABILITY</div>
               <div style={{ fontSize: 52, fontWeight: 900, fontFamily: 'monospace', color: riskColor, lineHeight: 1, textShadow: `0 0 40px ${riskColor}55` }}>
-                {(peakProb * 100).toFixed(0)}<span style={{ fontSize: 22, opacity: 0.75 }}>%</span>
+                {(peakProb * 100).toFixed(0)}<span style={{ fontSize: 16, opacity: 0.75 }}>%</span>
               </div>
               <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 7 }}>
                 <div style={{ width: 8, height: 8, borderRadius: '50%', background: riskColor, boxShadow: `0 0 10px ${riskColor}` }} />
@@ -2919,7 +2927,7 @@ function injectDrainageOverlay(map, liveData) {
             </div>
 
             {/* GFS Stability */}
-            <div style={{ background: 'rgba(5,8,18,0.9)', backdropFilter: 'blur(16px)', border: '1px solid rgba(56,189,248,0.12)', borderRadius: 15, padding: '12px 14px' }}>
+            <div style={{ background: 'rgba(5,8,18,0.9)', backdropFilter: 'blur(16px)', border: '1px solid rgba(56,189,248,0.12)', borderRadius: 12, padding: '8px 10px' }}>
               <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 3.5, color: '#a8c8dc', fontFamily: 'monospace', marginBottom: 10 }}>GFS STABILITY</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
                 {[
@@ -2929,7 +2937,7 @@ function injectDrainageOverlay(map, liveData) {
                   { k: 'TT', sub: 'Totals-totals', v: gfs.ua_totals_totals != null ? gfs.ua_totals_totals.toFixed(1) : '—', u: '', hi: (gfs.ua_totals_totals || 0) > 50 },
                   { k: 'IWV', sub: 'Moisture column', v: gfs.iwv_mm != null ? gfs.iwv_mm.toFixed(1) : '—', u: 'mm', hi: (gfs.iwv_mm || 0) > 50 },
                 ].map(r => (
-                  <div key={r.k} style={{ background: 'rgba(0,0,0,0.35)', borderRadius: 9, padding: '7px 9px', border: r.hi ? '1px solid rgba(255,152,0,0.3)' : '1px solid transparent' }}>
+                  <div key={r.k} style={{ background: 'rgba(0,0,0,0.35)', borderRadius: 9, padding: '5px 7px', border: r.hi ? '1px solid rgba(255,152,0,0.3)' : '1px solid transparent' }}>
                     <div style={{ fontSize: 12, color: '#a8c8dc', fontFamily: 'monospace', marginBottom: 1 }}>{r.k}</div>
                     <div style={{ fontSize: 13, color: '#88b4c8', fontFamily: 'monospace', marginBottom: 3, lineHeight: 1.2 }}>{r.sub}</div>
                     <div style={{ fontSize: 12, fontWeight: 800, color: r.hi ? '#ff9800' : '#c0d4de', fontFamily: 'monospace' }}>{r.v}<span style={{ fontSize: 12, opacity: 0.6 }}>{r.u}</span></div>
