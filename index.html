@@ -1888,7 +1888,7 @@ function injectDrainageOverlay(map, liveData) {
               const scrollNav = () => { if (navScrollRef.current) navScrollRef.current.scrollBy({ left: 160, behavior: 'smooth' }); };
               return (
                 <>
-                <div className="hidden lg:flex items-center" style={{minWidth:0,flexShrink:1,position:'relative'}}>
+                <div className="hidden lg:flex items-center" style={{minWidth:0,flex:1,position:'relative'}}>
                 <nav ref={navScrollRef} className="flex items-center gap-3 font-mono text-[12px] font-bold"
                   style={{
                     background:'rgba(4,8,18,0.65)',
@@ -1930,13 +1930,9 @@ function injectDrainageOverlay(map, liveData) {
               );
             })()}
 
-            {/* Right: hazard switcher (desktop) + stacked right column + hamburger */}
+            {/* Right block — two tidy rows on desktop */}
             <div className="flex items-center gap-2 font-mono" style={{flexShrink:0}}>
-              {/* Hazard switcher alone */}
-              <div className="hidden lg:block">
-                <HazardSwitcher selected={selectedHazard} onChange={onHazardChange} />
-              </div>
-              {/* Mobile lang + theme */}
+              {/* Mobile: lang + theme only */}
               <div className="flex lg:hidden items-center gap-1">
                 <LanguageSwitcher />
                 <button id="theme-toggle-btn" title="Toggle light / dark mode"
@@ -1945,43 +1941,45 @@ function injectDrainageOverlay(map, liveData) {
                   <span className="theme-icon">☀️</span>
                 </button>
               </div>
-              {/* Desktop stacked right column: time → EN+☀️ → copy/download → skill */}
-              <div className="hidden lg:flex flex-col gap-0.5 items-end" style={{flexShrink:0}}>
-                {/* Row 1: EN + light mode icon */}
-                <div className="flex items-center gap-1">
+              {/* Desktop: two-row compact block */}
+              <div className="hidden lg:flex flex-col gap-1 items-end" style={{flexShrink:0}}>
+                {/* Row 1: HAZARD · EN · ☀️ · ● TIME */}
+                <div className="flex items-center gap-2">
+                  <HazardSwitcher selected={selectedHazard} onChange={onHazardChange} />
+                  <div style={{width:1,height:16,background:'rgba(56,189,248,0.15)'}} />
                   <LanguageSwitcher />
                   <button id="theme-toggle-btn" title="Toggle light / dark mode"
                     onClick={() => { const isLight = document.body.classList.toggle('light-mode'); try { localStorage.setItem('csir_theme', isLight ? 'light' : 'dark'); } catch {} }}
                     style={{padding:'3px 7px',borderRadius:'7px',background:'rgba(8,13,26,0.8)',border:'1px solid rgba(56,189,248,0.25)',color:'#38bdf8',fontSize:14,cursor:'pointer',lineHeight:1,transition:'all 0.2s'}}>
                     <span className="theme-icon">☀️</span>
                   </button>
+                  <div style={{width:1,height:16,background:'rgba(56,189,248,0.15)'}} />
+                  <div className="flex items-center gap-1.5"
+                    style={{padding:'3px 8px',borderRadius:'8px',background:'rgba(4,8,18,0.7)',border:'1px solid rgba(56,189,248,0.15)',whiteSpace:'nowrap'}}>
+                    <span style={{width:7,height:7,borderRadius:'50%',background:'#4caf50',display:'inline-block',boxShadow:'0 0 8px #4caf50'}} />
+                    <span className="text-xs font-extrabold text-white" style={{letterSpacing:'0.08em',whiteSpace:'nowrap'}}>{liveTime}</span>
+                  </div>
                 </div>
-                {/* Row 2: live dot + time */}
-                <div className="flex items-center gap-1.5"
-                  style={{padding:'3px 8px',borderRadius:'8px',background:'rgba(4,8,18,0.7)',border:'1px solid rgba(56,189,248,0.15)',whiteSpace:'nowrap'}}>
-                  <span style={{width:8,height:8,borderRadius:'50%',background:'#4caf50',display:'inline-block',flexShrink:0,boxShadow:'0 0 8px #4caf50, 0 0 2px #4caf50'}} />
-                  <span className="text-xs font-extrabold text-white tracking-widest" style={{whiteSpace:'nowrap',lineHeight:1,letterSpacing:'0.08em'}}>{liveTime}</span>
-                </div>
-                {/* Row 3: copy + download briefing */}
-                {onCopyForecast && (
-                  <div className="flex items-center gap-1">
+                {/* Row 2: ⎘ COPY · ⬇ BRIEFING · SKILL */}
+                <div className="flex items-center gap-1.5">
+                  {onCopyForecast && (<>
                     <button onClick={onCopyForecast}
-                      style={{padding:'2px 6px',borderRadius:5,fontSize:9,fontWeight:800,fontFamily:'monospace',letterSpacing:'0.04em',
+                      style={{padding:'2px 7px',borderRadius:5,fontSize:9,fontWeight:800,fontFamily:'monospace',letterSpacing:'0.05em',
                         background: copyFeedback ? 'rgba(76,175,80,0.12)' : 'rgba(56,189,248,0.07)',
                         border: copyFeedback ? '1px solid rgba(76,175,80,0.35)' : '1px solid rgba(56,189,248,0.18)',
-                        color: copyFeedback ? '#4caf50' : 'rgba(56,189,248,0.6)',cursor:'pointer',whiteSpace:'nowrap',lineHeight:1.4}}>
+                        color: copyFeedback ? '#4caf50' : 'rgba(56,189,248,0.6)',cursor:'pointer',whiteSpace:'nowrap'}}>
                       {copyFeedback ? '✓ COPIED' : '⎘ COPY FORECAST'}
                     </button>
                     <button onClick={onDownloadBriefing}
-                      style={{padding:'2px 6px',borderRadius:5,fontSize:9,fontWeight:800,fontFamily:'monospace',letterSpacing:'0.04em',
+                      style={{padding:'2px 7px',borderRadius:5,fontSize:9,fontWeight:800,fontFamily:'monospace',letterSpacing:'0.05em',
                         background:'rgba(0,230,118,0.07)',border:'1px solid rgba(0,230,118,0.2)',
-                        color:'rgba(0,230,118,0.7)',cursor:'pointer',whiteSpace:'nowrap',lineHeight:1.4}}>
+                        color:'rgba(0,230,118,0.7)',cursor:'pointer',whiteSpace:'nowrap'}}>
                       ⬇ DOWNLOAD BRIEFING
                     </button>
-                  </div>
-                )}
-                {/* Row 4: skill score ticker */}
-                <SkillScoreTicker />
+                    <div style={{width:1,height:12,background:'rgba(56,189,248,0.15)'}} />
+                  </>)}
+                  <SkillScoreTicker />
+                </div>
               </div>
               <button
                 className="lg:hidden flex flex-col gap-1 p-2 rounded-lg"
