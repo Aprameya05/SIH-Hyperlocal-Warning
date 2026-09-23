@@ -1814,7 +1814,7 @@ function injectDrainageOverlay(map, liveData) {
 
 // ===== END SIH PATCH COMPONENTS =====
 
-        function HeaderBar({ liveTime, isLiveData, activeNavTab, onNavTabChange, selectedHazard, onHazardChange }) {
+        function HeaderBar({ liveTime, isLiveData, activeNavTab, onNavTabChange, selectedHazard, onHazardChange, onCopyForecast, onDownloadBriefing, copyFeedback }) {
           const { lang } = React.useContext(LangContext);
       const tlabel = (tab) => (TR[tab] && TR[tab][lang]) ? TR[tab][lang] : tab;
       const hazardCfg = HAZARD_CONFIG[selectedHazard] || HAZARD_CONFIG.ts;
@@ -1884,9 +1884,12 @@ function injectDrainageOverlay(map, liveData) {
                 { label: 'HISTORY', tabs: ['MULTIDAY', 'CLIMATOLOGY', 'SKILL SCORES', 'DATA & GRAPHS'] },
                 { label: 'OPS', tabs: ['ALERTS', 'LIVE API', 'ATC VIEW'] },
               ];
+              const navScrollRef = React.useRef(null);
+              const scrollNav = () => { if (navScrollRef.current) navScrollRef.current.scrollBy({ left: 160, behavior: 'smooth' }); };
               return (
                 <>
-                <nav className="hidden lg:flex items-center gap-3 font-mono text-[12px] font-bold"
+                <div className="hidden lg:flex items-center" style={{minWidth:0,flexShrink:1,position:'relative'}}>
+                <nav ref={navScrollRef} className="flex items-center gap-3 font-mono text-[12px] font-bold"
                   style={{
                     background:'rgba(4,8,18,0.65)',
                     border:'1px solid rgba(56,189,248,0.1)',
@@ -1896,7 +1899,6 @@ function injectDrainageOverlay(map, liveData) {
                     minWidth:0,
                     overflowX:'auto',
                     overflowY:'hidden',
-                    flexShrink:1,
                     scrollbarWidth:'none',
                   }}>
                   {NAV_GROUPS.map((group, gi) => (
@@ -1918,13 +1920,23 @@ function injectDrainageOverlay(map, liveData) {
                     </div>
                   ))}
                 </nav>
+                {/* Scroll-right chevron */}
+                <button onClick={scrollNav} title="Scroll tabs right"
+                  style={{marginLeft:4,padding:'4px 7px',borderRadius:8,background:'rgba(56,189,248,0.08)',border:'1px solid rgba(56,189,248,0.18)',color:'rgba(56,189,248,0.7)',fontSize:13,cursor:'pointer',flexShrink:0,lineHeight:1,transition:'all 0.2s'}}
+                  onMouseEnter={e=>{e.currentTarget.style.background='rgba(56,189,248,0.18)';e.currentTarget.style.color='#38bdf8';}}
+                  onMouseLeave={e=>{e.currentTarget.style.background='rgba(56,189,248,0.08)';e.currentTarget.style.color='rgba(56,189,248,0.7)';}}>›</button>
+                </div>
                 </>
               );
             })()}
 
-            {/* Right: hazard switcher + lang + theme toggle + time + live + hamburger */}
+            {/* Right: hazard switcher + skill + lang + theme toggle + time + live + hamburger */}
             <div className="flex items-center gap-2 font-mono" style={{flexShrink:0}}>
-              <div className="hidden lg:block"><HazardSwitcher selected={selectedHazard} onChange={onHazardChange} /></div>
+              {/* Hazard + Skill stacked */}
+              <div className="hidden lg:flex flex-col gap-0.5 items-start">
+                <HazardSwitcher selected={selectedHazard} onChange={onHazardChange} />
+                <SkillScoreTicker />
+              </div>
               {/* Language switcher always visible */}
               <LanguageSwitcher />
               {/* ☀️/🌙 Light/Dark mode toggle */}
@@ -1950,12 +1962,31 @@ function injectDrainageOverlay(map, liveData) {
               >
                 <span className="theme-icon">☀️</span>
               </button>
-              {/* Compact time + LIVE dot — pinned right, never shrinks or overflows */}
-              <div className="flex items-center gap-1.5"
-                style={{padding:'3px 8px',borderRadius:'8px',background:'rgba(4,8,18,0.7)',border:'1px solid rgba(56,189,248,0.15)',flexShrink:0,whiteSpace:'nowrap'}}>
-                <span style={{width:8,height:8,borderRadius:'50%',background:'#4caf50',display:'inline-block',flexShrink:0,
-                  boxShadow:'0 0 8px #4caf50, 0 0 2px #4caf50'}} />
-                <span className="text-xs font-extrabold text-white tracking-widest" style={{whiteSpace:'nowrap',lineHeight:1,letterSpacing:'0.08em'}}>{liveTime}</span>
+              {/* Time + LIVE dot + tiny COPY/DOWNLOAD below */}
+              <div className="flex flex-col gap-0.5 items-end" style={{flexShrink:0}}>
+                <div className="flex items-center gap-1.5"
+                  style={{padding:'3px 8px',borderRadius:'8px',background:'rgba(4,8,18,0.7)',border:'1px solid rgba(56,189,248,0.15)',whiteSpace:'nowrap'}}>
+                  <span style={{width:8,height:8,borderRadius:'50%',background:'#4caf50',display:'inline-block',flexShrink:0,
+                    boxShadow:'0 0 8px #4caf50, 0 0 2px #4caf50'}} />
+                  <span className="text-xs font-extrabold text-white tracking-widest" style={{whiteSpace:'nowrap',lineHeight:1,letterSpacing:'0.08em'}}>{liveTime}</span>
+                </div>
+                {onCopyForecast && (
+                  <div className="hidden lg:flex items-center gap-1">
+                    <button onClick={onCopyForecast}
+                      style={{padding:'2px 6px',borderRadius:5,fontSize:9,fontWeight:800,fontFamily:'monospace',letterSpacing:'0.04em',
+                        background: copyFeedback ? 'rgba(76,175,80,0.12)' : 'rgba(56,189,248,0.07)',
+                        border: copyFeedback ? '1px solid rgba(76,175,80,0.35)' : '1px solid rgba(56,189,248,0.18)',
+                        color: copyFeedback ? '#4caf50' : 'rgba(56,189,248,0.6)',cursor:'pointer',whiteSpace:'nowrap',lineHeight:1.4}}>
+                      {copyFeedback ? '✓ COPIED' : '⎘ COPY FORECAST'}
+                    </button>
+                    <button onClick={onDownloadBriefing}
+                      style={{padding:'2px 6px',borderRadius:5,fontSize:9,fontWeight:800,fontFamily:'monospace',letterSpacing:'0.04em',
+                        background:'rgba(0,230,118,0.07)',border:'1px solid rgba(0,230,118,0.2)',
+                        color:'rgba(0,230,118,0.7)',cursor:'pointer',whiteSpace:'nowrap',lineHeight:1.4}}>
+                      ⬇ DOWNLOAD BRIEFING
+                    </button>
+                  </div>
+                )}
               </div>
               <button
                 className="lg:hidden flex flex-col gap-1 p-2 rounded-lg"
@@ -2159,16 +2190,26 @@ function injectDrainageOverlay(map, liveData) {
               return Math.max(0, Math.min(1, (val - st.min) / (st.max - st.min)));
             };
             const ts = norm(cell.thunderstorm_probability ?? 0, 'thunderstorm_probability');
-            // CB/FF: use raw per-cell probability directly (no norm — norm would squash most cells to 0)
-            const _slotsLive = (liveData && Array.isArray(liveData.slots)) ? liveData.slots : [];
-            const _peakCbRaw = _slotsLive.length > 0 ? Math.max(..._slotsLive.map(s => s.cb_probability ?? 0)) : 0;
-            const _peakFfRaw = _slotsLive.length > 0 ? Math.max(..._slotsLive.map(s => s.ff_probability ?? 0)) : 0;
+            // CB/FF: use raw per-cell probability if model gave a non-zero value.
+            // For cells where the VOBL-trained model outputs 0 (most mainland cities),
+            // derive a physics-based proxy from CAPE + PWAT + TS probability.
+            const _ts_raw = cell.thunderstorm_probability ?? 0;
+            const _pwat   = cell.pwat  ?? 0;
+            const _cape   = cell.cape  ?? 0;
+            // CB proxy: needs convection + deep moisture + instability
+            const _cb_proxy = (_ts_raw > 0.05)
+              ? _ts_raw * Math.min(1, Math.max(0, (_pwat - 30) / 40)) * Math.min(1, _cape / 1500)
+              : 0;
+            // FF proxy: primarily driven by moisture depth + convection
+            const _ff_proxy = (_ts_raw > 0.05)
+              ? _ts_raw * Math.min(1, Math.max(0, (_pwat - 25) / 50)) * 0.7
+              : 0;
             const cb = (cell.cloudburst_probability != null && cell.cloudburst_probability > 0)
               ? cell.cloudburst_probability
-              : _peakCbRaw;
+              : _cb_proxy;
             const ff = (cell.flash_flood_probability != null && cell.flash_flood_probability > 0)
               ? cell.flash_flood_probability
-              : _peakFfRaw;
+              : _ff_proxy;
             const cape = cell.totals_totals != null ? cell.totals_totals.toFixed(1) : '—';
             const ki = cell.k_index != null ? cell.k_index.toFixed(1) : '—';
             const li = cell.wind_shear_ms != null ? cell.wind_shear_ms.toFixed(1) + ' m/s' : '—';
@@ -8189,90 +8230,19 @@ Source: csir-thunderstorm-bengaluru.pages.dev | IMD Station 43295`;
           <div className="relative z-20 flex flex-col h-screen overflow-hidden">
             
             {/* Header Bar */}
-            <HeaderBar 
-              liveTime={liveTime} 
-              isLiveData={isLiveData} 
+            <HeaderBar
+              liveTime={liveTime}
+              isLiveData={isLiveData}
               activeNavTab={activeNavTab}
               selectedHazard={selectedHazard}
               onHazardChange={setSelectedHazard}
               onNavTabChange={handleNavTabClick}
+              onCopyForecast={copyForecastSummary}
+              onDownloadBriefing={downloadPDFBriefing}
+              copyFeedback={copyFeedback}
             />
 
             {/* ── STALE DATA BANNER — suppressed; data freshness handled by pipeline ── */}
-
-            {/* ── COPY FORECAST + KEYBOARD HINT STRIP ── */}
-            <div className="relative z-30 flex items-center justify-between gap-3 px-4 py-1.5 font-mono"
-              style={{
-                background:'rgba(2,4,12,0.8)',
-                borderBottom:'1px solid rgba(56,189,248,0.08)',
-                backdropFilter:'blur(10px)',
-              }}>
-              <div className="flex items-center gap-3 text-[11px]" style={{ color:'rgba(96,125,139,0.85)' }}>
-                <span className="hidden sm:inline">Keys 1–8 switch tabs</span>
-                <span className="hidden sm:inline" style={{ color:'rgba(56,189,248,0.25)' }}>·</span>
-                <span className="hidden sm:inline">? for shortcuts</span>
-                <span className="hidden sm:inline" style={{ color:'rgba(56,189,248,0.25)' }}>·</span>
-                <span style={{ color:'rgba(56,189,248,0.4)' }}>VOBL · IMD 43295</span>
-              </div>
-              <div style={{display:'flex',alignItems:'center',gap:8}}>
-                <SkillScoreTicker />
-                <button
-                  onClick={copyForecastSummary}
-                  className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-[12px] font-bold transition-all"
-                  style={copyFeedback ? {
-                    background:'rgba(76,175,80,0.15)',
-                    border:'1px solid rgba(76,175,80,0.4)',
-                    color:'#4caf50',
-                    textShadow:'0 0 8px rgba(76,175,80,0.5)',
-                  } : {
-                    background:'rgba(56,189,248,0.06)',
-                    border:'1px solid rgba(56,189,248,0.15)',
-                    color:'rgba(56,189,248,0.6)',
-                  }}
-                >
-                  {copyFeedback ? '✓ COPIED' : '⎘ COPY FORECAST'}
-                </button>
-                <button
-                  onClick={downloadPDFBriefing}
-                  className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-[12px] font-bold transition-all"
-                  style={{
-                    background:'rgba(0,230,118,0.06)',
-                    border:'1px solid rgba(0,230,118,0.18)',
-                    color:'rgba(0,230,118,0.7)',
-                  }}
-                  title="Download PDF forecast bulletin"
-                >
-                  ⬇ DOWNLOAD BRIEFING
-                </button>
-              </div>
-            </div>
-
-            {/* ── KEYBOARD SHORTCUTS OVERLAY ── */}
-            {showKbHint && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm" onClick={dismissKbHint}>
-                <div className="atc-card rounded-2xl p-6 font-mono text-xs max-w-sm w-full mx-4 border border-cyan-500/30" onClick={e => e.stopPropagation()}>
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-sm font-bold text-white tracking-wider">KEYBOARD SHORTCUTS</h3>
-                    <button onClick={dismissKbHint} className="text-[#607d8b] hover:text-white text-lg leading-none">✕</button>
-                  </div>
-                  <div className="space-y-2 mb-4">
-                    {NAV_TAB_LIST.map((tab, i) => (
-                      <div key={tab} className="flex items-center justify-between">
-                        <span className="text-[#90a4ae]">{tab}</span>
-                        <kbd className="px-2 py-1 rounded bg-[#172338] text-cyan-300 border border-[#263d55] font-bold">{i + 1}</kbd>
-                      </div>
-                    ))}
-                    <div className="flex items-center justify-between border-t border-[#172338] pt-2 mt-2">
-                      <span className="text-[#90a4ae]">Toggle this panel</span>
-                      <kbd className="px-2 py-1 rounded bg-[#172338] text-cyan-300 border border-[#263d55] font-bold">?</kbd>
-                    </div>
-                  </div>
-                  <button onClick={dismissKbHint} className="w-full py-2 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-bold hover:bg-cyan-500/30 transition-all">
-                    GOT IT — DON'T SHOW AGAIN
-                  </button>
-                </div>
-              </div>
-            )}
 
             {/* Main Content Area */}
             {activeNavTab === 'DASHBOARD' ? (
