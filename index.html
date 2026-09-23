@@ -1970,25 +1970,7 @@ function injectDrainageOverlay(map, liveData) {
             </div>
           </div>
 
-          {/* IMD Institutional Strip */}
-          <div style={{
-            borderTop:'1px solid rgba(56,189,248,0.08)',
-            padding:'3px 0',
-            display:'flex',
-            alignItems:'center',
-            justifyContent:'center',
-            gap:16,
-            fontSize:10,
-            fontFamily:'monospace',
-            letterSpacing:'0.16em',
-            color:'rgba(56,189,248,0.85)',
-          }}>
-            <span>INDIA METEOROLOGICAL DEPARTMENT</span>
-            <span style={{color:'rgba(56,189,248,0.5)'}}>·</span>
-            <span>STATION 43295 · VOBL/BLR</span>
-            <span style={{color:'rgba(56,189,248,0.5)'}}>·</span>
-            <span>NOWCAST SYSTEM v2.0</span>
-          </div>
+
 
           {/* Mobile nav dropdown — grouped */}
           {mobileMenuOpen && (
@@ -2912,35 +2894,68 @@ function injectDrainageOverlay(map, liveData) {
           <div style={{ position: 'absolute', top: 50, left: 12, bottom: 155, width: 194, display: isMobile ? 'none' : 'flex', flexDirection: 'column', gap: 5, zIndex: 10, overflowY: 'auto' }}>
 
             {/* Peak Prob */}
-            <div style={{ background: 'rgba(5,8,18,0.9)', backdropFilter: 'blur(16px)', border: `1px solid ${alertActive ? 'rgba(239,83,80,0.55)' : 'rgba(56,189,248,0.22)'}`, borderRadius: 12, padding: '10px 12px', boxShadow: alertActive ? '0 0 32px rgba(239,83,80,0.15)' : '0 0 20px rgba(56,189,248,0.06)' }}>
-              <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 3.5, color: '#a8c8dc', fontFamily: 'monospace', marginBottom: 10 }}>PEAK PROBABILITY</div>
-              <div style={{ fontSize: 52, fontWeight: 900, fontFamily: 'monospace', color: riskColor, lineHeight: 1, textShadow: `0 0 40px ${riskColor}55` }}>
-                {(peakProb * 100).toFixed(0)}<span style={{ fontSize: 16, opacity: 0.75 }}>%</span>
+            <div style={{ background: 'rgba(5,8,18,0.92)', backdropFilter: 'blur(16px)', border: `1px solid ${alertActive ? 'rgba(239,83,80,0.55)' : 'rgba(56,189,248,0.18)'}`, borderLeft: `4px solid ${riskColor}`, borderRadius: 12, padding: '10px 12px', boxShadow: `0 0 28px ${riskColor}22, inset 0 0 40px rgba(0,0,0,0.4)` }}>
+              {/* Header row */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, paddingBottom: 6, borderBottom: '1px solid rgba(56,189,248,0.1)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <div style={{ width: 3, height: 12, borderRadius: 2, background: riskColor, boxShadow: `0 0 6px ${riskColor}` }} />
+                  <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: 3, color: '#6899b8', fontFamily: 'monospace' }}>PEAK PROBABILITY</span>
+                </div>
+                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.5, color: '#2a4a5e', fontFamily: 'monospace', border: '1px solid rgba(56,189,248,0.15)', borderRadius: 4, padding: '1px 5px' }}>VOBL</div>
               </div>
-              <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 7 }}>
-                <div style={{ width: 8, height: 8, borderRadius: '50%', background: riskColor, boxShadow: `0 0 10px ${riskColor}` }} />
-                <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: 2.5, color: riskColor, fontFamily: 'monospace' }}>{riskLabel} RISK</span>
+              {/* Big value + arc indicator */}
+              <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 6 }}>
+                <div>
+                  <div style={{ fontSize: 46, fontWeight: 900, fontFamily: 'monospace', color: riskColor, lineHeight: 1, textShadow: `0 0 30px ${riskColor}88` }}>
+                    {(peakProb * 100).toFixed(0)}<span style={{ fontSize: 15, opacity: 0.7 }}>%</span>
+                  </div>
+                  <div style={{ marginTop: 6, display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <div style={{ width: 7, height: 7, borderRadius: '50%', background: riskColor, boxShadow: `0 0 8px ${riskColor}`, animation: alertActive ? 'pulse 1.5s infinite' : 'none' }} />
+                    <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: 2.5, color: riskColor, fontFamily: 'monospace' }}>{riskLabel} RISK</span>
+                  </div>
+                </div>
+                {/* Circular gauge */}
+                <div style={{ position: 'relative', width: 48, height: 48, flexShrink: 0, marginBottom: 4 }}>
+                  <svg width="48" height="48" viewBox="0 0 48 48" style={{ transform: 'rotate(-90deg)' }}>
+                    <circle cx="24" cy="24" r="19" fill="none" stroke="rgba(56,189,248,0.08)" strokeWidth="4"/>
+                    <circle cx="24" cy="24" r="19" fill="none" stroke={riskColor} strokeWidth="4"
+                      strokeDasharray={`${119.38 * Math.min(peakProb,1)} 119.38`}
+                      strokeLinecap="round" style={{ transition: 'stroke-dasharray 1s ease', filter: `drop-shadow(0 0 4px ${riskColor})` }}/>
+                  </svg>
+                  <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 800, color: riskColor, fontFamily: 'monospace' }}>
+                    {(peakProb * 100).toFixed(0)}
+                  </div>
+                </div>
               </div>
-              <div style={{ marginTop: 10, height: 4, background: 'rgba(255,255,255,0.05)', borderRadius: 4, overflow: 'hidden' }}>
-                <div style={{ height: 4, width: `${Math.max(peakProb * 100, 1.5)}%`, background: `linear-gradient(90deg, rgba(56,189,248,0.7), ${riskColor})`, borderRadius: 4, transition: 'width 1s ease' }} />
+              {/* Progress bar */}
+              <div style={{ marginTop: 8, height: 3, background: 'rgba(255,255,255,0.05)', borderRadius: 4, overflow: 'hidden' }}>
+                <div style={{ height: 3, width: `${Math.max(peakProb * 100, 1.5)}%`, background: `linear-gradient(90deg, rgba(56,189,248,0.5), ${riskColor})`, borderRadius: 4, transition: 'width 1s ease' }} />
               </div>
             </div>
 
             {/* GFS Stability */}
-            <div style={{ background: 'rgba(5,8,18,0.9)', backdropFilter: 'blur(16px)', border: '1px solid rgba(56,189,248,0.12)', borderRadius: 12, padding: '8px 10px' }}>
-              <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 3.5, color: '#a8c8dc', fontFamily: 'monospace', marginBottom: 10 }}>GFS STABILITY</div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+            <div style={{ background: 'rgba(5,8,18,0.92)', backdropFilter: 'blur(16px)', border: '1px solid rgba(56,189,248,0.1)', borderLeft: '4px solid rgba(56,189,248,0.5)', borderRadius: 12, padding: '8px 10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, paddingBottom: 5, borderBottom: '1px solid rgba(56,189,248,0.08)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <div style={{ width: 3, height: 10, borderRadius: 2, background: 'rgba(56,189,248,0.7)' }} />
+                  <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: 3, color: '#6899b8', fontFamily: 'monospace' }}>GFS STABILITY</span>
+                </div>
+                <span style={{ fontSize: 9, color: '#2a4a5e', fontFamily: 'monospace', letterSpacing: 1 }}>UPPER-AIR</span>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 5 }}>
                 {[
-                  { k: 'CAPE', sub: 'Storm energy', v: gfs.ua_cape_jkg != null ? `${Math.round(gfs.ua_cape_jkg)}` : '—', u: 'J/kg', hi: (gfs.ua_cape_jkg || 0) > 1500 },
-                  { k: 'K-IDX', sub: 'Thunderstorm index', v: gfs.ua_k_index != null ? gfs.ua_k_index.toFixed(1) : '—', u: '', hi: (gfs.ua_k_index || 0) > 35 },
-                  { k: 'LI', sub: 'Lift index', v: gfs.ua_lifted_index != null ? gfs.ua_lifted_index.toFixed(1) : '—', u: '', hi: (gfs.ua_lifted_index || 0) < -3 },
-                  { k: 'TT', sub: 'Totals-totals', v: gfs.ua_totals_totals != null ? gfs.ua_totals_totals.toFixed(1) : '—', u: '', hi: (gfs.ua_totals_totals || 0) > 50 },
-                  { k: 'IWV', sub: 'Moisture column', v: gfs.iwv_mm != null ? gfs.iwv_mm.toFixed(1) : '—', u: 'mm', hi: (gfs.iwv_mm || 0) > 50 },
+                  { k: 'CAPE', sub: 'Storm energy', v: gfs.ua_cape_jkg != null ? `${Math.round(gfs.ua_cape_jkg)}` : '—', u: 'J/kg', hi: (gfs.ua_cape_jkg || 0) > 1500, pct: Math.min(1, (gfs.ua_cape_jkg || 0) / 3000) },
+                  { k: 'K-IDX', sub: 'TS index', v: gfs.ua_k_index != null ? gfs.ua_k_index.toFixed(1) : '—', u: '', hi: (gfs.ua_k_index || 0) > 35, pct: Math.min(1, (gfs.ua_k_index || 0) / 45) },
+                  { k: 'LI', sub: 'Lift index', v: gfs.ua_lifted_index != null ? gfs.ua_lifted_index.toFixed(1) : '—', u: '', hi: (gfs.ua_lifted_index || 0) < -3, pct: Math.min(1, Math.max(0, (-(gfs.ua_lifted_index || 0)) / 8)) },
+                  { k: 'TT', sub: 'Totals-totals', v: gfs.ua_totals_totals != null ? gfs.ua_totals_totals.toFixed(1) : '—', u: '', hi: (gfs.ua_totals_totals || 0) > 50, pct: Math.min(1, (gfs.ua_totals_totals || 0) / 60) },
+                  { k: 'IWV', sub: 'PW column', v: gfs.iwv_mm != null ? gfs.iwv_mm.toFixed(1) : '—', u: 'mm', hi: (gfs.iwv_mm || 0) > 50, pct: Math.min(1, (gfs.iwv_mm || 0) / 60) },
                 ].map(r => (
-                  <div key={r.k} style={{ background: 'rgba(0,0,0,0.35)', borderRadius: 9, padding: '5px 7px', border: r.hi ? '1px solid rgba(255,152,0,0.3)' : '1px solid transparent' }}>
-                    <div style={{ fontSize: 12, color: '#a8c8dc', fontFamily: 'monospace', marginBottom: 1 }}>{r.k}</div>
-                    <div style={{ fontSize: 13, color: '#88b4c8', fontFamily: 'monospace', marginBottom: 3, lineHeight: 1.2 }}>{r.sub}</div>
-                    <div style={{ fontSize: 12, fontWeight: 800, color: r.hi ? '#ff9800' : '#c0d4de', fontFamily: 'monospace' }}>{r.v}<span style={{ fontSize: 12, opacity: 0.6 }}>{r.u}</span></div>
+                  <div key={r.k} style={{ background: r.hi ? 'rgba(255,152,0,0.07)' : 'rgba(0,0,0,0.3)', borderRadius: 8, padding: '5px 7px', border: r.hi ? '1px solid rgba(255,152,0,0.25)' : '1px solid rgba(56,189,248,0.06)', position: 'relative', overflow: 'hidden' }}>
+                    {/* mini fill bar at bottom */}
+                    <div style={{ position: 'absolute', bottom: 0, left: 0, height: 2, width: `${(r.pct || 0) * 100}%`, background: r.hi ? '#ff9800' : 'rgba(56,189,248,0.4)', borderRadius: '0 0 8px 8px', transition: 'width 0.8s ease' }} />
+                    <div style={{ fontSize: 11, fontWeight: 800, color: r.hi ? '#ff9800' : '#7ab5cc', fontFamily: 'monospace', letterSpacing: 1, marginBottom: 1 }}>{r.k}</div>
+                    <div style={{ fontSize: 10, color: '#3a5a6e', fontFamily: 'monospace', marginBottom: 3, lineHeight: 1.2 }}>{r.sub}</div>
+                    <div style={{ fontSize: 13, fontWeight: 900, color: r.hi ? '#ff9800' : '#c0d4de', fontFamily: 'monospace' }}>{r.v}<span style={{ fontSize: 10, opacity: 0.55, marginLeft: 1 }}>{r.u}</span></div>
                   </div>
                 ))}
               </div>
@@ -2955,21 +2970,33 @@ function injectDrainageOverlay(map, liveData) {
               const catColor = cat === 'HIGH' ? '#ef5350' : cat === 'ELEVATED' ? '#ff9800' : cat === 'MODERATE' ? '#ffc107' : '#4caf50';
               const barW = Math.round((pct ?? 0) * 100);
               return (
-                <div style={{ background: 'rgba(5,8,18,0.9)', backdropFilter: 'blur(16px)', border: `1px solid ${catColor}33`, borderRadius: 15, padding: '12px 14px' }}>
-                  <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 3.5, color: '#a8c8dc', fontFamily: 'monospace', marginBottom: 8 }}>IWV MOISTURE COLUMN</div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 6 }}>
-                    <span style={{ fontSize: 22, fontWeight: 900, color: catColor, fontFamily: 'monospace', lineHeight: 1 }}>{iwv.toFixed(1)}<span style={{ fontSize: 12, marginLeft: 3, opacity: 0.7 }}>mm</span></span>
-                    <span style={{ fontSize: 13, fontWeight: 800, letterSpacing: 1.5, color: catColor, fontFamily: 'monospace', padding: '2px 7px', background: catColor + '18', borderRadius: 6, border: '1px solid ' + catColor + '44' }}>{cat ?? 'MODERATE'}</span>
+                <div style={{ background: 'rgba(5,8,18,0.92)', backdropFilter: 'blur(16px)', border: `1px solid ${catColor}22`, borderLeft: `4px solid ${catColor}`, borderRadius: 12, padding: '10px 12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 7, paddingBottom: 5, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                      <div style={{ width: 3, height: 10, borderRadius: 2, background: catColor }} />
+                      <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: 2.5, color: '#6899b8', fontFamily: 'monospace' }}>IWV MOISTURE</span>
+                    </div>
+                    <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: 1.5, color: catColor, fontFamily: 'monospace', padding: '1px 6px', background: catColor + '18', borderRadius: 4, border: '1px solid ' + catColor + '33' }}>{cat ?? 'MOD'}</span>
                   </div>
-                  <div style={{ background: 'rgba(0,0,0,0.4)', borderRadius: 4, height: 5, overflow: 'hidden', marginBottom: 5 }}>
-                    <div style={{ width: barW + '%', height: '100%', background: `linear-gradient(90deg, #4caf50, ${catColor})`, borderRadius: 4, transition: 'width 0.6s ease' }} />
+                  <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 7 }}>
+                    <span style={{ fontSize: 28, fontWeight: 900, color: catColor, fontFamily: 'monospace', lineHeight: 1, textShadow: `0 0 20px ${catColor}66` }}>{iwv.toFixed(1)}<span style={{ fontSize: 11, marginLeft: 2, opacity: 0.6 }}>mm</span></span>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: 10, color: '#2a4a5e', fontFamily: 'monospace' }}>OF THRESHOLD</div>
+                      <div style={{ fontSize: 18, fontWeight: 900, color: catColor, fontFamily: 'monospace' }}>{barW}%</div>
+                    </div>
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#a8c8dc', fontFamily: 'monospace' }}>
-                    <span>0 mm</span>
-                    <span style={{ color: '#607d8b' }}>THRESHOLD 55 mm</span>
+                  {/* Segmented bar */}
+                  <div style={{ position: 'relative', height: 8, background: 'rgba(0,0,0,0.4)', borderRadius: 4, overflow: 'hidden', marginBottom: 5 }}>
+                    <div style={{ position: 'absolute', inset: 0, display: 'flex' }}>
+                      {[0.25,0.5,0.75,1].map((seg,i) => <div key={i} style={{ flex: 1, borderRight: i<3 ? '1px solid rgba(255,255,255,0.06)' : 'none' }} />)}
+                    </div>
+                    <div style={{ width: barW + '%', height: '100%', background: `linear-gradient(90deg, #4caf50, #ffc107, ${catColor})`, borderRadius: 4, transition: 'width 0.6s ease' }} />
                   </div>
-                  <div style={{ marginTop: 6, fontSize: 12, color: '#90b8cc', fontFamily: 'monospace' }}>
-                    GFS PRECIP WATER COLUMN · HIMAWARI-9 ANCHOR · {barW}% OF DEEP CONV THRESHOLD
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9, color: '#2a4a5e', fontFamily: 'monospace' }}>
+                    <span>DRY</span><span>MOD</span><span>ELEV</span><span>HIGH</span>
+                  </div>
+                  <div style={{ marginTop: 5, fontSize: 9, color: '#2a4a5e', fontFamily: 'monospace', letterSpacing: 0.5 }}>
+                    PRECIP WATER · HIMAWARI-9 ANCHOR
                   </div>
                 </div>
               );
@@ -2977,19 +3004,26 @@ function injectDrainageOverlay(map, liveData) {
 
             {/* Satellite */}
             {sat.available && (
-              <div style={{ background: 'rgba(5,8,18,0.9)', backdropFilter: 'blur(16px)', border: '1px solid rgba(126,87,194,0.2)', borderRadius: 15, padding: '12px 14px' }}>
-                <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 3.5, color: '#a8c8dc', fontFamily: 'monospace', marginBottom: 10 }}>HIMAWARI-9 IR</div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                  <span style={{ fontSize: 13, color: '#90b8cc', fontFamily: 'monospace' }}>MIN BT</span>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: sat.storm_detected ? '#ef5350' : '#c0d4de', fontFamily: 'monospace' }}>{sat.min_bt_50km != null ? `${sat.min_bt_50km.toFixed(1)}°C` : '—'}</span>
+              <div style={{ background: 'rgba(5,8,18,0.92)', backdropFilter: 'blur(16px)', border: '1px solid rgba(126,87,194,0.15)', borderLeft: '4px solid rgba(126,87,194,0.7)', borderRadius: 12, padding: '10px 12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, paddingBottom: 5, borderBottom: '1px solid rgba(126,87,194,0.1)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <div style={{ width: 3, height: 10, borderRadius: 2, background: 'rgba(126,87,194,0.9)' }} />
+                    <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: 2.5, color: '#6899b8', fontFamily: 'monospace' }}>HIMAWARI-9 IR</span>
+                  </div>
+                  <div style={{ fontSize: 9, color: '#4a2a6a', fontFamily: 'monospace', border: '1px solid rgba(126,87,194,0.2)', borderRadius: 3, padding: '1px 5px' }}>GEO-SAT</div>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                  <span style={{ fontSize: 13, color: '#90b8cc', fontFamily: 'monospace' }}>CTT DROP RATE</span>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: (sat.bt_trend_1h || 0) < 0 ? '#ef5350' : '#4caf50', fontFamily: 'monospace' }} title="Cloud-Top Temperature change over 1 hour (negative = cooling = convection building)">{sat.bt_trend_1h != null ? `${sat.bt_trend_1h > 0 ? '+' : ''}${sat.bt_trend_1h.toFixed(1)} °C/h` : '—'}</span>
+                {/* BT rows */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5, padding: '3px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                  <span style={{ fontSize: 10, color: '#4a6a7a', fontFamily: 'monospace', letterSpacing: 1 }}>MIN BT (50km)</span>
+                  <span style={{ fontSize: 13, fontWeight: 800, color: sat.storm_detected ? '#ef5350' : '#c0d4de', fontFamily: 'monospace' }}>{sat.min_bt_50km != null ? `${sat.min_bt_50km.toFixed(1)}°C` : '—'}</span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 7, background: sat.storm_detected ? 'rgba(239,83,80,0.1)' : 'rgba(76,175,80,0.07)', borderRadius: 9, padding: '6px 9px', border: `1px solid ${sat.storm_detected ? 'rgba(239,83,80,0.25)' : 'rgba(76,175,80,0.2)'}` }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 7, padding: '3px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                  <span style={{ fontSize: 10, color: '#4a6a7a', fontFamily: 'monospace', letterSpacing: 1 }}>CTT TENDENCY</span>
+                  <span style={{ fontSize: 13, fontWeight: 800, color: (sat.bt_trend_1h || 0) < 0 ? '#ef5350' : '#4caf50', fontFamily: 'monospace' }} title="Cloud-Top Temperature change over 1 hour">{sat.bt_trend_1h != null ? `${sat.bt_trend_1h > 0 ? '+' : ''}${sat.bt_trend_1h.toFixed(1)} °/h` : '—'}</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7, background: sat.storm_detected ? 'rgba(239,83,80,0.1)' : 'rgba(76,175,80,0.07)', borderRadius: 8, padding: '5px 8px', border: `1px solid ${sat.storm_detected ? 'rgba(239,83,80,0.3)' : 'rgba(76,175,80,0.2)'}` }}>
                   <div style={{ width: 7, height: 7, borderRadius: '50%', background: sat.storm_detected ? '#ef5350' : '#4caf50', boxShadow: sat.storm_detected ? '0 0 8px #ef5350' : '0 0 8px #4caf50' }} />
-                  <span style={{ fontSize: 13, fontWeight: 800, letterSpacing: 1, color: sat.storm_detected ? '#ef5350' : '#4caf50', fontFamily: 'monospace' }}>{sat.storm_detected ? 'DEEP CONVECTION' : 'NO STORM CELL'}</span>
+                  <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1.5, color: sat.storm_detected ? '#ef5350' : '#4caf50', fontFamily: 'monospace' }}>{sat.storm_detected ? 'DEEP CONVECTION' : 'NO STORM CELL'}</span>
                 </div>
               </div>
             )}
@@ -3074,25 +3108,25 @@ function injectDrainageOverlay(map, liveData) {
           </div>
 
           {/* ── HEATMAP LEGEND -- anchored above the right map-control column ── */}
-          <div style={{ position: 'absolute', bottom: 230, right: 88, zIndex: 20, display: isMobile ? 'none' : undefined, background: 'rgba(4,7,17,0.92)', backdropFilter: 'blur(12px)', border: '1px solid rgba(56,189,248,0.14)', borderRadius: 10, padding: '7px 10px', width: 148 }}>
-            <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: 2, color: '#a8c8dc', fontFamily: 'monospace', marginBottom: 6, whiteSpace: 'nowrap' }}>
-              {(panLayer === 'thunderstorm' ? 'TS' : panLayer === 'cloudburst' ? 'CB' : 'FF')} PROBABILITY HEATMAP
+          <div style={{ position: 'absolute', bottom: 230, right: 320, zIndex: 20, display: isMobile ? 'none' : undefined, background: 'rgba(4,7,17,0.88)', backdropFilter: 'blur(12px)', border: '1px solid rgba(56,189,248,0.12)', borderRadius: 8, padding: '5px 8px', width: 118 }}>
+            <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 1.5, color: '#6899b8', fontFamily: 'monospace', marginBottom: 4, whiteSpace: 'nowrap' }}>
+              {(panLayer === 'thunderstorm' ? 'TS' : panLayer === 'cloudburst' ? 'CB' : 'FF')} HEATMAP
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
               {[
-                { grad: 'linear-gradient(90deg,rgba(220,0,0,0.6),rgba(220,0,0,0.9))', label: 'HIGH   ≥55%', c:'#ef5350' },
-                { grad: 'linear-gradient(90deg,rgba(255,100,0,0.5),rgba(255,100,0,0.85))', label: 'MOD    35–55%', c:'#ff9800' },
-                { grad: 'linear-gradient(90deg,rgba(255,213,0,0.4),rgba(255,213,0,0.75))', label: 'LOW    15–35%', c:'#fdd835' },
-                { grad: 'linear-gradient(90deg,rgba(56,189,248,0.25),rgba(56,189,248,0.55))', label: 'MIN    <15%', c:'#38bdf8' },
+                { grad: 'linear-gradient(90deg,rgba(220,0,0,0.6),rgba(220,0,0,0.9))', label: 'HIGH ≥55%', c:'#ef5350' },
+                { grad: 'linear-gradient(90deg,rgba(255,100,0,0.5),rgba(255,100,0,0.85))', label: 'MOD 35–55%', c:'#ff9800' },
+                { grad: 'linear-gradient(90deg,rgba(255,213,0,0.4),rgba(255,213,0,0.75))', label: 'LOW 15–35%', c:'#fdd835' },
+                { grad: 'linear-gradient(90deg,rgba(56,189,248,0.25),rgba(56,189,248,0.55))', label: 'MIN <15%', c:'#38bdf8' },
               ].map(({ grad, label, c }) => (
-                <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                  <div style={{ width: 26, height: 8, borderRadius: 4, background: grad, flexShrink: 0 }} />
-                  <span style={{ fontSize: 13, color: '#607d8b', fontFamily: 'monospace', whiteSpace: 'nowrap' }}>{label}</span>
+                <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <div style={{ width: 18, height: 6, borderRadius: 3, background: grad, flexShrink: 0 }} />
+                  <span style={{ fontSize: 10, color: c, fontFamily: 'monospace', whiteSpace: 'nowrap', fontWeight: 700 }}>{label}</span>
                 </div>
               ))}
             </div>
-            <div style={{ marginTop: 7, paddingTop: 6, borderTop: '1px solid rgba(56,189,248,0.08)', fontSize: 13, color: '#a8c8dc', fontFamily: 'monospace', lineHeight: 1.6, whiteSpace: 'nowrap' }}>
-              σ=18 km Gaussian · VOBL-centred
+            <div style={{ marginTop: 4, fontSize: 9, color: '#455a64', fontFamily: 'monospace', whiteSpace: 'nowrap' }}>
+              σ=18km · VOBL-centred
             </div>
           </div>
 
