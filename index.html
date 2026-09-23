@@ -1930,48 +1930,41 @@ function injectDrainageOverlay(map, liveData) {
               );
             })()}
 
-            {/* Right: hazard switcher + skill + lang + theme toggle + time + live + hamburger */}
+            {/* Right: hazard switcher (desktop) + stacked right column + hamburger */}
             <div className="flex items-center gap-2 font-mono" style={{flexShrink:0}}>
-              {/* Hazard + Skill stacked */}
-              <div className="hidden lg:flex flex-col gap-0.5 items-start">
+              {/* Hazard switcher alone */}
+              <div className="hidden lg:block">
                 <HazardSwitcher selected={selectedHazard} onChange={onHazardChange} />
-                <SkillScoreTicker />
               </div>
-              {/* Language switcher always visible */}
-              <LanguageSwitcher />
-              {/* ☀️/🌙 Light/Dark mode toggle */}
-              <button
-                id="theme-toggle-btn"
-                title="Toggle light / dark mode"
-                onClick={() => {
-                  const isLight = document.body.classList.toggle('light-mode');
-                  try { localStorage.setItem('csir_theme', isLight ? 'light' : 'dark'); } catch {}
-                }}
-                style={{
-                  padding:'4px 9px',
-                  borderRadius:'8px',
-                  background:'rgba(8,13,26,0.8)',
-                  border:'1px solid rgba(56,189,248,0.25)',
-                  color:'#38bdf8',
-                  fontSize:16,
-                  cursor:'pointer',
-                  lineHeight:1,
-                  flexShrink:0,
-                  transition:'all 0.2s',
-                }}
-              >
-                <span className="theme-icon">☀️</span>
-              </button>
-              {/* Time + LIVE dot + tiny COPY/DOWNLOAD below */}
-              <div className="flex flex-col gap-0.5 items-end" style={{flexShrink:0}}>
+              {/* Mobile lang + theme */}
+              <div className="flex lg:hidden items-center gap-1">
+                <LanguageSwitcher />
+                <button id="theme-toggle-btn" title="Toggle light / dark mode"
+                  onClick={() => { const isLight = document.body.classList.toggle('light-mode'); try { localStorage.setItem('csir_theme', isLight ? 'light' : 'dark'); } catch {} }}
+                  style={{padding:'4px 9px',borderRadius:'8px',background:'rgba(8,13,26,0.8)',border:'1px solid rgba(56,189,248,0.25)',color:'#38bdf8',fontSize:16,cursor:'pointer',lineHeight:1}}>
+                  <span className="theme-icon">☀️</span>
+                </button>
+              </div>
+              {/* Desktop stacked right column: time → EN+☀️ → copy/download → skill */}
+              <div className="hidden lg:flex flex-col gap-0.5 items-end" style={{flexShrink:0}}>
+                {/* Row 1: EN + light mode icon */}
+                <div className="flex items-center gap-1">
+                  <LanguageSwitcher />
+                  <button id="theme-toggle-btn" title="Toggle light / dark mode"
+                    onClick={() => { const isLight = document.body.classList.toggle('light-mode'); try { localStorage.setItem('csir_theme', isLight ? 'light' : 'dark'); } catch {} }}
+                    style={{padding:'3px 7px',borderRadius:'7px',background:'rgba(8,13,26,0.8)',border:'1px solid rgba(56,189,248,0.25)',color:'#38bdf8',fontSize:14,cursor:'pointer',lineHeight:1,transition:'all 0.2s'}}>
+                    <span className="theme-icon">☀️</span>
+                  </button>
+                </div>
+                {/* Row 2: live dot + time */}
                 <div className="flex items-center gap-1.5"
                   style={{padding:'3px 8px',borderRadius:'8px',background:'rgba(4,8,18,0.7)',border:'1px solid rgba(56,189,248,0.15)',whiteSpace:'nowrap'}}>
-                  <span style={{width:8,height:8,borderRadius:'50%',background:'#4caf50',display:'inline-block',flexShrink:0,
-                    boxShadow:'0 0 8px #4caf50, 0 0 2px #4caf50'}} />
+                  <span style={{width:8,height:8,borderRadius:'50%',background:'#4caf50',display:'inline-block',flexShrink:0,boxShadow:'0 0 8px #4caf50, 0 0 2px #4caf50'}} />
                   <span className="text-xs font-extrabold text-white tracking-widest" style={{whiteSpace:'nowrap',lineHeight:1,letterSpacing:'0.08em'}}>{liveTime}</span>
                 </div>
+                {/* Row 3: copy + download briefing */}
                 {onCopyForecast && (
-                  <div className="hidden lg:flex items-center gap-1">
+                  <div className="flex items-center gap-1">
                     <button onClick={onCopyForecast}
                       style={{padding:'2px 6px',borderRadius:5,fontSize:9,fontWeight:800,fontFamily:'monospace',letterSpacing:'0.04em',
                         background: copyFeedback ? 'rgba(76,175,80,0.12)' : 'rgba(56,189,248,0.07)',
@@ -1987,6 +1980,8 @@ function injectDrainageOverlay(map, liveData) {
                     </button>
                   </div>
                 )}
+                {/* Row 4: skill score ticker */}
+                <SkillScoreTicker />
               </div>
               <button
                 className="lg:hidden flex flex-col gap-1 p-2 rounded-lg"
