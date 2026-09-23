@@ -1250,7 +1250,22 @@ def main():
             "monsoon_regime", "regime_adjustment", "cape_tendency_jkgh",
             "alert_active", "generated_at",
         ]
+        # If existing CSV has a different (old) header, back it up and start fresh
         write_header = not log_path.exists()
+        if log_path.exists():
+            try:
+                with open(log_path, "r") as _f:
+                    first_line = _f.readline().strip()
+                existing_cols = [c.strip() for c in first_line.split(",")]
+                if existing_cols != log_cols:
+                    import shutil
+                    backup = log_path.with_suffix(".csv.bak")
+                    shutil.copy2(log_path, backup)
+                    log_path.unlink()
+                    write_header = True
+                    print(f"  ⚠ forecast_log.csv header mismatch — backed up to {backup.name} and starting fresh")
+            except Exception:
+                pass
         with open(log_path, "a", newline="") as csvf:
             writer = csv.DictWriter(csvf, fieldnames=log_cols, extrasaction="ignore")
             if write_header:

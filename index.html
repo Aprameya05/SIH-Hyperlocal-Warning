@@ -389,8 +389,8 @@
     }
     .page-hero-sub {
       font-family: monospace;
-      font-size: 11px;
-      color: #4a6280;
+      font-size: 12px;
+      color: #8bb8d4;
     }
 
     /* ── CONTENT SECTION DIVIDER ─────────────────────────────────── */
@@ -418,24 +418,154 @@
     }
 
 
+    /* == DARK MODE READABILITY FIXES =============================================== */
+    /* Brighter muted text so nothing is invisible on dark background */
+    .page-hero-sub { color: #8bb8d4 !important; }
+    .bnav-btn { color: #8baabe !important; }
+
+    /* Boost all very-faint inline cyan spans (header strips, nav group labels) */
+    /* We target via a filter on the whole doc at full saturation */
+    * { -webkit-font-smoothing: antialiased; }
+
+    /* Slightly larger tiny fonts globally */
+    body { font-size: 14px; }
+
     /* == LIGHT MODE ================================================================ */
-    body.light-mode { background: #f0f4fa !important; color: #1a2332 !important; }
-    body.light-mode #root > div { background: #f0f4fa; color: #1a2332; }
-    body.light-mode .atc-card {
-      background: rgba(255,255,255,0.92) !important;
-      border-color: rgba(100,130,170,0.25) !important;
+    body.light-mode {
+      background: #eef2f8 !important;
       color: #1a2332 !important;
     }
-    body.light-mode header {
-      background: rgba(240,244,250,0.97) !important;
-      border-bottom-color: rgba(100,130,200,0.25) !important;
+    body.light-mode #root > div,
+    body.light-mode #root > div > div,
+    body.light-mode main,
+    body.light-mode [id="main-content-area"] {
+      background: #eef2f8 !important;
+      color: #1a2332 !important;
     }
-    body.light-mode .slot-bg-common { opacity: 0.05 !important; }
-    body.light-mode .text-\[\#e8eaf6\] { color: #1a2332 !important; }
-    body.light-mode .text-\[\#607d8b\] { color: #455a64 !important; }
-    body.light-mode .text-\[\#90a4ae\] { color: #546e7a !important; }
-    body.light-mode .text-white { color: #1a2332 !important; }
-    body.light-mode .bg-\[\#040711\] { background: #f0f4fa !important; }
+    /* Cards & panels */
+    body.light-mode .atc-card,
+    body.light-mode .shimmer-card {
+      background: rgba(255,255,255,0.97) !important;
+      border-color: rgba(56,120,200,0.22) !important;
+      color: #1a2332 !important;
+      box-shadow: 0 2px 16px rgba(56,120,200,0.08) !important;
+    }
+    body.light-mode .atc-card::before { background: none !important; }
+    body.light-mode .atc-card:hover {
+      border-color: rgba(2,132,199,0.45) !important;
+      box-shadow: 0 4px 24px rgba(2,132,199,0.14) !important;
+    }
+    /* Header */
+    body.light-mode header {
+      background: rgba(240,245,255,0.98) !important;
+      border-bottom-color: rgba(56,120,200,0.18) !important;
+    }
+    /* Nav bar inside header */
+    body.light-mode nav {
+      background: rgba(224,232,248,0.85) !important;
+      border-color: rgba(56,120,200,0.15) !important;
+    }
+    body.light-mode .slot-bg-common { opacity: 0.04 !important; }
+    body.light-mode .overlay { background: rgba(240,245,255,0.25) !important; }
+
+    /* All text overrides */
+    body.light-mode .text-\[\#e8eaf6\],
+    body.light-mode .text-white,
+    body.light-mode .text-gray-100,
+    body.light-mode .text-gray-200 { color: #1a2332 !important; }
+
+    body.light-mode .text-\[\#607d8b\],
+    body.light-mode .text-\[\#4a6280\],
+    body.light-mode .text-\[\#3d5a72\],
+    body.light-mode .text-gray-400,
+    body.light-mode .text-gray-500,
+    body.light-mode .bnav-btn,
+    body.light-mode .page-hero-sub { color: #375c80 !important; }
+
+    body.light-mode .text-\[\#90a4ae\],
+    body.light-mode .text-gray-300 { color: #4e7a9a !important; }
+
+    body.light-mode .gradient-text {
+      background: linear-gradient(135deg, #0284c7 0%, #7c3aed 45%, #0284c7 100%);
+      background-size: 200% 200%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    body.light-mode .gradient-text-fast {
+      background: linear-gradient(90deg, #0284c7, #7c3aed, #db2777, #0284c7);
+      background-size: 300% 100%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* Background boxes / sections */
+    body.light-mode .bg-\[\#040711\],
+    body.light-mode .page-grid-bg,
+    body.light-mode [class*="bg-gray-9"],
+    body.light-mode [class*="bg-slate-9"] { background: #eef2f8 !important; }
+
+    body.light-mode .page-grid-bg {
+      background-color: #eef2f8 !important;
+      background-image: radial-gradient(rgba(2,132,199,0.10) 1px, transparent 1px) !important;
+    }
+    body.light-mode .page-hero-banner {
+      background: linear-gradient(135deg, rgba(224,235,255,0.95) 0%, rgba(210,225,250,0.95) 100%) !important;
+      border-color: rgba(56,120,200,0.25) !important;
+    }
+    body.light-mode .section-rule {
+      background: linear-gradient(90deg, transparent, rgba(2,132,199,0.25), transparent) !important;
+    }
+    body.light-mode .stat-chip {
+      border-color: rgba(2,132,199,0.35) !important;
+      background: rgba(2,132,199,0.10) !important;
+      color: #0284c7 !important;
+    }
+
+    /* Neon text → solid vivid on light */
+    body.light-mode .neon-cyan  { color:#0284c7 !important; text-shadow: none !important; }
+    body.light-mode .neon-red   { color:#dc2626 !important; text-shadow: none !important; }
+    body.light-mode .neon-green { color:#16a34a !important; text-shadow: none !important; }
+    body.light-mode .neon-amber { color:#d97706 !important; text-shadow: none !important; }
+
+    /* Nav tabs */
+    body.light-mode .nav-tab-active { color: #0284c7 !important; text-shadow: none !important; }
+    body.light-mode .nav-tab-active::after {
+      background: linear-gradient(90deg,transparent,#0284c7,#7c3aed,#0284c7,transparent) !important;
+    }
+
+    /* Scrollbar */
+    body.light-mode ::-webkit-scrollbar-track { background: #dde5f0 !important; }
+    body.light-mode ::-webkit-scrollbar-thumb { background: #8ab0d4 !important; }
+    body.light-mode ::-webkit-scrollbar-thumb:hover { background: #0284c7 !important; }
+
+    /* Slot cards row at bottom of dashboard */
+    body.light-mode [class*="bg-\[rgba(4"] { background: rgba(200,215,240,0.4) !important; }
+    body.light-mode [style*="background: rgba(4"],
+    body.light-mode [style*="background:rgba(4"],
+    body.light-mode [style*="background: rgba(5"],
+    body.light-mode [style*="background:rgba(5"],
+    body.light-mode [style*="background: rgba(6"],
+    body.light-mode [style*="background:rgba(6"],
+    body.light-mode [style*="background: rgba(8"],
+    body.light-mode [style*="background:rgba(8"] {
+      background: rgba(220,232,250,0.85) !important;
+    }
+    body.light-mode [style*="border: 1px solid rgba(23"],
+    body.light-mode [style*="border:1px solid rgba(23"] {
+      border-color: rgba(56,120,200,0.2) !important;
+    }
+
+    /* Scan line hidden in light mode */
+    body.light-mode .scan-line { display: none !important; }
+
+    /* Light mode toggle button itself */
+    body.light-mode #theme-toggle-btn {
+      background: rgba(224,235,255,0.9) !important;
+      border-color: rgba(56,120,200,0.3) !important;
+      color: #0284c7 !important;
+    }
 
     /* == MOBILE LEGIBILITY ========================================================= */
     @media (max-width: 640px) {
@@ -479,6 +609,28 @@
 <body class="bg-[#040711] text-[#e8eaf6] antialiased min-h-screen font-sans relative overflow-x-hidden selection:bg-sky-400 selection:text-black">
 
   <div id="root"></div>
+
+  <!-- Restore saved theme preference immediately -->
+  <script>
+    (function() {
+      try {
+        if (localStorage.getItem('csir_theme') === 'light') {
+          document.body.classList.add('light-mode');
+        }
+      } catch(e) {}
+      // Update toggle icon whenever mode changes
+      function syncIcon() {
+        var btn = document.getElementById('theme-toggle-btn');
+        if (btn) {
+          var isLight = document.body.classList.contains('light-mode');
+          btn.querySelector('.theme-icon').textContent = isLight ? '🌙' : '☀️';
+          btn.title = isLight ? 'Switch to dark mode' : 'Switch to light mode';
+        }
+      }
+      var obs = new MutationObserver(syncIcon);
+      obs.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+    })();
+  </script>
 
   <script type="text/babel">
     const { useState, useEffect, useRef, useMemo } = React;
@@ -1726,14 +1878,14 @@ function injectDrainageOverlay(map, liveData) {
                   {NAV_GROUPS.map((group, gi) => (
                     <div key={group.label} className="flex items-center gap-0.5">
                       {gi > 0 && <div style={{width:1,height:18,background:'rgba(56,189,248,0.15)',margin:'0 4px'}} />}
-                      <span style={{color:'rgba(56,189,248,0.3)',fontSize:7,letterSpacing:'0.18em',marginRight:2,fontWeight:900}}>{tlabel(group.label)}</span>
+                      <span style={{color:'rgba(56,189,248,0.75)',fontSize:9,letterSpacing:'0.18em',marginRight:2,fontWeight:900}}>{tlabel(group.label)}</span>
                       {group.tabs.map(tab => {
                         const isActive = activeNavTab === tab;
                         const base = tab === 'EXPLAINABILITY' ? 'EXPLAIN' : tab === 'CLIMATOLOGY' ? 'CLIMAT.' : tab === 'SKILL SCORES' ? 'SCORES' : tab === 'DATA & GRAPHS' ? 'GRAPHS' : tab;
                         const shortLabel = tlabel(tab) !== tab ? tlabel(tab) : base;
                         return (
                           <button key={tab} onClick={() => onNavTabChange(tab)}
-                            className={`relative px-3 py-1.5 rounded-lg tracking-wider transition-all duration-200 ${isActive ? 'nav-tab-active' : 'text-[#4a6880] hover:text-[#90cce8]'}`}
+                            className={`relative px-3 py-1.5 rounded-lg tracking-wider transition-all duration-200 ${isActive ? 'nav-tab-active' : 'text-[#8bbfd8] hover:text-[#c0e0f0]'}`}
                             style={isActive ? {background:'rgba(56,189,248,0.12)',boxShadow:'0 0 16px rgba(56,189,248,0.18)'} : {}}>
                             {shortLabel}
                           </button>
@@ -1746,11 +1898,34 @@ function injectDrainageOverlay(map, liveData) {
               );
             })()}
 
-            {/* Right: hazard switcher + lang + time + live + hamburger */}
+            {/* Right: hazard switcher + lang + theme toggle + time + live + hamburger */}
             <div className="flex items-center gap-2 font-mono" style={{flexShrink:0}}>
               <div className="hidden lg:block"><HazardSwitcher selected={selectedHazard} onChange={onHazardChange} /></div>
               {/* Language switcher always visible */}
               <LanguageSwitcher />
+              {/* ☀️/🌙 Light/Dark mode toggle */}
+              <button
+                id="theme-toggle-btn"
+                title="Toggle light / dark mode"
+                onClick={() => {
+                  const isLight = document.body.classList.toggle('light-mode');
+                  try { localStorage.setItem('csir_theme', isLight ? 'light' : 'dark'); } catch {}
+                }}
+                style={{
+                  padding:'4px 9px',
+                  borderRadius:'8px',
+                  background:'rgba(8,13,26,0.8)',
+                  border:'1px solid rgba(56,189,248,0.25)',
+                  color:'#38bdf8',
+                  fontSize:16,
+                  cursor:'pointer',
+                  lineHeight:1,
+                  flexShrink:0,
+                  transition:'all 0.2s',
+                }}
+              >
+                <span className="theme-icon">☀️</span>
+              </button>
               {/* Compact time + LIVE dot — pinned right, never shrinks or overflows */}
               <div className="flex items-center gap-1.5"
                 style={{padding:'3px 8px',borderRadius:'8px',background:'rgba(4,8,18,0.7)',border:'1px solid rgba(56,189,248,0.15)',flexShrink:0,whiteSpace:'nowrap'}}>
@@ -1779,15 +1954,15 @@ function injectDrainageOverlay(map, liveData) {
             alignItems:'center',
             justifyContent:'center',
             gap:16,
-            fontSize:8,
+            fontSize:10,
             fontFamily:'monospace',
             letterSpacing:'0.16em',
-            color:'rgba(56,189,248,0.4)',
+            color:'rgba(56,189,248,0.85)',
           }}>
             <span>INDIA METEOROLOGICAL DEPARTMENT</span>
-            <span style={{color:'rgba(56,189,248,0.2)'}}>·</span>
+            <span style={{color:'rgba(56,189,248,0.5)'}}>·</span>
             <span>STATION 43295 · VOBL/BLR</span>
-            <span style={{color:'rgba(56,189,248,0.2)'}}>·</span>
+            <span style={{color:'rgba(56,189,248,0.5)'}}>·</span>
             <span>NOWCAST SYSTEM v2.0</span>
           </div>
 
@@ -1802,7 +1977,7 @@ function injectDrainageOverlay(map, liveData) {
                 { label: 'OPS', tabs: ['ALERTS', 'LIVE API', 'ATC VIEW'] },
               ].map(group => (
                 <div key={group.label}>
-                  <div style={{fontSize:8,letterSpacing:'0.2em',color:'rgba(56,189,248,0.35)',fontWeight:900,marginBottom:4,paddingLeft:4}}>{tlabel(group.label)}</div>
+                  <div style={{fontSize:10,letterSpacing:'0.2em',color:'rgba(56,189,248,0.8)',fontWeight:900,marginBottom:4,paddingLeft:4}}>{tlabel(group.label)}</div>
                   <div className="grid grid-cols-3 gap-1.5">
                     {group.tabs.map(tab => (
                       <button key={tab} onClick={() => { onNavTabChange(tab); setMobileMenuOpen(false); }}

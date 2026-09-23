@@ -152,17 +152,26 @@ def main():
         write_empty_verification(yesterday, "forecast_log.csv missing")
         sys.exit(0)
 
-    df = pd.read_csv(FORECAST_LOG)
+    df = pd.read_csv(FORECAST_LOG, on_bad_lines='skip')
 
-    # Ensure predicted column is present using correct slot thresholds
-    if "predicted" not in df.columns:
+    # Normalise column names: old format used 'probability'/'predicted', new uses 'ts_probability'/'ts_predicted'
+    if "ts_probability" not in df.columns and "probability" in df.columns:
+        df = df.rename(columns={"probability": "ts_probability"})
+    if "ts_predicted" not in df.columns and "predicted" in df.columns:
+        df = df.rename(columns={"predicted": "ts_predicted"})
+
+    # Ensure ts_predicted column is present using correct slot thresholds
+    if "ts_predicted" not in df.columns:
         def apply_thresh(row):
             try:
                 month = int(str(row.get("date", "2000-01-01")).split("-")[1])
             except Exception:
                 month = datetime.now().month
             return int(float(row.get("ts_probability", 0)) >= get_threshold(int(row.get("slot", 0)), month))
-        df["predicted"] = df.apply(apply_thresh, axis=1)
+        df["ts_predicted"] = df.apply(apply_thresh, axis=1)
+    # Keep backwards compat alias
+    if "predicted" not in df.columns:
+        df["predicted"] = df["ts_predicted"]
 
     yesterday_rows = df[df["date"] == yesterday]
     if yesterday_rows.empty:
