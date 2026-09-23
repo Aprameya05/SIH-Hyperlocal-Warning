@@ -2159,15 +2159,15 @@ function injectDrainageOverlay(map, liveData) {
               return Math.max(0, Math.min(1, (val - st.min) / (st.max - st.min)));
             };
             const ts = norm(cell.thunderstorm_probability ?? 0, 'thunderstorm_probability');
-            // CB/FF per-cell probabilities are not in the grid — use peak slot values from forecast.json
+            // CB/FF: use raw per-cell probability directly (no norm — norm would squash most cells to 0)
             const _slotsLive = (liveData && Array.isArray(liveData.slots)) ? liveData.slots : [];
             const _peakCbRaw = _slotsLive.length > 0 ? Math.max(..._slotsLive.map(s => s.cb_probability ?? 0)) : 0;
             const _peakFfRaw = _slotsLive.length > 0 ? Math.max(..._slotsLive.map(s => s.ff_probability ?? 0)) : 0;
-            const cb = cell.cloudburst_probability != null && cell.cloudburst_probability > 0
-              ? norm(cell.cloudburst_probability, 'cloudburst_probability')
+            const cb = (cell.cloudburst_probability != null && cell.cloudburst_probability > 0)
+              ? cell.cloudburst_probability
               : _peakCbRaw;
-            const ff = cell.flash_flood_probability != null && cell.flash_flood_probability > 0
-              ? norm(cell.flash_flood_probability, 'flash_flood_probability')
+            const ff = (cell.flash_flood_probability != null && cell.flash_flood_probability > 0)
+              ? cell.flash_flood_probability
               : _peakFfRaw;
             const cape = cell.totals_totals != null ? cell.totals_totals.toFixed(1) : '—';
             const ki = cell.k_index != null ? cell.k_index.toFixed(1) : '—';
