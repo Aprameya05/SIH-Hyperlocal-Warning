@@ -37,6 +37,7 @@ Author: Aprameya + Atul, CSIR Thunderstorm Project
 """
 
 import argparse
+import gc
 import json
 import os
 import warnings
@@ -784,6 +785,10 @@ def main():
         tmin_c = round(min(tmp_k) - 273.15, 1)
         print(f"  Diurnal range: Tmax={tmax_c}°C  Tmin={tmin_c}°C")
     print("=" * 65)
+
+    # Force GC before interpreter shutdown to avoid cfgrib/eccodes
+    # "double free or corruption" crash during C library teardown
+    gc.collect()
 
 
 if __name__ == "__main__":
