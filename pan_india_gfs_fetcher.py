@@ -209,6 +209,14 @@ def extract_india_grid(grib_path: str) -> list[dict]:
                 "rh2": round(rh, 1) if rh else None,
             })
 
+    # Explicitly close all GRIB datasets to prevent cfgrib segfault on GC
+    for ds in [ds_sfc, ds_cape, ds_2m, ds_10m, ds_850, ds_700, ds_500]:
+        try:
+            if ds is not None:
+                ds.close()
+        except Exception:
+            pass
+
     log.info(f"Extracted {len(cells)} grid cells.")
     return cells
 
