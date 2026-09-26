@@ -486,22 +486,10 @@ def fetch_tmp_multiday(cycle_utc: datetime) -> dict:
         grib = GRIB_TMP_AUX.with_suffix(f".f{fh:03d}.grib2")
         try:
             download_grib(url, grib)
-            ds_2m = _open_group(grib, "heightAboveGround")
-            if ds_2m is not None:
-                pt = ds_2m.sel(latitude=LAT, longitude=LON % 360, method="nearest")
-                for src in ("t2m", "t"):
-                    if src in pt:
-                        try:
-                            val = float(pt[src].values)
-                        except Exception:
-                            try:
-                                val = float(pt[src].sel(heightAboveGround=2).values)
-                            except Exception:
-                                continue
-                        if not np.isnan(val):
-                            tmp_values[f"TMP_f{fh:03d}"] = val
-                            break
-                ds_2m.close()
+            sfc, _prof = extract_fields(grib)
+            t2m_c = sfc.get("t2m_C")
+            if t2m_c is not None and not np.isnan(t2m_c):
+                tmp_values[f"TMP_f{fh:03d}"] = t2m_c + 273.15  # store in Kelvin (training convention)
         except Exception as e:
             print(f"  TMP f{fh:03d}: fetch failed — {e}")
         finally:
@@ -799,9 +787,9 @@ def main():
         print(f"  Diurnal range: Tmax={tmax_c}°C  Tmin={tmin_c}°C")
     print("=" * 65)
 
-    # Force GC before interpreter shutdown to avoid cfgrib/eccodes
-    # "double free or corruption" crash during C library teardown
-    gc.collect()
+    # Hard-exit to bypass Python GC teardown — prevents eccodes C library
+    # "double free or corruption" / segfault at interpreter shutdown
+    os._exit(0)
 
 
 if __name__ == "__main__":
