@@ -186,112 +186,125 @@ def download_grib(url: str, out_path: Path, max_retries: int = 3) -> None:
     raise RuntimeError(f"NOMADS download failed after {max_retries} attempts: {last_error}")
 
 
-# ── GRIB2 parsing ─────────────────────────────────────────────────────────────
+# ── GRIB2 parsing (pure eccodes — no cfgrib/xarray, no GC memory corruption) ──
 
-def _open_group(grib_path: Path, type_of_level: str):
-    import xarray as xr
-    try:
-        ds = xr.open_dataset(
-            str(grib_path), engine="cfgrib",
-            backend_kwargs={"filter_by_keys": {"typeOfLevel": type_of_level}, "indexpath": ""},
-        )
-        if len(ds.data_vars) == 0:
-            ds.close()
-            return None
-        return ds
-    except Exception as e:
-        print(f"    (no '{type_of_level}' group: {e})")
-        return None
+def _nearest_idx(lats: np.ndarray, lons: np.ndarray, lat: float, lon: float):
+    """Return flat index of grid point nearest to (lat, lon)."""
+    dist = (lats - lat) ** 2 + (lons - lon) ** 2
+    return int(np.argmin(dist))
 
 
 def extract_fields(grib_path: Path) -> tuple[dict, dict]:
-    """Returns (surface_fields, profile) where profile is keyed by pressure level."""
-    surface_fields = {}
+    """
+    Parse GRIB2 using the eccodes Python bindings directly.
+    No cfgrib, no xarray — handles are opened and closed inside this function,
+    so the eccodes C library never sees a double-free or corrupt pointer.
+    Returns (surface_fields, profile) where profile is keyed by pressure level.
+    """
+    import eccodes
 
-    # CAPE / CIN / PWAT from surface/atmosphereSingleLayer groups
-    for group in ("surface", "atmosphereSingleLayer"):
-        ds = _open_group(grib_path, group)
-        if ds is None:
-            continue
-        pt = ds.sel(latitude=LAT, longitude=LON % 360, method="nearest")
-        for src, out in [("cape", "cape"), ("cin", "cin"), ("pwat", "pwat"), ("sp", "sp_pa")]:
-            if src in pt and out not in surface_fields:
-                surface_fields[out] = float(pt[src].values)
-        # APCP (precipitation)
-        for src in ("acpcp", "tp", "apcp"):
-            if src in pt and "apcp" not in surface_fields:
-                surface_fields["apcp"] = float(pt[src].values)
-        ds.close()
+    surface_fields: dict = {}
+    profile: dict = {}      # {850: {t_C, rh, u, v, q}, 700: ..., 500: ...}
 
-    # 2m temperature / dewpoint / RH
-    ds_2m = _open_group(grib_path, "heightAboveGround")
-    if ds_2m is not None:
-        pt = ds_2m.sel(latitude=LAT, longitude=LON % 360, method="nearest")
-        try:
-            pt = pt.sel(heightAboveGround=2)
-        except Exception:
-            pass
-        for src, out in [("t2m", "t2m_C"), ("t", "t2m_C")]:
-            if src in pt and "t2m_C" not in surface_fields:
-                surface_fields[out] = float(pt[src].values) - 273.15
-        for src in ("d2m", "dpt"):
-            if src in pt and "d2m_C" not in surface_fields:
-                surface_fields["d2m_C"] = float(pt[src].values) - 273.15
-        for src in ("r2", "r"):
-            if src in pt and "rh2" not in surface_fields:
-                surface_fields["rh2"] = float(pt[src].values)
-        # 10m winds
-        try:
-            pt10 = ds_2m.sel(latitude=LAT, longitude=LON % 360, method="nearest")
+    # shortName → (output_key, transform)
+    SURFACE_MAP = {
+        "cape":  ("cape",   lambda v: v),
+        "cin":   ("cin",    lambda v: v),
+        "pwat":  ("pwat",   lambda v: v),
+        "sp":    ("sp_pa",  lambda v: v),
+        "acpcp": ("apcp",   lambda v: v),
+        "tp":    ("apcp",   lambda v: v),
+        "apcp":  ("apcp",   lambda v: v),
+        "2t":    ("t2m_C",  lambda v: v - 273.15),
+        "t":     ("t2m_C",  lambda v: v - 273.15),   # caught only at 2m
+        "2d":    ("d2m_C",  lambda v: v - 273.15),
+        "d":     ("d2m_C",  lambda v: v - 273.15),   # caught only at 2m
+        "2r":    ("rh2",    lambda v: v),
+        "10u":   ("u10",    lambda v: v),
+        "10v":   ("v10",    lambda v: v),
+    }
+
+    PROFILE_LEVELS = {850, 700, 500}
+    # shortName → profile sub-key
+    PROFILE_MAP = {
+        "t":    "t_K",
+        "r":    "rh",
+        "u":    "u",
+        "v":    "v",
+        "q":    "q",
+        "spfh": "q",
+    }
+
+    with open(str(grib_path), "rb") as f:
+        while True:
             try:
-                pt10 = pt10.sel(heightAboveGround=10)
+                msg = eccodes.codes_grib_new_from_file(f)
+            except eccodes.CodesInternalError:
+                break
+            if msg is None:
+                break
+            try:
+                short = eccodes.codes_get(msg, "shortName", ktype=str)
+                type_of_level = eccodes.codes_get(msg, "typeOfLevel", ktype=str)
+                level = eccodes.codes_get(msg, "level", ktype=int)
+
+                # Get lat/lon grid and find nearest point
+                lats = eccodes.codes_get_array(msg, "latitudes")
+                lons = eccodes.codes_get_array(msg, "longitudes")
+                vals = eccodes.codes_get_array(msg, "values")
+                idx  = _nearest_idx(lats, lons % 360, LAT, LON % 360)
+                val  = float(vals[idx])
+
+                # Surface / single-layer fields
+                if type_of_level in ("surface", "atmosphereSingleLayer",
+                                     "heightAboveGround", "meanSea"):
+                    if short in SURFACE_MAP:
+                        out_key, transform = SURFACE_MAP[short]
+                        # For 't' and 'd'/'r' only take them at 2m height
+                        if short in ("t", "d", "2r") and type_of_level == "heightAboveGround":
+                            if level == 2 and out_key not in surface_fields:
+                                surface_fields[out_key] = transform(val)
+                        elif short in ("10u", "10v") and type_of_level == "heightAboveGround":
+                            if level == 10 and out_key not in surface_fields:
+                                surface_fields[out_key] = transform(val)
+                        elif short not in ("t", "d", "2r", "10u", "10v"):
+                            if out_key not in surface_fields:
+                                surface_fields[out_key] = transform(val)
+
+                # Pressure-level profile
+                elif type_of_level == "isobaricInhPa" and level in PROFILE_LEVELS:
+                    if short in PROFILE_MAP:
+                        sub_key = PROFILE_MAP[short]
+                        if level not in profile:
+                            profile[level] = {}
+                        if sub_key not in profile[level]:
+                            profile[level][sub_key] = val
+
             except Exception:
                 pass
-            if "u10" in pt10 and "u10" not in surface_fields:
-                surface_fields["u10"] = float(pt10["u10"].values)
-            if "v10" in pt10 and "v10" not in surface_fields:
-                surface_fields["v10"] = float(pt10["v10"].values)
-            for src in ("u", "ugrd"):
-                if src in pt10 and "u10" not in surface_fields:
-                    surface_fields["u10"] = float(pt10[src].values)
-            for src in ("v", "vgrd"):
-                if src in pt10 and "v10" not in surface_fields:
-                    surface_fields["v10"] = float(pt10[src].values)
-        except Exception:
-            pass
-        ds_2m.close()
+            finally:
+                eccodes.codes_release(msg)
 
-    # Pressure-level profile (T, RH, u, v, q at 850/700/500)
-    profile = {}
-    ds_iso = _open_group(grib_path, "isobaricInhPa")
-    if ds_iso is not None:
-        pt = ds_iso.sel(latitude=LAT, longitude=LON % 360, method="nearest")
-        for lvl in (850, 700, 500):
-            try:
-                sub = pt.sel(isobaricInhPa=lvl)
-                profile[lvl] = {
-                    "t_C": float(sub["t"].values) - 273.15 if "t" in sub else np.nan,
-                    "rh":  float(sub["r"].values) if "r" in sub else np.nan,
-                    "u":   float(sub["u"].values) if "u" in sub else np.nan,
-                    "v":   float(sub["v"].values) if "v" in sub else np.nan,
-                }
-                # Specific humidity
-                if "q" in sub:
-                    profile[lvl]["q"] = float(sub["q"].values)
-                elif "spfh" in sub:
-                    profile[lvl]["q"] = float(sub["spfh"].values)
-                else:
-                    # Derive q from T and RH if available
-                    t_k = profile[lvl]["t_C"] + 273.15
-                    rh  = profile[lvl]["rh"] / 100.0
-                    # Magnus: es in Pa
-                    es = 611.2 * np.exp(17.67 * profile[lvl]["t_C"] / (profile[lvl]["t_C"] + 243.5))
-                    e  = rh * es
-                    profile[lvl]["q"] = 0.622 * e / (lvl * 100.0 - 0.378 * e)
-            except Exception as e:
-                print(f"    Warning: missing {lvl} hPa: {e}")
-        ds_iso.close()
+    # Convert profile temperatures K→C and derive q where missing
+    for lvl, p in profile.items():
+        if "t_K" in p:
+            p["t_C"] = p.pop("t_K") - 273.15
+        else:
+            p["t_C"] = np.nan
+        p.setdefault("rh",  np.nan)
+        p.setdefault("u",   np.nan)
+        p.setdefault("v",   np.nan)
+        if "q" not in p and not np.isnan(p.get("t_C", np.nan)) and not np.isnan(p.get("rh", np.nan)):
+            tc = p["t_C"]
+            rh = p["rh"] / 100.0
+            es = 611.2 * np.exp(17.67 * tc / (tc + 243.5))
+            e  = rh * es
+            p["q"] = 0.622 * e / (lvl * 100.0 - 0.378 * e)
+        p.setdefault("q", np.nan)
 
+    sfc_list = list(surface_fields.keys())
+    print(f"  Surface: {sfc_list}")
+    print(f"  Profile levels: {sorted(profile.keys())}")
     return surface_fields, profile
 
 
