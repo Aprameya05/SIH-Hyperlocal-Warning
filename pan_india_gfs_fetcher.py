@@ -441,3 +441,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+    # Hard-exit to bypass Python GC teardown — prevents cfgrib/eccodes C library
+    # "double free or corruption" / segfault at interpreter shutdown (exit 139)
+    os._exit(0)
