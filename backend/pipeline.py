@@ -33,6 +33,11 @@ from pathlib import Path
 # ---------------------------------------------------------------------------
 # CONFIG
 # ---------------------------------------------------------------------------
+# Pipeline ownership (see docs/PIPELINE_OWNERSHIP.md): this pipeline is the
+# sole/canonical writer of data/pan_india_grid.json and data/ctt_grid.json.
+# pan_india_gfs_fetcher.py (root) used to also write pan_india_grid.json on a
+# separate cron; it now writes to data/pan_india_grid_slotrun.json instead so
+# the two pipelines no longer race on this path.
 OUT_DIR  = Path(__file__).parent.parent / "data"
 OUT_FILE = OUT_DIR / "pan_india_grid.json"
 

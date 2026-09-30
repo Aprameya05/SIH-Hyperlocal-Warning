@@ -96,7 +96,10 @@ jobs:
             SLOT_ARG="--slot ${{ github.event.inputs.slot }}"
           fi
           python pan_india_gfs_fetcher.py $SLOT_ARG
-          [ -f data/pan_india_grid.json ] && python3 -c 'import json; d=json.load(open("data/pan_india_grid.json")); c=d.get("grid_cells",[]); s=d.get("summary",{}).get("thunderstorm",{}); print("pan-India grid:",len(c),"cells ts_max="+str(round(s.get("max_prob",0)*100,1))+"%")' || echo 'pan-India grid not yet available'
+          # pan_india_gfs_fetcher.py writes its own slot-scoped artifact, not the
+          # shared data/pan_india_grid.json (that path is owned solely by
+          # backend/pipeline.py via update_grid.yml -- see docs/PIPELINE_OWNERSHIP.md).
+          [ -f data/pan_india_grid_slotrun.json ] && python3 -c 'import json; d=json.load(open("data/pan_india_grid_slotrun.json")); c=d.get("grid_cells",[]); s=d.get("summary",{}).get("thunderstorm",{}); print("pan-India slot-run grid:",len(c),"cells ts_max="+str(round(s.get("max_prob",0)*100,1))+"%")' || echo 'pan-India slot-run grid not yet available'
         continue-on-error: true
 
       - name: Fetch Himawari-9 satellite data
@@ -204,10 +207,8 @@ jobs:
           cp forecast.json /tmp/forecast_generated.json
           git pull origin main --no-rebase || true
           cp /tmp/forecast_generated.json forecast.json
-          git add data/pan_india_grid.json || true
           git add forecast.json
           git add \
-            data/pan_india_grid.json \
             data/gfs_realtime_43295.csv \
             data/upperair_realtime_43295.csv \
             data/gfs_multiday_43295.json \

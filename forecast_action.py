@@ -88,27 +88,29 @@ def detect_monsoon_regime(cape: float, ki: float, t2m_c: float, month: int) -> s
 
 # Production model priority per slot
 # v6 Himawari > v6 temporal > v5 temporal > v4 ensemble/calibrated > v3 > v2
+# Production reality (verified 2026-09-30): no *_v6_himawari.pkl artifacts
+# exist in models/. Training one is out of scope for this pass. GFS-only
+# v6_temporal is the highest-priority model actually in production; any slot
+# that falls through past index 0 below is running on a fallback artifact and
+# forecast.json now records that per-slot (see `fallback` / `fallback_reason`
+# in the slots_output entries further down).
 SLOT_MODEL_PRIORITY = {
-    0: ["nowcast_slot0_xgb_v6_himawari.pkl",
-        "nowcast_slot0_xgb_v6_temporal.pkl",
+    0: ["nowcast_slot0_xgb_v6_temporal.pkl",
         "nowcast_slot0_xgb_v4_ensemble.pkl",
         "nowcast_slot0_xgb_v4_calibrated.pkl",
         "nowcast_slot0_xgb_v3_calibrated.pkl",
         "nowcast_slot0_xgb_v2_calibrated.pkl"],
-    1: ["nowcast_slot1_xgb_v6_himawari.pkl",
-        "nowcast_slot1_xgb_v6_temporal.pkl",
+    1: ["nowcast_slot1_xgb_v6_temporal.pkl",
         "nowcast_slot1_xgb_v5_temporal.pkl",
         "nowcast_slot1_xgb_v4_calibrated.pkl",
         "nowcast_slot1_xgb_v3_calibrated.pkl",
         "nowcast_slot1_xgb_v2_calibrated.pkl"],
-    2: ["nowcast_slot2_xgb_v6_himawari.pkl",
-        "nowcast_slot2_xgb_v6_temporal.pkl",
+    2: ["nowcast_slot2_xgb_v6_temporal.pkl",
         "nowcast_slot2_xgb_v5_temporal.pkl",
         "nowcast_slot2_xgb_v4_calibrated.pkl",
         "nowcast_slot2_xgb_v3_calibrated.pkl",
         "nowcast_slot2_xgb_v2_calibrated.pkl"],
-    3: ["nowcast_slot3_xgb_v6_himawari.pkl",
-        "nowcast_slot3_xgb_v6_temporal.pkl",
+    3: ["nowcast_slot3_xgb_v6_temporal.pkl",
         "nowcast_slot3_xgb_v5_temporal.pkl",
         "nowcast_slot3_xgb_v4_calibrated.pkl",
         "nowcast_slot3_xgb_v3_calibrated.pkl",
@@ -434,6 +436,8 @@ def main():
                 "primary":        slot_id == 2,
                 "source":         "climatology",
                 "model_used":     "none",
+                "fallback":       True,
+                "fallback_reason": "no model artifact found for this slot in models/",
             })
             continue
 
@@ -465,6 +469,8 @@ def main():
                 "primary":        slot_id == 2,
                 "source":         "climatology_model_error",
                 "model_used":     model_name,
+                "fallback":       True,
+                "fallback_reason": f"model artifact failed to load: {e}",
                 "error":          str(e),
             })
             continue
@@ -534,7 +540,7 @@ def main():
 
         # Determine model version label
         if "v6" in model_name:
-            model_ver = "v6_himawari" if "himawari" in model_name else "v6_temporal"
+            model_ver = "v6_temporal"
         elif "v5" in model_name:
             model_ver = "v5_temporal"
         elif "v4_ensemble" in model_name:
@@ -545,6 +551,14 @@ def main():
             model_ver = "v3_calibrated"
         else:
             model_ver = "v2_calibrated"
+
+        # Provenance: is this the first-priority (production) model for the
+        # slot, or did we fall through to a lower-priority artifact?
+        is_fallback = (model_name != SLOT_MODEL_PRIORITY[slot_id][0])
+        fallback_reason = (
+            None if not is_fallback
+            else f"preferred model(s) missing from models/ — using {model_name}"
+        )
 
         slots_output.append({
             "slot":              slot_id,
@@ -557,6 +571,8 @@ def main():
             "source":            data_source,
             "model_used":        model_name,
             "model_version":     model_ver,
+            "fallback":          is_fallback,
+            "fallback_reason":   fallback_reason,
             "raw_probability":   round(float(raw), 4),
             "cape":              round(obs.get("CAPE", 0), 1),
             "k_index":           round(obs.get("K_INDEX", 0), 1),
