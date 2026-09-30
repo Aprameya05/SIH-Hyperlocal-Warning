@@ -3404,7 +3404,7 @@ function injectDrainageOverlay(map, liveData) {
                 </div>
                 <div className="flex justify-between items-center text-[12px]">
                   <span className="text-[#607d8b]">LAST UPDATE</span>
-                  <span className="text-white font-bold">{lastUpdated || '2026-07-25 17:20 IST'}</span>
+                  <span className="text-white font-bold">{lastUpdated || 'UNAVAILABLE'}</span>
                 </div>
                 <div className="flex justify-between items-center text-[12px]">
                   <span className="text-[#607d8b]">LATENCY</span>
@@ -4154,7 +4154,7 @@ function injectDrainageOverlay(map, liveData) {
                       MODEL PERFORMANCE SUMMARY
                     </h4>
                     <span className={`text-[11px] font-bold px-2 py-0.5 rounded border ${isLive ? 'text-cyan-300 border-cyan-700/50 bg-cyan-900/30' : 'text-[#607d8b] border-[#172338] bg-[#050811]'}`}>
-                      {isLive ? `ROLLING 30-DAY${liveData.verification.last_updated ? ' · ' + liveData.verification.last_updated : ''}` : 'TEST PERIOD 2023–2025 · SLOT 2 v3'}
+                      {isLive ? `LIVE ROLLING VERIFICATION (30-DAY)${liveData.verification.last_updated ? ' · ' + liveData.verification.last_updated : ''}` : 'STATIC / HISTORICAL FALLBACK · TEST PERIOD 2023–2025 · SLOT 2 v3'}
                     </span>
                   </div>
                   <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 text-center items-stretch">
@@ -5983,6 +5983,12 @@ function injectDrainageOverlay(map, liveData) {
 
           {/* SHAP slot label */}
           <div className="text-[12px] text-[#607d8b] -mt-2">↑ Slot switcher above controls SHAP only — Skew-T shows today's full atmospheric column</div>
+
+          {!isRealtime && (
+            <div className="text-[11px] font-bold px-2 py-1 rounded border text-amber-300 border-amber-700/50 bg-amber-900/20 inline-block">
+              STATIC / HISTORICAL FALLBACK — live per-run SHAP unavailable for this slot, showing illustrative example values
+            </div>
+          )}
 
           {/* SHAP Chart Legend */}
           <div className="flex items-center gap-6 text-xs border-b border-[#172338] pb-3">
@@ -7929,7 +7935,22 @@ function injectDrainageOverlay(map, liveData) {
           setLiveData(json);
           window.__SIH_VERIFICATION__ = json.verification || {};
           setLastUpdated(json.generated_at || json.date || 'Just now');
-          setIsLiveData(true);
+          // Honest liveness: a successful fetch only means the file was
+          // reachable, not that the data is fresh. Derive LIVE vs STALE from
+          // the same generated_at-age thresholds used by the Data Health
+          // card (ok < 7h, warn < 14h, stale >= 14h). Treat >= 14h as not
+          // live so the header badge can't say LIVE on stale data.
+          (() => {
+            const genAt = json.generated_at;
+            if (!genAt) { setIsLiveData(false); return; }
+            try {
+              const cleaned = genAt.replace(' IST', '').trim();
+              const parsed = new Date(cleaned.replace(' ', 'T') + ':00+05:30');
+              if (isNaN(parsed)) { setIsLiveData(false); return; }
+              const ageHours = (Date.now() - parsed.getTime()) / 3600000;
+              setIsLiveData(ageHours < 14);
+            } catch (_) { setIsLiveData(false); }
+          })();
           if (Array.isArray(json.slots)) {
             setCurrentSlots(json.slots.map(s => {
               const hCfg = HAZARD_CONFIG[selectedHazard] || HAZARD_CONFIG.ts;
@@ -7953,7 +7974,7 @@ function injectDrainageOverlay(map, liveData) {
           }
         } catch (err) {
           setIsLiveData(false);
-          setLastUpdated('2026-07-25 17:20 IST');
+          setLastUpdated('UNAVAILABLE');
           setCurrentSlots(DEFAULT_SLOTS);
         }
       };
