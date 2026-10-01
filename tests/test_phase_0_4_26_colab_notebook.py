@@ -83,6 +83,67 @@ def test_notebook_batch_size_gate_logic_reduces_on_low_free_space():
     assert compute_batch_size(1024) == 0
 
 
+def test_notebook_resolves_ts_labels_from_drive_and_hard_fails_if_missing():
+    nb = json.loads(NOTEBOOK_PATH.read_text())
+    code_cells = [c for c in nb["cells"] if c["cell_type"] == "code"]
+    ts_cells = [c for c in code_cells if "TS_LABELS_DRIVE_PATH" in "".join(c["source"])]
+    assert ts_cells, "no cell defines TS_LABELS_DRIVE_PATH"
+    src = "".join(ts_cells[0]["source"])
+
+    # Resolves the exact Drive root path, not any other location.
+    assert '/content/drive/MyDrive/ts_labels.csv' in src
+
+    # Hard-fails (raises) rather than silently continuing or substituting another path.
+    assert "raise RuntimeError" in src
+    assert "if not TS_LABELS_DRIVE_PATH.exists():" in src
+
+    # Verifies it's readable as a CSV and checks for the real columns
+    # build_vobl_historical_gfs_ts_join.py::build_pilot() actually requires.
+    assert "pd.read_csv(TS_LABELS_DRIVE_PATH)" in src
+    for col in ("cell_id", "timestamp", "label", "label_status"):
+        assert col in src, f"missing required TS label column check: {col}"
+
+
+def test_notebook_build_phase_0_4_20_calls_always_pass_explicit_ts_labels():
+    nb = json.loads(NOTEBOOK_PATH.read_text())
+    code_cells = [c for c in nb["cells"] if c["cell_type"] == "code"]
+    invocation_cells = [
+        c for c in code_cells
+        if "build_phase_0_4_20_dataset.py" in "".join(c["source"])
+        and "cmd = (" in "".join(c["source"])
+    ]
+    assert invocation_cells, "no cell builds a build_phase_0_4_20_dataset.py command line"
+    for c in invocation_cells:
+        src = "".join(c["source"])
+        assert "--ts-labels" in src, "a build_phase_0_4_20_dataset.py call is missing --ts-labels"
+        assert "TS_LABELS_DRIVE_PATH" in src, (
+            "--ts-labels must reference the Drive-hosted path, not a hardcoded/default one"
+        )
+        # Never allow silent fallback to the builder's own default path: the actual
+        # --ts-labels argument must be the Drive variable, not a literal default path
+        # (a comment *mentioning* the default, to explain why it's avoided, is fine).
+        assert '--ts-labels "{TS_LABELS_DRIVE_PATH}"' in src
+
+
+def test_notebook_ts_labels_section_precedes_manifest_and_extraction_sections():
+    nb = json.loads(NOTEBOOK_PATH.read_text())
+    headings = [
+        "".join(c["source"]).strip()
+        for c in nb["cells"]
+        if c["cell_type"] == "markdown" and "".join(c["source"]).strip().startswith("##")
+    ]
+    def index_of(prefix):
+        for i, h in enumerate(headings):
+            if h.startswith(prefix):
+                return i
+        raise AssertionError(f"heading not found: {prefix}")
+
+    ts_idx = index_of("## 4b. TS labels")
+    manifest_idx = index_of("## 7. Manifest verification")
+    extraction_idx = index_of("## 11. Historical feature extraction")
+    assert ts_idx < manifest_idx < extraction_idx
+
+
 def test_resumability_skip_logic_skips_terminal_statuses():
     TERMINAL_STATUSES = {"DOWNLOADED", "VERIFIED", "EXTRACTED", "VALIDATED", "PERSISTED", "PURGED"}
     state = {
