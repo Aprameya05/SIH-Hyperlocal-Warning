@@ -144,19 +144,54 @@ def build_obs(gfs_row: pd.Series | None, slot_id: int) -> dict:
     return obs
 
 
-def compute_shap_for_slot(slot_id: int, gfs_row: pd.Series | None) -> dict | None:
-    model_path = find_model(slot_id)
-    if model_path is None:
-        print(f"    Slot {slot_id}: no model found — skipping")
-        return None
+def model_used_for_slot(forecast: dict, slot_id: int) -> str | None:
+    """The model filename forecast_action.py actually used for this slot,
+    as recorded in forecast.json's per-slot "model_used" field (Phase P0.1).
+    Returns None if forecast.json has no entry for this slot -- callers
+    must treat that as 'explanation unavailable', never fall back to
+    find_model()'s own, independent priority list. This is the single
+    source of truth for "which model does SHAP explain" -- it must always
+    be the model that produced the displayed prediction, never a separately
+    and independently re-selected one."""
+    for s in forecast.get("slots", []):
+        if s.get("slot") == slot_id:
+            return s.get("model_used")
+    return None
 
-    artifact     = joblib.load(model_path)
+
+def compute_shap_for_slot(forecast: dict, slot_id: int, models_dir: Path,
+                           gfs_row: pd.Series | None = None) -> dict:
+    """SHAP must explain the EXACT model forecast_action.py used for this
+    slot (Phase P0.1 fix for the model-version-mismatch risk identified in
+    docs/PHASE_P0_LIVE_VERIFICATION.md). This never independently
+    re-selects a model via SLOT_MODEL_PRIORITY/find_model(), and never
+    silently substitutes a different model if the declared one can't be
+    loaded -- it reports available=False instead. Always returns a dict,
+    never raises and never returns None, so a caller always gets an
+    explicit available/unavailable state."""
+    declared = model_used_for_slot(forecast, slot_id)
+    if not declared:
+        return {"slot": slot_id, "available": False, "model_used": None,
+                "reason": "forecast.json has no model_used recorded for this slot -- explanation unavailable"}
+
+    model_path = models_dir / declared
+    if not model_path.exists():
+        return {"slot": slot_id, "available": False, "model_used": declared,
+                "reason": f"declared model '{declared}' not found on disk -- explanation unavailable "
+                          f"(never silently substituting a different model)"}
+
+    try:
+        artifact = joblib.load(model_path)
+    except Exception as e:
+        return {"slot": slot_id, "available": False, "model_used": declared,
+                "reason": f"declared model '{declared}' failed to load: {type(e).__name__}: {e}"}
+
     model        = artifact.get("model") or artifact.get("calibrated")
     feature_cols = artifact.get("feature_cols") or artifact.get("features") or []
     threshold    = artifact.get("threshold", 0.16)
     if model is None or not feature_cols:
-        print(f"    Slot {slot_id}: missing model/features in artifact. Keys: {list(artifact.keys())}")
-        return None
+        return {"slot": slot_id, "available": False, "model_used": declared,
+                "reason": f"declared model artifact missing model/feature_cols keys: {list(artifact.keys())}"}
 
     obs = build_obs(gfs_row, slot_id)
     X   = np.array([[float(obs.get(c, 0.0)) for c in feature_cols]])
@@ -165,8 +200,8 @@ def compute_shap_for_slot(slot_id: int, gfs_row: pd.Series | None) -> dict | Non
     try:
         import shap
     except ImportError:
-        print("    shap not installed — pip install shap")
-        return None
+        return {"slot": slot_id, "available": False, "model_used": declared,
+                "reason": "shap library not installed -- explanation unavailable"}
 
     explainer   = shap.TreeExplainer(model)
     shap_values = explainer.shap_values(df)
@@ -192,7 +227,8 @@ def compute_shap_for_slot(slot_id: int, gfs_row: pd.Series | None) -> dict | Non
 
     return {
         "slot":       slot_id,
-        "model_used": model_path.name,
+        "available":  True,
+        "model_used": declared,
         "prob":       round(prob, 4),
         "threshold":  threshold,
         "base_value": round(base_val, 4),
@@ -240,6 +276,22 @@ def main():
     else:
         print("  GFS: file not found — using defaults")
 
+    # Phase P0.1: SHAP must explain the model forecast_action.py actually
+    # used, not independently re-select one. forecast.json is the single
+    # source of truth for "which model produced this prediction" via each
+    # slot's model_used field.
+    forecast_path = Path("forecast.json")
+    forecast = {}
+    if forecast_path.exists():
+        try:
+            with open(forecast_path) as f:
+                forecast = json.load(f)
+        except Exception as e:
+            print(f"  WARNING: could not read forecast.json ({e}) — SHAP will report unavailable for every slot")
+    else:
+        print("  WARNING: forecast.json not found — SHAP will report unavailable for every slot "
+              "(it cannot know which model produced a prediction that was never written)")
+
     slots_to_run = [args.slot] if args.slot is not None else [0, 1, 2, 3]
     results = {}
 
@@ -254,16 +306,18 @@ def main():
     for slot_id in slots_to_run:
         print(f"\n  Computing SHAP for Slot {slot_id}...")
         try:
-            result = compute_shap_for_slot(slot_id, gfs_row)
-            if result:
-                results[str(slot_id)] = result
+            result = compute_shap_for_slot(forecast, slot_id, MODELS, gfs_row)
+            results[str(slot_id)] = result
+            if result.get("available"):
                 top = result["top_features"][0]
                 print(f"  ✓ Top: {top['feature']} "
-                      f"(SHAP={top['shap']:.4f}, {top['direction']})")
+                      f"(SHAP={top['shap']:.4f}, {top['direction']})  [model: {result['model_used']}]")
             else:
-                print(f"  ✗ Slot {slot_id}: no result")
+                print(f"  ✗ Slot {slot_id}: explanation unavailable — {result.get('reason')}")
         except Exception as e:
             print(f"  ✗ Slot {slot_id} error: {type(e).__name__}: {e}")
+            results[str(slot_id)] = {"slot": slot_id, "available": False,
+                                      "reason": f"{type(e).__name__}: {e}"}
             # Don't re-raise — keep partial results
 
     DATA.mkdir(parents=True, exist_ok=True)

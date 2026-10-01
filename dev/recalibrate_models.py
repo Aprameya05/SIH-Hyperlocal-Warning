@@ -34,7 +34,9 @@ import numpy as np
 import pandas as pd
 import joblib
 
-BASE    = Path(__file__).resolve().parent
+BASE    = Path(__file__).resolve().parent.parent  # Phase P0.1: this script lives in dev/,
+# one level below repo root (same convention as backend/pipeline.py), so MODELS/DATA/RESULTS
+# must resolve against the repo root, not dev/ itself.
 MODELS  = BASE / "models"
 DATA    = BASE / "data"
 RESULTS = BASE / "results"
