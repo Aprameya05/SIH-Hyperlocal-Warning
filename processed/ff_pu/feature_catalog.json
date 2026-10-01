@@ -1,0 +1,51 @@
+{
+  "rainfall_features": [
+    "rain_1d",
+    "rain_3d",
+    "rain_5d",
+    "rain_10d",
+    "rain_max1d_5d",
+    "rain_recent_vs_antecedent_ratio",
+    "rain_accel_3d_minus_prior3d"
+  ],
+  "catchment_numeric_features": [
+    "Stream Order",
+    "Drainage Density",
+    "Drainage Texture",
+    "Drainage Intensity",
+    "Channel Frequency",
+    "Infiltration Number",
+    "No. of Firstorder Streams",
+    "No. of Secondorder Streams",
+    "No. of Thirdorder Streams",
+    "Basin Magnitude",
+    "Fitness Ratio",
+    "Wandering Ratio",
+    "Maximal Flow Length",
+    "Downvalley Length",
+    "Drainage Area",
+    "Catchment Relief",
+    "Catchment Length",
+    "Catchment Perimeter",
+    "Sinuosity Index",
+    "Form Factor",
+    "Relief Ratio",
+    "Elongation Ratio",
+    "Circularity Ratio",
+    "Lemniscates Value",
+    "Compactness Coefficient",
+    "Ruggedness Number",
+    "Annual Precipitation",
+    "Precipitation Seasonality",
+    "Precipitation of Wettest Month",
+    "Precipitation of Wettest Quarter",
+    "Annual Mean Temperature",
+    "Temperature Seasonality"
+  ],
+  "catchment_categorical_features": [
+    "Soil type",
+    "lithology type",
+    "Land cover",
+    "KoppenGeiger Climate Type"
+  ]
+}

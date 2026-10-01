@@ -1,0 +1,100 @@
+{
+  "phase": "0.4.12",
+  "contract_version": "phase_0_4_12_v1",
+  "contract_doc": "docs/PHASE_0_4_12_HISTORICAL_GFS_TS_DATASET_CONTRACT.md",
+  "status": "BUILT_FROM_ACTUAL_FILES",
+  "cycle": "2024051206",
+  "leads_requested": [
+    3,
+    6
+  ],
+  "source_files": [
+    {
+      "path": "D:\\SIH-Historical-GFS\\raw\\gfs.0p25.2024051206.f003.grib2",
+      "sha256": "b6e3676c0734f24d5f9b0da015a19817b2d677f79126fd5caf10690f47bea2cb",
+      "size_bytes": 543364213
+    },
+    {
+      "path": "D:\\SIH-Historical-GFS\\raw\\gfs.0p25.2024051206.f006.grib2",
+      "sha256": "7c011f279e9443e90ce8b25c10f4c0ff94d5a5ec28e57f85814af62a1dc1842b",
+      "size_bytes": 546282172
+    }
+  ],
+  "archive_source": "NCAR_GDEX_d084001",
+  "initialization_times": [
+    "2024-05-12T06:00:00+00:00"
+  ],
+  "forecast_leads_hours": [
+    3,
+    6
+  ],
+  "cycle_consistency_check": {
+    "same_initialization_cycle_across_all_files": true,
+    "initialization_times_seen": [
+      "20240512 0600"
+    ]
+  },
+  "vobl_cell_mapping": {
+    "station_latitude": 13.1979,
+    "station_longitude": 77.7063,
+    "canonical_cell_id": "IND_13.0_78.0",
+    "cell_center_lat": 13.0,
+    "cell_center_lon": 78.0,
+    "distance_station_to_cell_center_km": 38.678,
+    "note": "cell id reused from scripts/build_panindia_ts_labels.py / scripts/build_panindia_dataset.py (not re-derived fresh); cell_id_for() is deterministic from (lat,lon), verified by calling it here."
+  },
+  "event_group_keys": [
+    "IND_13.0_78.0|2024-05-12|2"
+  ],
+  "n_rows": 2,
+  "n_positive": 2,
+  "n_negative": 0,
+  "n_unmatched": 0,
+  "unmatched_detail": [],
+  "feature_list": [
+    "cape",
+    "cin",
+    "pwat_mm",
+    "u850",
+    "v850",
+    "u200",
+    "v200",
+    "wind_shear_850_200_ms",
+    "t850_k",
+    "t700_k",
+    "t500_k",
+    "rh850_pct",
+    "rh700_pct",
+    "k_index",
+    "totals_totals",
+    "gfs_precip_3h_interval_mm",
+    "gfs_prate_kg_m2_s"
+  ],
+  "feature_leakage_classification": {
+    "cape": "FORECAST_DERIVED",
+    "cin": "FORECAST_DERIVED",
+    "pwat_mm": "FORECAST_DERIVED",
+    "u850": "FORECAST_DERIVED",
+    "v850": "FORECAST_DERIVED",
+    "u200": "FORECAST_DERIVED",
+    "v200": "FORECAST_DERIVED",
+    "wind_shear_850_200_ms": "FORECAST_DERIVED",
+    "t850_k": "FORECAST_DERIVED",
+    "t700_k": "FORECAST_DERIVED",
+    "t500_k": "FORECAST_DERIVED",
+    "rh850_pct": "FORECAST_DERIVED",
+    "rh700_pct": "FORECAST_DERIVED",
+    "k_index": "FORECAST_DERIVED",
+    "totals_totals": "FORECAST_DERIVED",
+    "gfs_precip_3h_interval_mm": "FORECAST_DERIVED",
+    "gfs_prate_kg_m2_s": "FORECAST_DERIVED"
+  },
+  "features_using_future_information": [],
+  "label_definition": "ANY TS observation within the IST slot window => POSITIVE (1); closed window with >=1 real observation and none showing TS => NEGATIVE_CONFIRMED (0); no row / open window => UNKNOWN",
+  "label_source": "SIH_PANINDIA_GRID_LABELS_20260930_143541Z\\processed\\labels\\ts_labels.csv",
+  "canonical_cell": "IND_13.0_78.0",
+  "quality_issues": [],
+  "creation_timestamp_utc": "2026-10-01T11:18:20.448115+00:00",
+  "script": "scripts/build_vobl_historical_gfs_ts_join.py",
+  "script_version": "phase_0_4_12_v1_contract_fields"
+}

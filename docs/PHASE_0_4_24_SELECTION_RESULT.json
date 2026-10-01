@@ -1,0 +1,121 @@
+{
+  "candidate_report": {
+    "total_eligible_positive_groups": 571,
+    "total_eligible_negative_groups": 14685,
+    "years_positive": [
+      2015,
+      2016,
+      2017,
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024,
+      2025
+    ],
+    "years_negative": [
+      2015,
+      2016,
+      2017,
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024,
+      2025
+    ],
+    "seasons_positive": [
+      "monsoon",
+      "post-monsoon",
+      "pre-monsoon",
+      "winter"
+    ],
+    "slots_positive": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "unmapped_label_statuses_excluded": [],
+    "n_unmapped_status_rows": 0,
+    "n_cannot_map_to_gfs_cycle": 0
+  },
+  "selected": {
+    "total_event_groups": 300,
+    "positive": 150,
+    "negative": 150,
+    "train": 240,
+    "holdout": 60,
+    "train_positive": 120,
+    "train_negative": 120,
+    "holdout_positive": 30,
+    "holdout_negative": 30
+  },
+  "expected_gfs_files": 600,
+  "duplicate_filenames": 0,
+  "duplicate_event_group_keys": [],
+  "cross_partition_episode_overlap": [],
+  "train_episodes": 236,
+  "holdout_episodes": 58,
+  "year_distribution_positive": {
+    "2015": 15,
+    "2016": 15,
+    "2017": 15,
+    "2018": 15,
+    "2019": 1,
+    "2020": 15,
+    "2021": 15,
+    "2022": 15,
+    "2023": 14,
+    "2024": 15,
+    "2025": 15
+  },
+  "year_distribution_negative": {
+    "2015": 14,
+    "2016": 14,
+    "2017": 14,
+    "2018": 13,
+    "2019": 13,
+    "2020": 13,
+    "2021": 13,
+    "2022": 13,
+    "2023": 13,
+    "2024": 15,
+    "2025": 15
+  },
+  "season_distribution_positive": {
+    "monsoon": 52,
+    "post-monsoon": 44,
+    "pre-monsoon": 51,
+    "winter": 3
+  },
+  "season_distribution_negative": {
+    "monsoon": 36,
+    "post-monsoon": 38,
+    "pre-monsoon": 42,
+    "winter": 34
+  },
+  "slot_distribution_positive": {
+    "0": 24,
+    "1": 26,
+    "2": 66,
+    "3": 34
+  },
+  "slot_distribution_negative": {
+    "0": 33,
+    "1": 44,
+    "2": 38,
+    "3": 35
+  },
+  "max_same_date": 2,
+  "max_within_24h": 1,
+  "max_within_3d": 3,
+  "max_within_7d": 6,
+  "existing_20_retained_as_candidates": 0,
+  "existing_20_train": 14,
+  "existing_20_holdout": 6
+}

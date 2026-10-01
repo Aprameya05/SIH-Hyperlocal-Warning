@@ -4,3 +4,10 @@ __pycache__/
 *.nc
 thunderstorm_model.pklbackend/.env
 *.env
+
+# Historical GFS raw acquisition files
+*.grib2
+*.grb2
+*.idx
+*.part
+data/external/historical_gfs/raw/

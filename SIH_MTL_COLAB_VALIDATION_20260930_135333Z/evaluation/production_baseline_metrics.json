@@ -1,0 +1,56 @@
+{
+  "test_period": "2024-01-01 to 2025-12-31",
+  "population": "VOBL / Bengaluru only",
+  "by_hazard": {
+    "TS": {
+      "status": "unavailable",
+      "reason": "All 4 production TS slot artifacts expect feature columns that are not present in data/bengaluru_6hr_training_dataset_cb_ff.csv (the production TS models were trained on a richer/newer feature set than this CB/FF-audited CSV carries). No score was fabricated by zero-filling those columns and presenting the result as a real baseline.",
+      "skip_reasons_by_slot": {
+        "0": "model requires 9 columns not present in this CSV: ['doy', 'cape_trend', 'moisture_depth', 'low_level_convergence', 'wet_bulb_potential_temp', 'rf_std_7d', 'lapse_rate_850_500', 'is_october_slot2', 'monsoon_break_flag']",
+        "1": "model requires 9 columns not present in this CSV: ['doy', 'cape_trend', 'moisture_depth', 'low_level_convergence', 'wet_bulb_potential_temp', 'rf_std_7d', 'lapse_rate_850_500', 'is_october_slot2', 'monsoon_break_flag']",
+        "2": "model requires 9 columns not present in this CSV: ['doy', 'cape_trend', 'moisture_depth', 'low_level_convergence', 'wet_bulb_potential_temp', 'rf_std_7d', 'lapse_rate_850_500', 'is_october_slot2', 'monsoon_break_flag']",
+        "3": "model requires 9 columns not present in this CSV: ['doy', 'cape_trend', 'moisture_depth', 'low_level_convergence', 'wet_bulb_potential_temp', 'rf_std_7d', 'lapse_rate_850_500', 'is_october_slot2', 'monsoon_break_flag']"
+      }
+    },
+    "CB": {
+      "n": 2680,
+      "n_positive": 8,
+      "n_negative": 2672,
+      "threshold_used": 0.5,
+      "AUROC": 0.9239099925149701,
+      "AUPRC": 0.09063552989889508,
+      "POD": 0.0,
+      "FAR": 1.0,
+      "CSI": 0.0,
+      "HSS": -0.0006637902422798138,
+      "BIAS": 0.125,
+      "confusion_matrix": {
+        "TP": 0,
+        "FP": 1,
+        "FN": 8,
+        "TN": 2671
+      },
+      "threshold_note": "No calibrated operational threshold is defined for CB/FF alerting in forecast_action.py at the time of this audit; 0.5 used as a neutral default, not a tuned production cutoff."
+    },
+    "FF": {
+      "n": 2680,
+      "n_positive": 8,
+      "n_negative": 2672,
+      "threshold_used": 0.5,
+      "AUROC": 0.9858486152694611,
+      "AUPRC": 0.24027004909983635,
+      "POD": 0.375,
+      "FAR": 0.7857142857142857,
+      "CSI": 0.15789473684210525,
+      "HSS": 0.26995369109234546,
+      "BIAS": 1.75,
+      "confusion_matrix": {
+        "TP": 3,
+        "FP": 11,
+        "FN": 5,
+        "TN": 2661
+      },
+      "threshold_note": "No calibrated operational threshold is defined for CB/FF alerting in forecast_action.py at the time of this audit; 0.5 used as a neutral default, not a tuned production cutoff."
+    }
+  }
+}

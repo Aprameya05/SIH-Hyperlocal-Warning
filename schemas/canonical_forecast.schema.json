@@ -1,0 +1,120 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://sih-hyperlocal-warning/schemas/canonical_forecast.schema.json",
+  "title": "DRIFT Canonical Forecast",
+  "description": "Single authoritative forecast artifact. See docs/CANONICAL_FORECAST_SCHEMA.md for the full rationale and provenance/status semantics.",
+  "type": "object",
+  "required": ["schema_version", "generated_at", "forecast_cycle", "grid", "cells"],
+  "additionalProperties": true,
+  "properties": {
+    "schema_version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "forecast_cycle": {
+      "type": "object",
+      "required": ["source", "source_cycle", "source_timestamp"],
+      "properties": {
+        "source": { "type": "string" },
+        "source_cycle": { "type": ["string", "null"] },
+        "source_timestamp": { "type": ["string", "null"], "format": "date-time" }
+      }
+    },
+    "grid": {
+      "type": "object",
+      "required": ["grid_id", "cell_count"],
+      "properties": {
+        "grid_id": { "type": "string" },
+        "cell_count": { "type": "integer", "const": 992 }
+      }
+    },
+    "cells": {
+      "type": "array",
+      "minItems": 992,
+      "maxItems": 992,
+      "items": { "$ref": "#/definitions/cell" }
+    }
+  },
+  "definitions": {
+    "cell": {
+      "type": "object",
+      "required": ["cell_id", "latitude", "longitude", "forecasts"],
+      "properties": {
+        "cell_id": { "type": "string", "pattern": "^IND_-?[0-9]+\\.[0-9]_-?[0-9]+\\.[0-9]$" },
+        "latitude": { "type": "number", "minimum": 6, "maximum": 37 },
+        "longitude": { "type": "number", "minimum": 68, "maximum": 98 },
+        "domain": {
+          "type": "string",
+          "enum": ["PAN_INDIA_PHYSICS_PROXY", "VOBL_ML_DOMAIN"],
+          "description": "Which forecast domain this cell's forecasts[].hazards come from. VOBL_ML_DOMAIN appears only on the single canonical VOBL cell (IND_13.0_78.0)."
+        },
+        "forecasts": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/definitions/leadForecast" }
+        }
+      }
+    },
+    "leadForecast": {
+      "type": "object",
+      "required": ["lead_hours", "valid_time", "hazards", "data_quality"],
+      "properties": {
+        "lead_hours": { "type": "integer", "enum": [2, 4, 6] },
+        "valid_time": { "type": "string", "format": "date-time" },
+        "hazards": {
+          "type": "object",
+          "required": ["thunderstorm", "cloudburst", "flash_flood"],
+          "properties": {
+            "thunderstorm": { "$ref": "#/definitions/hazard" },
+            "cloudburst": { "$ref": "#/definitions/hazard" },
+            "flash_flood": { "$ref": "#/definitions/hazard" }
+          }
+        },
+        "data_quality": {
+          "type": "object",
+          "required": ["gfs", "himawari", "terrain"],
+          "properties": {
+            "gfs": { "$ref": "#/definitions/sourceStatus" },
+            "himawari": { "$ref": "#/definitions/sourceStatus" },
+            "terrain": { "$ref": "#/definitions/sourceStatus" }
+          }
+        }
+      }
+    },
+    "hazard": {
+      "type": "object",
+      "required": ["probability", "status", "source", "method", "model"],
+      "properties": {
+        "probability": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+        "status": {
+          "type": "string",
+          "enum": ["AVAILABLE", "PROXY", "UNAVAILABLE", "STALE", "NOT_APPLICABLE"]
+        },
+        "source": { "type": "string" },
+        "method": { "type": "string" },
+        "model": { "type": "string" },
+        "reason": { "type": "string", "description": "Required when status is UNAVAILABLE, STALE, or NOT_APPLICABLE." }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "status": { "const": "AVAILABLE" } } },
+          "then": { "properties": { "probability": { "type": "number" } } }
+        },
+        {
+          "if": { "properties": { "status": { "enum": ["UNAVAILABLE", "NOT_APPLICABLE"] } } },
+          "then": { "properties": { "probability": { "type": "null" } }, "required": ["reason"] }
+        }
+      ]
+    },
+    "sourceStatus": {
+      "type": "object",
+      "required": ["status"],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["AVAILABLE", "PROXY", "UNAVAILABLE", "STALE", "NOT_APPLICABLE", "FETCHED", "CACHED", "FAILED"],
+          "description": "AVAILABLE/PROXY/NOT_APPLICABLE are hazard-provenance states inherited from Part 1. FETCHED/CACHED/STALE/FAILED are freshness states (Phase 3.5 Part 3/6): FETCHED means a fetch step in this same pipeline run wrote the backing artifact; CACHED means the backing artifact is present and not stale but was NOT verifiably fetched this run; STALE means the artifact is older than that source's own real refresh cadence; FAILED means the backing artifact is missing."
+        },
+        "timestamp": { "type": ["string", "null"], "format": "date-time" }
+      }
+    }
+  }
+}
