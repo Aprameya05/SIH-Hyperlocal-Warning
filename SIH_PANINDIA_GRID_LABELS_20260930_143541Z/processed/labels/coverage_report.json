@@ -1,0 +1,34 @@
+{
+  "TS": {
+    "geographic_coverage": "1/992 canonical cells (0.101%) -- VOBL only",
+    "positive_events": 584,
+    "negative_confirmed": 14692,
+    "unknown_cells": 991,
+    "class_imbalance": 3.823
+  },
+  "CB": {
+    "geographic_coverage": "992/992 canonical cells have IMD rain data (genuinely pan-India)",
+    "positive_cell_days": 49613,
+    "negative_confirmed_cell_days": 1501330,
+    "missing_cell_days": 2434913,
+    "class_imbalance_pct": 3.1989,
+    "temporal_resolution": "daily (source), applied to all 4 six-hour slots -- see docs/LABEL_ENGINE.md"
+  },
+  "FF": {
+    "event_based": {
+      "status": "UNKNOWN for all 992 cells, all timestamps",
+      "reason": "IMPOSSIBLE -- no coordinate source exists for any INDOFLOODS gauge in this repo",
+      "n_indofloods_events_in_source_file": 4548,
+      "n_unique_gauges_in_source_file": 155
+    },
+    "rainfall_proxy": {
+      "status": "PROXY_NOT_OBSERVED -- not a real flood observation",
+      "cell_days_positive": 78442,
+      "cell_days_negative": 1472501,
+      "positive_rate_pct": 5.0577,
+      "total_canonical_cells": 992
+    },
+    "warning": "The event-based figure is UNKNOWN everywhere, not a class-imbalance figure -- do not read this as '0% FF events found'. The proxy figure is NOT an observed-flood rate."
+  },
+  "overall_note": "No hazard has genuine pan-India POSITIVE/NEGATIVE_CONFIRMED coverage: TS is VOBL-only (0.1% of cells), CB is genuinely pan-India but daily-resolution and rainfall-only (not a multimodal ML label), FF has no genuine event-based labels anywhere due to a missing coordinate file."
+}

@@ -30,6 +30,20 @@ import urllib.request
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
+# terrain_lookup.py lives at repo root, backend/pipeline.py runs from
+# backend/ -- add the repo root to sys.path so this works both as
+# `python backend/pipeline.py` (CI's invocation) and as a package import.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from terrain_lookup import get_terrain_grid, apply_terrain_to_ff  # noqa: E402
+# Phase 4.5 Part 2: pan_india_grid.json/ctt_grid.json are production
+# artifacts consumed by canonical_forecast_writer.py (same run) and by the
+# NEXT run of this same script (ctt_grid.json's drop-rate calc) -- a
+# partially-written file here is visible to those consumers. Reuse the
+# existing atomic_write.py primitive rather than writing a second one.
+from atomic_write import atomic_write_json, AtomicWriteError  # noqa: E402
+
+terrain_grid = get_terrain_grid()
+
 # ---------------------------------------------------------------------------
 # CONFIG
 # ---------------------------------------------------------------------------
@@ -41,8 +55,37 @@ from pathlib import Path
 OUT_DIR  = Path(__file__).parent.parent / "data"
 OUT_FILE = OUT_DIR / "pan_india_grid.json"
 
-GRID_STEP = 0.25         # degrees; 0.25 = GFS native resolution (~27 km)
+# ---------------------------------------------------------------------------
+# CANONICAL APPLICATION GRID -- LOCKED (Phase 4.5 integrity fix, 2026-09-30)
+# ---------------------------------------------------------------------------
+# docs/CANONICAL_GRID.md formalizes the deployed 992-cell, 1.0-degree grid
+# as the single canonical application/prediction grid. Before this fix,
+# GRID_STEP was a single constant doing two unrelated jobs: (1) a fallback
+# estimate of the GFS *source* grid spacing (line ~204, compute_convergence_grid
+# fallback) and (2) the step used to build the *output/application* grid
+# cells (previously here). It was set to 0.25 (a commit-ago "sub-district
+# upgrade"), which would silently generate 15,125 application cells instead
+# of the canonical 992 on the next run -- found and NOT yet triggered as of
+# this fix, verified by comparing this constant against the live on-disk
+# data/pan_india_grid.json's own grid_step_deg=1.0/n_cells=992.
+#
+# Fix: split into two constants. APPLICATION_GRID_STEP is now hardcoded to
+# 1.0 and asserted at grid-construction time (see the assertion right after
+# the cells loop below) -- it cannot silently become 0.25 again without a
+# deliberate code change AND that change failing its own assertion until
+# BOUNDS or the expected cell count is also updated. GFS source-resolution
+# handling (input data) is untouched -- GFS is still fetched/parsed at its
+# native 0.25-degree resolution; only the OUTPUT application grid is locked.
+APPLICATION_GRID_STEP = 1.0         # LOCKED -- canonical 992-cell grid, do not change without updating docs/CANONICAL_GRID.md and EXPECTED_APPLICATION_CELL_COUNT below
+EXPECTED_APPLICATION_CELL_COUNT = 992  # 32 lats x 31 lons at 1.0deg over BOUNDS below
 BOUNDS    = {"S": 6, "N": 37, "W": 68, "E": 98}
+
+# Retained ONLY as a source-grid-spacing fallback estimate (used at line
+# ~204 when the GFS field's own coordinate spacing can't be read directly).
+# This is NOT the application grid step -- see APPLICATION_GRID_STEP above.
+# Renamed from the old ambiguous "GRID_STEP" to make that distinction
+# impossible to miss on a future edit.
+SOURCE_GRID_STEP_FALLBACK_DEG = 0.25   # degrees; GFS native resolution (~27 km), source-side only
 
 # GFS variables requested from NOMADS filter
 GFS_VARS = [
@@ -193,7 +236,7 @@ def compute_convergence_grid(u850_arr, v850_arr, lats_1d, lons_1d):
         cos_lat = math.cos(float(lats_rad[j]))
         if abs(cos_lat) < 1e-6:
             cos_lat = 1e-6
-        dlon_deg = abs(float(lons_1d[2] - lons_1d[0])) if nlon > 2 else GRID_STEP * 2
+        dlon_deg = abs(float(lons_1d[2] - lons_1d[0])) if nlon > 2 else SOURCE_GRID_STEP_FALLBACK_DEG * 2
         dlon_m = R_EARTH * cos_lat * math.radians(dlon_deg)
 
         for i in range(1, nlon - 1):
@@ -480,12 +523,16 @@ def write_ctt_grid(cells: list, out_path: Path):
         {"lat": c["lat"], "lon": c["lon"], "ctt_c": c["ctt_c"]}
         for c in cells if c.get("ctt_c") is not None
     ]
-    out_path.write_text(json.dumps({
-        "generated_at_utc": datetime.now(timezone.utc).isoformat(),
-        "description": "Cloud Top Temperature (CTT) proxy from GFS pressure-level RH + temperature",
-        "unit": "degC",
-        "ctt_cells": ctt_cells,
-    }, separators=(",", ":")))
+    try:
+        atomic_write_json(out_path, {
+            "generated_at_utc": datetime.now(timezone.utc).isoformat(),
+            "description": "Cloud Top Temperature (CTT) proxy from GFS pressure-level RH + temperature",
+            "unit": "degC",
+            "ctt_cells": ctt_cells,
+        }, indent=None)
+    except AtomicWriteError as e:
+        print(f"  WARNING: CTT grid write failed, previous {out_path} left untouched: {e}")
+        return
     print(f"  CTT grid written: {len(ctt_cells)} cells -> {out_path}")
 
 
@@ -561,10 +608,10 @@ def run(cycle_override: str = None, fhour: int = 0):
         has_qpe = apcp_arr is not None
         print(f"  QPE (APCP) field: {'found' if has_qpe else 'not found -- QPE will be None'}")
 
-        print("  Scoring ~15,000 grid cells...")
+        print(f"  Scoring the canonical {EXPECTED_APPLICATION_CELL_COUNT}-cell application grid...")
         cells = []
-        lats = [round(v, 4) for v in np.arange(BOUNDS["S"], BOUNDS["N"] + GRID_STEP * 0.5, GRID_STEP)]
-        lons = [round(v, 4) for v in np.arange(BOUNDS["W"], BOUNDS["E"] + GRID_STEP * 0.5, GRID_STEP)]
+        lats = [round(v, 4) for v in np.arange(BOUNDS["S"], BOUNDS["N"] + APPLICATION_GRID_STEP * 0.5, APPLICATION_GRID_STEP)]
+        lons = [round(v, 4) for v in np.arange(BOUNDS["W"], BOUNDS["E"] + APPLICATION_GRID_STEP * 0.5, APPLICATION_GRID_STEP)]
 
         for lat in lats:
             for lon in lons:
@@ -630,6 +677,17 @@ def run(cycle_override: str = None, fhour: int = 0):
                     qpe_mm=qpe_mm,
                 )
 
+                # --- TERRAIN (DEM/slope/drainage) FLASH-FLOOD MODIFIER ---
+                # Only real coverage today is the Bengaluru/VOBL DEM bbox
+                # (fetch_dem_terrain.py) -- terrain_lookup.py reports
+                # available=False for any pan-India cell outside it, and
+                # ff_prob is left unmodified in that case (never fabricated).
+                # See terrain_lookup.apply_terrain_to_ff() for the documented,
+                # bounded 0.70x-1.30x formula. This is a heuristic
+                # post-processing layer, not a trained terrain-aware model.
+                terrain = terrain_grid.lookup(lat, lon)
+                ff_prob_terrain = apply_terrain_to_ff(ff_prob, terrain)
+
                 if ts_prob >= 0.70:
                     risk_label = "SEVERE"
                 elif ts_prob >= 0.45:
@@ -657,6 +715,8 @@ def run(cycle_override: str = None, fhour: int = 0):
                     "thunderstorm_probability":  round(ts_prob, 4),
                     "cloudburst_probability":    round(cb_prob, 4),
                     "flash_flood_probability":   round(ff_prob, 4),
+                    "flash_flood_probability_terrain_adjusted": round(ff_prob_terrain, 4),
+                    "terrain":                   terrain.to_json(),
                     "thunderstorm_risk":         risk_label,
                     # Thermodynamic fields
                     "cape":           round(cape, 1)  if cape  is not None else None,
@@ -671,6 +731,31 @@ def run(cycle_override: str = None, fhour: int = 0):
                     "ctt_drop_rate_c_hr": round(ctt_drop_rate, 2) if ctt_drop_rate is not None else None,
                     "qpe_mm":            round(qpe_mm, 1)         if qpe_mm        is not None else None,
                 })
+
+        # ------------------------------------------------------------------
+        # HARD GRID-DRIFT GUARDRAIL (Phase 4.5) -- fails loudly, aborts the
+        # run, rather than silently writing a differently-sized/shaped
+        # application grid. This is deliberately an assert-and-crash, not a
+        # warning: a wrong cell count here means every downstream consumer
+        # (frontend, location_engine.py, alert dispatch) would silently
+        # start looking up the wrong cells.
+        # ------------------------------------------------------------------
+        if len(cells) != EXPECTED_APPLICATION_CELL_COUNT:
+            raise RuntimeError(
+                f"CRITICAL: canonical application grid drift detected. "
+                f"Expected exactly {EXPECTED_APPLICATION_CELL_COUNT} cells "
+                f"(APPLICATION_GRID_STEP={APPLICATION_GRID_STEP} over BOUNDS={BOUNDS}), "
+                f"got {len(cells)}. Refusing to write data/pan_india_grid.json in this "
+                f"state -- see docs/CANONICAL_GRID.md. If this is a deliberate grid "
+                f"resolution change, update EXPECTED_APPLICATION_CELL_COUNT AND "
+                f"docs/CANONICAL_GRID.md in the same change, not silently."
+            )
+        seen_ids = set()
+        for c in cells:
+            cid = f"{c['lat']:.1f}_{c['lon']:.1f}"
+            if cid in seen_ids:
+                raise RuntimeError(f"CRITICAL: duplicate application grid cell detected at {cid}.")
+            seen_ids.add(cid)
 
         # Summary statistics
         ts_vals = [c["thunderstorm_probability"]  for c in cells]
@@ -688,7 +773,9 @@ def run(cycle_override: str = None, fhour: int = 0):
             "generated_at_utc": datetime.now(timezone.utc).isoformat(),
             "gfs_cycle":        f"{date_str} {cycle}Z",
             "gfs_fhour":        fhour,
-            "grid_step_deg":    GRID_STEP,
+            "grid_step_deg":    APPLICATION_GRID_STEP,
+            "application_grid_resolution_deg": APPLICATION_GRID_STEP,
+            "input_sources_may_have_different_native_resolution": True,
             "bounds":           BOUNDS,
             "n_cells":          len(cells),
             "features_active": {
@@ -704,7 +791,11 @@ def run(cycle_override: str = None, fhour: int = 0):
             "grid_cells": cells,
         }
 
-        OUT_FILE.write_text(json.dumps(output, separators=(",", ":")))
+        try:
+            atomic_write_json(OUT_FILE, output, indent=None)
+        except AtomicWriteError as e:
+            print(f"FATAL: could not write {OUT_FILE} atomically -- previous file left untouched: {e}")
+            sys.exit(1)
         print(f"  Written {len(cells)} cells -> {OUT_FILE}")
 
         # Write CTT grid (used by next run for drop rate)

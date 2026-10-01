@@ -85,6 +85,8 @@
   <!-- Babel Standalone for JSX -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <!-- Location engine: coordinate -> multi-architecture bundle, plain script (not JSX) -->
+  <script src="./assets/location_engine.js"></script>
 
   
   <style>
@@ -2087,12 +2089,13 @@ function injectDrainageOverlay(map, liveData) {
       return 'MINIMAL';
     }
 
-    function DashboardOverviewPage({ slots, selectedSlotIndex, onSelectSlot, isLiveData, lastUpdated, liveTime, liveData, onNavTabChange, fetchLatencyMs, mousePos, hazardCfg }) {
+    function DashboardOverviewPage({ slots, selectedSlotIndex, onSelectSlot, isLiveData, lastUpdated, liveTime, liveData, onNavTabChange, fetchLatencyMs, mousePos, hazardCfg, canonicalPipelineRun }) {
       const { lang } = React.useContext(LangContext);
       const mapContainerRef = React.useRef(null);
       const mapRef = React.useRef(null);
       const voblPopupRef = React.useRef(null);
       const gridCellsRef = React.useRef([]);
+      const gridMetaRef = React.useRef({});   // generated_at_utc/gfs_cycle/gfs_fhour/grid_step_deg for the loaded pan-India grid
       const clickPopupRef = React.useRef(null);
       const [searchQuery, setSearchQuery] = React.useState('');
       const [searching, setSearching] = React.useState(false);
@@ -2102,6 +2105,93 @@ function injectDrainageOverlay(map, liveData) {
       const [mapReady, setMapReady] = React.useState(false);
       const [mapError, setMapError] = React.useState(false);
       const [panLayer, setPanLayer] = React.useState('thunderstorm');
+
+      // ── CANONICAL ACTIVE LOCATION ──────────────────────────────────────────
+      // One state, everything below derives from it. selectionSource is one
+      // of 'DEFAULT' | 'DEVICE' | 'MAP' | 'SEARCH'. architectureResults is the
+      // real output of DriftLocationEngine.buildLocationBundle() (see
+      // assets/location_engine.js, tested against the live grid file in
+      // test_location_engine.py) -- never computed inline here, so the UI
+      // and the tested engine can never drift apart.
+      const [activeLocation, setActiveLocationState] = React.useState({
+        latitude: VOBL.lat, longitude: VOBL.lng, displayName: 'VOBL / Bengaluru Airport',
+        selectionSource: 'DEFAULT', selectedGridCell: null, architectureResults: null,
+        timestamp: null, freshness: null,
+      });
+      const [selectedArchitecture, setSelectedArchitecture] = React.useState('PAN_INDIA');
+      const [geoStatus, setGeoStatus] = React.useState(null); // null | 'locating' | 'denied' | 'unavailable' | 'ok'
+
+      // Recomputes the full multi-architecture bundle for (lat, lon) via the
+      // tested location engine and sets it as the one canonical state. Every
+      // panel (selected-location card, architecture panel, timeline) reads
+      // from activeLocation.architectureResults -- no panel keeps its own
+      // separate location state.
+      const setActiveLocationFromCoords = React.useCallback((lat, lon, displayName, source) => {
+        if (typeof window === 'undefined' || !window.DriftLocationEngine) return;
+        const grid = { grid_cells: gridCellsRef.current, ...gridMetaRef.current };
+        const himawari = liveData?.satellite?.himawari9 || null;
+        const bundle = window.DriftLocationEngine.buildLocationBundle(lat, lon, grid, liveData, himawari);
+        setActiveLocationState({
+          latitude: lat, longitude: lon,
+          displayName: displayName || `${lat.toFixed(3)}°N, ${lon.toFixed(3)}°E`,
+          selectionSource: source,
+          selectedGridCell: bundle.pan_india.available ? bundle.pan_india.cell : null,
+          architectureResults: bundle,
+          timestamp: new Date().toISOString(),
+          freshness: bundle.pan_india.generated_at_utc || bundle.generated_at || null,
+        });
+      }, [liveData]);
+
+      // Keep activeLocation's architecture results current when a newer
+      // forecast/grid arrives (REAL-TIME REFRESH requirement): re-run the
+      // same lookup for the SAME coordinates whenever liveData changes,
+      // rather than resetting location. Skipped on first mount (the initial
+      // state above already covers VOBL/DEFAULT) and only once the engine
+      // script and grid are actually loaded.
+      const didInitLocationRef = React.useRef(false);
+      React.useEffect(() => {
+        if (typeof window === 'undefined' || !window.DriftLocationEngine) return;
+        if (!didInitLocationRef.current) { didInitLocationRef.current = true; return; }
+        setActiveLocationFromCoords(activeLocation.latitude, activeLocation.longitude,
+                                     activeLocation.displayName, activeLocation.selectionSource);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+      }, [liveData]);
+
+      // ── USE MY LOCATION ──────────────────────────────────────────────────
+      // One-shot lookup, only on explicit user action (never auto-invoked,
+      // never watched/polled) -- matches "do not continuously request GPS
+      // permission" and "one-time/current-position lookup" requirements.
+      const useMyLocation = React.useCallback(() => {
+        if (typeof navigator === 'undefined' || !navigator.geolocation) {
+          setGeoStatus('unavailable');
+          return;
+        }
+        setGeoStatus('locating');
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            const { latitude, longitude } = pos.coords;
+            setGeoStatus('ok');
+            setActiveLocationFromCoords(latitude, longitude, 'My Location', 'DEVICE');
+            if (mapRef.current) mapRef.current.flyTo({ center: [longitude, latitude], zoom: 9, speed: 1.2 });
+          },
+          (err) => {
+            // err.code: 1 = PERMISSION_DENIED, 2 = POSITION_UNAVAILABLE, 3 = TIMEOUT
+            setGeoStatus(err.code === 1 ? 'denied' : 'unavailable');
+          },
+          { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 }
+        );
+      }, [setActiveLocationFromCoords]);
+
+      // Sync the visible selected-location marker whenever activeLocation
+      // changes. Only shown for an explicit user choice (MAP/SEARCH/DEVICE)
+      // -- the DEFAULT VOBL state already has its own permanent marker, so
+      // this stays hidden until the user actually picks somewhere.
+      React.useEffect(() => {
+        if (!mapRef.current || !window._setSelectedLocationMarker) return;
+        const visible = activeLocation.selectionSource !== 'DEFAULT';
+        window._setSelectedLocationMarker(activeLocation.longitude, activeLocation.latitude, visible);
+      }, [activeLocation.latitude, activeLocation.longitude, activeLocation.selectionSource]);
+
       const [winW, setWinW] = React.useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
       React.useEffect(() => {
         const onResize = () => setWinW(window.innerWidth);
@@ -2164,7 +2254,10 @@ function injectDrainageOverlay(map, liveData) {
           });
           map.addSource('vobl-src', { type: 'geojson', data: { type: 'Feature', geometry: { type: 'Point', coordinates: [VOBL.lng, VOBL.lat] }, properties: {} } });
           map.addLayer({ id: 'vobl-clickzone', type: 'circle', source: 'vobl-src', paint: { 'circle-radius': 22, 'circle-color': 'rgba(0,0,0,0)', 'circle-stroke-width': 0 } });
-          map.on('click', 'vobl-clickzone', () => { map.flyTo({ center: [VOBL.lng, VOBL.lat], zoom: 9, speed: 1.2 }); });
+          map.on('click', 'vobl-clickzone', () => {
+            map.flyTo({ center: [VOBL.lng, VOBL.lat], zoom: 9, speed: 1.2 });
+            setActiveLocationFromCoords(VOBL.lat, VOBL.lng, 'VOBL / Bengaluru Airport', 'MAP');
+          });
           map.on('mouseenter', 'vobl-clickzone', () => { map.getCanvas().style.cursor = 'pointer'; });
           map.on('mouseleave', 'vobl-clickzone', () => { map.getCanvas().style.cursor = ''; });
 
@@ -2260,9 +2353,40 @@ function injectDrainageOverlay(map, liveData) {
             });
             if (!best || bestD > 5) return;
             showCellPopup(map, lng, lat, best, null);
+            // MAP CLICK -> canonical activeLocation update. This reuses the
+            // exact tested lookup (assets/location_engine.js), so the
+            // architecture panel below the map and this popup are always
+            // reading the same underlying cell, not two separate lookups
+            // that could disagree.
+            setActiveLocationFromCoords(lat, lng, null, 'MAP');
           });
 
           window._showCellPopup = showCellPopup;
+
+          // ── SELECTED LOCATION marker (activeLocation) ──────────────────
+          // Distinct from the fixed VOBL marker above: this one follows
+          // whatever the user last selected via map click / search / device
+          // location, so the active point is always visually obvious and
+          // distinguishable from the permanent VOBL station marker.
+          map.addSource('selected-location-src', {
+            type: 'geojson',
+            data: { type: 'Feature', geometry: { type: 'Point', coordinates: [VOBL.lng, VOBL.lat] }, properties: {} },
+          });
+          map.addLayer({ id: 'selected-location-ring', type: 'circle', source: 'selected-location-src',
+            paint: { 'circle-radius': 16, 'circle-color': 'rgba(255,255,255,0)', 'circle-stroke-width': 2, 'circle-stroke-color': '#ffd500', 'circle-stroke-opacity': 0 }
+          });
+          map.addLayer({ id: 'selected-location-dot', type: 'circle', source: 'selected-location-src',
+            paint: { 'circle-radius': 5, 'circle-color': '#ffd500', 'circle-stroke-width': 2, 'circle-stroke-color': '#040711', 'circle-opacity': 0 }
+          });
+          window._setSelectedLocationMarker = (lng, lat, visible) => {
+            const src = map.getSource('selected-location-src');
+            if (!src) return;
+            src.setData({ type: 'Feature', geometry: { type: 'Point', coordinates: [lng, lat] }, properties: {} });
+            const op = visible ? 1 : 0;
+            map.setPaintProperty('selected-location-ring', 'circle-stroke-opacity', op);
+            map.setPaintProperty('selected-location-dot', 'circle-opacity', op);
+          };
+
           map.addLayer({ id: 'vobl-outer', type: 'circle', source: 'vobl-src',
             paint: { 'circle-radius': 24, 'circle-color': 'rgba(56,189,248,0.08)', 'circle-stroke-width': 2, 'circle-stroke-color': '#38bdf8' }
           });
@@ -2642,6 +2766,18 @@ function injectDrainageOverlay(map, liveData) {
             .then(d => {
               if (!d.grid_cells || d.grid_cells.length === 0) return;
               gridCellsRef.current = d.grid_cells;
+              gridMetaRef.current = {
+                generated_at_utc: d.generated_at_utc, gfs_cycle: d.gfs_cycle,
+                gfs_fhour: d.gfs_fhour, grid_step_deg: d.grid_step_deg,
+              };
+              // Grid just finished loading -- refresh activeLocation's
+              // architecture results for whatever location is currently
+              // selected (initially VOBL/DEFAULT) now that pan-India data
+              // actually exists to look up.
+              if (window.DriftLocationEngine) {
+                setActiveLocationFromCoords(activeLocation.latitude, activeLocation.longitude,
+                                             activeLocation.displayName, activeLocation.selectionSource);
+              }
               const STEP = 1.0;
               const features = [];
               // Grid cell squares removed -- canvas overlays handle all three hazards visually
@@ -2800,6 +2936,14 @@ function injectDrainageOverlay(map, liveData) {
                   shortName = data[0].display_name.split(',').slice(0,2).join(', ');
                 }
                 mapRef.current.flyTo({ center: [lngN, latN], zoom: 8, speed: 1.4 });
+                // SEARCH -> canonical activeLocation update. Runs immediately
+                // (does not wait for the popup retry loop below), so every
+                // panel driven by activeLocation updates as soon as the
+                // place resolves -- search changes the forecast context, not
+                // just the camera. On failure above (no results / network
+                // error), this line is never reached, so the previous valid
+                // activeLocation is left untouched.
+                setActiveLocationFromCoords(latN, lngN, shortName, 'SEARCH');
                 // Show popup after flyTo — retry up to 3s if grid data still loading
                 const tryPopup = (attempts) => {
                   const cells = gridCellsRef.current;
@@ -2902,6 +3046,162 @@ function injectDrainageOverlay(map, liveData) {
               </div>
             );
           })()}
+
+          {/* ── USE MY LOCATION ── */}
+          <div style={{ position: 'absolute', top: 50, right: 262, zIndex: 25 }}>
+            <button
+              onClick={useMyLocation}
+              disabled={geoStatus === 'locating'}
+              title="Use my location"
+              style={{
+                padding: '6px 10px', borderRadius: 8, fontSize: 12, fontFamily: 'monospace',
+                border: '1px solid rgba(255,213,0,0.35)', background: 'rgba(255,213,0,0.08)',
+                color: '#ffd500', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
+                minHeight: 32,
+              }}
+            >
+              {geoStatus === 'locating' ? '◌ Locating…' : '◎ Use my location'}
+            </button>
+            {geoStatus === 'denied' && (
+              <div style={{ marginTop: 4, fontSize: 10, fontFamily: 'monospace', color: '#ff9800', maxWidth: 170, background: 'rgba(4,7,17,0.9)', padding: '4px 8px', borderRadius: 6 }}>
+                Location access denied. Use search or tap the map instead.
+              </div>
+            )}
+            {geoStatus === 'unavailable' && (
+              <div style={{ marginTop: 4, fontSize: 10, fontFamily: 'monospace', color: '#ff9800', maxWidth: 170, background: 'rgba(4,7,17,0.9)', padding: '4px 8px', borderRadius: 6 }}>
+                Location unavailable on this device. Use search or tap the map instead.
+              </div>
+            )}
+          </div>
+
+          {/* ── SELECTED LOCATION + MULTI-ARCHITECTURE PANEL ──────────────────
+              Everything below reads from the single canonical `activeLocation`
+              state -- no separate location state per panel. Every value shown
+              is either a real field from architectureResults (itself the
+              tested location_engine.js output) or an explicit "unavailable"
+              string; nothing here is computed or guessed inline. */}
+          {(() => {
+            const R = activeLocation.architectureResults;
+            const ARCHS = [
+              { key: 'PAN_INDIA', label: 'PAN-INDIA' },
+              { key: 'VOBL', label: 'VOBL XGBOOST' },
+              { key: 'TERRAIN', label: 'TERRAIN' },
+              { key: 'HIMAWARI', label: 'HIMAWARI' },
+              { key: 'GFS', label: 'GFS' },
+            ];
+            const fmtPct = (v) => (v === null || v === undefined) ? '—' : `${(v * 100).toFixed(0)}%`;
+            const unavailable = (reason) => (
+              <div style={{ fontSize: 11, fontFamily: 'monospace', color: '#546e7a', fontStyle: 'italic' }}>
+                {reason || 'Unavailable for selected location'}
+              </div>
+            );
+
+            const renderArchitecture = () => {
+              if (!R) return unavailable('Location data still loading…');
+              if (selectedArchitecture === 'PAN_INDIA') {
+                if (!R.pan_india.available) return unavailable(R.pan_india.reason);
+                return (
+                  <div>
+                    <div style={{ fontSize: 9, color: '#546e7a', marginBottom: 6 }}>{R.pan_india.source}</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 }}>
+                      <div><div style={{ fontSize: 8, color: '#546e7a' }}>TS</div><div style={{ fontSize: 14, fontWeight: 800, color: '#ef5350' }}>{fmtPct(R.pan_india.ts_probability)}</div></div>
+                      <div><div style={{ fontSize: 8, color: '#546e7a' }}>CB</div><div style={{ fontSize: 14, fontWeight: 800, color: '#1e88e5' }}>{fmtPct(R.pan_india.cb_probability)}</div></div>
+                      <div><div style={{ fontSize: 8, color: '#546e7a' }}>FF</div><div style={{ fontSize: 14, fontWeight: 800, color: '#ff9800' }}>{fmtPct(R.pan_india.ff_probability)}</div></div>
+                    </div>
+                    <div style={{ fontSize: 9, color: '#455a64', marginTop: 6 }}>
+                      Cell {R.pan_india.cell?.lat}°N {R.pan_india.cell?.lon}°E · {R.pan_india.distance_km} km away · GFS {R.pan_india.gfs_cycle} f{R.pan_india.gfs_fhour}
+                    </div>
+                  </div>
+                );
+              }
+              if (selectedArchitecture === 'VOBL') {
+                return (
+                  <div>
+                    <div style={{ fontSize: 9, color: '#546e7a', marginBottom: 6 }}>{R.vobl.source}</div>
+                    {R.vobl.in_domain ? (
+                      R.vobl.station_forecast ? (
+                        <div>
+                          <div style={{ fontSize: 10, color: '#38bdf8', fontWeight: 700, marginBottom: 4 }}>IMD VOBL STATION 43295 — station-specific forecast</div>
+                          <div style={{ fontSize: 14, fontWeight: 800, color: '#ef5350' }}>{fmtPct(R.vobl.station_forecast.peak_probability)}</div>
+                          <div style={{ fontSize: 9, color: '#455a64', marginTop: 4 }}>Peak slot {R.vobl.station_forecast.peak_slot} · {R.vobl.station_forecast.generated_at_ist}</div>
+                        </div>
+                      ) : unavailable('Station forecast not loaded')
+                    ) : (
+                      <div style={{ fontSize: 11, color: '#ff9800' }}>
+                        VOBL XGBoost — station-specific — <b>NOT APPLICABLE TO SELECTED LOCATION</b>
+                        <div style={{ fontSize: 9, color: '#546e7a', marginTop: 4 }}>{R.vobl.reason}</div>
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+              if (selectedArchitecture === 'TERRAIN') {
+                const terr = R.pan_india.available ? R.pan_india.terrain : null;
+                if (!terr || !terr.available) return unavailable('Terrain data unavailable for selected cell');
+                return (
+                  <div>
+                    <div style={{ fontSize: 9, color: '#546e7a', marginBottom: 6 }}>DEM/SRTM (fetch_dem_terrain.py) — Bengaluru-region coverage only</div>
+                    <div style={{ fontSize: 10, color: '#cfd8dc' }}>Elevation: {terr.elevation_m ?? '—'} m · Slope: {terr.slope_deg ?? '—'}°</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginTop: 6 }}>
+                      <div><div style={{ fontSize: 8, color: '#546e7a' }}>FF BASE</div><div style={{ fontSize: 13, fontWeight: 800 }}>{fmtPct(R.pan_india.ff_probability)}</div></div>
+                      <div><div style={{ fontSize: 8, color: '#546e7a' }}>FF TERRAIN-ADJUSTED</div><div style={{ fontSize: 13, fontWeight: 800, color: '#ff9800' }}>{fmtPct(R.pan_india.ff_probability_terrain_adjusted)}</div></div>
+                    </div>
+                  </div>
+                );
+              }
+              if (selectedArchitecture === 'HIMAWARI') {
+                if (!R.himawari.available) return unavailable(R.himawari.reason || 'Himawari data unavailable for selected location');
+                return (
+                  <div>
+                    <div style={{ fontSize: 9, color: '#546e7a', marginBottom: 6 }}>{R.himawari.source}</div>
+                    <div style={{ fontSize: 10, color: '#cfd8dc' }}>CTT: {R.himawari.vobl_bt_celsius ?? '—'}°C · Trend: {R.himawari.bt_trend_1h ?? '—'} °C/h</div>
+                    <div style={{ fontSize: 9, color: '#455a64', marginTop: 4 }}>{R.himawari.timestamp}</div>
+                  </div>
+                );
+              }
+              if (selectedArchitecture === 'GFS') {
+                if (!R.gfs.available) return unavailable(R.gfs.reason);
+                return (
+                  <div>
+                    <div style={{ fontSize: 9, color: '#546e7a', marginBottom: 6 }}>{R.gfs.source}</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 }}>
+                      <div><div style={{ fontSize: 8, color: '#546e7a' }}>CAPE</div><div style={{ fontSize: 12, fontWeight: 700 }}>{R.gfs.cape ?? '—'}</div></div>
+                      <div><div style={{ fontSize: 8, color: '#546e7a' }}>K-INDEX</div><div style={{ fontSize: 12, fontWeight: 700 }}>{R.gfs.k_index ?? '—'}</div></div>
+                      <div><div style={{ fontSize: 8, color: '#546e7a' }}>PWAT</div><div style={{ fontSize: 12, fontWeight: 700 }}>{R.gfs.pwat_mm ?? '—'} mm</div></div>
+                    </div>
+                  </div>
+                );
+              }
+              return null;
+            };
+
+            return (
+              <div style={{ position: 'absolute', bottom: 60, left: 12, zIndex: 22, width: 260, background: 'rgba(4,7,17,0.93)', backdropFilter: 'blur(12px)', border: '1px solid rgba(56,189,248,0.2)', borderRadius: 10, padding: '10px 12px', display: isMobile ? 'none' : 'block' }}>
+                <div style={{ fontSize: 9, letterSpacing: 1.5, color: '#7dd3fc', fontWeight: 700 }}>SELECTED LOCATION</div>
+                <div style={{ fontSize: 13, fontWeight: 800, color: '#fff', marginTop: 2 }}>{activeLocation.displayName}</div>
+                <div style={{ fontSize: 9, color: '#455a64' }}>{activeLocation.latitude.toFixed(4)}°N, {activeLocation.longitude.toFixed(4)}°E</div>
+                <div style={{ fontSize: 9, color: '#546e7a', marginTop: 4 }}>SOURCE: <span style={{ color: '#38bdf8' }}>{activeLocation.selectionSource}</span></div>
+
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 10, marginBottom: 8 }}>
+                  {ARCHS.map(a => (
+                    <button key={a.key} onClick={() => setSelectedArchitecture(a.key)}
+                      style={{
+                        fontSize: 9, fontFamily: 'monospace', padding: '4px 6px', borderRadius: 6,
+                        border: `1px solid ${selectedArchitecture === a.key ? '#38bdf8' : 'rgba(56,189,248,0.2)'}`,
+                        background: selectedArchitecture === a.key ? 'rgba(56,189,248,0.18)' : 'transparent',
+                        color: selectedArchitecture === a.key ? '#38bdf8' : '#88b4c8', cursor: 'pointer',
+                      }}
+                    >{a.label}</button>
+                  ))}
+                </div>
+
+                <div style={{ borderTop: '1px solid rgba(56,189,248,0.12)', paddingTop: 8 }}>
+                  {renderArchitecture()}
+                </div>
+              </div>
+            );
+          })()}
+
           {/* Gradient vignettes */}
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, rgba(4,7,17,0.93) 0%, rgba(4,7,17,0.65) 240px, rgba(4,7,17,0.1) 420px)', pointerEvents: 'none', zIndex: 2 }} />
           <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 175, background: 'linear-gradient(to top, rgba(4,7,17,1) 0%, rgba(4,7,17,0) 100%)', pointerEvents: 'none', zIndex: 2 }} />
@@ -2910,13 +3210,28 @@ function injectDrainageOverlay(map, liveData) {
 
           {/* ── MOBILE PEAK CHIP ── */}
           {isMobile && (
-            <div style={{ position: 'absolute', top: 52, left: 10, right: 10, zIndex: 20, background: 'rgba(5,8,18,0.9)', backdropFilter: 'blur(16px)', border: `1px solid ${alertActive ? 'rgba(239,83,80,0.55)' : 'rgba(56,189,248,0.22)'}`, borderRadius: 12, padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{ width: 8, height: 8, borderRadius: '50%', background: riskColor, boxShadow: `0 0 10px ${riskColor}` }} />
-                <span style={{ fontSize: 13, fontWeight: 800, letterSpacing: 2, color: riskColor, fontFamily: 'monospace' }}>{riskLabel} RISK</span>
+            <div style={{ position: 'absolute', top: 52, left: 10, right: 10, zIndex: 20, display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {/* Compact location bar -- targeted addition, not a mobile
+                  redesign: shows the active location and a one-tap "use my
+                  location" affordance without touching the peak-prob chip's
+                  existing layout below. */}
+              <div style={{ background: 'rgba(5,8,18,0.9)', backdropFilter: 'blur(16px)', border: '1px solid rgba(56,189,248,0.22)', borderRadius: 10, padding: '6px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                <div style={{ fontSize: 11, fontFamily: 'monospace', color: '#cfd8dc', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  📍 {activeLocation.displayName}
+                </div>
+                <button onClick={useMyLocation} disabled={geoStatus === 'locating'}
+                  style={{ fontSize: 10, fontFamily: 'monospace', color: '#ffd500', background: 'rgba(255,213,0,0.1)', border: '1px solid rgba(255,213,0,0.3)', borderRadius: 6, padding: '4px 8px', flexShrink: 0, minHeight: 30 }}>
+                  {geoStatus === 'locating' ? '◌' : '◎ Locate'}
+                </button>
               </div>
-              <div style={{ fontSize: 28, fontWeight: 900, fontFamily: 'monospace', color: riskColor, lineHeight: 1 }}>
-                {(peakProb * 100).toFixed(0)}<span style={{ fontSize: 13, opacity: 0.75 }}>%</span>
+              <div style={{ background: 'rgba(5,8,18,0.9)', backdropFilter: 'blur(16px)', border: `1px solid ${alertActive ? 'rgba(239,83,80,0.55)' : 'rgba(56,189,248,0.22)'}`, borderRadius: 12, padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: riskColor, boxShadow: `0 0 10px ${riskColor}` }} />
+                  <span style={{ fontSize: 13, fontWeight: 800, letterSpacing: 2, color: riskColor, fontFamily: 'monospace' }}>{riskLabel} RISK</span>
+                </div>
+                <div style={{ fontSize: 28, fontWeight: 900, fontFamily: 'monospace', color: riskColor, lineHeight: 1 }}>
+                  {(peakProb * 100).toFixed(0)}<span style={{ fontSize: 13, opacity: 0.75 }}>%</span>
+                </div>
               </div>
             </div>
           )}
@@ -2980,7 +3295,7 @@ function injectDrainageOverlay(map, liveData) {
               </div>
             </div>
 
-            {/* IWV Satellite Moisture Tracker */}
+            {/* IWV Moisture Tracker (GFS precipitable water, not satellite-observed) */}
             {(() => {
               const iwv = liveData?.met_parameters?.iwv_mm;
               const cat = liveData?.met_parameters?.iwv_category;
@@ -3015,7 +3330,7 @@ function injectDrainageOverlay(map, liveData) {
                     <span>DRY</span><span>MOD</span><span>ELEV</span><span>HIGH</span>
                   </div>
                   <div style={{ marginTop: 5, fontSize: 9, color: '#2a4a5e', fontFamily: 'monospace', letterSpacing: 0.5 }}>
-                    PRECIP WATER · HIMAWARI-9 ANCHOR
+                    PRECIP WATER · GFS MODEL-DERIVED (NOT SATELLITE)
                   </div>
                 </div>
               );
@@ -4242,6 +4557,39 @@ function injectDrainageOverlay(map, liveData) {
                       <span className="text-[#607d8b]">SOURCE</span>
                       <span className="text-white font-bold">forecast.json · GHA CI/CD</span>
                     </div>
+                    {/* Phase 3.5: real fetch-vs-cached state per source, from
+                        canonical_forecast.json's pipeline_run block -- NOT
+                        derived from generated_at age (that only proves when
+                        the writer ran, never whether GFS/Himawari were
+                        freshly fetched this cycle). Renders nothing if the
+                        canonical artifact hasn't loaded, so this never
+                        changes existing behavior when absent. */}
+                    {canonicalPipelineRun && (
+                      <>
+                        <div className="flex justify-between">
+                          <span className="text-[#607d8b]">GFS SOURCE STATE</span>
+                          <span className={`font-bold ${
+                            canonicalPipelineRun.gfs?.status === 'FETCHED' ? 'text-emerald-400'
+                            : canonicalPipelineRun.gfs?.status === 'CACHED' ? 'text-amber-400'
+                            : 'text-red-400'}`}>
+                            {canonicalPipelineRun.gfs?.status ?? '—'}
+                            {typeof canonicalPipelineRun.gfs?.artifact_age_hours === 'number'
+                              ? ` (${canonicalPipelineRun.gfs.artifact_age_hours}h old)` : ''}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-[#607d8b]">HIMAWARI SOURCE STATE</span>
+                          <span className={`font-bold ${
+                            canonicalPipelineRun.himawari?.status === 'FETCHED' ? 'text-emerald-400'
+                            : canonicalPipelineRun.himawari?.status === 'CACHED' ? 'text-amber-400'
+                            : 'text-red-400'}`}>
+                            {canonicalPipelineRun.himawari?.status ?? '—'}
+                            {typeof canonicalPipelineRun.himawari?.artifact_age_hours === 'number'
+                              ? ` (${canonicalPipelineRun.himawari.artifact_age_hours}h old)` : ''}
+                          </span>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
               );
@@ -4968,7 +5316,7 @@ function injectDrainageOverlay(map, liveData) {
               <div className="space-y-2 text-[12px]">
                 {[
                   { src: 'GFS NWP (NCEP)', spec: 'IMDAA Reanalysis proxy', desc: 'CAPE, CIN, K-Index, TT, LI, shear, wind, humidity · 78 features', col: '#38bdf8' },
-                  { src: 'Himawari-9 IR/WV', spec: 'INSAT-3D/3DR (MOSDAC)', desc: 'IWV variations, CTT drop rate, storm cell detection · headline feature', col: '#ab47bc' },
+                  { src: 'Himawari-9 IR (live)', spec: 'INSAT-3D/3DR not live — scaffolded only', desc: 'CTT drop rate, storm cell detection · headline feature. IWV shown elsewhere is GFS precipitable water, not from this source.', col: '#ab47bc' },
                   { src: 'SRTM (AWS Terrarium)', spec: 'CartoDEM / SRTM DEM', desc: 'Slope, elevation, drainage basins · FF terrain routing', col: '#4caf50' },
                   { src: 'METAR VOBL', spec: 'Surface obs 43295', desc: 'Wind, pressure, visibility, flight category · real-time anchor', col: '#ffc107' },
                 ].map(d => (
@@ -7876,6 +8224,14 @@ function injectDrainageOverlay(map, liveData) {
     function App() {
       const [liveData, setLiveData] = useState(null);
       const [isLiveData, setIsLiveData] = useState(false);
+      // Phase 3.5: canonical_forecast.json's pipeline_run block is the ONLY
+      // place that distinguishes FETCHED/CACHED/STALE/FAILED for GFS and
+      // Himawari from the real on-disk artifact age -- forecast.json's own
+      // generated_at (used below for the age-based badge) proves only when
+      // the writer ran, never whether upstream data was freshly fetched.
+      // Fetched additively; if it fails, the existing generated_at-based
+      // Data Health card is untouched and continues to work as before.
+      const [canonicalPipelineRun, setCanonicalPipelineRun] = useState(null);
       const [lastUpdated, setLastUpdated] = useState('');
       const [fetchLatencyMs, setFetchLatencyMs] = useState(null);
       const [currentSlots, setCurrentSlots] = useState(DEFAULT_SLOTS);
@@ -7979,10 +8335,29 @@ function injectDrainageOverlay(map, liveData) {
         }
       };
 
+      // Phase 3.5: additive fetch of canonical_forecast.json's pipeline_run
+      // block only (GFS/Himawari FETCHED/CACHED/STALE/FAILED + real
+      // artifact age). Never throws into the main forecast fetch path;
+      // a failure here just leaves canonicalPipelineRun null and the
+      // existing Data Health card renders exactly as it did before this
+      // phase.
+      const fetchCanonicalPipelineRun = async () => {
+        try {
+          const res = await fetch('./data/canonical_forecast.json', { cache: 'no-cache' });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const json = await res.json();
+          setCanonicalPipelineRun(json.pipeline_run || null);
+        } catch (err) {
+          setCanonicalPipelineRun(null);
+        }
+      };
+
       useEffect(() => {
         fetchRealForecast();
+        fetchCanonicalPipelineRun();
         const interval = setInterval(fetchRealForecast, 300000);
-        return () => clearInterval(interval);
+        const canonicalInterval = setInterval(fetchCanonicalPipelineRun, 300000);
+        return () => { clearInterval(interval); clearInterval(canonicalInterval); };
       }, []);
 
       // Re-derive .probability on cached slots when hazard switcher changes (no re-fetch)
@@ -8277,6 +8652,7 @@ Source: csir-thunderstorm-bengaluru.pages.dev | IMD Station 43295`;
                       onNavTabChange={handleNavTabClick}
                       fetchLatencyMs={fetchLatencyMs}
                       mousePos={mousePos}
+                      canonicalPipelineRun={canonicalPipelineRun}
                     />
                   </motion.div>
                 </AnimatePresence>

@@ -218,21 +218,25 @@ def main():
     print("  compute_realtime_shap.py — Real-Time SHAP")
     print("=" * 60)
 
-    # Load GFS data (use today's date, first row)
+    # Load GFS data — same selection semantics as forecast_action.py, via the
+    # shared gfs_row_select module. This is deliberately the identical call
+    # (select_latest_gfs by fetched_at_utc, not row order) so SHAP always
+    # explains the same input row the forecast actually used.
+    from gfs_row_select import select_latest_gfs
+
     now      = datetime.now(IST)
     date_str = now.strftime("%Y-%m-%d")
     gfs_path = DATA / "gfs_realtime_43295.csv"
     gfs_row  = None
 
     if gfs_path.exists():
-        gfs_df = pd.read_csv(gfs_path)
-        if "date" in gfs_df.columns:
-            gfs_df = gfs_df[gfs_df["date"] == date_str]
-        if len(gfs_df) > 0:
-            gfs_row = gfs_df.iloc[0]
-            print(f"  GFS loaded: cycle={gfs_row.get('gfs_cycle', 'N/A')}")
+        gfs_df_raw = pd.read_csv(gfs_path)
+        gfs_selection = select_latest_gfs(gfs_df_raw, date_str=date_str)
+        if gfs_selection is not None:
+            gfs_row = gfs_selection.row
+            print(gfs_selection.log_line())
         else:
-            print("  GFS: no rows for today — using defaults")
+            print(f"  GFS: {len(gfs_df_raw)} row(s) on file but none valid for {date_str} — using defaults")
     else:
         print("  GFS: file not found — using defaults")
 

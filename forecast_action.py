@@ -25,8 +25,16 @@ Author: Aprameya + team, CSIR Thunderstorm Project
 import json
 import math
 import argparse
+import sys
 from pathlib import Path
 from datetime import datetime, timedelta, timezone
+
+# Phase 4.5 Part 2: forecast.json is a production artifact consumed by
+# canonical_forecast_writer.py (same job), the frontend, and the alert
+# steps later in the same workflow run -- a partially-written file here is
+# visible to all of them. Reuse the existing atomic_write.py primitive
+# rather than writing a second implementation.
+from atomic_write import atomic_write_json, AtomicWriteError  # noqa: E402
 
 import pickle
 import joblib
@@ -345,40 +353,49 @@ def main():
         print("\n  Upper-air: NOT FOUND — using model defaults")
 
     # ── Load GFS realtime data ────────────────────────────────────────────────
+    # Row selection is NOT append order: gfs_realtime_43295.csv accumulates one
+    # row per slot per day and is never re-sorted by gfs_fetcher.py, so the
+    # physically-first row is whichever slot ran first that day, not the
+    # freshest fetch. gfs_row_select.select_latest_gfs() picks the row with
+    # the newest fetched_at_utc (falling back to GFS valid time on ties) —
+    # see gfs_row_select.py for the full rationale. forecast_action.py and
+    # compute_realtime_shap.py both call this so they agree on the same row.
+    from gfs_row_select import select_latest_gfs, latest_gfs_frame
+
     gfs_df   = pd.DataFrame()
     gfs_path = DATA / "gfs_realtime_43295.csv"
+    gfs_selection = None  # populated below when a valid GFS row exists; used by lead_time.compute_lead_time()
     if gfs_path.exists():
-        gfs_df = pd.read_csv(gfs_path)
-        # Only use today's data
-        if "date" in gfs_df.columns:
-            gfs_df = gfs_df[gfs_df["date"] == date_str].reset_index(drop=True)
-        cycle_info = gfs_df.iloc[0]["gfs_cycle"] if len(gfs_df) > 0 else "N/A"
-        print(f"  GFS loaded: {len(gfs_df)} row(s), cycle: {cycle_info}")
+        gfs_df_raw = pd.read_csv(gfs_path)
+        gfs_selection = select_latest_gfs(gfs_df_raw, date_str=date_str)
+        if gfs_selection is not None:
+            gfs_df = latest_gfs_frame(gfs_df_raw, date_str=date_str)
+            print(gfs_selection.log_line())
+        else:
+            gfs_df = gfs_df_raw.iloc[0:0]
+            print(f"  GFS: {len(gfs_df_raw)} row(s) on file but none valid for {date_str} — using climatology defaults")
     else:
         print("  GFS: NOT FOUND — using climatology defaults")
 
-    # ── CAPE tendency from GFS history ───────────────────────────────────────
-    cape_tendency = None   # J/kg/h — positive = instability growing
-    gfs_hist_path = DATA / "gfs_history_43295.json"
-    if gfs_hist_path.exists():
-        try:
-            with open(gfs_hist_path) as f:
-                gfs_hist = json.load(f)
-            if len(gfs_hist) >= 2:
-                c_new = float(gfs_hist[-1].get("CAPE", 0) or 0)
-                c_old = float(gfs_hist[-2].get("CAPE", 0) or 0)
-                t_new_str = gfs_hist[-1].get("fetched_at", "")
-                t_old_str = gfs_hist[-2].get("fetched_at", "")
-                if t_new_str and t_old_str:
-                    t_new_dt = datetime.fromisoformat(t_new_str.replace("Z", "+00:00"))
-                    t_old_dt = datetime.fromisoformat(t_old_str.replace("Z", "+00:00"))
-                    dt_h = (t_new_dt - t_old_dt).total_seconds() / 3600.0
-                    if dt_h > 0:
-                        cape_tendency = round((c_new - c_old) / dt_h, 1)
-                        print(f"  CAPE tendency: {cape_tendency:+.1f} J/kg/h "
-                              f"(prev={c_old:.0f} → now={c_new:.0f})")
-        except Exception as e:
-            print(f"  CAPE tendency error: {e}")
+    # ── CAPE tendency from GFS realtime CSV (same-day, two most recent fetches) ─
+    # data/gfs_history_43295.json (the old source of this) has not been written
+    # by anything since 2026-07-26 and its timestamps aren't valid ISO strings
+    # (e.g. "2026-07-26 02:36 IST"), so it threw a caught exception on every
+    # run. Removed. CAPE tendency is now computed from the two most recent
+    # VALID rows of gfs_realtime_43295.csv for today -- a real, current
+    # source, not a new one. When fewer than two distinct fetches exist yet
+    # today (e.g. only slot 0 has run), tendency is explicitly unavailable
+    # rather than silently reusing stale/fabricated data.
+    from gfs_row_select import compute_cape_tendency
+
+    cape_tendency_result = compute_cape_tendency(gfs_df_raw, date_str=date_str) if gfs_path.exists() else None
+    if cape_tendency_result is not None and cape_tendency_result.available:
+        cape_tendency = cape_tendency_result.value_jkgh
+        print(f"  CAPE tendency: {cape_tendency:+.1f} J/kg/h ({cape_tendency_result.reason})")
+    else:
+        cape_tendency = None
+        reason = cape_tendency_result.reason if cape_tendency_result is not None else "GFS file not found"
+        print(f"  CAPE tendency: UNAVAILABLE ({reason})")
 
     # ── Monsoon regime pre-detection for threshold adjustment ─────────────────
     if len(gfs_df) > 0:
@@ -427,6 +444,13 @@ def main():
             prob = clim[slot_id]
             results[slot_id] = prob
             print(f"\n  Slot {slot_id}: ⚠ No model found — using climatology ({prob*100:.1f}%)")
+            from lead_time import compute_lead_time
+            _lt = compute_lead_time(
+                date_str=date_str, slot=slot_id,
+                reference_time_utc=(gfs_selection.fetched_at_utc if gfs_selection is not None else None),
+                gfs_cycle=(gfs_selection.gfs_cycle if gfs_selection is not None else None),
+                gfs_fhour=(gfs_selection.gfs_fhour if gfs_selection is not None else None),
+            )
             slots_output.append({
                 "slot": slot_id, "label": SLOT_LABELS[slot_id],
                 "time": SLOT_NAMES[slot_id],
@@ -438,6 +462,7 @@ def main():
                 "model_used":     "none",
                 "fallback":       True,
                 "fallback_reason": "no model artifact found for this slot in models/",
+                "lead_time":      _lt.to_json(),
             })
             continue
 
@@ -460,6 +485,13 @@ def main():
             clim = {0: 0.037, 1: 0.011, 2: 0.063, 3: 0.059}
             prob = clim[slot_id]
             results[slot_id] = prob
+            from lead_time import compute_lead_time
+            _lt = compute_lead_time(
+                date_str=date_str, slot=slot_id,
+                reference_time_utc=(gfs_selection.fetched_at_utc if gfs_selection is not None else None),
+                gfs_cycle=(gfs_selection.gfs_cycle if gfs_selection is not None else None),
+                gfs_fhour=(gfs_selection.gfs_fhour if gfs_selection is not None else None),
+            )
             slots_output.append({
                 "slot": slot_id, "label": SLOT_LABELS[slot_id],
                 "time": SLOT_NAMES[slot_id],
@@ -472,6 +504,7 @@ def main():
                 "fallback":       True,
                 "fallback_reason": f"model artifact failed to load: {e}",
                 "error":          str(e),
+                "lead_time":      _lt.to_json(),
             })
             continue
 
@@ -560,6 +593,15 @@ def main():
             else f"preferred model(s) missing from models/ — using {model_name}"
         )
 
+        from lead_time import compute_lead_time
+        lt = compute_lead_time(
+            date_str=date_str,
+            slot=slot_id,
+            reference_time_utc=(gfs_selection.fetched_at_utc if gfs_selection is not None else None),
+            gfs_cycle=(gfs_selection.gfs_cycle if gfs_selection is not None else None),
+            gfs_fhour=(gfs_selection.gfs_fhour if gfs_selection is not None else None),
+        )
+
         slots_output.append({
             "slot":              slot_id,
             "label":             SLOT_LABELS[slot_id],
@@ -579,6 +621,7 @@ def main():
             "lifted_index":      round(obs.get("LIFTED_INDEX", 0), 2),
             "totals_totals":     round(obs.get("TOTALS_TOTALS", 0), 1),
             "regime_adjustment": regime_thresh_factor,
+            "lead_time":         lt.to_json(),
         })
         print(f"  Slot {slot_id}: {model_ver}  raw={raw*100:.1f}%  cal={cal*100:.1f}%  "
               f"threshold={threshold}  predicted={'YES' if float(cal) >= threshold else 'NO'}")
@@ -848,7 +891,8 @@ def main():
         "cape_tendency_jkgh": cape_tendency,
         "cape_trend":         ("BUILDING" if cape_tendency is not None and cape_tendency > 50
                                else "WEAKENING" if cape_tendency is not None and cape_tendency < -50
-                               else "STEADY"),
+                               else "STEADY" if cape_tendency is not None
+                               else "UNAVAILABLE"),
         "monsoon_regime":     monsoon_regime,
         "regime_thresh_factor": regime_thresh_factor,
         "peak_window_ist":    "1300–1800 IST",
@@ -963,6 +1007,15 @@ def main():
             print(f"  Terrain integration error (non-fatal): {e}")
 
     # IWV trend and category in met_parameters
+    # NOTE (Phase 0.1 semantic correction): "iwv_mm" is GFS PRECIP_WATER
+    # (model-derived precipitable water from the NWP column), NOT a
+    # satellite-observed Integrated Water Vapor retrieval. No live satellite
+    # IWV source (e.g. INSAT-3DR WV channel) is wired into production today.
+    # The field name and category thresholds are left unchanged (no schema
+    # break); "iwv_source" is added below as a provenance string using the
+    # same "source" convention already used elsewhere in this document
+    # (see e.g. the terrain and GFS blocks) so a real satellite IWV source
+    # could be substituted here later without further schema changes.
     iwv_val = forecast["met_parameters"].get("iwv_mm", 0) or 0
     forecast["met_parameters"]["iwv_category"] = (
         "HIGH" if iwv_val >= 55 else
@@ -973,6 +1026,9 @@ def main():
     forecast["met_parameters"]["iwv_threshold_mm"] = 55.0
     forecast["met_parameters"]["iwv_pct_of_threshold"] = round(
         min(1.0, iwv_val / 55.0), 3
+    )
+    forecast["met_parameters"]["iwv_source"] = (
+        "GFS PRECIP_WATER (model-derived precipitable water, not satellite-observed IWV)"
     )
 
     # ── Hazard summary (CB / FF) ──────────────────────────────────────────────
@@ -1243,8 +1299,11 @@ def main():
     print(f"  Pipeline health → {health_path}")
 
     # ── Write forecast.json ───────────────────────────────────────────────────
-    with open("forecast.json", "w") as f:
-        json.dump(forecast, f, indent=2)
+    try:
+        atomic_write_json("forecast.json", forecast, indent=2)
+    except AtomicWriteError as e:
+        print(f"FATAL: could not write forecast.json atomically -- previous file left untouched: {e}")
+        sys.exit(1)
 
     print("\n" + "=" * 65)
     print(f"  forecast.json written — alert={alert_active}  "
@@ -1256,8 +1315,17 @@ def main():
     print("=" * 65)
 
     # ── Append to forecast_log.csv (needed by verify_today + skill_scores) ────
+    # Schema-mismatch handling used to back up and DELETE the existing file,
+    # silently destroying accumulated verification history (root-cause report
+    # Phase 3). It now migrates in place via forecast_log_migrate: existing
+    # rows are preserved, new columns are added blank, and legacy columns not
+    # in the current schema are kept (appended) rather than dropped. A
+    # genuinely unparsable file is backed up and left untouched rather than
+    # wiped -- the run continues, but no data is lost or silently discarded.
     try:
         import csv
+        from forecast_log_migrate import migrate_forecast_log
+
         log_path = DATA / "forecast_log.csv"
         log_cols = [
             "date", "slot", "ts_probability", "ts_predicted", "threshold",
@@ -1266,24 +1334,29 @@ def main():
             "monsoon_regime", "regime_adjustment", "cape_tendency_jkgh",
             "alert_active", "generated_at",
         ]
-        # If existing CSV has a different (old) header, back it up and start fresh
+
         write_header = not log_path.exists()
+        write_cols = log_cols
         if log_path.exists():
-            try:
+            mig = migrate_forecast_log(log_path, log_cols)
+            if mig.action == "migrated":
+                print(f"  forecast_log.csv migrated: {mig.message}")
+                write_cols = log_cols + mig.columns_kept_legacy
+            elif mig.action == "failed":
+                print(f"  ⚠ forecast_log.csv NOT migrated ({mig.message}) — "
+                      f"skipping append this run rather than risking data loss")
+                write_cols = None
+            elif mig.action == "no_op":
+                # Already current schema -- read the real on-disk header in
+                # case it carries legacy columns from an earlier migration.
                 with open(log_path, "r") as _f:
-                    first_line = _f.readline().strip()
-                existing_cols = [c.strip() for c in first_line.split(",")]
-                if existing_cols != log_cols:
-                    import shutil
-                    backup = log_path.with_suffix(".csv.bak")
-                    shutil.copy2(log_path, backup)
-                    log_path.unlink()
-                    write_header = True
-                    print(f"  ⚠ forecast_log.csv header mismatch — backed up to {backup.name} and starting fresh")
-            except Exception:
-                pass
+                    write_cols = [c.strip() for c in _f.readline().strip().split(",")] or log_cols
+
+        if write_cols is None:
+            raise RuntimeError("forecast_log.csv migration failed — see message above")
+
         with open(log_path, "a", newline="") as csvf:
-            writer = csv.DictWriter(csvf, fieldnames=log_cols, extrasaction="ignore")
+            writer = csv.DictWriter(csvf, fieldnames=write_cols, extrasaction="ignore")
             if write_header:
                 writer.writeheader()
             for s in slots_output:
@@ -1407,7 +1480,14 @@ if __name__ == "__main__":
         except Exception:
             pass
 
-        with open("forecast.json", "w") as _f:
-            json.dump(emergency, _f, indent=2)
-        print("  Emergency forecast.json written — CI will commit and push this.")
+        try:
+            atomic_write_json("forecast.json", emergency, indent=2)
+            print("  Emergency forecast.json written — CI will commit and push this.")
+        except AtomicWriteError as _e:
+            # The crash-handler's own write failed too -- do NOT let this
+            # mask the original crash, and do NOT leave a partially-written
+            # forecast.json on disk. atomic_write_json guarantees the
+            # PREVIOUS valid forecast.json (from the last successful run)
+            # is left completely untouched in this case.
+            print(f"  Emergency forecast.json write also failed -- previous forecast.json left untouched: {_e}")
         sys.exit(1)   # Non-zero exit so GitHub Actions marks the step as failed (visible in logs)

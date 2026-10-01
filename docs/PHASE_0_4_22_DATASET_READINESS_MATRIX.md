@@ -1,0 +1,38 @@
+# Phase 0.4.22 — Dataset Readiness Matrix
+
+Audit + dataset-design phase. No deep-learning training, no fabricated/duplicated/synthetic/interpolated/resampled samples, no treatment of proxy labels as observed, no production/UI change, no commit/push. All numbers below were computed this phase by directly loading and parsing the real files named in each row's Evidence column — not taken from prior summaries or README claims.
+
+## Status definitions
+
+- **GREEN** — real, observed (or, for CB, genuinely pan-India-consistent) labels exist, are GFS-aligned (predictors already built and joined) in sufficient quantity for at least a pipeline smoke test, and the dataset is usable today with no blocking gap.
+- **YELLOW** — real labels exist and the hazard is in principle trainable, but a material gap remains (temporal-resolution mismatch, scale too small for a defensible baseline, concentrated/non-diverse sampling, or GFS-alignment not yet done at scale).
+- **RED** — a real, specific blocker exists that prevents the dataset from being used as the sole supervised source today (e.g. no valid negative label class, a label/target mismatch not yet corrected) — distinguished from GRAY because the blocker is well understood and has a known resolution path, not an open unknown.
+- **GRAY** — status cannot be determined from files actually inspected this phase, or depends on work (e.g. further acquisition) whose outcome is not yet known.
+
+## Readiness table
+
+| Dataset | Hazard | Coverage | Samples | Positive | Negative | Label Type | Predictors | GFS-Aligned | Trainable | MTL-Ready | Status |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| `ts_labels.csv` (full archive) | TS | VOBL only (1/992 cells, 0.101% pan-India) | 15,276 rows | 584 | 14,692 | Observed (station-based) | N/A (labels only) | No — only a 20-event-group subset is GFS-aligned | Not directly (needs GFS join) | No | YELLOW |
+| `phase_0_4_20_train.csv` + `phase_0_4_20_holdout.csv` (GFS-aligned TS) | TS | VOBL only (1 cell) | 40 rows / 20 event groups (28 train/14 groups, 12 holdout/6 groups) | 26 rows / 13 event groups | 14 rows / 7 event groups | Observed, GFS-joined | 17-feature `FEATURE_COLUMNS`, all `FORECAST_DERIVED` | Yes — this is the GFS-aligned product | Pipeline-smoke-test only; too small for a defensible baseline | No | YELLOW |
+| `cb_labels.csv.gz` / `cb_labels_summary.json` | CB | Pan-India (382 of 992 cells observed in the raw file; 992/992 per summary coverage report) | 198,452 label rows = 49,613 positive cell-days × 4 slots (verified: 198,452/4 = 49,613, exact match to summary) | 49,613 cell-days (198,452 rows) | 1,501,330 cell-days (per summary; not re-tallied row-by-row since negatives are not materialized as rows in this file — see note) | **Daily** rainfall threshold (64.5mm) applied identically to all 4 six-hour slots — confirmed directly from raw rows (`temporal_resolution: daily`, `quality_flag: daily_resolution_applied_to_all_4_slots`) | Not yet GFS-joined at scale (only the VOBL cell has a built predictor join) | No | Not today, for a 2–6h nowcast target, without a resolution fix | No | RED (label/target temporal-resolution mismatch — see Part 3) |
+| `ff_labels_proxy.csv.gz` / `ff_labels_summary.json` | FF (proxy) | Pan-India (378 of 992 cells observed in raw file) | 313,768 label rows = 78,442 positive cell-days × 4 slots (verified: 313,768/4 = 78,442, exact match to summary) | 78,442 cell-days | 1,472,501 cell-days (per summary) | **Rainfall proxy, explicitly self-labeled `PROXY_NOT_OBSERVED`** (3-day cumsum ≥100mm AND daily ≥40mm) — not an observed flood | Not GFS-joined at scale | No | Only as a proxy target, never presentable as "observed flash flood" | No | YELLOW (usable only as an explicitly-labeled proxy, never as ground truth) |
+| `floodevents_indofloods.csv` + `indofloods_grid_events.csv` + `indofloods_grid_mapping.csv` (FF observed) | FF (observed) | 75 of 992 cells (7.6% pan-India), 155 gauges, 214 mapped gauges total (100% mapped, 0 unmapped) | 4,548 event rows → 4,106 unique (cell, date) positive pairs after dedup (per `docs/INDOFLOODS_LABEL_DEFINITION.md`) | 4,106 unique positive (cell,date) pairs | **0 — no valid negative label exists.** `docs/INDOFLOODS_NEGATIVE_LABEL_AUDIT.md` concludes Case B: absence of a recorded event is UNKNOWN, not confirmed non-flood (50.5% of gauges have <90% data-coverage ratio in their own operational window) | Observed (real flood events, gauge-point-in-cell mapped) | Not GFS-joined at all | **No — positive-only, no negative class** | No — cannot train a binary classifier without a negative-sampling strategy that does not fabricate labels | No | **RED — not "impossible" (see correction below), but blocked on missing valid negative labels, not on missing coordinates** |
+
+## Correction to a prior self-report (important finding this phase)
+
+`SIH_PANINDIA_GRID_LABELS_20260930_143541Z/processed/labels/coverage_report.json` and `ff_labels_summary.json` state that an observed-flood-event FF label source is **"IMPOSSIBLE -- no coordinate source exists for any INDOFLOODS gauge in this repo."**
+
+This phase inspected the actual files directly (per the hard instruction not to rely on self-reported summaries) and found this claim is **false as currently worded**:
+
+- `data/metadata_indofloods.csv` contains `Latitude`/`Longitude` for all 214 gauges.
+- `processed/indofloods/indofloods_grid_mapping.csv` already maps all 214 gauges to canonical grid cells (`status: MAPPED`, 0 unmapped).
+- `processed/indofloods/indofloods_grid_events.csv` already carries all 4,548 flood events joined to their `cell_id` (100% `MAPPED`).
+- `docs/INDOFLOODS_LABEL_DEFINITION.md` (an earlier, already-completed phase) documents exactly this gauge→cell→label chain and its OR-aggregation rule for co-located gauges, reproduced by `tests/test_indofloods_phase55.py`.
+
+The real, substantiated blocker is not "no coordinates" — it is the one documented in `docs/INDOFLOODS_NEGATIVE_LABEL_AUDIT.md`: **INDOFLOODS has no reliable negative-label mechanism** (absence of a recorded event cannot be read as "confirmed no flood" given inconsistent per-gauge data coverage), so this source currently yields positive-only labels, not a trainable binary dataset. The `coverage_report.json`/`ff_labels_summary.json` wording should be corrected from "impossible" to "positive-only; blocked on an unresolved negative-labeling strategy," but this document does not edit those generated files (out of scope — doing so would be a label/data change, excluded by this phase's constraints). This correction is recorded here as an audit finding only.
+
+## Notes
+
+- Row counts for CB/FF pan-India proxy negatives are taken from the summary JSONs (`coverage_report.json`, `cb_labels_summary.json`, `ff_labels_summary.json`) rather than re-tallied line-by-line, because negatives in those files are apparently not stored as individual rows in the gzipped CSVs inspected (`cb_labels.csv.gz` and `ff_labels_proxy.csv.gz` contain only `POSITIVE`/`PROXY_NOT_OBSERVED` rows — 198,452 and 313,768 rows respectively, both confirmed by direct independent tally to be exactly 4× the summary's cell-day positive counts, which is strong, non-circular agreement between the two independently-generated files for the counts that are actually comparable).
+- "Event groups" below and throughout Phase 0.4.22 means the `event_group_key = cell_id|ist_date|slot_id` leakage-safe unit already used by the Phase 0.4.20 builder — never conflated with raw rows (two leads per event group) or with "independent weather events" (a single synoptic system can span multiple adjacent event groups; see Part 4 of the companion Model Readiness Report).

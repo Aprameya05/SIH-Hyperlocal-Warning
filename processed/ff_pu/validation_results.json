@@ -1,0 +1,666 @@
+{
+  "model_a_catchment_only": {
+    "feature_columns": [
+      "Stream Order",
+      "Drainage Density",
+      "Drainage Texture",
+      "Drainage Intensity",
+      "Channel Frequency",
+      "Infiltration Number",
+      "No. of Firstorder Streams",
+      "No. of Secondorder Streams",
+      "No. of Thirdorder Streams",
+      "Basin Magnitude",
+      "Fitness Ratio",
+      "Wandering Ratio",
+      "Maximal Flow Length",
+      "Downvalley Length",
+      "Drainage Area",
+      "Catchment Relief",
+      "Catchment Length",
+      "Catchment Perimeter",
+      "Sinuosity Index",
+      "Form Factor",
+      "Relief Ratio",
+      "Elongation Ratio",
+      "Circularity Ratio",
+      "Lemniscates Value",
+      "Compactness Coefficient",
+      "Ruggedness Number",
+      "Annual Precipitation",
+      "Precipitation Seasonality",
+      "Precipitation of Wettest Month",
+      "Precipitation of Wettest Quarter",
+      "Annual Mean Temperature",
+      "Temperature Seasonality",
+      "Soil type",
+      "lithology type",
+      "Land cover",
+      "KoppenGeiger Climate Type"
+    ],
+    "logistic_pu": {
+      "elkan_noto_c_estimate": 0.6190214563314993,
+      "validation": {
+        "pu_ranking_auc_caveated": 0.47918402565778606,
+        "enrichment_top1pct": {
+          "k": 430,
+          "k_frac": 0.01,
+          "positives_in_top_k": 4,
+          "precision_at_k": 0.009302325581395349,
+          "base_rate": 0.004832264659418269,
+          "enrichment_over_base_rate": 1.9250447227191414,
+          "recall_at_k": 0.019230769230769232
+        },
+        "enrichment_top5pct": {
+          "k": 2152,
+          "k_frac": 0.05,
+          "positives_in_top_k": 8,
+          "precision_at_k": 0.0037174721189591076,
+          "base_rate": 0.004832264659418269,
+          "enrichment_over_base_rate": 0.7693022590792108,
+          "recall_at_k": 0.038461538461538464
+        }
+      },
+      "spatial_holdout": {
+        "pu_ranking_auc_caveated": 0.5,
+        "enrichment_top1pct": {
+          "k": 21,
+          "k_frac": 0.01,
+          "positives_in_top_k": 0,
+          "precision_at_k": 0.0,
+          "base_rate": 0.022922636103151862,
+          "enrichment_over_base_rate": 0.0,
+          "recall_at_k": 0.0
+        },
+        "enrichment_top5pct": {
+          "k": 105,
+          "k_frac": 0.05,
+          "positives_in_top_k": 0,
+          "precision_at_k": 0.0,
+          "base_rate": 0.022922636103151862,
+          "enrichment_over_base_rate": 0.0,
+          "recall_at_k": 0.0
+        },
+        "n_positives_in_holdout_cell": 48,
+        "n_rows_in_holdout_cell": 2094
+      }
+    },
+    "logistic_pu_naive_uncorrected": {
+      "elkan_noto_c_estimate": 1.0,
+      "validation": {
+        "pu_ranking_auc_caveated": 0.4830913138302075,
+        "enrichment_top1pct": {
+          "k": 430,
+          "k_frac": 0.01,
+          "positives_in_top_k": 4,
+          "precision_at_k": 0.009302325581395349,
+          "base_rate": 0.004832264659418269,
+          "enrichment_over_base_rate": 1.9250447227191414,
+          "recall_at_k": 0.019230769230769232
+        },
+        "enrichment_top5pct": {
+          "k": 2152,
+          "k_frac": 0.05,
+          "positives_in_top_k": 22,
+          "precision_at_k": 0.010223048327137546,
+          "base_rate": 0.004832264659418269,
+          "enrichment_over_base_rate": 2.1155812124678297,
+          "recall_at_k": 0.10576923076923077
+        }
+      },
+      "spatial_holdout": {
+        "pu_ranking_auc_caveated": 0.5,
+        "enrichment_top1pct": {
+          "k": 21,
+          "k_frac": 0.01,
+          "positives_in_top_k": 0,
+          "precision_at_k": 0.0,
+          "base_rate": 0.022922636103151862,
+          "enrichment_over_base_rate": 0.0,
+          "recall_at_k": 0.0
+        },
+        "enrichment_top5pct": {
+          "k": 105,
+          "k_frac": 0.05,
+          "positives_in_top_k": 0,
+          "precision_at_k": 0.0,
+          "base_rate": 0.022922636103151862,
+          "enrichment_over_base_rate": 0.0,
+          "recall_at_k": 0.0
+        },
+        "n_positives_in_holdout_cell": 48,
+        "n_rows_in_holdout_cell": 2094
+      }
+    },
+    "xgboost_pu": {
+      "elkan_noto_c_estimate": 0.6603540182113647,
+      "validation": {
+        "pu_ranking_auc_caveated": 0.496234632803465,
+        "enrichment_top1pct": {
+          "k": 430,
+          "k_frac": 0.01,
+          "positives_in_top_k": 3,
+          "precision_at_k": 0.0069767441860465115,
+          "base_rate": 0.004832264659418269,
+          "enrichment_over_base_rate": 1.443783542039356,
+          "recall_at_k": 0.014423076923076924
+        },
+        "enrichment_top5pct": {
+          "k": 2152,
+          "k_frac": 0.05,
+          "positives_in_top_k": 14,
+          "precision_at_k": 0.006505576208178439,
+          "base_rate": 0.004832264659418269,
+          "enrichment_over_base_rate": 1.346278953388619,
+          "recall_at_k": 0.0673076923076923
+        }
+      },
+      "spatial_holdout": {
+        "pu_ranking_auc_caveated": 0.5,
+        "enrichment_top1pct": {
+          "k": 21,
+          "k_frac": 0.01,
+          "positives_in_top_k": 0,
+          "precision_at_k": 0.0,
+          "base_rate": 0.022922636103151862,
+          "enrichment_over_base_rate": 0.0,
+          "recall_at_k": 0.0
+        },
+        "enrichment_top5pct": {
+          "k": 105,
+          "k_frac": 0.05,
+          "positives_in_top_k": 0,
+          "precision_at_k": 0.0,
+          "base_rate": 0.022922636103151862,
+          "enrichment_over_base_rate": 0.0,
+          "recall_at_k": 0.0
+        },
+        "n_positives_in_holdout_cell": 48,
+        "n_rows_in_holdout_cell": 2094
+      }
+    },
+    "xgboost_pu_naive_uncorrected": {
+      "elkan_noto_c_estimate": 1.0,
+      "validation": {
+        "pu_ranking_auc_caveated": 0.4985791067182887,
+        "enrichment_top1pct": {
+          "k": 430,
+          "k_frac": 0.01,
+          "positives_in_top_k": 11,
+          "precision_at_k": 0.02558139534883721,
+          "base_rate": 0.004832264659418269,
+          "enrichment_over_base_rate": 5.293872987477639,
+          "recall_at_k": 0.052884615384615384
+        },
+        "enrichment_top5pct": {
+          "k": 2152,
+          "k_frac": 0.05,
+          "positives_in_top_k": 18,
+          "precision_at_k": 0.008364312267657992,
+          "base_rate": 0.004832264659418269,
+          "enrichment_over_base_rate": 1.7309300829282241,
+          "recall_at_k": 0.08653846153846154
+        }
+      },
+      "spatial_holdout": {
+        "pu_ranking_auc_caveated": 0.5,
+        "enrichment_top1pct": {
+          "k": 21,
+          "k_frac": 0.01,
+          "positives_in_top_k": 0,
+          "precision_at_k": 0.0,
+          "base_rate": 0.022922636103151862,
+          "enrichment_over_base_rate": 0.0,
+          "recall_at_k": 0.0
+        },
+        "enrichment_top5pct": {
+          "k": 105,
+          "k_frac": 0.05,
+          "positives_in_top_k": 0,
+          "precision_at_k": 0.0,
+          "base_rate": 0.022922636103151862,
+          "enrichment_over_base_rate": 0.0,
+          "recall_at_k": 0.0
+        },
+        "n_positives_in_holdout_cell": 48,
+        "n_rows_in_holdout_cell": 2094
+      }
+    }
+  },
+  "model_b_rainfall_only": {
+    "feature_columns": [
+      "rain_1d",
+      "rain_3d",
+      "rain_5d",
+      "rain_10d",
+      "rain_max1d_5d",
+      "rain_recent_vs_antecedent_ratio",
+      "rain_accel_3d_minus_prior3d"
+    ],
+    "logistic_pu": {
+      "elkan_noto_c_estimate": 0.6585256644177307,
+      "validation": {
+        "pu_ranking_auc_caveated": 0.6536456462752394,
+        "enrichment_top1pct": {
+          "k": 430,
+          "k_frac": 0.01,
+          "positives_in_top_k": 1,
+          "precision_at_k": 0.002325581395348837,
+          "base_rate": 0.004832264659418269,
+          "enrichment_over_base_rate": 0.48126118067978535,
+          "recall_at_k": 0.004807692307692308
+        },
+        "enrichment_top5pct": {
+          "k": 2152,
+          "k_frac": 0.05,
+          "positives_in_top_k": 13,
+          "precision_at_k": 0.0060408921933085506,
+          "base_rate": 0.004832264659418269,
+          "enrichment_over_base_rate": 1.2501161710037176,
+          "recall_at_k": 0.0625
+        }
+      },
+      "spatial_holdout": {
+        "pu_ranking_auc_caveated": 0.8631068752036495,
+        "enrichment_top1pct": {
+          "k": 21,
+          "k_frac": 0.01,
+          "positives_in_top_k": 1,
+          "precision_at_k": 0.047619047619047616,
+          "base_rate": 0.022922636103151862,
+          "enrichment_over_base_rate": 2.0773809523809526,
+          "recall_at_k": 0.020833333333333332
+        },
+        "enrichment_top5pct": {
+          "k": 105,
+          "k_frac": 0.05,
+          "positives_in_top_k": 5,
+          "precision_at_k": 0.047619047619047616,
+          "base_rate": 0.022922636103151862,
+          "enrichment_over_base_rate": 2.0773809523809526,
+          "recall_at_k": 0.10416666666666667
+        },
+        "n_positives_in_holdout_cell": 48,
+        "n_rows_in_holdout_cell": 2094
+      }
+    },
+    "logistic_pu_naive_uncorrected": {
+      "elkan_noto_c_estimate": 1.0,
+      "validation": {
+        "pu_ranking_auc_caveated": 0.6618021461100297,
+        "enrichment_top1pct": {
+          "k": 430,
+          "k_frac": 0.01,
+          "positives_in_top_k": 18,
+          "precision_at_k": 0.04186046511627907,
+          "base_rate": 0.004832264659418269,
+          "enrichment_over_base_rate": 8.662701252236136,
+          "recall_at_k": 0.08653846153846154
+        },
+        "enrichment_top5pct": {
+          "k": 2152,
+          "k_frac": 0.05,
+          "positives_in_top_k": 59,
+          "precision_at_k": 0.02741635687732342,
+          "base_rate": 0.004832264659418269,
+          "enrichment_over_base_rate": 5.67360416070918,
+          "recall_at_k": 0.28365384615384615
+        }
+      },
+      "spatial_holdout": {
+        "pu_ranking_auc_caveated": 0.8898867709351581,
+        "enrichment_top1pct": {
+          "k": 21,
+          "k_frac": 0.01,
+          "positives_in_top_k": 5,
+          "precision_at_k": 0.23809523809523808,
+          "base_rate": 0.022922636103151862,
+          "enrichment_over_base_rate": 10.386904761904761,
+          "recall_at_k": 0.10416666666666667
+        },
+        "enrichment_top5pct": {
+          "k": 105,
+          "k_frac": 0.05,
+          "positives_in_top_k": 15,
+          "precision_at_k": 0.14285714285714285,
+          "base_rate": 0.022922636103151862,
+          "enrichment_over_base_rate": 6.232142857142857,
+          "recall_at_k": 0.3125
+        },
+        "n_positives_in_holdout_cell": 48,
+        "n_rows_in_holdout_cell": 2094
+      }
+    },
+    "xgboost_pu": {
+      "elkan_noto_c_estimate": 0.7690703868865967,
+      "validation": {
+        "pu_ranking_auc_caveated": 0.6506456646817558,
+        "enrichment_top1pct": {
+          "k": 430,
+          "k_frac": 0.01,
+          "positives_in_top_k": 28,
+          "precision_at_k": 0.06511627906976744,
+          "base_rate": 0.004832264659418269,
+          "enrichment_over_base_rate": 13.47531305903399,
+          "recall_at_k": 0.1346153846153846
+        },
+        "enrichment_top5pct": {
+          "k": 2152,
+          "k_frac": 0.05,
+          "positives_in_top_k": 56,
+          "precision_at_k": 0.026022304832713755,
+          "base_rate": 0.004832264659418269,
+          "enrichment_over_base_rate": 5.385115813554476,
+          "recall_at_k": 0.2692307692307692
+        }
+      },
+      "spatial_holdout": {
+        "pu_ranking_auc_caveated": 0.870580808080808,
+        "enrichment_top1pct": {
+          "k": 21,
+          "k_frac": 0.01,
+          "positives_in_top_k": 2,
+          "precision_at_k": 0.09523809523809523,
+          "base_rate": 0.022922636103151862,
+          "enrichment_over_base_rate": 4.154761904761905,
+          "recall_at_k": 0.041666666666666664
+        },
+        "enrichment_top5pct": {
+          "k": 105,
+          "k_frac": 0.05,
+          "positives_in_top_k": 11,
+          "precision_at_k": 0.10476190476190476,
+          "base_rate": 0.022922636103151862,
+          "enrichment_over_base_rate": 4.570238095238095,
+          "recall_at_k": 0.22916666666666666
+        },
+        "n_positives_in_holdout_cell": 48,
+        "n_rows_in_holdout_cell": 2094
+      }
+    },
+    "xgboost_pu_naive_uncorrected": {
+      "elkan_noto_c_estimate": 1.0,
+      "validation": {
+        "pu_ranking_auc_caveated": 0.651690907899179,
+        "enrichment_top1pct": {
+          "k": 430,
+          "k_frac": 0.01,
+          "positives_in_top_k": 21,
+          "precision_at_k": 0.04883720930232558,
+          "base_rate": 0.004832264659418269,
+          "enrichment_over_base_rate": 10.106484794275493,
+          "recall_at_k": 0.10096153846153846
+        },
+        "enrichment_top5pct": {
+          "k": 2152,
+          "k_frac": 0.05,
+          "positives_in_top_k": 56,
+          "precision_at_k": 0.026022304832713755,
+          "base_rate": 0.004832264659418269,
+          "enrichment_over_base_rate": 5.385115813554476,
+          "recall_at_k": 0.2692307692307692
+        }
+      },
+      "spatial_holdout": {
+        "pu_ranking_auc_caveated": 0.8758451449983707,
+        "enrichment_top1pct": {
+          "k": 21,
+          "k_frac": 0.01,
+          "positives_in_top_k": 7,
+          "precision_at_k": 0.3333333333333333,
+          "base_rate": 0.022922636103151862,
+          "enrichment_over_base_rate": 14.541666666666666,
+          "recall_at_k": 0.14583333333333334
+        },
+        "enrichment_top5pct": {
+          "k": 105,
+          "k_frac": 0.05,
+          "positives_in_top_k": 15,
+          "precision_at_k": 0.14285714285714285,
+          "base_rate": 0.022922636103151862,
+          "enrichment_over_base_rate": 6.232142857142857,
+          "recall_at_k": 0.3125
+        },
+        "n_positives_in_holdout_cell": 48,
+        "n_rows_in_holdout_cell": 2094
+      }
+    }
+  },
+  "model_c_combined": {
+    "feature_columns": [
+      "rain_1d",
+      "rain_3d",
+      "rain_5d",
+      "rain_10d",
+      "rain_max1d_5d",
+      "rain_recent_vs_antecedent_ratio",
+      "rain_accel_3d_minus_prior3d",
+      "Stream Order",
+      "Drainage Density",
+      "Drainage Texture",
+      "Drainage Intensity",
+      "Channel Frequency",
+      "Infiltration Number",
+      "No. of Firstorder Streams",
+      "No. of Secondorder Streams",
+      "No. of Thirdorder Streams",
+      "Basin Magnitude",
+      "Fitness Ratio",
+      "Wandering Ratio",
+      "Maximal Flow Length",
+      "Downvalley Length",
+      "Drainage Area",
+      "Catchment Relief",
+      "Catchment Length",
+      "Catchment Perimeter",
+      "Sinuosity Index",
+      "Form Factor",
+      "Relief Ratio",
+      "Elongation Ratio",
+      "Circularity Ratio",
+      "Lemniscates Value",
+      "Compactness Coefficient",
+      "Ruggedness Number",
+      "Annual Precipitation",
+      "Precipitation Seasonality",
+      "Precipitation of Wettest Month",
+      "Precipitation of Wettest Quarter",
+      "Annual Mean Temperature",
+      "Temperature Seasonality",
+      "Soil type",
+      "lithology type",
+      "Land cover",
+      "KoppenGeiger Climate Type"
+    ],
+    "logistic_pu": {
+      "elkan_noto_c_estimate": 0.7449603972577553,
+      "validation": {
+        "pu_ranking_auc_caveated": 0.5900325570871373,
+        "enrichment_top1pct": {
+          "k": 430,
+          "k_frac": 0.01,
+          "positives_in_top_k": 30,
+          "precision_at_k": 0.06976744186046512,
+          "base_rate": 0.004832264659418269,
+          "enrichment_over_base_rate": 14.437835420393561,
+          "recall_at_k": 0.14423076923076922
+        },
+        "enrichment_top5pct": {
+          "k": 2152,
+          "k_frac": 0.05,
+          "positives_in_top_k": 63,
+          "precision_at_k": 0.029275092936802975,
+          "base_rate": 0.004832264659418269,
+          "enrichment_over_base_rate": 6.058255290248785,
+          "recall_at_k": 0.30288461538461536
+        }
+      },
+      "spatial_holdout": {
+        "pu_ranking_auc_caveated": 0.5,
+        "enrichment_top1pct": {
+          "k": 21,
+          "k_frac": 0.01,
+          "positives_in_top_k": 0,
+          "precision_at_k": 0.0,
+          "base_rate": 0.022922636103151862,
+          "enrichment_over_base_rate": 0.0,
+          "recall_at_k": 0.0
+        },
+        "enrichment_top5pct": {
+          "k": 105,
+          "k_frac": 0.05,
+          "positives_in_top_k": 0,
+          "precision_at_k": 0.0,
+          "base_rate": 0.022922636103151862,
+          "enrichment_over_base_rate": 0.0,
+          "recall_at_k": 0.0
+        },
+        "n_positives_in_holdout_cell": 48,
+        "n_rows_in_holdout_cell": 2094
+      }
+    },
+    "logistic_pu_naive_uncorrected": {
+      "elkan_noto_c_estimate": 1.0,
+      "validation": {
+        "pu_ranking_auc_caveated": 0.5951464260830215,
+        "enrichment_top1pct": {
+          "k": 430,
+          "k_frac": 0.01,
+          "positives_in_top_k": 18,
+          "precision_at_k": 0.04186046511627907,
+          "base_rate": 0.004832264659418269,
+          "enrichment_over_base_rate": 8.662701252236136,
+          "recall_at_k": 0.08653846153846154
+        },
+        "enrichment_top5pct": {
+          "k": 2152,
+          "k_frac": 0.05,
+          "positives_in_top_k": 59,
+          "precision_at_k": 0.02741635687732342,
+          "base_rate": 0.004832264659418269,
+          "enrichment_over_base_rate": 5.67360416070918,
+          "recall_at_k": 0.28365384615384615
+        }
+      },
+      "spatial_holdout": {
+        "pu_ranking_auc_caveated": 0.8957518735744542,
+        "enrichment_top1pct": {
+          "k": 21,
+          "k_frac": 0.01,
+          "positives_in_top_k": 3,
+          "precision_at_k": 0.14285714285714285,
+          "base_rate": 0.022922636103151862,
+          "enrichment_over_base_rate": 6.232142857142857,
+          "recall_at_k": 0.0625
+        },
+        "enrichment_top5pct": {
+          "k": 105,
+          "k_frac": 0.05,
+          "positives_in_top_k": 14,
+          "precision_at_k": 0.13333333333333333,
+          "base_rate": 0.022922636103151862,
+          "enrichment_over_base_rate": 5.816666666666666,
+          "recall_at_k": 0.2916666666666667
+        },
+        "n_positives_in_holdout_cell": 48,
+        "n_rows_in_holdout_cell": 2094
+      }
+    },
+    "xgboost_pu": {
+      "elkan_noto_c_estimate": 0.8557725548744202,
+      "validation": {
+        "pu_ranking_auc_caveated": 0.5840869155706558,
+        "enrichment_top1pct": {
+          "k": 430,
+          "k_frac": 0.01,
+          "positives_in_top_k": 22,
+          "precision_at_k": 0.05116279069767442,
+          "base_rate": 0.004832264659418269,
+          "enrichment_over_base_rate": 10.587745974955277,
+          "recall_at_k": 0.10576923076923077
+        },
+        "enrichment_top5pct": {
+          "k": 2152,
+          "k_frac": 0.05,
+          "positives_in_top_k": 45,
+          "precision_at_k": 0.020910780669144983,
+          "base_rate": 0.004832264659418269,
+          "enrichment_over_base_rate": 4.327325207320561,
+          "recall_at_k": 0.21634615384615385
+        }
+      },
+      "spatial_holdout": {
+        "pu_ranking_auc_caveated": 0.8778052704463994,
+        "enrichment_top1pct": {
+          "k": 21,
+          "k_frac": 0.01,
+          "positives_in_top_k": 6,
+          "precision_at_k": 0.2857142857142857,
+          "base_rate": 0.022922636103151862,
+          "enrichment_over_base_rate": 12.464285714285714,
+          "recall_at_k": 0.125
+        },
+        "enrichment_top5pct": {
+          "k": 105,
+          "k_frac": 0.05,
+          "positives_in_top_k": 16,
+          "precision_at_k": 0.1523809523809524,
+          "base_rate": 0.022922636103151862,
+          "enrichment_over_base_rate": 6.647619047619048,
+          "recall_at_k": 0.3333333333333333
+        },
+        "n_positives_in_holdout_cell": 48,
+        "n_rows_in_holdout_cell": 2094
+      }
+    },
+    "xgboost_pu_naive_uncorrected": {
+      "elkan_noto_c_estimate": 1.0,
+      "validation": {
+        "pu_ranking_auc_caveated": 0.5848012343140565,
+        "enrichment_top1pct": {
+          "k": 430,
+          "k_frac": 0.01,
+          "positives_in_top_k": 23,
+          "precision_at_k": 0.053488372093023255,
+          "base_rate": 0.004832264659418269,
+          "enrichment_over_base_rate": 11.069007155635063,
+          "recall_at_k": 0.11057692307692307
+        },
+        "enrichment_top5pct": {
+          "k": 2152,
+          "k_frac": 0.05,
+          "positives_in_top_k": 45,
+          "precision_at_k": 0.020910780669144983,
+          "base_rate": 0.004832264659418269,
+          "enrichment_over_base_rate": 4.327325207320561,
+          "recall_at_k": 0.21634615384615385
+        }
+      },
+      "spatial_holdout": {
+        "pu_ranking_auc_caveated": 0.8768226621049202,
+        "enrichment_top1pct": {
+          "k": 21,
+          "k_frac": 0.01,
+          "positives_in_top_k": 4,
+          "precision_at_k": 0.19047619047619047,
+          "base_rate": 0.022922636103151862,
+          "enrichment_over_base_rate": 8.30952380952381,
+          "recall_at_k": 0.08333333333333333
+        },
+        "enrichment_top5pct": {
+          "k": 105,
+          "k_frac": 0.05,
+          "positives_in_top_k": 16,
+          "precision_at_k": 0.1523809523809524,
+          "base_rate": 0.022922636103151862,
+          "enrichment_over_base_rate": 6.647619047619048,
+          "recall_at_k": 0.3333333333333333
+        },
+        "n_positives_in_holdout_cell": 48,
+        "n_rows_in_holdout_cell": 2094
+      }
+    }
+  },
+  "spatial_holdout_cell": "26.0_88.0",
+  "spatial_holdout_cell_positive_count": 48
+}

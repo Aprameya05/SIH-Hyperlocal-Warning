@@ -1,0 +1,554 @@
+[
+  {
+    "filename": "gfs.0p25.2021072406.f003.grib2",
+    "failures": [],
+    "warnings": [],
+    "size_bytes": 545088909,
+    "non_empty": true,
+    "sha256": "e026a6779088fa7135d5b51cf727c5bf398a7b6b269626124d3d9453b0e4308c",
+    "manifest_sha256": "e026a6779088fa7135d5b51cf727c5bf398a7b6b269626124d3d9453b0e4308c",
+    "manifest_size_bytes": 545088909,
+    "grib_header_ok": true,
+    "grib_trailer_ok": true,
+    "n_messages": 743,
+    "grid": {
+      "gridType": "regular_ll",
+      "Ni": 1440,
+      "Nj": 721,
+      "lat_first": 90.0,
+      "lat_last": -90.0,
+      "lon_first": 0.0,
+      "lon_last": 359.75,
+      "jScansPositively": 0
+    },
+    "init_dt_utc": "2021-07-24T06:00:00+00:00",
+    "lead_hours_from_grib": 3,
+    "valid_dt_utc": "2021-07-24T09:00:00+00:00",
+    "valid_dt_ist": "2021-07-24T14:30:00+05:30",
+    "ist_date": "2021-07-24",
+    "slot_id": 2,
+    "slot_label": "1201-1800",
+    "event_group_key": "IND_13.0_78.0|2021-07-24|2",
+    "field_presence": {
+      "cape@surface/0": true,
+      "cin@surface/0": true,
+      "pwat@atmosphereSingleLayer/0": true,
+      "u@isobaricInhPa/850": true,
+      "v@isobaricInhPa/850": true,
+      "u@isobaricInhPa/200": true,
+      "v@isobaricInhPa/200": true,
+      "t@isobaricInhPa/850": true,
+      "t@isobaricInhPa/700": true,
+      "t@isobaricInhPa/500": true,
+      "r@isobaricInhPa/850": true,
+      "r@isobaricInhPa/700": true
+    },
+    "tp_messages": [
+      {
+        "shortName": "tp",
+        "typeOfLevel": "surface",
+        "level": 0,
+        "stepType": "accum",
+        "startStep": 0,
+        "endStep": 3,
+        "forecastTime": 0,
+        "units": "kg m**-2"
+      },
+      {
+        "shortName": "tp",
+        "typeOfLevel": "surface",
+        "level": 0,
+        "stepType": "accum",
+        "startStep": 0,
+        "endStep": 3,
+        "forecastTime": 0,
+        "units": "kg m**-2"
+      }
+    ],
+    "prate_messages": [
+      {
+        "shortName": "prate",
+        "typeOfLevel": "surface",
+        "level": 0,
+        "stepType": "instant",
+        "startStep": 3,
+        "endStep": 3,
+        "forecastTime": 3,
+        "units": "kg m**-2 s**-1"
+      },
+      {
+        "shortName": "prate",
+        "typeOfLevel": "surface",
+        "level": 0,
+        "stepType": "avg",
+        "startStep": 0,
+        "endStep": 3,
+        "forecastTime": 0,
+        "units": "kg m**-2 s**-1"
+      }
+    ],
+    "label_status": "POSITIVE",
+    "label_source": "IMD station observation, VOBL/43295",
+    "partition": "train"
+  },
+  {
+    "filename": "gfs.0p25.2021072406.f006.grib2",
+    "failures": [],
+    "warnings": [],
+    "size_bytes": 550065659,
+    "non_empty": true,
+    "sha256": "943cf50522d559090f836fb4f1d7b227623ec2410b3316eb99988c51982be1e9",
+    "manifest_sha256": "943cf50522d559090f836fb4f1d7b227623ec2410b3316eb99988c51982be1e9",
+    "manifest_size_bytes": 550065659,
+    "grib_header_ok": true,
+    "grib_trailer_ok": true,
+    "n_messages": 743,
+    "grid": {
+      "gridType": "regular_ll",
+      "Ni": 1440,
+      "Nj": 721,
+      "lat_first": 90.0,
+      "lat_last": -90.0,
+      "lon_first": 0.0,
+      "lon_last": 359.75,
+      "jScansPositively": 0
+    },
+    "init_dt_utc": "2021-07-24T06:00:00+00:00",
+    "lead_hours_from_grib": 6,
+    "valid_dt_utc": "2021-07-24T12:00:00+00:00",
+    "valid_dt_ist": "2021-07-24T17:30:00+05:30",
+    "ist_date": "2021-07-24",
+    "slot_id": 2,
+    "slot_label": "1201-1800",
+    "event_group_key": "IND_13.0_78.0|2021-07-24|2",
+    "field_presence": {
+      "cape@surface/0": true,
+      "cin@surface/0": true,
+      "pwat@atmosphereSingleLayer/0": true,
+      "u@isobaricInhPa/850": true,
+      "v@isobaricInhPa/850": true,
+      "u@isobaricInhPa/200": true,
+      "v@isobaricInhPa/200": true,
+      "t@isobaricInhPa/850": true,
+      "t@isobaricInhPa/700": true,
+      "t@isobaricInhPa/500": true,
+      "r@isobaricInhPa/850": true,
+      "r@isobaricInhPa/700": true
+    },
+    "tp_messages": [
+      {
+        "shortName": "tp",
+        "typeOfLevel": "surface",
+        "level": 0,
+        "stepType": "accum",
+        "startStep": 0,
+        "endStep": 6,
+        "forecastTime": 0,
+        "units": "kg m**-2"
+      },
+      {
+        "shortName": "tp",
+        "typeOfLevel": "surface",
+        "level": 0,
+        "stepType": "accum",
+        "startStep": 0,
+        "endStep": 6,
+        "forecastTime": 0,
+        "units": "kg m**-2"
+      }
+    ],
+    "prate_messages": [
+      {
+        "shortName": "prate",
+        "typeOfLevel": "surface",
+        "level": 0,
+        "stepType": "instant",
+        "startStep": 6,
+        "endStep": 6,
+        "forecastTime": 6,
+        "units": "kg m**-2 s**-1"
+      },
+      {
+        "shortName": "prate",
+        "typeOfLevel": "surface",
+        "level": 0,
+        "stepType": "avg",
+        "startStep": 0,
+        "endStep": 6,
+        "forecastTime": 0,
+        "units": "kg m**-2 s**-1"
+      }
+    ],
+    "label_status": "POSITIVE",
+    "label_source": "IMD station observation, VOBL/43295",
+    "partition": "train"
+  },
+  {
+    "filename": "gfs.0p25.2022081512.f003.grib2",
+    "failures": [],
+    "warnings": [],
+    "size_bytes": 547784169,
+    "non_empty": true,
+    "sha256": "5690dbfa60b2546c316dc92c5b81508f1f631b26c0d8252ffba69c4588314346",
+    "manifest_sha256": "5690dbfa60b2546c316dc92c5b81508f1f631b26c0d8252ffba69c4588314346",
+    "manifest_size_bytes": 547784169,
+    "grib_header_ok": true,
+    "grib_trailer_ok": true,
+    "n_messages": 743,
+    "grid": {
+      "gridType": "regular_ll",
+      "Ni": 1440,
+      "Nj": 721,
+      "lat_first": 90.0,
+      "lat_last": -90.0,
+      "lon_first": 0.0,
+      "lon_last": 359.75,
+      "jScansPositively": 0
+    },
+    "init_dt_utc": "2022-08-15T12:00:00+00:00",
+    "lead_hours_from_grib": 3,
+    "valid_dt_utc": "2022-08-15T15:00:00+00:00",
+    "valid_dt_ist": "2022-08-15T20:30:00+05:30",
+    "ist_date": "2022-08-15",
+    "slot_id": 3,
+    "slot_label": "1801-2400",
+    "event_group_key": "IND_13.0_78.0|2022-08-15|3",
+    "field_presence": {
+      "cape@surface/0": true,
+      "cin@surface/0": true,
+      "pwat@atmosphereSingleLayer/0": true,
+      "u@isobaricInhPa/850": true,
+      "v@isobaricInhPa/850": true,
+      "u@isobaricInhPa/200": true,
+      "v@isobaricInhPa/200": true,
+      "t@isobaricInhPa/850": true,
+      "t@isobaricInhPa/700": true,
+      "t@isobaricInhPa/500": true,
+      "r@isobaricInhPa/850": true,
+      "r@isobaricInhPa/700": true
+    },
+    "tp_messages": [
+      {
+        "shortName": "tp",
+        "typeOfLevel": "surface",
+        "level": 0,
+        "stepType": "accum",
+        "startStep": 0,
+        "endStep": 3,
+        "forecastTime": 0,
+        "units": "kg m**-2"
+      },
+      {
+        "shortName": "tp",
+        "typeOfLevel": "surface",
+        "level": 0,
+        "stepType": "accum",
+        "startStep": 0,
+        "endStep": 3,
+        "forecastTime": 0,
+        "units": "kg m**-2"
+      }
+    ],
+    "prate_messages": [
+      {
+        "shortName": "prate",
+        "typeOfLevel": "surface",
+        "level": 0,
+        "stepType": "instant",
+        "startStep": 3,
+        "endStep": 3,
+        "forecastTime": 3,
+        "units": "kg m**-2 s**-1"
+      },
+      {
+        "shortName": "prate",
+        "typeOfLevel": "surface",
+        "level": 0,
+        "stepType": "avg",
+        "startStep": 0,
+        "endStep": 3,
+        "forecastTime": 0,
+        "units": "kg m**-2 s**-1"
+      }
+    ],
+    "label_status": "NEGATIVE_CONFIRMED",
+    "label_source": "IMD station observation, VOBL/43295",
+    "partition": "train"
+  },
+  {
+    "filename": "gfs.0p25.2022081512.f006.grib2",
+    "failures": [],
+    "warnings": [],
+    "size_bytes": 551714308,
+    "non_empty": true,
+    "sha256": "e4821947f16bfb0d02332a9d7b9e843b34bb31ff3ce09c13cd72860b1411ce97",
+    "manifest_sha256": "e4821947f16bfb0d02332a9d7b9e843b34bb31ff3ce09c13cd72860b1411ce97",
+    "manifest_size_bytes": 551714308,
+    "grib_header_ok": true,
+    "grib_trailer_ok": true,
+    "n_messages": 743,
+    "grid": {
+      "gridType": "regular_ll",
+      "Ni": 1440,
+      "Nj": 721,
+      "lat_first": 90.0,
+      "lat_last": -90.0,
+      "lon_first": 0.0,
+      "lon_last": 359.75,
+      "jScansPositively": 0
+    },
+    "init_dt_utc": "2022-08-15T12:00:00+00:00",
+    "lead_hours_from_grib": 6,
+    "valid_dt_utc": "2022-08-15T18:00:00+00:00",
+    "valid_dt_ist": "2022-08-15T23:30:00+05:30",
+    "ist_date": "2022-08-15",
+    "slot_id": 3,
+    "slot_label": "1801-2400",
+    "event_group_key": "IND_13.0_78.0|2022-08-15|3",
+    "field_presence": {
+      "cape@surface/0": true,
+      "cin@surface/0": true,
+      "pwat@atmosphereSingleLayer/0": true,
+      "u@isobaricInhPa/850": true,
+      "v@isobaricInhPa/850": true,
+      "u@isobaricInhPa/200": true,
+      "v@isobaricInhPa/200": true,
+      "t@isobaricInhPa/850": true,
+      "t@isobaricInhPa/700": true,
+      "t@isobaricInhPa/500": true,
+      "r@isobaricInhPa/850": true,
+      "r@isobaricInhPa/700": true
+    },
+    "tp_messages": [
+      {
+        "shortName": "tp",
+        "typeOfLevel": "surface",
+        "level": 0,
+        "stepType": "accum",
+        "startStep": 0,
+        "endStep": 6,
+        "forecastTime": 0,
+        "units": "kg m**-2"
+      },
+      {
+        "shortName": "tp",
+        "typeOfLevel": "surface",
+        "level": 0,
+        "stepType": "accum",
+        "startStep": 0,
+        "endStep": 6,
+        "forecastTime": 0,
+        "units": "kg m**-2"
+      }
+    ],
+    "prate_messages": [
+      {
+        "shortName": "prate",
+        "typeOfLevel": "surface",
+        "level": 0,
+        "stepType": "instant",
+        "startStep": 6,
+        "endStep": 6,
+        "forecastTime": 6,
+        "units": "kg m**-2 s**-1"
+      },
+      {
+        "shortName": "prate",
+        "typeOfLevel": "surface",
+        "level": 0,
+        "stepType": "avg",
+        "startStep": 0,
+        "endStep": 6,
+        "forecastTime": 0,
+        "units": "kg m**-2 s**-1"
+      }
+    ],
+    "label_status": "NEGATIVE_CONFIRMED",
+    "label_source": "IMD station observation, VOBL/43295",
+    "partition": "train"
+  },
+  {
+    "filename": "gfs.0p25.2023110612.f003.grib2",
+    "failures": [],
+    "warnings": [],
+    "size_bytes": 542915936,
+    "non_empty": true,
+    "sha256": "1034598ef53f22ab0d97f4875f4f5f2b2babeeab042a4e519370bd24c44867ce",
+    "manifest_sha256": "1034598ef53f22ab0d97f4875f4f5f2b2babeeab042a4e519370bd24c44867ce",
+    "manifest_size_bytes": 542915936,
+    "grib_header_ok": true,
+    "grib_trailer_ok": true,
+    "n_messages": 743,
+    "grid": {
+      "gridType": "regular_ll",
+      "Ni": 1440,
+      "Nj": 721,
+      "lat_first": 90.0,
+      "lat_last": -90.0,
+      "lon_first": 0.0,
+      "lon_last": 359.75,
+      "jScansPositively": 0
+    },
+    "init_dt_utc": "2023-11-06T12:00:00+00:00",
+    "lead_hours_from_grib": 3,
+    "valid_dt_utc": "2023-11-06T15:00:00+00:00",
+    "valid_dt_ist": "2023-11-06T20:30:00+05:30",
+    "ist_date": "2023-11-06",
+    "slot_id": 3,
+    "slot_label": "1801-2400",
+    "event_group_key": "IND_13.0_78.0|2023-11-06|3",
+    "field_presence": {
+      "cape@surface/0": true,
+      "cin@surface/0": true,
+      "pwat@atmosphereSingleLayer/0": true,
+      "u@isobaricInhPa/850": true,
+      "v@isobaricInhPa/850": true,
+      "u@isobaricInhPa/200": true,
+      "v@isobaricInhPa/200": true,
+      "t@isobaricInhPa/850": true,
+      "t@isobaricInhPa/700": true,
+      "t@isobaricInhPa/500": true,
+      "r@isobaricInhPa/850": true,
+      "r@isobaricInhPa/700": true
+    },
+    "tp_messages": [
+      {
+        "shortName": "tp",
+        "typeOfLevel": "surface",
+        "level": 0,
+        "stepType": "accum",
+        "startStep": 0,
+        "endStep": 3,
+        "forecastTime": 0,
+        "units": "kg m**-2"
+      },
+      {
+        "shortName": "tp",
+        "typeOfLevel": "surface",
+        "level": 0,
+        "stepType": "accum",
+        "startStep": 0,
+        "endStep": 3,
+        "forecastTime": 0,
+        "units": "kg m**-2"
+      }
+    ],
+    "prate_messages": [
+      {
+        "shortName": "prate",
+        "typeOfLevel": "surface",
+        "level": 0,
+        "stepType": "instant",
+        "startStep": 3,
+        "endStep": 3,
+        "forecastTime": 3,
+        "units": "kg m**-2 s**-1"
+      },
+      {
+        "shortName": "prate",
+        "typeOfLevel": "surface",
+        "level": 0,
+        "stepType": "avg",
+        "startStep": 0,
+        "endStep": 3,
+        "forecastTime": 0,
+        "units": "kg m**-2 s**-1"
+      }
+    ],
+    "label_status": "POSITIVE",
+    "label_source": "IMD station observation, VOBL/43295",
+    "partition": "train"
+  },
+  {
+    "filename": "gfs.0p25.2023110612.f006.grib2",
+    "failures": [],
+    "warnings": [],
+    "size_bytes": 543369258,
+    "non_empty": true,
+    "sha256": "a50f1f7d602870c73f249e7563f1d4d0747e8220e01fff72d2ad14e5f73a93f3",
+    "manifest_sha256": "a50f1f7d602870c73f249e7563f1d4d0747e8220e01fff72d2ad14e5f73a93f3",
+    "manifest_size_bytes": 543369258,
+    "grib_header_ok": true,
+    "grib_trailer_ok": true,
+    "n_messages": 743,
+    "grid": {
+      "gridType": "regular_ll",
+      "Ni": 1440,
+      "Nj": 721,
+      "lat_first": 90.0,
+      "lat_last": -90.0,
+      "lon_first": 0.0,
+      "lon_last": 359.75,
+      "jScansPositively": 0
+    },
+    "init_dt_utc": "2023-11-06T12:00:00+00:00",
+    "lead_hours_from_grib": 6,
+    "valid_dt_utc": "2023-11-06T18:00:00+00:00",
+    "valid_dt_ist": "2023-11-06T23:30:00+05:30",
+    "ist_date": "2023-11-06",
+    "slot_id": 3,
+    "slot_label": "1801-2400",
+    "event_group_key": "IND_13.0_78.0|2023-11-06|3",
+    "field_presence": {
+      "cape@surface/0": true,
+      "cin@surface/0": true,
+      "pwat@atmosphereSingleLayer/0": true,
+      "u@isobaricInhPa/850": true,
+      "v@isobaricInhPa/850": true,
+      "u@isobaricInhPa/200": true,
+      "v@isobaricInhPa/200": true,
+      "t@isobaricInhPa/850": true,
+      "t@isobaricInhPa/700": true,
+      "t@isobaricInhPa/500": true,
+      "r@isobaricInhPa/850": true,
+      "r@isobaricInhPa/700": true
+    },
+    "tp_messages": [
+      {
+        "shortName": "tp",
+        "typeOfLevel": "surface",
+        "level": 0,
+        "stepType": "accum",
+        "startStep": 0,
+        "endStep": 6,
+        "forecastTime": 0,
+        "units": "kg m**-2"
+      },
+      {
+        "shortName": "tp",
+        "typeOfLevel": "surface",
+        "level": 0,
+        "stepType": "accum",
+        "startStep": 0,
+        "endStep": 6,
+        "forecastTime": 0,
+        "units": "kg m**-2"
+      }
+    ],
+    "prate_messages": [
+      {
+        "shortName": "prate",
+        "typeOfLevel": "surface",
+        "level": 0,
+        "stepType": "instant",
+        "startStep": 6,
+        "endStep": 6,
+        "forecastTime": 6,
+        "units": "kg m**-2 s**-1"
+      },
+      {
+        "shortName": "prate",
+        "typeOfLevel": "surface",
+        "level": 0,
+        "stepType": "avg",
+        "startStep": 0,
+        "endStep": 6,
+        "forecastTime": 0,
+        "units": "kg m**-2 s**-1"
+      }
+    ],
+    "label_status": "POSITIVE",
+    "label_source": "IMD station observation, VOBL/43295",
+    "partition": "train"
+  }
+]
