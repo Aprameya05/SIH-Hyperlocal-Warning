@@ -39,6 +39,7 @@ sys.path.insert(0, str(REPO_ROOT / "scripts"))
 
 from build_vobl_historical_gfs_ts_join import ist_slot_for, event_group_key_for, IST  # noqa: E402
 from historical_dataset_split import assign_partition, TRAIN, HOLDOUT  # noqa: E402
+from acquire_historical_gfs_pilot import build_direct_url  # noqa: E402
 
 CELL_ID = "IND_13.0_78.0"
 LABELS_PATH = REPO_ROOT / "SIH_PANINDIA_GRID_LABELS_20260930_143541Z" / "processed" / "labels" / "ts_labels.csv"
@@ -373,7 +374,12 @@ def main():
                 "gfs_init_cycle_utc": init.isoformat(),
                 "forecast_lead": f"f{lead_hours:03d}",
                 "expected_filename": fname,
-                "expected_url": f"https://rda.ucar.edu/datasets/d084001/{init.strftime('%Y')}/{cycle_str[:8]}/{fname}",
+                # Canonical GDEX direct-file URL, built by the one authoritative helper
+                # (build_direct_url, scripts/acquire_historical_gfs_pilot.py, confirmed-working
+                # since Phase 0.4.3/0.4.19) -- never hand-built here. The directory is the
+                # cycle's calendar date (YYYYMMDD), not the full cycle timestamp; the filename
+                # alone carries the full YYYYMMDDHH cycle.
+                "expected_url": build_direct_url(cycle_str, f"{lead_hours:03d}"),
                 "acquisition_year": int(row["year"]),
                 "acquisition_path": "D:\\SIH-Historical-GFS\\raw",
                 "selection_reason": (
