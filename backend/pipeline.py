@@ -41,6 +41,14 @@ from terrain_lookup import get_terrain_grid, apply_terrain_to_ff  # noqa: E402
 # partially-written file here is visible to those consumers. Reuse the
 # existing atomic_write.py primitive rather than writing a second one.
 from atomic_write import atomic_write_json, AtomicWriteError  # noqa: E402
+# Phase P0.1: reuse the ALREADY-CANONICAL cell_id convention
+# (regrid.py::cell_id_for, "IND_{lat:.1f}_{lon:.1f}", documented as "the
+# canonical cell_id convention for the 992-cell grid" in regrid.py's own
+# docstring and already used by the pan-India label-engine scripts) instead
+# of inventing a second, pipeline-local ID scheme. Before this fix, this
+# file computed a local duplicate-check string ("{lat:.1f}_{lon:.1f}", no
+# "IND_" prefix) and never persisted it into the cell object at all.
+from regrid import cell_id_for  # noqa: E402
 
 terrain_grid = get_terrain_grid()
 
@@ -710,6 +718,7 @@ def run(cycle_override: str = None, fhour: int = 0):
                     return round(tt - 273.15, 1) if tt > 200 else round(tt, 1)
 
                 cells.append({
+                    "cell_id": cell_id_for(lat, lon),
                     "lat": lat,
                     "lon": lon,
                     "thunderstorm_probability":  round(ts_prob, 4),
@@ -752,10 +761,20 @@ def run(cycle_override: str = None, fhour: int = 0):
             )
         seen_ids = set()
         for c in cells:
-            cid = f"{c['lat']:.1f}_{c['lon']:.1f}"
+            # Phase P0.1: check the same canonical cell_id now persisted on
+            # the cell object (regrid.py::cell_id_for), not a second,
+            # separately-formatted ad hoc string -- one convention, checked
+            # and stored consistently.
+            cid = c["cell_id"]
             if cid in seen_ids:
                 raise RuntimeError(f"CRITICAL: duplicate application grid cell detected at {cid}.")
             seen_ids.add(cid)
+        if len(seen_ids) != EXPECTED_APPLICATION_CELL_COUNT:
+            raise RuntimeError(
+                f"CRITICAL: {len(seen_ids)} unique cell_id values but "
+                f"{EXPECTED_APPLICATION_CELL_COUNT} cells expected -- cell_id "
+                f"generation disagrees with the canonical grid."
+            )
 
         # Summary statistics
         ts_vals = [c["thunderstorm_probability"]  for c in cells]

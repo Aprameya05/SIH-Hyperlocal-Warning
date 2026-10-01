@@ -92,9 +92,9 @@ jobs:
           CAL_YEARS="${{ steps.action.outputs.cal_years }}"
 
           if [ "$SLOT" = "all" ]; then
-            python recalibrate_models.py --slots 0 1 2 3 --cal-years $CAL_YEARS
+            python dev/recalibrate_models.py --slots 0 1 2 3 --cal-years $CAL_YEARS
           else
-            python recalibrate_models.py --slots $SLOT --cal-years $CAL_YEARS
+            python dev/recalibrate_models.py --slots $SLOT --cal-years $CAL_YEARS
           fi
 
       - name: Run v6 retrain (CPU, single slot)
