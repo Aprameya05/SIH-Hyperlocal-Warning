@@ -120,6 +120,80 @@ NOMADS_BASE = "https://nomads.ncep.noaa.gov/cgi-bin/filter_gfs_0p25.pl"
 # CTT drop rate: how old can the previous CTT file be before we skip the delta?
 CTT_PREV_MAX_AGE_HOURS = 7.0
 
+# ---------------------------------------------------------------------------
+# PHASE 2/A -- FORECAST HORIZONS (corrected design, locked semantics)
+# ---------------------------------------------------------------------------
+# The canonical pan-India path scores GENUINE GFS FORECAST fields, never the
+# f000 analysis field.
+#
+# Phase 2 originally used f003+f006. The operational-lead audit
+# (docs/PHASE_2_OPERATIONAL_LEAD_AUDIT.md) proved this was wrong for the
+# actual SIH requirement: update_grid.yml's cron (04:30/10:30/16:30/22:30 UTC)
+# combined with latest_gfs_cycle()'s own >4h-latency rule means production
+# ALWAYS generates at approximately cycle_init + 4.5h, every single run, by
+# construction of the schedule -- not an occasional drift. That makes
+# "forecast_lead_hours" (a GFS-file property) and "operational actionable
+# lead from issuance" (forecast_valid_at_utc - generated_at) two genuinely
+# different numbers that must never be conflated:
+#
+#     f003: operational lead = 3h - 4.5h   = -1.5h  (ALREADY PAST at generation)
+#     f006: operational lead = 6h - 4.5h   = +1.5h  (barely ahead)
+#     f009: operational lead = 9h - 4.5h   = +4.5h  (squarely inside the 2-6h window)
+#     f012: operational lead = 12h - 4.5h  = +7.5h  (overshoots the 6h ceiling)
+#
+# Phase A fix: f009 is now the PRIMARY operational forecast (the one the
+# legacy mirror / UI / alert path treat as "the" forecast). f006 is retained
+# as a secondary forecast (shorter GFS lead => generally lower atmospheric-
+# model uncertainty, useful for comparison) -- f003 is dropped entirely since
+# it is structurally guaranteed stale at every single scheduled run, with no
+# offsetting benefit. f012 is NOT introduced: it was considered during audit
+# (docs/PHASE_2_OPERATIONAL_LEAD_AUDIT.md Phase D/E/F) and rejected as the
+# default choice because it trades additional forecast-skill degradation for
+# an upper-bound overshoot that f009 alone already avoids by sitting cleanly
+# inside the window -- no concrete technical reason established to add it.
+PRIMARY_FORECAST_LEAD_HOURS = 9
+FORECAST_LEAD_HOURS = [6, 9]
+
+# Phase 1 -- corrected time semantics (three distinct concepts, never conflated):
+#
+#   forecast_lead_hours      = gfs_fhour (3 or 6) -- a property of WHICH GRIB
+#                               file was fetched. NEVER computed from wall-clock
+#                               time, never adjusted for when the pipeline runs.
+#
+#   forecast_valid_at_utc    = gfs_cycle_init_utc + forecast_lead_hours.
+#                               Deterministic from the cycle and the declared
+#                               lead alone.
+#
+#   time_until_valid_hours   = forecast_valid_at_utc - generated_at_utc.
+#                               SIGNED, NEVER CLAMPED. Positive = the forecast's
+#                               valid moment is still ahead of us (fresh).
+#                               Negative = the pipeline ran after the nominal
+#                               valid time already passed (stale/late run) --
+#                               this must be surfaced to consumers, not hidden.
+#
+# These three were previously at risk of being conflated into one
+# "lead_time_hours = valid_at_utc - generated_at_utc" quantity, which silently
+# changes the reported forecast horizon based on how late the pipeline ran --
+# explicitly corrected and forbidden; see docs/PHASE_2_TIME_SEMANTICS.md.
+
+def gfs_cycle_init_dt(date_str: str, cycle: str) -> datetime:
+    """Parse (date_str, cycle) e.g. ("20261002", "00") into an aware UTC
+    datetime marking exactly when this GFS cycle was initialized. This is the
+    one and only input forecast_valid_at_utc is computed from."""
+    return datetime.strptime(f"{date_str}{cycle}", "%Y%m%d%H").replace(tzinfo=timezone.utc)
+
+
+def compute_forecast_valid_at_utc(cycle_init_dt: datetime, lead_hours: int) -> datetime:
+    """forecast_valid_at_utc = gfs_cycle_init_utc + forecast_lead_hours."""
+    return cycle_init_dt + timedelta(hours=lead_hours)
+
+
+def compute_time_until_valid_hours(valid_dt: datetime, generated_dt: datetime) -> float:
+    """time_until_valid_hours = forecast_valid_at_utc - generated_at_utc, hours,
+    SIGNED and NEVER clamped to zero. A negative value is a genuine stale/late
+    forecast condition and must be preserved exactly, not hidden or floored."""
+    return (valid_dt - generated_dt).total_seconds() / 3600.0
+
 
 # ---------------------------------------------------------------------------
 # HELPERS
@@ -545,44 +619,58 @@ def write_ctt_grid(cells: list, out_path: Path):
 
 
 # ---------------------------------------------------------------------------
-# MAIN
+# PHASE 2 -- per-lead fetch + score. Returns a dict describing exactly one
+# forecast horizon (lead_hours). On any fetch/parse failure this returns an
+# explicit fetch_status="unavailable" entry -- it NEVER substitutes a
+# different forecast hour (e.g. f000) and NEVER fabricates cell data for an
+# unavailable lead. The caller decides whether an unavailable lead is fatal.
 # ---------------------------------------------------------------------------
 
-def run(cycle_override: str = None, fhour: int = 0):
+def _score_lead(date_str: str, cycle: str, cycle_init_dt, lead_hours: int,
+                 generated_dt) -> dict:
     import numpy as np
 
-    OUT_DIR.mkdir(parents=True, exist_ok=True)
+    valid_dt = compute_forecast_valid_at_utc(cycle_init_dt, lead_hours)
+    time_until_valid = compute_time_until_valid_hours(valid_dt, generated_dt)
 
-    date_str, cycle = latest_gfs_cycle()
-    if cycle_override:
-        cycle = cycle_override
-    print(f"GFS pipeline: {date_str} {cycle}Z f{fhour:03d}")
+    base_meta = {
+        "forecast_lead_hours": lead_hours,
+        "is_primary": lead_hours == PRIMARY_FORECAST_LEAD_HOURS,
+        "forecast_valid_at_utc": valid_dt.isoformat(),
+        "time_until_valid_hours": round(time_until_valid, 4),
+        "field_type": "model_forecast",
+        "model_type": "physics_baseline",
+    }
 
-    # --- Load previous CTT grid for drop rate computation ---
-    ctt_prev_path = OUT_DIR / "ctt_grid.json"
-    prev_ctt_map, prev_ctt_ts = load_prev_ctt_map(ctt_prev_path)
-    prev_age_h = ctt_hours_elapsed(prev_ctt_ts)
-    use_ctt_delta = len(prev_ctt_map) > 0 and prev_age_h <= CTT_PREV_MAX_AGE_HOURS
-    if use_ctt_delta:
-        print(f"  Previous CTT grid loaded ({len(prev_ctt_map)} cells, {prev_age_h:.1f}h old) -- drop rate active")
-    else:
-        print("  No usable previous CTT grid -- drop rate will be None for this run")
-
-    url = build_nomads_url(date_str, cycle, fhour)
+    url = build_nomads_url(date_str, cycle, lead_hours)
 
     with tempfile.TemporaryDirectory() as tmp:
-        grib_path = Path(tmp) / "gfs_subset.grib2"
+        grib_path = Path(tmp) / f"gfs_subset_f{lead_hours:03d}.grib2"
         if not download_grib(url, grib_path):
-            print("FATAL: could not download GFS data -- aborting")
-            sys.exit(1)
+            print(f"  f{lead_hours:03d}: GFS download FAILED -- recording this "
+                  f"lead as unavailable. NOT falling back to f000 or any other "
+                  f"lead; NOT fabricating cell data for f{lead_hours:03d}.")
+            return {
+                **base_meta,
+                "fetch_status": "unavailable",
+                "reason": "GFS download failed for this forecast hour",
+                "n_cells": 0,
+                "grid_cells": [],
+            }
 
-        print("  Parsing GRIB2 fields...")
+        print(f"  f{lead_hours:03d}: parsing GRIB2 fields...")
         fields = read_grib_fields(grib_path)
         if not fields:
-            print("FATAL: no fields parsed -- check cfgrib/eccodes installation")
-            sys.exit(1)
+            print(f"  f{lead_hours:03d}: no fields parsed -- recording this lead as unavailable.")
+            return {
+                **base_meta,
+                "fetch_status": "unavailable",
+                "reason": "no fields parsed from GRIB2 (cfgrib/eccodes failure)",
+                "n_cells": 0,
+                "grid_cells": [],
+            }
 
-        print(f"  Parsed {len(fields)} fields: {list(fields.keys())[:8]}...")
+        print(f"  f{lead_hours:03d}: parsed {len(fields)} fields: {list(fields.keys())[:8]}...")
 
         # Build lat/lon index arrays from field shape
         sample_arr = next(iter(fields.values()))
@@ -595,6 +683,20 @@ def run(cycle_override: str = None, fhour: int = 0):
                 if k in fields:
                     return fields[k]
             return None
+
+        # --- Load previous CTT grid for drop rate computation ---
+        # Phase 2: each forecast lead now has its own CTT history
+        # (ctt_grid_f003.json / ctt_grid_f006.json) rather than one shared
+        # file -- f003 and f006 are different forecast fields and must not
+        # have their cloud-top-cooling deltas cross-contaminate each other.
+        ctt_prev_path = OUT_DIR / f"ctt_grid_f{lead_hours:03d}.json"
+        prev_ctt_map, prev_ctt_ts = load_prev_ctt_map(ctt_prev_path)
+        prev_age_h = ctt_hours_elapsed(prev_ctt_ts)
+        use_ctt_delta = len(prev_ctt_map) > 0 and prev_age_h <= CTT_PREV_MAX_AGE_HOURS
+        if use_ctt_delta:
+            print(f"  f{lead_hours:03d}: previous CTT grid loaded ({len(prev_ctt_map)} cells, {prev_age_h:.1f}h old) -- drop rate active")
+        else:
+            print(f"  f{lead_hours:03d}: no usable previous CTT grid -- drop rate will be None for this run")
 
         # --- Pre-compute 850 hPa convergence grid ---
         u850_arr = field("u_isobaricInhPa_850")
@@ -721,6 +823,18 @@ def run(cycle_override: str = None, fhour: int = 0):
                     "cell_id": cell_id_for(lat, lon),
                     "lat": lat,
                     "lon": lon,
+                    # Phase 1 -- canonical time/provenance semantics, locked per
+                    # Correction 1-3. These are the same on every cell within a
+                    # lead (duplicated per-cell, not just at the artifact's top
+                    # level) so a consumer reading one cell in isolation still
+                    # has everything it needs to avoid misrepresenting the value.
+                    "forecast_lead_hours":    lead_hours,
+                    "is_primary":             lead_hours == PRIMARY_FORECAST_LEAD_HOURS,
+                    "forecast_valid_at_utc":  valid_dt.isoformat(),
+                    "time_until_valid_hours": round(time_until_valid, 4),
+                    "model_type":             "physics_baseline",
+                    "value_type":             "heuristic_risk_score",
+                    "is_calibrated_probability": False,
                     "thunderstorm_probability":  round(ts_prob, 4),
                     "cloudburst_probability":    round(cb_prob, 4),
                     "flash_flood_probability":   round(ff_prob, 4),
@@ -743,15 +857,18 @@ def run(cycle_override: str = None, fhour: int = 0):
 
         # ------------------------------------------------------------------
         # HARD GRID-DRIFT GUARDRAIL (Phase 4.5) -- fails loudly, aborts the
-        # run, rather than silently writing a differently-sized/shaped
-        # application grid. This is deliberately an assert-and-crash, not a
-        # warning: a wrong cell count here means every downstream consumer
-        # (frontend, location_engine.py, alert dispatch) would silently
-        # start looking up the wrong cells.
+        # ENTIRE run (not just this lead), rather than silently writing a
+        # differently-sized/shaped application grid. This is deliberately an
+        # assert-and-crash, not a warning: a wrong cell count here means every
+        # downstream consumer (frontend, location_engine.py, alert dispatch)
+        # would silently start looking up the wrong cells. Unchanged in
+        # severity from before Phase 2 -- this is a structural-integrity
+        # guardrail, not a network-availability concern, so it still raises
+        # rather than degrading to an "unavailable" lead entry.
         # ------------------------------------------------------------------
         if len(cells) != EXPECTED_APPLICATION_CELL_COUNT:
             raise RuntimeError(
-                f"CRITICAL: canonical application grid drift detected. "
+                f"CRITICAL: canonical application grid drift detected for f{lead_hours:03d}. "
                 f"Expected exactly {EXPECTED_APPLICATION_CELL_COUNT} cells "
                 f"(APPLICATION_GRID_STEP={APPLICATION_GRID_STEP} over BOUNDS={BOUNDS}), "
                 f"got {len(cells)}. Refusing to write data/pan_india_grid.json in this "
@@ -767,12 +884,12 @@ def run(cycle_override: str = None, fhour: int = 0):
             # and stored consistently.
             cid = c["cell_id"]
             if cid in seen_ids:
-                raise RuntimeError(f"CRITICAL: duplicate application grid cell detected at {cid}.")
+                raise RuntimeError(f"CRITICAL: duplicate application grid cell detected at {cid} (f{lead_hours:03d}).")
             seen_ids.add(cid)
         if len(seen_ids) != EXPECTED_APPLICATION_CELL_COUNT:
             raise RuntimeError(
                 f"CRITICAL: {len(seen_ids)} unique cell_id values but "
-                f"{EXPECTED_APPLICATION_CELL_COUNT} cells expected -- cell_id "
+                f"{EXPECTED_APPLICATION_CELL_COUNT} cells expected (f{lead_hours:03d}) -- cell_id "
                 f"generation disagrees with the canonical grid."
             )
 
@@ -788,15 +905,14 @@ def run(cycle_override: str = None, fhour: int = 0):
                 "mean": round(sum(vals) / len(vals), 4),
             }
 
-        output = {
-            "generated_at_utc": datetime.now(timezone.utc).isoformat(),
-            "gfs_cycle":        f"{date_str} {cycle}Z",
-            "gfs_fhour":        fhour,
-            "grid_step_deg":    APPLICATION_GRID_STEP,
-            "application_grid_resolution_deg": APPLICATION_GRID_STEP,
-            "input_sources_may_have_different_native_resolution": True,
-            "bounds":           BOUNDS,
-            "n_cells":          len(cells),
+        # Write this lead's own CTT grid (used by the NEXT run of the SAME
+        # lead for drop rate) -- lead-specific file, see note above.
+        write_ctt_grid(cells, OUT_DIR / f"ctt_grid_f{lead_hours:03d}.json")
+
+        return {
+            **base_meta,
+            "fetch_status": "ok",
+            "n_cells": len(cells),
             "features_active": {
                 "ctt_drop_rate": use_ctt_delta,
                 "convergence":   conv_grid is not None,
@@ -810,23 +926,104 @@ def run(cycle_override: str = None, fhour: int = 0):
             "grid_cells": cells,
         }
 
-        try:
-            atomic_write_json(OUT_FILE, output, indent=None)
-        except AtomicWriteError as e:
-            print(f"FATAL: could not write {OUT_FILE} atomically -- previous file left untouched: {e}")
-            sys.exit(1)
-        print(f"  Written {len(cells)} cells -> {OUT_FILE}")
 
-        # Write CTT grid (used by next run for drop rate)
-        write_ctt_grid(cells, OUT_DIR / "ctt_grid.json")
+# ---------------------------------------------------------------------------
+# MAIN
+# ---------------------------------------------------------------------------
 
+def run(cycle_override: str = None):
+    """Phase 2: scores BOTH forecast horizons (f003, f006) every run and
+    writes one combined canonical artifact. f000 (analysis) is never used in
+    this path anymore. If a requested lead's GFS data is unavailable, that
+    lead is recorded explicitly as unavailable in the artifact -- it is NEVER
+    silently replaced by a different lead or by the analysis field."""
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
+
+    date_str, cycle = latest_gfs_cycle()
+    if cycle_override:
+        cycle = cycle_override
+    cycle_init_dt = gfs_cycle_init_dt(date_str, cycle)
+    generated_dt = datetime.now(timezone.utc)  # captured ONCE, shared by every lead in this run
+    print(f"GFS pipeline: cycle {date_str} {cycle}Z (init {cycle_init_dt.isoformat()}), "
+          f"leads={FORECAST_LEAD_HOURS}, generated_at={generated_dt.isoformat()}")
+
+    forecasts = []
+    for lead_hours in FORECAST_LEAD_HOURS:
+        print(f"--- Forecast lead f{lead_hours:03d} (valid "
+              f"{compute_forecast_valid_at_utc(cycle_init_dt, lead_hours).isoformat()}) ---")
+        forecasts.append(_score_lead(date_str, cycle, cycle_init_dt, lead_hours, generated_dt))
+
+    any_ok = any(f["fetch_status"] == "ok" for f in forecasts)
+    if not any_ok:
+        print(f"FATAL: all requested forecast leads ({FORECAST_LEAD_HOURS}) are unavailable "
+              f"-- aborting. NOT writing a file, NOT substituting f000 or any other analysis "
+              f"field for a missing forecast.")
+        sys.exit(1)
+
+    # Legacy flat-field mirror is a COMPATIBILITY MIRROR ONLY (Phase B). It is
+    # not the source of truth -- "forecasts[]" is. Selection rule, explicit
+    # and never silent: prefer the PRIMARY lead (f009) if it succeeded; if
+    # the primary lead is unavailable, fall back to whichever other
+    # requested lead did succeed (e.g. f006) -- but every cell in that
+    # fallback still carries its own true forecast_lead_hours/is_primary, so
+    # a consumer reading the mirror is never told f009 when it is actually
+    # looking at f006's data. Never f000, never a blend of two leads.
+    ok_forecasts = [f for f in forecasts if f["fetch_status"] == "ok"]
+    primary_ok = [f for f in ok_forecasts if f["forecast_lead_hours"] == PRIMARY_FORECAST_LEAD_HOURS]
+    if primary_ok:
+        legacy = primary_ok[0]
+    else:
+        # Primary (f009) unavailable -- fall back to the next-best successfully
+        # fetched lead, preferring the longest (closest to the primary) one.
+        # This fallback is explicit and logged, and the mirrored data is
+        # still correctly self-labeled with its real forecast_lead_hours.
+        legacy = sorted(ok_forecasts, key=lambda f: f["forecast_lead_hours"], reverse=True)[0]
+        print(f"  WARNING: primary forecast f{PRIMARY_FORECAST_LEAD_HOURS:03d} unavailable -- "
+              f"legacy mirror falls back to f{legacy['forecast_lead_hours']:03d} "
+              f"(still correctly labeled, not relabeled as primary).")
+
+    output = {
+        "generated_at_utc":    generated_dt.isoformat(),
+        "gfs_cycle_init_utc":  cycle_init_dt.isoformat(),
+        "gfs_cycle":           f"{date_str} {cycle}Z",   # legacy string format, unchanged
+        "model_type":          "physics_baseline",
+        "grid_step_deg":       APPLICATION_GRID_STEP,
+        "application_grid_resolution_deg": APPLICATION_GRID_STEP,
+        "input_sources_may_have_different_native_resolution": True,
+        "bounds":              BOUNDS,
+        "primary_forecast_lead_hours": PRIMARY_FORECAST_LEAD_HOURS,
+        "forecast_lead_hours_requested": FORECAST_LEAD_HOURS,
+        "forecasts": forecasts,  # one entry per lead -- ok or unavailable, never fabricated.
+                                  # THIS IS THE SOURCE OF TRUTH. Fields below are a mirror only.
+
+        # --- legacy flat fields: COMPATIBILITY MIRROR ONLY, not the source of
+        # truth. Mirrors the primary (f009) lead when available, else the
+        # best available fallback lead (see selection rule above). Any new
+        # consumer should read "forecasts[]" directly instead. ---
+        "gfs_fhour":  legacy["forecast_lead_hours"],
+        "legacy_mirror_is_primary": legacy["forecast_lead_hours"] == PRIMARY_FORECAST_LEAD_HOURS,
+        "n_cells":    legacy["n_cells"],
+        "summary":    legacy["summary"],
+        "features_active": legacy["features_active"],
+        "grid_cells": legacy["grid_cells"],
+    }
+
+    try:
+        atomic_write_json(OUT_FILE, output, indent=None)
+    except AtomicWriteError as e:
+        print(f"FATAL: could not write {OUT_FILE} atomically -- previous file left untouched: {e}")
+        sys.exit(1)
+
+    for f in forecasts:
+        status_line = (f"f{f['forecast_lead_hours']:03d}: {f['fetch_status']}"
+                        + (f", {f['n_cells']} cells" if f["fetch_status"] == "ok" else f" ({f.get('reason')})"))
+        print(f"  {status_line}")
+    print(f"  Written combined artifact -> {OUT_FILE}")
     print("Pipeline complete.")
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="GFS hazard pipeline")
+    parser = argparse.ArgumentParser(description="GFS hazard pipeline (f003/f006 pan-India forecast)")
     parser.add_argument("--cycle", choices=["00", "06", "12", "18"], default=None)
-    parser.add_argument("--fhour", type=int, default=0,
-                        help="Forecast hour (0, 6, 12, ... default 0)")
     args = parser.parse_args()
-    run(cycle_override=args.cycle, fhour=args.fhour)
+    run(cycle_override=args.cycle)

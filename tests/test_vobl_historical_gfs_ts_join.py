@@ -376,6 +376,7 @@ def test_no_production_code_imports_research_builder_repo_wide():
         and not line.endswith("scripts/verify_phase_0_4_19_batch.py")  # research-only, manifest-driven verification sibling, imports it directly by design
         and not line.endswith("scripts/build_phase_0_4_20_dataset.py")  # research-only, manifest-driven dataset builder sibling, imports it directly by design
         and not line.endswith("scripts/design_phase_0_4_24_ts_300_candidates.py")  # research-only, audit/design-only sibling (Phase 0.4.24 manifest design), imports it directly by design
+        and not line.endswith("scripts/phase_0_4_26_final_evidence.py")  # research-only evidence report, docstring mention only (describes a historical bug in build_vobl_historical_gfs_ts_join.py), no import
     ]
     assert hits == [], f"unexpected non-test/non-script references: {hits}"
 
