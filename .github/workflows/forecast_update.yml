@@ -23,6 +23,10 @@ on:
         description: "Force a specific slot (0-3, leave empty for auto)"
         required: false
         default: ""
+concurrency:
+  group: sih-forecast-publish
+  cancel-in-progress: false
+
 jobs:
   update-forecast:
     runs-on: ubuntu-latest
@@ -152,7 +156,15 @@ jobs:
       - name: Append alert log entry
         run: python generate_alert_log.py
         continue-on-error: true
-        
+
+      - name: Sync latest cross-workflow artifacts
+        run: |
+          git fetch origin main
+          git -c user.name="github-actions[bot]" -c user.email="github-actions[bot]@users.noreply.github.com" pull origin main --no-rebase --no-edit || true
+
+      - name: Build canonical forecast
+        run: python canonical_forecast_writer.py
+
       - name: Send WhatsApp alerts
         env:
           WORKER_URL: ${{ secrets.WORKER_URL }}
