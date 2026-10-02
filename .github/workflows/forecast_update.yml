@@ -76,7 +76,8 @@ jobs:
           pip install \
             "satpy>=0.47.0" \
             "dask>=2024.1.0" \
-            "trollimage>=1.8.0"
+            "trollimage>=1.8.0" \
+            "jsonschema>=4.0.0"
         continue-on-error: true
 
       - name: Show library versions
