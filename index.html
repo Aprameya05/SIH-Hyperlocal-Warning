@@ -480,6 +480,19 @@
     body.light-mode header a {
       color: #374151 !important;
     }
+    /* Segmented TS/CB/FF hazard pill keeps its own selected/unselected contrast
+       in light mode instead of inheriting the generic header-button color above
+       (which made unselected CB/FF unreadable against the dark pill track). */
+    body.light-mode .hazard-pill {
+      background: rgba(241, 245, 249, 0.9) !important;
+      border-color: rgba(209, 213, 219, 0.8) !important;
+    }
+    body.light-mode .hazard-pill-btn {
+      color: #4b5563 !important;
+    }
+    body.light-mode .hazard-pill-btn.active {
+      color: #ffffff !important;
+    }
     body.light-mode .nav-tab-active { color: #4f46e5 !important; text-shadow: none !important; }
     body.light-mode .nav-tab-active::after {
       background: linear-gradient(90deg, transparent, #4f46e5, #06b6d4, #4f46e5, transparent) !important;
@@ -2460,31 +2473,32 @@ function injectDrainageOverlay(map, liveData) {
                   </div>
                 </div>
 
-                {/* Desktop Nav Tabs */}
+                {/* Compact Navigation Rail — single-row, horizontally scrollable, same header slot as before */}
                 <div className="hidden lg:flex items-center" style={{ minWidth: 0, flex: 1, margin: '0 12px' }}>
-                  <button onClick={() => scrollNav(-1)} title="Scroll left"
-                    style={{ padding: '4px 6px', borderRadius: 6, border: 'none', background: 'transparent', color: '#64748b', cursor: 'pointer', fontSize: 13, marginRight: 2 }}>‹</button>
+                  <button onClick={() => scrollNav(-1)} title="Scroll left" aria-label="Scroll navigation left"
+                    style={{ padding: '4px 6px', borderRadius: 6, border: 'none', background: 'transparent', color: '#64748b', cursor: 'pointer', fontSize: 13, marginRight: 2, flexShrink: 0 }}>‹</button>
                   <nav ref={navScrollRef} style={{
                     display: 'flex', alignItems: 'center', gap: 2, padding: '3px 4px',
                     background: 'rgba(15, 23, 42, 0.65)', border: '1px solid rgba(255, 255, 255, 0.08)',
-                    borderRadius: 12, overflowX: 'auto', scrollbarWidth: 'none', minWidth: 0, flex: 1
+                    borderRadius: 10, overflowX: 'auto', scrollbarWidth: 'none', minWidth: 0, flex: 1,
+                    whiteSpace: 'nowrap'
                   }}>
                     {NAV_GROUPS.map((group, gi) => (
-                      <div key={group.label} style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                        {gi > 0 && <div style={{ width: 1, height: 16, background: 'rgba(255, 255, 255, 0.08)', margin: '0 4px' }} />}
-                        {group.tabs.map(tab => {
+                      <div key={group.label} style={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}>
+                        {gi > 0 && <div style={{ width: 1, height: 14, background: 'rgba(255, 255, 255, 0.08)', margin: '0 4px', display: 'inline-block' }} />}
+                        {group.tabs.filter(tab => tab !== 'DASHBOARD').map(tab => {
                           const isActive = activeNavTab === tab;
                           const base = tab === 'EXPLAINABILITY' ? 'EXPLAIN' : tab === 'CLIMATOLOGY' ? 'CLIMAT.' : tab === 'SKILL SCORES' ? 'SCORES' : tab === 'DATA & GRAPHS' ? 'GRAPHS' : tab;
                           const label = tlabel(tab) !== tab ? tlabel(tab) : base;
                           return (
                             <button key={tab} onClick={() => onNavTabChange(tab)}
                               style={{
-                                padding: '5px 10px', borderRadius: 8, fontSize: 11, fontWeight: isActive ? 700 : 500,
+                                padding: '4px 9px', borderRadius: 7, fontSize: 10.5, fontWeight: isActive ? 700 : 500,
                                 letterSpacing: '0.02em', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap',
                                 background: isActive ? 'rgba(56, 189, 248, 0.12)' : 'transparent',
                                 color: isActive ? '#f8fafc' : '#94a3b8',
                                 boxShadow: isActive ? 'inset 0 0 0 1px rgba(56, 189, 248, 0.25)' : 'none',
-                                transition: 'all 0.15s ease'
+                                transition: 'all 0.15s ease', flexShrink: 0
                               }}
                               onMouseEnter={e => { if (!isActive) e.currentTarget.style.color = '#e2e8f0'; }}
                               onMouseLeave={e => { if (!isActive) e.currentTarget.style.color = '#94a3b8'; }}
@@ -2496,20 +2510,21 @@ function injectDrainageOverlay(map, liveData) {
                       </div>
                     ))}
                   </nav>
-                  <button onClick={() => scrollNav(1)} title="Scroll right"
-                    style={{ padding: '4px 6px', borderRadius: 6, border: 'none', background: 'transparent', color: '#64748b', cursor: 'pointer', fontSize: 13, marginLeft: 2 }}>›</button>
+                  <button onClick={() => scrollNav(1)} title="Scroll right" aria-label="Scroll navigation right"
+                    style={{ padding: '4px 6px', borderRadius: 6, border: 'none', background: 'transparent', color: '#64748b', cursor: 'pointer', fontSize: 13, marginLeft: 2, flexShrink: 0 }}>›</button>
                 </div>
 
                 {/* Right Utility Cluster */}
                 <div className="flex items-center gap-2.5 flex-shrink-0">
                   {/* Segmented Hazard Pill */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 2, padding: '2px', background: 'rgba(15, 23, 42, 0.7)', borderRadius: 9, border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                  <div className="hazard-pill" style={{ display: 'flex', alignItems: 'center', gap: 2, padding: '2px', background: 'rgba(15, 23, 42, 0.7)', borderRadius: 9, border: '1px solid rgba(255, 255, 255, 0.08)' }}>
                     {[
                       { key: 'ts', label: 'TS' },
                       { key: 'cb', label: 'CB' },
                       { key: 'ff', label: 'FF' }
                     ].map(item => (
                       <button key={item.key} onClick={() => onHazardChange(item.key)}
+                        className={`hazard-pill-btn${selectedHazard === item.key ? ' active' : ''}`}
                         style={{
                           padding: '3px 8px', borderRadius: 7, fontSize: 11, fontWeight: 700, border: 'none', cursor: 'pointer',
                           background: selectedHazard === item.key ? '#2563eb' : 'transparent',
