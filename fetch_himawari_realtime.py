@@ -26,6 +26,7 @@ import datetime
 import tempfile
 import os
 from pathlib import Path
+from typing import Optional
 
 import numpy as np
 import requests
@@ -90,6 +91,28 @@ KEEP_FRAMES = 6
 FEATURES_FILE = OUT_DIR / "himawari_features.json"
 FEATURE_EXTRACTION_VERSION = "himawari_features.py@phase2-hardened"
 
+# Phase 7 (additive, independently-isolated OBSERVED/DERIVED artifact --
+# see docs/PHASE_6_HIMAWARI_MULTIBAND_AUDIT.md and
+# docs/PHASE_7_HIMAWARI_B08_IMPLEMENTATION.md). Band 8 (6.185um, the
+# upper-tropospheric water-vapor-sensitive AHI channel) is a SEPARATE
+# fetch from Band 13 -- each HSD segment file is single-band, so B08
+# requires its own S3/JAXA GETs. B08 brightness temperature is NEVER
+# IWV: it is a real, calibrated radiance observation, not a retrieval.
+# This file is written to a SEPARATE path from OUT_FILE/HIST_FILE/
+# FEATURES_FILE above and must never affect any of them.
+B08_BAND = "B08"
+B08_WAVELENGTH_UM = 6.185
+B08_RESOLUTION = "2km (R20 nominal)"
+B08_FEATURES_FILE = OUT_DIR / "himawari_b08_features.json"
+B08_FEATURE_VERSION = "phase7-b08-v1"
+# Floating-point tolerance for comparing two independently-computed
+# satpy area/lon-lat grids of the SAME resolution class (R20). This is
+# not a scientific threshold -- it only accounts for floating-point
+# representation noise in an otherwise-deterministic geometric
+# calculation; B08 and B13 are expected to be numerically identical,
+# not merely "close".
+GEOMETRY_TOLERANCE_DEG = 1e-6
+
 
 # ── Coordinate helpers ────────────────────────────────────────────────────────
 
@@ -142,14 +165,20 @@ def haversine_km(lat1, lon1, lat2, lon2):
 
 # ── S3 fetch ──────────────────────────────────────────────────────────────────
 
-def build_s3_key(scene_dt: datetime.datetime, seg: int) -> str:
+def build_s3_key(scene_dt: datetime.datetime, seg: int, band: str = "B13") -> str:
     """
     AHI-L1b-FLDK/YYYY/MM/DD/HHmm/
-      HS_H09_YYYYMMDD_HHmm_B13_FLDK_R20_S{seg:02d}10.DAT.bz2
+      HS_H09_YYYYMMDD_HHmm_{band}_FLDK_R20_S{seg:02d}10.DAT.bz2
+
+    `band` defaults to "B13" -- every existing call site (positional,
+    2-arg) is completely unaffected by this parameter's addition. Phase 7
+    passes band="B08" explicitly for the new, independent B08 fetch path;
+    no other band is ever requested (see docs/PHASE_6_HIMAWARI_MULTIBAND_AUDIT.md
+    section 3 for why only B08 was approved).
     """
     folder = scene_dt.strftime("%Y/%m/%d/%H%M")
     fname  = scene_dt.strftime(
-        f"HS_H09_%Y%m%d_%H%M_B13_FLDK_R20_S{seg:02d}10.DAT.bz2")
+        f"HS_H09_%Y%m%d_%H%M_{band}_FLDK_R20_S{seg:02d}10.DAT.bz2")
     return f"{S3_PREFIX}/{folder}/{fname}"
 
 
@@ -233,6 +262,301 @@ def fetch_segments_jaxa(scene_dt: datetime.datetime):
     except Exception as e:
         log.error(f"  JAXA satpy parse error: {e}")
         return None
+
+
+# ── Phase 7: independent B08 fetch (additive, isolated from B13) ──────────────
+# Mirrors fetch_segments_s3()/fetch_segments_jaxa() exactly, but requests
+# Band 8 instead of Band 13. Each HSD segment file is single-band (see
+# docs/PHASE_6_HIMAWARI_MULTIBAND_AUDIT.md section 2), so this performs its
+# own independent S3/JAXA GETs -- it does not and cannot reuse B13's files.
+# This function must NEVER be called from inside fetch_segments_s3()/
+# fetch_segments_jaxa()/try_scene() (B13's own functions, left untouched),
+# only from the separate, independently try/excepted call site in main().
+
+def fetch_segments_s3_b08(scene_dt: datetime.datetime):
+    """Same mechanism as fetch_segments_s3() (anonymous S3, same bucket,
+    same segments 4/5/6), requesting B08 instead of B13. Returns
+    {"bt", "lons", "lats"} or None -- never raises out to the caller."""
+    try:
+        import boto3, tempfile, os
+        from botocore import UNSIGNED
+        from botocore.config import Config
+        from satpy import Scene
+        s3 = boto3.client(
+            "s3", region_name=S3_REGION,
+            config=Config(signature_version=UNSIGNED,
+                          connect_timeout=15, read_timeout=180))
+        tmpdir = tempfile.mkdtemp()
+        files = []
+        for seg in SEGMENTS:
+            key = build_s3_key(scene_dt, seg, band=B08_BAND)
+            local = os.path.join(tmpdir, os.path.basename(key))
+            log.info(f"  [B08] S3 GET s3://{S3_BUCKET}/{key}")
+            try:
+                s3.download_file(S3_BUCKET, key, local)
+                size = os.path.getsize(local)
+                log.info(f"  ✓ [B08] seg {seg}  {size/1e6:.1f} MB")
+                files.append(local)
+            except Exception as e:
+                log.warning(f"  [B08] seg {seg}: {e}")
+        if not files:
+            return None
+        scn = Scene(filenames=files, reader='ahi_hsd')
+        scn.load([B08_BAND])
+        bt = scn[B08_BAND].values
+        lons, lats = scn[B08_BAND].attrs['area'].get_lonlats()
+        return {"bt": bt, "lons": lons, "lats": lats}
+    except Exception as e:
+        log.error(f"[B08] S3 fetch error: {e}")
+        return None
+
+
+def fetch_segments_jaxa_b08(scene_dt: datetime.datetime):
+    """JAXA P-Tree HTTP fallback for B08 -- same mechanism as
+    fetch_segments_jaxa(), same fallback host, requesting B08 instead of
+    B13. Returns {"bt", "lons", "lats"} or None -- never raises out to the
+    caller (mirrors fetch_segments_s3_b08's outer try/except so a missing
+    satpy install, or zero downloaded segments, both fail open to None)."""
+    try:
+        import requests as req
+
+        BASE = "https://www.eorc.jaxa.jp/ptree/userspace/FULL/GEO/HIMAWARI/B08/FLDK"
+        tmpdir = tempfile.mkdtemp()
+        files  = []
+
+        for seg in SEGMENTS:
+            dpath = scene_dt.strftime("%Y/%m/%d/%H")
+            fname = scene_dt.strftime(
+                f"HS_H09_%Y%m%d_%H%M_B08_FLDK_R20_S{seg:02d}10.DAT.bz2")
+            url   = f"{BASE}/{dpath}/{fname}"
+            local = os.path.join(tmpdir, fname)
+            log.info(f"  [B08] JAXA GET {url}")
+            try:
+                r = req.get(url, timeout=180)
+                if r.status_code == 200:
+                    with open(local, "wb") as f:
+                        f.write(r.content)
+                    log.info(f"  ✓ [B08] seg {seg}  {len(r.content)/1e6:.1f} MB")
+                    files.append(local)
+                elif r.status_code == 404:
+                    log.warning(f"  [B08] seg {seg}: 404")
+                else:
+                    log.warning(f"  [B08] seg {seg}: HTTP {r.status_code}")
+            except Exception as e:
+                log.warning(f"  [B08] JAXA seg {seg}: {e}")
+
+        if not files:
+            return None
+
+        from satpy import Scene
+        scn = Scene(filenames=files, reader='ahi_hsd')
+        scn.load([B08_BAND])
+        bt   = scn[B08_BAND].values
+        lons, lats = scn[B08_BAND].attrs['area'].get_lonlats()
+        return {"bt": bt, "lons": lons, "lats": lats}
+    except Exception as e:
+        log.error(f"  [B08] JAXA fetch/satpy error: {e}")
+        return None
+
+
+def try_scene_b08(scene_dt: datetime.datetime):
+    """Try S3, then JAXA, for B08 only. Mirrors try_scene() exactly but
+    for the independent B08 path. Returns {"bt", "lons", "lats"} or None."""
+    log.info(f"\n[B08] Fetching scene: {scene_dt.strftime('%Y-%m-%d %H:%M UTC')}")
+    result = fetch_segments_s3_b08(scene_dt)
+    if result is None:
+        log.info("[B08] S3 failed — trying JAXA fallback...")
+        result = fetch_segments_jaxa_b08(scene_dt)
+    return result
+
+
+def verify_geometry(b13_lons, b13_lats, b08_lons, b08_lats) -> dict:
+    """Real geometry comparison between the two independently-fetched
+    grids -- never assumed equal. Returns a status dict; never raises.
+    Per docs/PHASE_6_HIMAWARI_MULTIBAND_AUDIT.md section 6, B08 and B13
+    are expected to share the same area/geolocation (same R20 resolution
+    class, same fixed geostationary geometry) -- but this must be
+    verified in code, not assumed, before any B13-B08 derived feature is
+    computed from them."""
+    try:
+        b13_shape = tuple(b13_lons.shape)
+        b08_shape = tuple(b08_lons.shape)
+    except Exception as exc:
+        return {
+            "status": "error",
+            "reason": f"could not read array shapes: {type(exc).__name__}: {exc}",
+            "compatible": False,
+        }
+
+    if b13_shape != b08_shape:
+        return {
+            "status": "shape_mismatch",
+            "b13_shape": list(b13_shape),
+            "b08_shape": list(b08_shape),
+            "compatible": False,
+        }
+
+    try:
+        lons_match = bool(np.allclose(b13_lons, b08_lons, atol=GEOMETRY_TOLERANCE_DEG, equal_nan=True))
+        lats_match = bool(np.allclose(b13_lats, b08_lats, atol=GEOMETRY_TOLERANCE_DEG, equal_nan=True))
+    except Exception as exc:
+        return {
+            "status": "error",
+            "reason": f"numerical comparison failed: {type(exc).__name__}: {exc}",
+            "b13_shape": list(b13_shape),
+            "b08_shape": list(b08_shape),
+            "compatible": False,
+        }
+
+    compatible = lons_match and lats_match
+    return {
+        "status": "verified_match" if compatible else "numerical_mismatch",
+        "b13_shape": list(b13_shape),
+        "b08_shape": list(b08_shape),
+        "lons_match": lons_match,
+        "lats_match": lats_match,
+        "tolerance_deg": GEOMETRY_TOLERANCE_DEG,
+        "compatible": compatible,
+    }
+
+
+def compute_b08_signal(result: dict) -> dict:
+    """B08 analogue of analyse() -- VOBL point + 50km mean/min brightness
+    temperature ONLY. Deliberately does NOT compute a cold-pixel count or
+    a storm-detection flag: B13's -40C threshold was tuned for B13's own
+    IR-window radiative regime and has no justified B08 (6.185um,
+    upper-tropospheric water vapor) equivalent (see
+    docs/PHASE_6_HIMAWARI_MULTIBAND_AUDIT.md section 5/13 -- "do not
+    inherit an arbitrary threshold"). If a B08-appropriate threshold is
+    ever scientifically justified, it must be derived and documented on
+    its own, not copied from B13."""
+    bt   = result["bt"].astype(np.float32)
+    lons = result["lons"]
+    lats = result["lats"]
+
+    dlat = np.radians(lats - VOBL_LAT)
+    dlon = np.radians(lons - VOBL_LON)
+    a    = (np.sin(dlat / 2)**2
+            + np.cos(np.radians(VOBL_LAT)) * np.cos(np.radians(lats))
+            * np.sin(dlon / 2)**2)
+    dist_km = 6371.0 * 2 * np.arcsin(np.sqrt(np.clip(a, 0, 1)))
+
+    vobl_idx  = np.unravel_index(np.nanargmin(dist_km), dist_km.shape)
+    vobl_bt_k = float(bt[vobl_idx]) if not np.isnan(bt[vobl_idx]) else None
+    vobl_bt_c = round(vobl_bt_k - 273.15, 2) if vobl_bt_k is not None else None
+
+    mask_50 = dist_km <= RADIUS_KM
+    bt_50   = bt.copy()
+    bt_50[~mask_50] = np.nan
+
+    valid     = bt_50[~np.isnan(bt_50)]
+    min_bt_k  = float(np.nanmin(bt_50))  if len(valid) else None
+    mean_bt_k = float(np.nanmean(bt_50)) if len(valid) else None
+    min_bt_c  = round(min_bt_k  - 273.15, 2) if min_bt_k  is not None else None
+    mean_bt_c = round(mean_bt_k - 273.15, 2) if mean_bt_k is not None else None
+
+    return {
+        "brightness_temperature_vobl_c": vobl_bt_c,
+        "brightness_temperature_mean_50km_c": mean_bt_c,
+        "brightness_temperature_min_50km_c": min_bt_c,
+        "valid_pixel_count_50km": int(len(valid)),
+    }
+
+
+def compute_b13_minus_b08(b13_signal: dict, b08_signal: dict, geometry: dict) -> dict:
+    """The highest-value new derived feature from Phase 6's audit:
+    b13_minus_b08_brightness_temperature_c. Computed ONLY when a real B13
+    observation exists, a real B08 observation exists, and geometry has
+    been verified compatible this cycle -- never fabricated when either
+    channel or geometry verification is missing. Category:
+    derived_from_observation -- NEVER iwv/retrieved_iwv/model_prediction/
+    forecast_feature."""
+    out = {
+        "b13_minus_b08_brightness_temperature_vobl_c": None,
+        "b13_minus_b08_brightness_temperature_mean_50km_c": None,
+        "category": "derived_from_observation",
+        "available": False,
+        "reason": None,
+    }
+    if b13_signal is None:
+        out["reason"] = "b13_observation_unavailable"
+        return out
+    if b08_signal is None:
+        out["reason"] = "b08_observation_unavailable"
+        return out
+    if not geometry.get("compatible"):
+        out["reason"] = f"geometry_not_compatible ({geometry.get('status')})"
+        return out
+
+    b13_vobl = b13_signal.get("vobl_bt_celsius")
+    b08_vobl = b08_signal.get("brightness_temperature_vobl_c")
+    b13_mean = b13_signal.get("mean_bt_50km")
+    b08_mean = b08_signal.get("brightness_temperature_mean_50km_c")
+
+    if b13_vobl is not None and b08_vobl is not None:
+        out["b13_minus_b08_brightness_temperature_vobl_c"] = round(b13_vobl - b08_vobl, 2)
+    if b13_mean is not None and b08_mean is not None:
+        out["b13_minus_b08_brightness_temperature_mean_50km_c"] = round(b13_mean - b08_mean, 2)
+
+    out["available"] = (
+        out["b13_minus_b08_brightness_temperature_vobl_c"] is not None
+        or out["b13_minus_b08_brightness_temperature_mean_50km_c"] is not None
+    )
+    if not out["available"]:
+        out["reason"] = "one_or_both_channel_values_null_at_matched_points"
+    return out
+
+
+def compute_b08_temporal(new_signal: dict, new_ts_str: str, previous_artifact: Optional[dict]) -> dict:
+    """Temporal B08 change using ONLY a real previous B08 observation --
+    never fabricates a t-10/t-30 value, never interpolates. Exposes the
+    true elapsed time between the two real observations actually used,
+    exactly as Phase 2's hardening already established for B13 (see
+    docs/PHASE_3_HIMAWARI_INTEGRATION_AUDIT.md). `previous_artifact` is
+    this same B08 artifact's own content from the PRIOR run (read before
+    this run's write), or None if no prior artifact exists."""
+    out = {
+        "previous_observation_time_utc": None,
+        "actual_gap_minutes": None,
+        "brightness_temperature_change_c": None,
+        "cooling_rate_c_per_hour": None,
+        "available": False,
+        "reason": None,
+    }
+    if new_signal is None or new_signal.get("brightness_temperature_min_50km_c") is None:
+        out["reason"] = "no_current_b08_observation"
+        return out
+    if not previous_artifact:
+        out["reason"] = "no_previous_b08_artifact"
+        return out
+
+    prev_obs_time = previous_artifact.get("observation_time_utc")
+    prev_min_bt = (previous_artifact.get("b08_observed") or {}).get("brightness_temperature_min_50km_c")
+    if prev_obs_time is None or prev_min_bt is None:
+        out["reason"] = "previous_artifact_missing_required_fields"
+        return out
+
+    try:
+        t_prev = datetime.datetime.fromisoformat(prev_obs_time)
+        t_now = datetime.datetime.fromisoformat(new_ts_str)
+    except Exception as exc:
+        out["reason"] = f"timestamp_parse_error: {type(exc).__name__}: {exc}"
+        return out
+
+    gap_minutes = (t_now - t_prev).total_seconds() / 60.0
+    if gap_minutes <= 0:
+        out["reason"] = "non_positive_or_zero_actual_gap_minutes"
+        return out
+
+    change_c = round(new_signal["brightness_temperature_min_50km_c"] - prev_min_bt, 2)
+    cooling_rate = round(change_c / (gap_minutes / 60.0), 2)
+
+    out["previous_observation_time_utc"] = prev_obs_time
+    out["actual_gap_minutes"] = round(gap_minutes, 2)
+    out["brightness_temperature_change_c"] = change_c
+    out["cooling_rate_c_per_hour"] = cooling_rate
+    out["available"] = True
+    return out
 
 
 # ── Analysis (works on satpy lat/lon output) ──────────────────────────────────
@@ -504,6 +828,80 @@ def main():
         log.error(
             f"Phase 4 Himawari feature extraction failed (non-fatal, production "
             f"output above is unaffected): {type(exc).__name__}: {exc}"
+        )
+
+    # ── Phase 7: independent B08 observed/derived feature artifact ─────────
+    # Runs strictly AFTER save_outputs(record) and the Phase 4 block above --
+    # B13's production output (OUT_FILE/HIST_FILE) and the Phase 4 artifact
+    # are already written and complete before this point, and nothing below
+    # can affect them. This is a SEPARATE S3/JAXA fetch (B08 is not present
+    # in the B13 files already downloaded -- see
+    # docs/PHASE_6_HIMAWARI_MULTIBAND_AUDIT.md section 2), wrapped in its own
+    # independent try/except so a B08 download failure, a geometry mismatch,
+    # a processing error, or a serialization/write failure can NEVER raise
+    # out of main() or touch any file other than B08_FEATURES_FILE. On any
+    # failure, the previous valid data/himawari_b08_features.json (if any)
+    # is left completely untouched -- atomic_write_json() never truncates
+    # the destination until a full, valid replacement is ready, and this
+    # block simply skips the write entirely if it never gets that far.
+    try:
+        from atomic_write import atomic_write_json, read_json_or_none
+
+        b08_result = try_scene_b08(scene_dt)
+        geometry = verify_geometry(result["lons"], result["lats"],
+                                    b08_result["lons"], b08_result["lats"]) \
+            if b08_result is not None else {
+                "status": "b08_fetch_failed", "compatible": False,
+            }
+        b08_signal = compute_b08_signal(b08_result) if b08_result is not None else None
+
+        if b08_signal is None:
+            log.warning("[B08] fetch failed (S3 and JAXA both unavailable) -- "
+                         "leaving any previous B08 artifact untouched.")
+        else:
+            b13_signal_for_diff = {
+                "vobl_bt_celsius": record.get("vobl_bt_celsius"),
+                "mean_bt_50km": record.get("mean_bt_50km"),
+            }
+            diff = compute_b13_minus_b08(b13_signal_for_diff, b08_signal, geometry)
+
+            previous_artifact = read_json_or_none(B08_FEATURES_FILE)
+            temporal = compute_b08_temporal(b08_signal, record["timestamp_utc"], previous_artifact)
+
+            b08_artifact = {
+                "artifact_type": "observed_satellite_feature_set",
+                "model_input": False,
+                "note": "OBSERVED/DERIVED Himawari-9 AHI Band 8 artifact. B08 "
+                        "brightness temperature is a real calibrated radiance "
+                        "observation, NOT a retrieved IWV product -- see "
+                        "docs/PHASE_7_HIMAWARI_B08_IMPLEMENTATION.md. Not "
+                        "consumed by any model today.",
+                "feature_extraction_version": B08_FEATURE_VERSION,
+                "satellite": "Himawari-9",
+                "instrument": "AHI (Advanced Himawari Imager)",
+                "band": B08_BAND,
+                "wavelength_um": B08_WAVELENGTH_UM,
+                "resolution": B08_RESOLUTION,
+                "source": "NOAA S3 (noaa-himawari9, anonymous) / JAXA P-Tree HTTP fallback",
+                "segments": list(SEGMENTS),
+                "calibration_method": "satpy ahi_hsd reader (automatic digital-number -> brightness-temperature)",
+                "observation_time_utc": record["timestamp_utc"],
+                "processing_timestamp_utc": datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S"),
+                "raw_pixels_available_this_run": True,
+                "geometry_verification": geometry,
+                "b08_observed": b08_signal,
+                "b13_minus_b08_derived": diff,
+                "temporal": temporal,
+                "quality_flags": (
+                    [] if geometry.get("compatible") else [f"geometry_{geometry.get('status')}"]
+                ),
+            }
+            atomic_write_json(B08_FEATURES_FILE, b08_artifact, indent=2)
+            log.info(f"Saved → {B08_FEATURES_FILE} (B08 observed/derived artifact, not a model input)")
+    except Exception as exc:
+        log.error(
+            f"Phase 7 B08 feature pipeline failed (non-fatal, B13 production "
+            f"output above is completely unaffected): {type(exc).__name__}: {exc}"
         )
 
     log.info(f"\n✓ Done — storm_detected={record['storm_detected']}  "
