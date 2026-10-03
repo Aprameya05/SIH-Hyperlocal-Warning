@@ -83,6 +83,13 @@ OUT_FILE  = OUT_DIR / "himawari_realtime.json"
 HIST_FILE = OUT_DIR / "himawari_history.json"
 KEEP_FRAMES = 6
 
+# Phase 4 (additive, observation-only artifact -- see docs/PHASE_3_HIMAWARI_INTEGRATION_AUDIT.md Step 1). This file is a real satellite OBSERVATION record,
+# never a model input: nothing in forecast_action.py, backend/pipeline.py, or
+# canonical_forecast_writer.py reads it. It must never block the write of
+# OUT_FILE/HIST_FILE above if feature extraction fails for any reason.
+FEATURES_FILE = OUT_DIR / "himawari_features.json"
+FEATURE_EXTRACTION_VERSION = "himawari_features.py@phase2-hardened"
+
 
 # ── Coordinate helpers ────────────────────────────────────────────────────────
 
@@ -455,6 +462,49 @@ def main():
         log.info(f"  {k:<30} {v}")
 
     save_outputs(record)
+
+    # ── Phase 4: additive OBSERVED satellite feature artifact ──────────────
+    # result["bt"/"lats"/"lons"] is still the same in-memory array fetched
+    # above (no second download, no cadence change). This block runs strictly
+    # AFTER save_outputs() so OUT_FILE/HIST_FILE are already written and
+    # unaffected no matter what happens below. It is wrapped so that an
+    # import failure, a malformed pixel array, a raised exception inside
+    # extract_himawari_features(), or a JSON-serialization/write failure can
+    # NEVER turn into a non-zero exit or touch the files written above.
+    # It only ever ADDS data/himawari_features.json -- an observation record,
+    # not a model input (see docs/PHASE_3_HIMAWARI_INTEGRATION_AUDIT.md).
+    try:
+        from backend.data_sources.himawari_features import extract_himawari_features
+
+        feature_set = extract_himawari_features(raw_pixels=result)
+        artifact = {
+            "artifact_type": "observed_satellite_feature_set",
+            "model_input": False,
+            "note": "OBSERVED SATELLITE FEATURE artifact. Not consumed by any "
+                    "model today -- see docs/PHASE_3_HIMAWARI_INTEGRATION_AUDIT.md.",
+            "feature_extraction_version": FEATURE_EXTRACTION_VERSION,
+            "processing_timestamp_utc": datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S"),
+            "raw_pixels_available_this_run": result is not None and result.get("bt") is not None,
+            **feature_set.to_dict(),
+        }
+        artifact["spatial_statistics_available"] = (
+            artifact.get("feature_values", {}).get("valid_pixel_count_50km") is not None
+        )
+        # Atomic write: reuses this repo's existing atomic_write_json() (see
+        # atomic_write.py), the same primitive forecast.json/pan_india_grid.json
+        # already rely on. Serialization happens BEFORE any file is touched, so
+        # a bad value never truncates a previous known-good himawari_features.json;
+        # the actual disk write goes to a temp file in the same directory and is
+        # only os.replace()'d into place after it fully succeeds and is fsync'd.
+        from atomic_write import atomic_write_json
+
+        atomic_write_json(FEATURES_FILE, artifact, indent=2)
+        log.info(f"Saved → {FEATURES_FILE} (observed feature artifact, not a model input)")
+    except Exception as exc:
+        log.error(
+            f"Phase 4 Himawari feature extraction failed (non-fatal, production "
+            f"output above is unaffected): {type(exc).__name__}: {exc}"
+        )
 
     log.info(f"\n✓ Done — storm_detected={record['storm_detected']}  "
              f"min_bt={record['min_bt_50km']}°C  "
