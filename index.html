@@ -2486,7 +2486,7 @@ function injectDrainageOverlay(map, liveData) {
                     {NAV_GROUPS.map((group, gi) => (
                       <div key={group.label} style={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}>
                         {gi > 0 && <div style={{ width: 1, height: 14, background: 'rgba(255, 255, 255, 0.08)', margin: '0 4px', display: 'inline-block' }} />}
-                        {group.tabs.filter(tab => tab !== 'DASHBOARD').map(tab => {
+                        {group.tabs.map(tab => {
                           const isActive = activeNavTab === tab;
                           const base = tab === 'EXPLAINABILITY' ? 'EXPLAIN' : tab === 'CLIMATOLOGY' ? 'CLIMAT.' : tab === 'SKILL SCORES' ? 'SCORES' : tab === 'DATA & GRAPHS' ? 'GRAPHS' : tab;
                           const label = tlabel(tab) !== tab ? tlabel(tab) : base;
