@@ -74,6 +74,7 @@ def _patch_paths(monkeypatch, tmp_path):
     monkeypatch.setattr(fhr, "OUT_FILE", out_dir / "himawari_realtime.json", raising=True)
     monkeypatch.setattr(fhr, "HIST_FILE", out_dir / "himawari_history.json", raising=True)
     monkeypatch.setattr(fhr, "FEATURES_FILE", out_dir / "himawari_features.json", raising=True)
+    monkeypatch.setattr(fhr, "B08_FEATURES_FILE", out_dir / "himawari_b08_features.json", raising=True)
     return out_dir
 
 
