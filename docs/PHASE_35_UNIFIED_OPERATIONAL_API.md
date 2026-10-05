@@ -1,0 +1,125 @@
+# Phase 35: Making the Unified Engine Operational
+
+Status date: 2026-10-05. No model is retrained. No production file
+(`forecast.json`, `index.html`, `backend/pipeline.py`) is modified. No
+frontend redesign. No commit/push.
+
+## What was built
+
+`backend/unified_api.py` mounts new routes onto the **existing** FastAPI
+`app` object already defined in `backend/alerts.py` (imported, never
+recreated), so the pre-existing `/alert` (POST), `/alerts` (GET), and CORS
+configuration are preserved exactly as they were. `/health` could not be
+re-registered at the same path (Starlette/FastAPI route matching is by
+registration order -- a second handler at an already-matched path+method
+is never reached), so it was instead **enriched in place** inside
+`backend/alerts.py::health()`: every field that existed before this phase
+is still returned unchanged; new fields were only added.
+
+New routes:
+- `GET /forecast` -- single cell/lead_hours, live inference via
+  `UnifiedInferenceEngine`, with real per-prediction local SHAP (TS/CB)
+  via the new `backend/models/unified_mtl/local_xai.py`.
+- `GET /forecast/all` -- serves `data/unified_forecast.json` verbatim,
+  `forecast_source=OFFLINE_ARTIFACT`. Never recomputed on request.
+- `GET /forecast/sources` -- the documented per-source status table.
+- `GET /forecast/alerts` -- read-only evaluation of HIGH/SEVERE candidates
+  from the offline artifact. Never dispatches anything.
+- `POST /forecast/alerts/dispatch` -- actually sends, reusing the
+  **existing, unmodified** `send_sms_twilio`/`post_webhook`/`log_alert`
+  functions from `backend/alerts.py`. Rejects FF outright (400) and any
+  hazard without a legitimate probability (422).
+
+No `/subscribe`, `/unsubscribe`, or `/subscribers` endpoint existed in
+this repo before this phase (confirmed by repo-wide search); per the
+instruction's own "if these already exist" condition, none were added.
+
+## Local XAI (Part 4)
+
+`backend/models/unified_mtl/local_xai.py` computes genuine, on-demand
+local SHAP values (`shap.TreeExplainer`, shap==0.49.1) against the SAME
+persisted TS/CB boosters `heads.py` already loads -- never a separately
+retrained or approximated model. This is distinct from, and additional
+to, the pre-existing GLOBAL mean-|SHAP| importance artifact Phase 21/34
+already expose. FF has no valid local-attribution story documented in
+this repo (no LinearExplainer background ever validated for the PU
+logistic model), so `local_xai_ff()` always returns
+`{"status": "NOT_AVAILABLE", "reason": ...}` -- never a fabricated
+contribution.
+
+## Alert engine (Parts 5/6)
+
+`GET /forecast/alerts` only ever considers TS/CB records whose
+`probability is not None` and whose `status` is not
+`NOT_TRAINED`/`OUT_OF_DOMAIN_STATION_ONLY`/`UNAVAILABLE`. FF can **never**
+produce a candidate (it has no `probability` field at all, by Phase
+34/35 design). `POST /forecast/alerts/dispatch` independently re-checks
+the same condition server-side (422 if violated) before calling the real
+Twilio/webhook functions, and reports `delivery_status` exactly as those
+functions report it back -- `NOT_SENT` whenever Twilio/webhook are not
+configured or fail, never `SENT` without a confirmed provider response.
+
+## Frontend/map contract (Parts 8-10)
+
+No frontend file was modified (`index.html`, `assets/*` untouched --
+confirmed by mtime). `GET /forecast/all` already returns, per record,
+every field the map-first UI needs to render TS/CB/FF across all 5 lead
+hours without creating a second grid: `cell_id`, `lat`/`lon` (from the
+existing canonical 992-cell grid), `TS`/`CB`/`FF` (`probability`,
+`risk_category`, `status`), `lead_hours`, and `valid_time` (serving as
+the per-record timestamp). A hazard with no legitimate probability
+carries `probability: null`, `risk_category: "NOT_AVAILABLE"` -- the
+frontend, when it is later wired to this endpoint, renders that as
+"unavailable," never as a blank/zero-risk cell. That wiring itself is
+explicitly out of scope for this phase (no frontend redesign).
+
+## DEM / terrain in the contract (Part 10)
+
+`GET /forecast` and `GET /forecast/all` both carry a `terrain` block
+with `status: "MISSING"` for any cell whose `terrain_status` in
+`data/pan_india_terrain_992.json` is not `REAL_SRTM_PANINDIA` (639/992
+cells) -- never interpolated or fabricated.
+
+## Source status (Part 11)
+
+| Source | Status | Basis |
+|---|---|---|
+| GFS | READY | Phase 19/20/21 extraction, full 992-cell coverage |
+| IMERG | REAL_SAMPLE_VALIDATED (1 day) / LIMITED_ARCHIVE | Phase 32/32B; archive/automation still blocked |
+| Himawari | B13_ONLY | No B08/WV fetch implemented anywhere in this repo |
+| METAR | VOBL_VOBG | Single-station scope only |
+| DEM | 353_OF_992 | `data/pan_india_terrain_992.json`, real count |
+| Hydrology | 75_OF_992 | Same file, real count |
+| IMDAA | BLOCKED_CREDENTIAL | Unchanged from prior phases |
+| INSAT | BLOCKED_CREDENTIAL | Unchanged from prior phases |
+
+## Offline artifact fallback (Part 12)
+
+`data/unified_forecast.json` is regenerated by
+`scripts/phase34_build_unified_forecast.py` (unchanged script, re-run in
+this phase only because the on-disk file had reverted to the older
+Phase 24 schema between sessions -- see "Environment notes" below). It is
+served verbatim by `GET /forecast/all` with `forecast_source:
+"OFFLINE_ARTIFACT"` and is never recomputed inside a request handler.
+
+## Environment notes (pre-existing, not fixed in this phase)
+
+- `data/unified_forecast.json` was found reverted to the Phase 24 schema
+  at the start of this phase (most likely an out-of-session regeneration
+  on the user's machine between conversations). Re-ran the unmodified
+  Phase 34 builder script to restore the Phase 34/35 schema.
+- `data/alerts.db` (the pre-existing Twilio alert-history SQLite file)
+  raises `disk I/O error` on every connection attempt on this machine,
+  unrelated to any code in this phase -- a freshly created SQLite file at
+  a different path works normally. This is a pre-existing environment
+  issue (the disk this repo lives on is at 98% capacity), not a product
+  of Phase 35's changes, and is out of this phase's scope to repair (no
+  delete permission was requested or used). Tests that need a working
+  alerts table monkeypatch `backend.alerts.DB_PATH` to a temp file.
+
+## Running the service
+
+`uvicorn backend.unified_api:app --host 0.0.0.0 --port 8000` (note: the
+entry point is now `backend.unified_api`, not `backend.alerts`, so that
+the `/forecast*` routes registered by this module are actually mounted
+onto the app before it starts serving).

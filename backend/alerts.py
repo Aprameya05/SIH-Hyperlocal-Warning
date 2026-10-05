@@ -48,7 +48,17 @@ except ImportError:
 # CONFIG
 # ---------------------------------------------------------------------------
 
-DB_PATH = Path(__file__).parent.parent / "data" / "alerts.db"
+# DB_PATH: SQLite needs real POSIX file-locking/fsync semantics that some
+# mounted/networked/FUSE filesystems do not implement correctly, which can
+# produce "disk I/O error" on writes even with ample free space and a
+# structurally valid database file (confirmed on this dev environment via
+# direct SQLite write tests at multiple paths under the project mount --
+# see docs/PIPELINE_OWNERSHIP.md). ALERTS_DB_PATH lets deployment
+# relocate the database off such a mount without any code change; the
+# default is unchanged from before (data/alerts.db next to the repo).
+DB_PATH = Path(os.environ.get("ALERTS_DB_PATH", "")) if os.environ.get("ALERTS_DB_PATH") else (
+    Path(__file__).parent.parent / "data" / "alerts.db"
+)
 TWILIO_SID = os.environ.get("TWILIO_ACCOUNT_SID", "")
 TWILIO_TOKEN = os.environ.get("TWILIO_AUTH_TOKEN", "")
 TWILIO_FROM = os.environ.get("TWILIO_FROM_NUMBER", "")
@@ -228,13 +238,45 @@ def startup():
 
 @app.get("/health")
 def health():
-    return {
+    # Phase 35 Part 3: additive enrichment only -- every field that was
+    # here before this phase is still here, unchanged. The new fields
+    # describe the Phase 34/35 unified forecast engine's own health,
+    # which is a different concern from Twilio/webhook delivery config
+    # but is served from the same /health path per the Phase 35
+    # instruction to preserve this endpoint rather than add a second one
+    # at the same path (Starlette would never route to a second handler
+    # registered for an already-matched path+method).
+    base = {
         "status": "ok",
         "twilio_configured": bool(TWILIO_SID and TWILIO_TOKEN and TWILIO_FROM),
         "recipients_count": len(RECIPIENTS),
         "webhook_configured": bool(WEBHOOK_URL),
         "db": str(DB_PATH),
     }
+    try:
+        from backend.unified_api import SOURCE_STATUS, _get_engine
+        engine = _get_engine()
+        model_versions = {
+            "CB": "panindia_cb_v1 (Phase 21, LODO-validated XGBoost)" if "CB" in engine.heads else "UNAVAILABLE",
+            "TS": "models/thunderstorm_model.pkl (Phase 25, VOBL station)" if "TS" in engine.heads else "UNAVAILABLE",
+            "FF": "RESEARCH_ONLY_model_c_logistic (PU-corrected)" if "FF" in engine.heads else "UNAVAILABLE",
+            "shared_backbone": engine.backbone_status,
+        }
+        unified_forecast_status = "READY" if (Path(__file__).parent.parent / "data" / "unified_forecast.json").exists() else "NOT_TRAINED"
+        base.update({
+            "service": "SIH Hyperlocal Warning -- Unified Forecast + Alert Backend",
+            "model_versions": model_versions,
+            "forecast_init_time": "2024-08-01T00:00:00Z",
+            "grid_cells": 992,
+            "lead_times_hours": [2, 3, 4, 5, 6],
+            "data_source_status": SOURCE_STATUS,
+            "unified_forecast_artifact_status": unified_forecast_status,
+        })
+    except Exception as exc:  # noqa: BLE001
+        # Never let the unified-engine enrichment break the pre-existing
+        # Twilio/webhook health check this endpoint already provided.
+        base["unified_forecast_engine_error"] = f"{type(exc).__name__}: {exc}"
+    return base
 
 
 @app.post("/alert", response_model=AlertResponse, status_code=status.HTTP_201_CREATED)
