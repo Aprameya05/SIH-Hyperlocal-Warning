@@ -1,0 +1,58 @@
+{
+  "artifact_type": "observed_satellite_feature_set",
+  "model_input": false,
+  "note": "OBSERVED/DERIVED Himawari-9 AHI Band 8 artifact. B08 brightness temperature is a real calibrated radiance observation, NOT a retrieved IWV product -- see docs/PHASE_7_HIMAWARI_B08_IMPLEMENTATION.md. Not consumed by any model today.",
+  "feature_extraction_version": "phase7-b08-v1",
+  "satellite": "Himawari-9",
+  "instrument": "AHI (Advanced Himawari Imager)",
+  "band": "B08",
+  "wavelength_um": 6.185,
+  "resolution": "2km (R20 nominal)",
+  "source": "NOAA S3 (noaa-himawari9, anonymous) / JAXA P-Tree HTTP fallback",
+  "segments": [
+    4,
+    5,
+    6
+  ],
+  "calibration_method": "satpy ahi_hsd reader (automatic digital-number -> brightness-temperature)",
+  "observation_time_utc": "2026-10-04T20:20:00",
+  "processing_timestamp_utc": "2026-10-04T20:32:10",
+  "raw_pixels_available_this_run": true,
+  "geometry_verification": {
+    "status": "verified_match",
+    "b13_shape": [
+      5500,
+      5500
+    ],
+    "b08_shape": [
+      5500,
+      5500
+    ],
+    "lons_match": true,
+    "lats_match": true,
+    "tolerance_deg": 1e-06,
+    "compatible": true
+  },
+  "b08_observed": {
+    "brightness_temperature_vobl_c": -48.27,
+    "brightness_temperature_mean_50km_c": -47.47,
+    "brightness_temperature_min_50km_c": -52.6,
+    "valid_pixel_count_50km": 493
+  },
+  "b13_minus_b08_derived": {
+    "b13_minus_b08_brightness_temperature_vobl_c": 44.59,
+    "b13_minus_b08_brightness_temperature_mean_50km_c": 43.9,
+    "category": "derived_from_observation",
+    "available": true,
+    "reason": null
+  },
+  "temporal": {
+    "previous_observation_time_utc": "2026-10-04T15:20:00",
+    "actual_gap_minutes": 300.0,
+    "brightness_temperature_change_c": 6.57,
+    "cooling_rate_c_per_hour": 1.31,
+    "available": true,
+    "reason": null
+  },
+  "quality_flags": []
+}
