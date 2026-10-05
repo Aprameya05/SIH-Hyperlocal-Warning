@@ -1,0 +1,235 @@
+{
+  "experiment_name": "ablation_without_both",
+  "lodo_pooled_uncalibrated": {
+    "n": 1930,
+    "n_positive": 400,
+    "n_negative": 1530,
+    "auroc": 0.7461911764705882,
+    "pr_auc": 0.4225351382530792,
+    "brier_score": 0.18808424130107135,
+    "threshold": 0.5,
+    "confusion_matrix": {
+      "tn": 1154,
+      "fp": 376,
+      "fn": 157,
+      "tp": 243
+    },
+    "pod_recall": 0.6075,
+    "far": 0.6074313408723748,
+    "precision": 0.3925686591276252,
+    "csi": 0.3131443298969072,
+    "hss": 0.30090997437936207
+  },
+  "lodo_pooled_calibrated": {
+    "n": 1930,
+    "n_positive": 400,
+    "n_negative": 1530,
+    "auroc": 0.7542426470588235,
+    "pr_auc": 0.4177497752207466,
+    "brier_score": 0.14073434898190687,
+    "threshold": 0.5,
+    "confusion_matrix": {
+      "tn": 1491,
+      "fp": 39,
+      "fn": 341,
+      "tp": 59
+    },
+    "pod_recall": 0.1475,
+    "far": 0.3979591836734694,
+    "precision": 0.6020408163265306,
+    "csi": 0.13439635535307518,
+    "hss": 0.16917778734395172
+  },
+  "per_date_results": [
+    {
+      "held_out_date": "2015-02-28",
+      "n_train": 3474,
+      "n_test": 386,
+      "n_test_positive": 0,
+      "n_test_negative": 386,
+      "degenerate": "True",
+      "metrics": null,
+      "note": "held-out date has only one class present; metrics requiring both classes are undefined for this date"
+    },
+    {
+      "held_out_date": "2016-01-10",
+      "n_train": 3474,
+      "n_test": 386,
+      "n_test_positive": 0,
+      "n_test_negative": 386,
+      "degenerate": "True",
+      "metrics": null,
+      "note": "held-out date has only one class present; metrics requiring both classes are undefined for this date"
+    },
+    {
+      "held_out_date": "2016-01-15",
+      "n_train": 3474,
+      "n_test": 386,
+      "n_test_positive": 0,
+      "n_test_negative": 386,
+      "degenerate": "True",
+      "metrics": null,
+      "note": "held-out date has only one class present; metrics requiring both classes are undefined for this date"
+    },
+    {
+      "held_out_date": "2016-07-03",
+      "n_train": 3474,
+      "n_test": 386,
+      "n_test_positive": 80,
+      "n_test_negative": 306,
+      "degenerate": "False",
+      "metrics": {
+        "n": 386,
+        "n_positive": 80,
+        "n_negative": 306,
+        "auroc": 0.6919117647058823,
+        "pr_auc": 0.388961386282777,
+        "brier_score": 0.17989622998329485,
+        "threshold": 0.5,
+        "confusion_matrix": {
+          "tn": 261,
+          "fp": 45,
+          "fn": 48,
+          "tp": 32
+        },
+        "pod_recall": 0.4,
+        "far": 0.5844155844155844,
+        "precision": 0.4155844155844156,
+        "csi": 0.256,
+        "hss": 0.2564931030197589
+      }
+    },
+    {
+      "held_out_date": "2018-02-09",
+      "n_train": 3474,
+      "n_test": 386,
+      "n_test_positive": 0,
+      "n_test_negative": 386,
+      "degenerate": "True",
+      "metrics": null,
+      "note": "held-out date has only one class present; metrics requiring both classes are undefined for this date"
+    },
+    {
+      "held_out_date": "2018-07-16",
+      "n_train": 3474,
+      "n_test": 386,
+      "n_test_positive": 76,
+      "n_test_negative": 310,
+      "degenerate": "False",
+      "metrics": {
+        "n": 386,
+        "n_positive": 76,
+        "n_negative": 310,
+        "auroc": 0.7902376910016977,
+        "pr_auc": 0.5733321974232305,
+        "brier_score": 0.17313084988601934,
+        "threshold": 0.5,
+        "confusion_matrix": {
+          "tn": 232,
+          "fp": 78,
+          "fn": 26,
+          "tp": 50
+        },
+        "pod_recall": 0.6578947368421053,
+        "far": 0.609375,
+        "precision": 0.390625,
+        "csi": 0.3246753246753247,
+        "hss": 0.32289839427877476
+      }
+    },
+    {
+      "held_out_date": "2019-12-09",
+      "n_train": 3474,
+      "n_test": 386,
+      "n_test_positive": 0,
+      "n_test_negative": 386,
+      "degenerate": "True",
+      "metrics": null,
+      "note": "held-out date has only one class present; metrics requiring both classes are undefined for this date"
+    },
+    {
+      "held_out_date": "2020-08-13",
+      "n_train": 3474,
+      "n_test": 386,
+      "n_test_positive": 83,
+      "n_test_negative": 303,
+      "degenerate": "False",
+      "metrics": {
+        "n": 386,
+        "n_positive": 83,
+        "n_negative": 303,
+        "auroc": 0.7455962463716251,
+        "pr_auc": 0.419954045694856,
+        "brier_score": 0.22347270859111149,
+        "threshold": 0.5,
+        "confusion_matrix": {
+          "tn": 186,
+          "fp": 117,
+          "fn": 17,
+          "tp": 66
+        },
+        "pod_recall": 0.7951807228915663,
+        "far": 0.639344262295082,
+        "precision": 0.36065573770491804,
+        "csi": 0.33,
+        "hss": 0.28457218733574924
+      }
+    },
+    {
+      "held_out_date": "2022-07-14",
+      "n_train": 3474,
+      "n_test": 386,
+      "n_test_positive": 75,
+      "n_test_negative": 311,
+      "degenerate": "False",
+      "metrics": {
+        "n": 386,
+        "n_positive": 75,
+        "n_negative": 311,
+        "auroc": 0.8550482315112541,
+        "pr_auc": 0.5940389752152971,
+        "brier_score": 0.12260487440657857,
+        "threshold": 0.5,
+        "confusion_matrix": {
+          "tn": 273,
+          "fp": 38,
+          "fn": 31,
+          "tp": 44
+        },
+        "pod_recall": 0.5866666666666667,
+        "far": 0.4634146341463415,
+        "precision": 0.5365853658536586,
+        "csi": 0.3893805309734513,
+        "hss": 0.44859426110720063
+      }
+    },
+    {
+      "held_out_date": "2024-08-01",
+      "n_train": 3474,
+      "n_test": 386,
+      "n_test_positive": 86,
+      "n_test_negative": 300,
+      "degenerate": "False",
+      "metrics": {
+        "n": 386,
+        "n_positive": 86,
+        "n_negative": 300,
+        "auroc": 0.6662015503875969,
+        "pr_auc": 0.3075283595603058,
+        "brier_score": 0.241316543108547,
+        "threshold": 0.5,
+        "confusion_matrix": {
+          "tn": 202,
+          "fp": 98,
+          "fn": 35,
+          "tp": 51
+        },
+        "pod_recall": 0.5930232558139535,
+        "far": 0.6577181208053692,
+        "precision": 0.3422818791946309,
+        "csi": 0.27717391304347827,
+        "hss": 0.2111797424787192
+      }
+    }
+  ]
+}
