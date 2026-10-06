@@ -1,0 +1,59 @@
+name: TEST — AWS GFS Preflight (throwaway verification)
+# 2026-10-06: isolated, read-only verification that the NOAA AWS Open
+# Data GFS mirror (scripts/gfs_aws_source.py) is actually reachable
+# from a real GitHub Actions Ubuntu runner -- not just this dev
+# sandbox. Deliberately minimal: no checkout of production data, no
+# git commit/push, no Cloudflare deploy. Safe to run from any branch
+# and safe to delete once verified. workflow_dispatch only -- never
+# runs on a schedule.
+on:
+  workflow_dispatch: {}
+
+jobs:
+  aws-gfs-preflight:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository (read-only, no push back)
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install minimal dependencies (requests + xarray/cfgrib for GRIB decode)
+        run: |
+          pip install --upgrade pip
+          pip install --no-cache-dir "requests>=2.31.0" "xarray>=2024.0.0" "cfgrib>=0.9.10" "eccodes>=1.6.0"
+
+      - name: AWS GFS mirror -- connectivity + byte-range + GRIB2 decode smoke test
+        run: |
+          python3 - <<'PYEOF'
+          import json, sys
+          sys.path.insert(0, "scripts")
+          import gfs_aws_source as aws_src
+
+          result = aws_src.check_connectivity()
+          print("=== CONNECTIVITY ===")
+          print(json.dumps(result, indent=2))
+
+          if result["overall"] != "OK":
+              print("Connectivity not OK -- stopping here (this IS the result being verified).")
+              sys.exit(0)
+
+          cycle = aws_src.find_latest_available_cycle()
+          print(f"\n=== CYCLE DISCOVERY ===\nresolved cycle: {cycle}")
+
+          from pathlib import Path
+          out_path = Path("/tmp/aws_gfs_smoke.grib2")
+          manifest = aws_src.fetch_cycle_subset(cycle, 6, out_path, fields=[("CAPE", "surface")])
+          print("\n=== BYTE-RANGE DOWNLOAD ===")
+          print(json.dumps(manifest, indent=2))
+
+          validation = aws_src.validate_grib(out_path)
+          print("\n=== GRIB2 DECODE ===")
+          print(json.dumps(validation, indent=2))
+
+          overall = "LIVE_VERIFIED" if validation.get("readable") else "BLOCKED"
+          print(f"\n=== OVERALL: {overall} ===")
+          PYEOF
