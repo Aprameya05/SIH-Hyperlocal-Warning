@@ -36,7 +36,14 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 MODEL_PATH = REPO_ROOT / "models" / "thunderstorm_model.pkl"
 TRAIN_DATA_PATH = REPO_ROOT / "data" / "bengaluru_thunderstorm_features_merged.csv"
 
-VOBL_CELL_ID = "IND_13.0_77.0"  # nearest canonical 992-cell grid point to VOBL/VOBG (~13.2N 77.7E)
+VOBL_CELL_ID = "IND_13.0_78.0"  # nearest canonical 992-cell grid point to VOBL/VOBG (13.1979N 77.7063E);
+# corrected 2026-10-06 (Phase D takeover pass) -- IND_13.0_77.0 (the
+# previous value here) is 79.6km from VOBL; IND_13.0_78.0 is 38.68km,
+# genuinely the nearest cell. canonical_forecast_writer.py and
+# scripts/build_panindia_dataset.py already independently used the
+# correct value; only this module's own VOBL_CELL_ID (and
+# backend/models/unified_mtl/shared_target_schema.py's separate copy of
+# the same constant) had the wrong one.
 TS_STATUS = "STATION_BASELINE"
 
 
