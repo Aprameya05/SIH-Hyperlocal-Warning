@@ -4,10 +4,17 @@ name: TEST — AWS GFS Preflight (throwaway verification)
 # from a real GitHub Actions Ubuntu runner -- not just this dev
 # sandbox. Deliberately minimal: no checkout of production data, no
 # git commit/push, no Cloudflare deploy. Safe to run from any branch
-# and safe to delete once verified. workflow_dispatch only -- never
-# runs on a schedule.
+# and safe to delete once verified. Triggers on workflow_dispatch OR a
+# push restricted to this exact throwaway branch (GitHub's Actions UI
+# doesn't list a workflow_dispatch-only workflow that only exists on a
+# non-default branch until it has at least one run -- the push trigger
+# below exists solely to produce that first run). Never runs on a
+# schedule, and never on main or any other branch.
 on:
   workflow_dispatch: {}
+  push:
+    branches:
+      - test/aws-gfs-preflight
 
 jobs:
   aws-gfs-preflight:
