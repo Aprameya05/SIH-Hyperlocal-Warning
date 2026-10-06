@@ -30,7 +30,7 @@ fastapi = pytest.importorskip("fastapi")
 from fastapi.testclient import TestClient  # noqa: E402
 
 import backend.alerts as alerts_mod  # noqa: E402
-from backend.unified_api import app, SOURCE_STATUS  # noqa: E402
+from backend.unified_api import app, SOURCE_STATUS, LIVE_SOURCE_STATUSES as LIVE_SOURCE_STATUSES_FOR_TEST  # noqa: E402
 from backend.models.unified_mtl.lead_time_interface import LEAD_HOURS  # noqa: E402
 
 
@@ -211,23 +211,42 @@ def test_dispatch_rejects_unavailable_hazard(client):
 
 
 def test_dispatch_accepts_legitimate_cb_probability_and_reports_truthful_delivery(client):
+    """Updated 2026-10-06 (Priority 14, freshness gate; revised again the
+    same day once CB started reporting genuinely LIVE_AWS_GFS/LIVE_NOMADS_GFS/
+    MIXED_LIVE_SOURCES source_status -- see scripts/gfs_live_cb_predictors.py):
+    a HIGH/SEVERE CB candidate is not guaranteed to exist for any given real
+    cycle -- today's actual weather may simply have no HIGH-risk cell
+    anywhere, which is a legitimate outcome, not a bug, and must never be
+    forced by fabricating one. This test only exercises the dispatch gate
+    when a real candidate happens to exist; otherwise it is skipped with an
+    honest reason rather than asserting a candidate must be present."""
     candidates = client.get("/forecast/alerts", params={"min_risk": "HIGH"}).json()["candidates"]
-    cb_candidate = next(c for c in candidates if c["hazard"] == "CB")
+    cb_candidates = [c for c in candidates if c["hazard"] == "CB"]
+    if not cb_candidates:
+        pytest.skip("no HIGH/SEVERE CB candidate in the current real artifact -- nothing to dispatch-test")
+    cb_candidate = cb_candidates[0]
     r = client.post("/forecast/alerts/dispatch",
                      json={"cell_id": cb_candidate["cell_id"], "hazard": "CB", "lead_hours": cb_candidate["lead_hours"]})
     assert r.status_code == 200
     d = r.json()
-    # No Twilio/webhook configured in this test environment -> must NOT claim SENT.
-    assert d["delivery_status"] == "NOT_SENT"
-    assert d["sms_count"] == 0
-    assert d["status"] == "DISPATCHED"
+    if cb_candidate.get("source_status") in LIVE_SOURCE_STATUSES_FOR_TEST:
+        # No Twilio/webhook configured in this test environment -> must NOT claim SENT.
+        assert d["delivery_status"] == "NOT_SENT"
+        assert d["sms_count"] == 0
+        assert d["status"] == "DISPATCHED"
+    else:
+        assert d["status"] == "SKIPPED_NO_ALERT"
+        assert d["delivery_status"].startswith("NOT_SENT")
 
 
 def test_dispatch_never_reports_sent_without_confirmation(client):
     """Delivery-status truthfulness: with no Twilio creds and no webhook
-    configured, dispatch must report NOT_SENT, never SENT."""
+    configured, dispatch must report a NOT_SENT-prefixed status, never SENT
+    -- whether that is because no provider is configured (legacy path) or
+    because the 2026-10-06 freshness gate skipped it outright."""
     r = client.post("/forecast/alerts/dispatch", json={"cell_id": "IND_8.0_76.0", "hazard": "CB", "lead_hours": 2})
-    assert r.json()["delivery_status"] == "NOT_SENT"
+    assert r.json()["delivery_status"].startswith("NOT_SENT")
+    assert "SENT" not in r.json()["delivery_status"].replace("NOT_SENT", "")
 
 
 # ---------------------------------------------------------------------------
