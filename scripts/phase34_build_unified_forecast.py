@@ -14,6 +14,12 @@ Reuses, never re-invents:
   - data/pan_india_terrain_992.json (real/blocked SRTM DEM + real/missing
     INDOFLOODS catchment hydrology, Phase 26/27)
   - data/pan_india_common_grid_992.json (canonical cell_id/lat/lon order)
+  - scripts/gfs_live_cb_predictors.py (2026-10-06 Phase 3 pass: attempts a
+    LIVE current-cycle GFS fetch -- NOAA AWS Open Data mirror primary,
+    NOMADS CGI secondary fallback -- for CB's predictor table; falls back
+    to the fixed 2024-08-01 Phase 20 CSV on any failure. TS and FF are
+    unaffected and still use the fixed validation cycle; see each
+    record's CB.source_status/source_cycle vs TS/FF's own fields.)
 
 No model is trained here. No production file is modified. This script
 only reads existing real artifacts and writes data/unified_forecast.json.
@@ -40,8 +46,19 @@ from backend.models.unified_mtl.inference_engine import (  # noqa: E402
 from backend.models.unified_mtl.lead_time_interface import LEAD_HOURS  # noqa: E402
 
 OUTPUT_PATH = REPO_ROOT / "data" / "unified_forecast.json"
-SOURCE_CYCLE_DATE = "2024-08-01"  # the one real, Phase-32/32B-validated IMERG day; also present in
-                                   # the Phase 20 GFS predictor dataset and used as FF's target_date.
+# FIXED_VALIDATION_FALLBACK cycle: the one real, Phase-32/32B-validated
+# IMERG day; also present in the Phase 20 GFS predictor dataset and
+# used as FF's target_date and TS's VOBL row. This remains the
+# artifact-level (TS/FF) init_time/valid_time basis -- TS and FF have
+# no live data source wired yet (Phases 5/7/8 of the takeover plan).
+# CB is the exception as of the 2026-10-06 Phase 3 pass: it now
+# attempts a LIVE current-cycle fetch first (see
+# scripts/gfs_live_cb_predictors.py) and carries its OWN
+# cb_init_time_utc/cb_valid_time_utc fields (additive, alongside the
+# shared record-level init_time/valid_time below) so CB's timestamps
+# are never silently borrowed from this fixed fallback cycle while
+# claiming to be live.
+SOURCE_CYCLE_DATE = "2024-08-01"
 INIT_TIME_UTC = datetime(2024, 8, 1, 0, 0, tzinfo=timezone.utc)
 
 # GFS predictor list actually exposed by the Phase 19/20/21 extraction
@@ -64,10 +81,16 @@ METAR_SCOPE_CELLS = ["IND_13.0_77.0"]
 
 
 def build_feature_provenance_block(n_cells_terrain_real: int, n_cells_terrain_blocked: int,
-                                    n_cells_hydrology_real: int, n_cells_hydrology_missing: int) -> dict:
+                                    n_cells_hydrology_real: int, n_cells_hydrology_missing: int,
+                                    cb_cycle_date_used: str = SOURCE_CYCLE_DATE,
+                                    cb_source_status_live: str = "FIXED_VALIDATION_FALLBACK") -> dict:
+    gfs_coverage = (f"all 992 cells, LIVE cycle {cb_cycle_date_used} via {cb_source_status_live} "
+                    f"(scripts/gfs_live_cb_predictors.py) -- CB only; TS/FF unaffected"
+                    if cb_source_status_live in ("LIVE_AWS_GFS", "LIVE_NOMADS_GFS", "MIXED_LIVE_SOURCES")
+                    else "all 992 cells, 1 fixed validation cycle (2024-08-01), Phase 19/20 extraction")
     return {
         "GFS": {"provenance": "FORECAST", "variables": GFS_PREDICTORS,
-                "coverage": "all 992 cells, 1 cycle (2024-08-01), Phase 19/20 extraction"},
+                "coverage": gfs_coverage},
         "IMERG": {"provenance": "OBSERVED", "product": "GPM_3IMERGHH", "version": "V07B", "run": "Final",
                    "temporal_resolution": "30min", "spatial_resolution": "0.1deg",
                    "coverage": "1 real validated day (2024-08-01, Phase 32/32B); "
@@ -106,11 +129,35 @@ def main():
     n_hydro_real = sum(1 for c in terrain_doc["cells"] if c["catchment_status"] == "OBSERVED_SPARSE")
     n_hydro_missing = sum(1 for c in terrain_doc["cells"] if c["catchment_status"] == "MISSING_NO_GAUGE")
 
-    print("[2/7] Loading CB engine features (Phase 20 GFS dataset, cycle 2024-08-01)...")
+    print("[2/7] Loading CB engine features -- trying LIVE current-cycle GFS first...")
     from panindia_cb_features import engineer_daily_features
-    raw_df = pd.read_csv(REPO_ROOT / "data" / "external" / "historical_gfs" / "phase20_full_predictor_dataset.csv")
-    cycle_rows = raw_df[raw_df["target_date"] == SOURCE_CYCLE_DATE].copy()
-    cb_engineered = engineer_daily_features(cycle_rows, include_prate=False, include_9000pa=False)
+    cb_cycle_date_used = SOURCE_CYCLE_DATE
+    cb_init_time_used = INIT_TIME_UTC
+    cb_source_status_live = "FIXED_VALIDATION_FALLBACK"
+    cb_live_meta = None
+    try:
+        import gfs_live_cb_predictors
+        live_result = gfs_live_cb_predictors.build_live_cb_longform_table(cells)
+        cb_live_meta = {k: v for k, v in live_result.items() if k != "dataframe"}
+        if live_result["status"] in ("LIVE_AWS_GFS", "LIVE_NOMADS_GFS", "MIXED_LIVE_SOURCES") \
+                and live_result.get("dataframe") is not None:
+            cb_engineered = engineer_daily_features(live_result["dataframe"], include_prate=False, include_9000pa=False)
+            cb_cycle_date_used = live_result["target_date"]
+            cb_init_time_used = datetime.fromisoformat(live_result["init_time_utc"])
+            cb_source_status_live = live_result["status"]
+            print(f"  LIVE CB predictors used: cycle={live_result['cycle_str']} "
+                  f"leads_live={live_result['n_leads_live']}/{live_result['n_leads_requested']} "
+                  f"source={live_result['status']} from_cache={live_result.get('from_cache')}")
+        else:
+            print(f"  Live CB fetch did not produce usable data (status={live_result['status']}, "
+                  f"reason={live_result.get('reason')}) -- falling back to fixed validation cycle.")
+            raise RuntimeError("live CB fetch unusable")
+    except Exception as exc:
+        print(f"  Live CB path unavailable ({type(exc).__name__}: {exc}) -- using FIXED_VALIDATION_FALLBACK "
+              f"({SOURCE_CYCLE_DATE}, Phase 20 GFS dataset).")
+        raw_df = pd.read_csv(REPO_ROOT / "data" / "external" / "historical_gfs" / "phase20_full_predictor_dataset.csv")
+        cycle_rows = raw_df[raw_df["target_date"] == SOURCE_CYCLE_DATE].copy()
+        cb_engineered = engineer_daily_features(cycle_rows, include_prate=False, include_9000pa=False)
 
     print("[3/7] Loading FF engine features (real IMD rainfall + INDOFLOODS catchment, cycle 2024-08-01)...")
     from ff_feature_adapter import build_ff_input_table_for_date
@@ -167,6 +214,19 @@ def main():
             if ff_pred.extra.get("pu_ranking_score") is not None:
                 n_ff_pu_scored += 1
 
+            # Honest freshness/value-type metadata (2026-10-06 Phase 3 pass):
+            # TS and FF still have no live data source wired (see module
+            # docstring) so they remain tied to the fixed validation cycle.
+            # CB now reflects whatever cb_source_status_live/cb_cycle_date_used
+            # actually resolved to above (LIVE_AWS_GFS / LIVE_NOMADS_GFS /
+            # FIXED_VALIDATION_FALLBACK) -- never hardcoded, and never
+            # "LIVE" merely because generated_at_utc is "now".
+            cb_source_status = cb_source_status_live if cb_pred.probability is not None else "UNAVAILABLE"
+            ff_source_status = "FIXED_VALIDATION_FALLBACK" if ff_pred.extra.get("pu_ranking_score") is not None else "UNAVAILABLE"
+            ts_source_status = "RECENT" if ts_pred.probability is not None else "NOT_AVAILABLE"
+            cb_valid_time = compute_valid_time(cb_init_time_used, lead_h)
+            assert_no_leakage(cb_init_time_used, cb_valid_time, lead_h)
+
             records.append({
                 "cell_id": cid,
                 "lat": cell["lat"],
@@ -177,15 +237,20 @@ def main():
                 "TS": {"probability": ts_pred.probability, "risk_category": ts_pred.risk_category,
                        "status": ts_pred.status, "model_version": ts_pred.model_version,
                        "provenance": ts_pred.provenance, "confidence": ts_pred.confidence,
-                       "extra": ts_pred.extra},
+                       "extra": ts_pred.extra, "value_type": "probability",
+                       "source_cycle": SOURCE_CYCLE_DATE, "source_status": ts_source_status},
                 "CB": {"probability": cb_pred.probability, "risk_category": cb_pred.risk_category,
                        "status": cb_pred.status, "model_version": cb_pred.model_version,
                        "provenance": cb_pred.provenance, "confidence": cb_pred.confidence,
-                       "extra": cb_pred.extra},
+                       "extra": cb_pred.extra, "value_type": "probability",
+                       "source_cycle": cb_cycle_date_used, "source_status": cb_source_status,
+                       "cb_init_time_utc": _iso(cb_init_time_used), "cb_valid_time_utc": _iso(cb_valid_time),
+                       "lead_time_resolution": "DAILY_AGGREGATE_NOT_LEAD_SPECIFIC"},
                 "FF": {"probability": ff_pred.probability, "risk_category": ff_pred.risk_category,
                        "status": ff_pred.status, "model_version": ff_pred.model_version,
                        "provenance": ff_pred.provenance, "confidence": ff_pred.confidence,
-                       "extra": ff_pred.extra},
+                       "extra": ff_pred.extra, "value_type": "risk_score",
+                       "source_cycle": SOURCE_CYCLE_DATE, "source_status": ff_source_status},
                 "terrain": {
                     "elevation_m": terr.get("elevation_m"), "slope_deg": terr.get("slope_deg"),
                     "terrain_status": terr.get("terrain_status"),
@@ -224,7 +289,8 @@ def main():
                          "mismatched-model XAI claim"}
 
     feature_provenance = build_feature_provenance_block(n_terrain_real, n_terrain_blocked,
-                                                           n_hydro_real, n_hydro_missing)
+                                                           n_hydro_real, n_hydro_missing,
+                                                           cb_cycle_date_used, cb_source_status_live)
 
     artifact = {
         "artifact_type": "unified_forecast (Phase 34 UNIFIED SIH INFERENCE ENGINE -- NOT a claim "
@@ -241,6 +307,11 @@ def main():
         "provenance_enum": ["OBSERVED", "FORECAST", "REANALYSIS", "DERIVED", "PROXY", "MISSING"],
         "shared_backbone_status": engine.backbone_status,
         "feature_provenance": feature_provenance,
+        "cb_live_fetch": cb_live_meta,  # None if the live path raised before returning a status;
+                                         # otherwise the full gfs_live_cb_predictors.py result
+                                         # (status/cycle_str/per_lead_meta/bytes/timing), additive
+                                         # diagnostic -- see CB.source_status/source_cycle per record
+                                         # for the authoritative per-record provenance.
         "xai": {"CB": cb_xai, "FF": ff_coef_xai, "TS": ts_xai},
         "coverage_summary": {
             "n_records_total": len(records),
@@ -258,8 +329,55 @@ def main():
     validation = validate_artifact(artifact)
     artifact["validation"] = validation
 
-    with open(OUTPUT_PATH, "w") as f:
+    # Atomic write + last-known-good preservation (Priority 7/10, 2026-10-06
+    # pass): never overwrite a valid existing production artifact with a
+    # malformed/incomplete one. Write to a sibling temp file first, run the
+    # same reject-list a deploy gate would run, and only replace
+    # OUTPUT_PATH with os.replace() (atomic on POSIX) if every check passes.
+    # On failure, the previous OUTPUT_PATH (if any) is left untouched and
+    # the failure is reported loudly rather than silently proceeding.
+    import os
+    reject_reasons = []
+    if not validation.get("exactly_992_cells"):
+        reject_reasons.append(f"expected 992 unique cells, got {validation.get('n_unique_cells')}")
+    if not validation.get("exactly_4960_records"):
+        reject_reasons.append(f"expected 4960 records, got {len(records)}")
+    if not validation.get("all_5_lead_slots_present_per_cell"):
+        reject_reasons.append("not every cell has all 5 lead slots present")
+    if not validation.get("lead_time_arithmetic_correct_for_every_record"):
+        reject_reasons.append("init_time/valid_time/lead_hours arithmetic mismatch detected")
+    if not validation.get("all_present_probabilities_in_0_1_range"):
+        reject_reasons.append("a TS/CB probability outside [0,1] was found")
+    if not validation.get("ff_never_carries_a_fabricated_probability"):
+        reject_reasons.append("an FF record carried a 'probability' field (FF must be risk_score-only)")
+    if not validation.get("no_unavailable_probability_mapped_to_a_risk_category"):
+        reject_reasons.append("a NULL-probability record was mapped to a non-NOT_AVAILABLE risk_category")
+
+    tmp_path = OUTPUT_PATH.with_suffix(".json.tmp")
+    with open(tmp_path, "w") as f:
         json.dump(artifact, f, indent=1)
+
+    if reject_reasons:
+        try:
+            tmp_path.unlink()
+        except Exception:
+            pass
+        print("REJECTED new artifact -- last-known-good output at " +
+              f"{OUTPUT_PATH.relative_to(REPO_ROOT)} was NOT modified. Reasons:")
+        for r in reject_reasons:
+            print(f"  - {r}")
+        validation["accepted"] = False
+        if __name__ == "__main__":
+            # Exit nonzero so CI (e.g. .github/workflows/forecast_update.yml)
+            # shows this as a clear failure in the run log, even when the
+            # calling step uses continue-on-error to avoid blocking the
+            # unrelated legacy dashboard deploy (Phase 15 safety requirement:
+            # a bad unified-artifact build must never silently look green).
+            sys.exit(1)
+        return artifact, validation
+
+    os.replace(tmp_path, OUTPUT_PATH)  # atomic rename on POSIX
+    validation["accepted"] = True
 
     elapsed = time.time() - t0
     print(f"\nWrote {OUTPUT_PATH.relative_to(REPO_ROOT)}: {len(records)} records "

@@ -84,6 +84,68 @@ jobs:
         run: |
           python -c "import sklearn,xgboost,joblib,shap; print(f'sklearn={sklearn.__version__} xgb={xgboost.__version__} joblib={joblib.__version__} shap={shap.__version__}')"
 
+      - name: Diagnose NOMADS/GFS connectivity from this runner (safe, bounded, no secrets)
+        id: gfs_diagnostic
+        # Priority 1 (2026-10-06 pass): answers "can GitHub Actions reach
+        # NOMADS?" with evidence, not assumption -- DNS, HTTPS, cycle
+        # resolution, one small (few-MB, CAPE-only) GRIB request, and a
+        # real cfgrib read confirming the returned file actually matches
+        # the requested cycle/variable. Never downloads a full archive.
+        # continue-on-error: a blocked/unreachable result here is an
+        # expected, truthful outcome (this sandbox already confirmed NOMADS
+        # is blocked), not a reason to fail the whole scheduled job -- the
+        # production CB fetch path already handles this honestly via its
+        # own FIXED_VALIDATION_FALLBACK path.
+        continue-on-error: true
+        run: python3 scripts/ci_gfs_connectivity_diagnostic.py | tee /tmp/gfs_diagnostic.json
+
+      - name: Preflight -- AWS Open Data GFS mirror (primary live CB source)
+        id: aws_gfs_preflight
+        # 2026-10-06 Phase 3 pass: NOMADS access from a GitHub Actions
+        # runner is unverified/historically unreliable (see the diagnostic
+        # step above). scripts/gfs_live_cb_predictors.py now tries the free,
+        # public, no-credential NOAA AWS Open Data GFS mirror FIRST for
+        # CB's current-cycle predictors (scripts/gfs_aws_source.py) --
+        # this step independently proves, from THIS runner, that the exact
+        # chain the production build depends on actually works end to end:
+        # DNS -> HTTPS -> current-cycle discovery -> .idx byte-range
+        # download -> a real cfgrib decode of the returned bytes. It is a
+        # single small (CAPE-only, surface, f006) request, never a full
+        # archive download. continue-on-error: true -- same reasoning as
+        # the NOMADS diagnostic above: an honest BLOCKED/DEGRADED result
+        # here must never fail the whole scheduled job, because
+        # phase34_build_unified_forecast.py already falls back to NOMADS
+        # and then to the fixed validation cycle on its own.
+        continue-on-error: true
+        run: |
+          python3 - <<'PYEOF' | tee /tmp/aws_gfs_diagnostic.json
+          import json, sys
+          sys.path.insert(0, "scripts")
+          import gfs_aws_source as aws_src
+
+          result = aws_src.check_connectivity()
+          print(json.dumps({"connectivity": result}), file=sys.stderr)
+
+          if result["overall"] != "OK":
+              print(json.dumps({"connectivity": result, "byte_range_smoke_test": "SKIPPED (connectivity not OK)"}))
+              sys.exit(0)
+
+          cycle = aws_src.find_latest_available_cycle()
+          smoke = {"cycle": cycle.cycle_str if cycle else None}
+          try:
+              out_path = __import__("pathlib").Path("/tmp/aws_gfs_smoke.grib2")
+              manifest = aws_src.fetch_cycle_subset(cycle, 6, out_path,
+                                                     fields=[("CAPE", "surface")])
+              smoke["manifest"] = manifest
+              validation = aws_src.validate_grib(out_path)
+              smoke["grib_validation"] = validation
+              smoke["overall"] = "LIVE_VERIFIED" if validation.get("readable") else "BLOCKED"
+          except Exception as exc:
+              smoke["overall"] = "ERROR"
+              smoke["failure_reason"] = f"{type(exc).__name__}: {exc}"
+          print(json.dumps({"connectivity": result, "byte_range_smoke_test": smoke}))
+          PYEOF
+
       - name: Fetch GFS real-time data
         run: |
           SLOT_ARG=""
@@ -166,6 +228,28 @@ jobs:
       - name: Build canonical forecast
         run: python canonical_forecast_writer.py
 
+      - name: Generate unified SIH forecast artifact (TS/CB/FF, 992 cells x 5 leads)
+        id: unified_artifact
+        # 2026-10-06 production-plumbing pass (updated same day, Phase 3):
+        # this is the ONE authoritative production generator for
+        # data/unified_forecast.json (Priority 8). It attempts a real
+        # current-cycle GFS fetch for CB internally
+        # (scripts/gfs_live_cb_predictors.py: AWS Open Data mirror primary,
+        # NOMADS CGI secondary fallback); if both are unreachable from this
+        # runner it falls back HONESTLY to the fixed, validated cycle
+        # (status FIXED_VALIDATION_FALLBACK, never silently "LIVE"). See
+        # the "Preflight -- AWS Open Data GFS mirror" step above for an
+        # independent connectivity proof from this exact runner.
+        # The script's own atomic-write + reject-list means a malformed
+        # build can NEVER overwrite the last-known-good artifact already
+        # committed to the repo -- see scripts/phase34_build_unified_forecast.py.
+        # continue-on-error so a problem here never blocks the unrelated
+        # legacy VOBL dashboard deploy that the rest of this job produces;
+        # the step's own exit code (visible in the Action run log) still
+        # shows this clearly rather than silently looking green.
+        run: python scripts/phase34_build_unified_forecast.py
+        continue-on-error: true
+
       - name: Send WhatsApp alerts
         env:
           WORKER_URL: ${{ secrets.WORKER_URL }}
@@ -235,6 +319,7 @@ jobs:
             data/forecast_log.csv \
             data/alert_history.json \
             data/blr_terrain.json \
+            data/unified_forecast.json \
             2>/dev/null || true
           git diff --staged --quiet || \
             git commit -m "auto: forecast $(date -u '+%Y-%m-%d %H:%M UTC')"
@@ -287,9 +372,29 @@ jobs:
           echo "pages_dist top-level contents:"
           ls -la pages_dist
 
+      - name: Validate unified artifact before deploy (reject malformed/empty)
+        # Priority 8/15: a bad build of data/unified_forecast.json must
+        # never reach production. Uses the SAME validation keys
+        # scripts/phase34_build_unified_forecast.py computed and embedded
+        # in the artifact itself -- this is a second, independent gate
+        # right before deploy, not a re-implementation of that logic.
+        run: python3 scripts/ci_validate_unified_artifact.py pages_dist/data/unified_forecast.json
+
       - name: Deploy to Cloudflare Pages
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
           CLOUDFLARE_ACCOUNT_ID="d1ebec3d837d56d32a077b449a65f0c0" \
           npx wrangler@3.87.0 pages deploy pages_dist --project-name=sih-hyperlocal-warning --branch=main
+
+      - name: Post-deploy smoke test (public site actually serves the fresh artifact)
+        # Priority 10/13: catches a CDN/propagation-level failure the
+        # deploy step itself wouldn't see -- e.g. the Pages deploy
+        # "succeeds" but the edge is still serving a stale cached copy.
+        # continue-on-error: true because this is a diagnostic check, not
+        # a gate -- the deploy already happened by this point, and
+        # failing the whole scheduled job here would not undo it.
+        continue-on-error: true
+        run: |
+          sleep 15
+          python3 scripts/ci_smoke_test_deployed_site.py https://sih-hyperlocal-warning.pages.dev
