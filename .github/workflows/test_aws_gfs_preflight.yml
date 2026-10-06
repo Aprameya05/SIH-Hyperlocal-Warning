@@ -64,3 +64,72 @@ jobs:
           overall = "LIVE_VERIFIED" if validation.get("readable") else "BLOCKED"
           print(f"\n=== OVERALL: {overall} ===")
           PYEOF
+
+  full-pipeline-cb-fetch:
+    # Phase 1 (2026-10-06): the single-field smoke test above only
+    # proves the AWS primitive works on a real runner. This job proves
+    # the ACTUAL production code path that phase34_build_unified_forecast.py
+    # calls -- scripts/gfs_live_cb_predictors.py's full 992-cell x
+    # 8-lead fetch -- runs to completion on GitHub Actions within a
+    # practical time/resource budget. Still fully isolated: no checkout
+    # of secrets, no git commit/push, no Cloudflare deploy, no
+    # forecast_update.yml, no main. use_cache=False forces a genuine
+    # fresh fetch so the measured runtime is real, not a cache hit.
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: aws-gfs-preflight
+    steps:
+      - name: Checkout repository (read-only, no push back)
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install --no-cache-dir \
+            "requests>=2.31.0" "xarray>=2024.0.0" "cfgrib>=0.9.10" "eccodes>=1.6.0" \
+            "numpy>=1.24.0" "pandas>=2.0.0" "pyarrow>=14.0.0"
+
+      - name: Disk/memory baseline before fetch
+        run: |
+          echo "=== DISK (before) ==="; df -h /tmp .
+          echo "=== MEMORY (before) ==="; free -h
+
+      - name: Full 992-cell x 8-lead live CB predictor fetch (real runtime measurement)
+        run: |
+          python3 -c "
+          import json, sys, time
+          sys.path.insert(0, 'scripts')
+          import gfs_live_cb_predictors as cb
+
+          with open('data/pan_india_common_grid_992.json') as f:
+              grid = json.load(f)
+          cells = grid['cells']
+          print(f'cells loaded: {len(cells)}')
+
+          t0 = time.time()
+          result = cb.build_live_cb_longform_table(cells, use_cache=False)
+          wall_s = time.time() - t0
+
+          df = result.pop('dataframe')
+          print(json.dumps(result, indent=2))
+          print(f'wall_clock_elapsed_s: {wall_s:.1f}')
+          if df is not None:
+              print(f'dataframe shape: {df.shape}, unique cells: {df[\"cell_id\"].nunique()}')
+              missing_cols = [c for c in df.columns if df[c].isna().all()]
+              print(f'columns entirely NaN (never fabricated as 0): {missing_cols}')
+          overall = result.get('status')
+          print(f'=== FULL PIPELINE OVERALL: {overall} ===')
+          if overall == 'UNAVAILABLE':
+              sys.exit(1)
+          "
+
+      - name: Disk/memory baseline after fetch
+        if: always()
+        run: |
+          echo "=== DISK (after) ==="; df -h /tmp .
+          echo "=== MEMORY (after) ==="; free -h
