@@ -73,7 +73,7 @@ def test_health_never_reports_blocked_source_as_ready(client):
 # ---------------------------------------------------------------------------
 
 def test_forecast_vobl_cell_has_real_probability_and_shap(client):
-    r = client.get("/forecast", params={"cell_id": "IND_13.0_77.0", "lead_hours": 3})
+    r = client.get("/forecast", params={"cell_id": "IND_13.0_78.0", "lead_hours": 3})
     assert r.status_code == 200
     d = r.json()
     assert d["ts"]["probability"] is not None
@@ -101,7 +101,7 @@ def test_forecast_rejects_unknown_cell(client):
 
 
 def test_forecast_valid_time_lead_hours_arithmetic(client):
-    r = client.get("/forecast", params={"cell_id": "IND_13.0_77.0", "lead_hours": 4,
+    r = client.get("/forecast", params={"cell_id": "IND_13.0_78.0", "lead_hours": 4,
                                           "init_time": "2024-08-01T00:00:00Z"})
     d = r.json()
     assert d["valid_time"] == "2024-08-01T04:00:00Z"
@@ -109,13 +109,13 @@ def test_forecast_valid_time_lead_hours_arithmetic(client):
 
 
 def test_forecast_rejects_malformed_init_time(client):
-    r = client.get("/forecast", params={"cell_id": "IND_13.0_77.0", "lead_hours": 3,
+    r = client.get("/forecast", params={"cell_id": "IND_13.0_78.0", "lead_hours": 3,
                                           "init_time": "not-a-date"})
     assert r.status_code == 400
 
 
 def test_forecast_includes_data_sources_block(client):
-    d = client.get("/forecast", params={"cell_id": "IND_13.0_77.0", "lead_hours": 3}).json()
+    d = client.get("/forecast", params={"cell_id": "IND_13.0_78.0", "lead_hours": 3}).json()
     assert d["data_sources"] == SOURCE_STATUS
     assert d["forecast_source"] == "LIVE_INFERENCE"
 
@@ -140,7 +140,7 @@ def test_forecast_all_returns_4960_records(client):
 
 def test_forecast_all_schema_matches_single_forecast_endpoint_hazard_keys(client):
     artifact = client.get("/forecast/all").json()
-    single = client.get("/forecast", params={"cell_id": "IND_13.0_77.0", "lead_hours": 3}).json()
+    single = client.get("/forecast", params={"cell_id": "IND_13.0_78.0", "lead_hours": 3}).json()
     rec = artifact["records"][0]
     for hz in ("TS", "CB", "FF"):
         assert hz in rec
@@ -275,5 +275,5 @@ def test_xai_available_for_cb_with_complete_features(client):
 
 
 def test_xai_not_available_for_ff(client):
-    d = client.get("/forecast", params={"cell_id": "IND_13.0_77.0", "lead_hours": 3}).json()
+    d = client.get("/forecast", params={"cell_id": "IND_13.0_78.0", "lead_hours": 3}).json()
     assert d["ff"]["xai"]["status"] == "NOT_AVAILABLE"

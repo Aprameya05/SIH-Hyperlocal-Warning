@@ -6,28 +6,47 @@ Attempts genuine event-based flash-flood labeling from
 data/floodevents_indofloods.csv, generalized pan-India (NOT the old
 "blindly apply 200km-of-Bengaluru" approach).
 
-REAL FINDING (see docs/LABEL_ENGINE.md for full detail): there is no
-gauge-coordinate file anywhere in this repo. data/floodevents_indofloods.csv
-and data/precipitation_variables_indofloods.csv both lack lat/lon;
-data/catchment_characteristics_indofloods.csv (which would have carried
-gauge coordinates) does not exist. Without it, no INDOFLOODS event can be
-spatially assigned to any of the 992 canonical cells at all -- not just
-outside Bengaluru, everywhere, including Bengaluru itself.
+HISTORICAL FINDING, preserved for the record (see docs/LABEL_ENGINE.md,
+Phase 4, 2026-09-30): at that time, no gauge-coordinate file existed
+anywhere in this repo. data/floodevents_indofloods.csv and
+data/precipitation_variables_indofloods.csv both lacked lat/lon, and no
+file carrying real gauge coordinates was present, so no INDOFLOODS event
+could be spatially assigned to any of the 992 canonical cells.
 
-So this script does two honest things instead of one dishonest thing:
-  1. Marks every canonical cell UNKNOWN for genuine event-based FF (not
-     NEGATIVE_CONFIRMED -- the absence of an assignable event reflects a
-     missing coordinate file, not an absence of floods).
+CURRENT STATE, corrected 2026-10-06: this is SUPERSEDED. data/metadata_indofloods.csv
+(added after the above finding) carries real per-gauge Latitude/Longitude
+for all 214 INDOFLOODS gauges. scripts/map_indofloods_to_grid.py uses it
+to do genuine point-in-cell mapping, producing the authoritative,
+already-computed result: processed/indofloods/indofloods_grid_events.csv
+(4,548/4,548 events mapped, 155 unique gauges, 75 unique canonical cells,
+1965-2020). FF EVENT GEOLOCATION IS THEREFORE AVAILABLE, not impossible.
+step1_event_based_check() below now reads that authoritative output
+directly rather than re-deriving a coordinate-existence check against
+the wrong file (data/catchment_characteristics_indofloods.csv, which
+genuinely has no coordinates -- that part of the original finding is
+still true, it was just the wrong file to check for this purpose).
+
+The REMAINING real blocker for FF V2 is NOT geolocation -- it is
+historical GFS predictor coverage: of 2,791 unique real mapped event
+dates, only 2 overlap the 10 currently-archived historical GFS cycles,
+far below any reasonable training threshold (see scripts/train_flash_flood_v2.py).
+
+This script still does two honest things:
+  1. Reports the REAL event-based mapping status (available, with its
+     real counts) instead of a stale "impossible" claim.
   2. Separately computes a rainfall-only FF PROXY (reusing the exact
      fallback formula already in dev/Fetch_cb_ff_labels.py: 3-day
      cumulative >= 100mm AND daily >= 40mm), labeled label_status=
      PROXY_NOT_OBSERVED so nothing downstream can mistake it for an
-     observed flood.
+     observed flood -- this proxy remains in use because the genuine
+     event mapping, while now available, still only covers 75/992
+     cells and is not usable for live inference without the GFS
+     history the model actually needs.
 
-Output: processed/labels/ff_labels_proxy.csv (proxy only -- the UNKNOWN
-event-based result is summarized in ff_labels_summary.json since
-materializing "UNKNOWN" for 992 cells x ~4000 dates x 4 slots as full rows
-would be an 15M-row file with zero informational content).
+Output: processed/labels/ff_labels_proxy.csv (proxy only -- the real
+event-based mapping already lives in
+processed/indofloods/indofloods_grid_events.csv, produced by
+map_indofloods_to_grid.py; this script does not duplicate it).
 """
 import json
 import sys
@@ -51,7 +70,11 @@ CANON_STEP = 1.0
 
 RAIN_DIR = REPO_ROOT / "imd_rain" / "rain"
 FLOOD_EVENTS = REPO_ROOT / "data" / "floodevents_indofloods.csv"
-CATCHMENT_FILE = REPO_ROOT / "data" / "catchment_characteristics_indofloods.csv"
+# Authoritative event-geolocation output (scripts/map_indofloods_to_grid.py,
+# which reads the real per-gauge coordinates in data/metadata_indofloods.csv).
+# Checked directly here -- not re-derived -- per the "prefer the existing
+# path, do not create a duplicate competing implementation" principle.
+INDOFLOODS_GRID_EVENTS = REPO_ROOT / "processed" / "indofloods" / "indofloods_grid_events.csv"
 OUT_DIR = REPO_ROOT / "processed" / "labels"
 OUT_PATH = OUT_DIR / "ff_labels_proxy.csv"
 
@@ -88,23 +111,43 @@ def read_grd_year(path: Path, year: int):
 
 
 def step1_event_based_check():
-    """Verify, explicitly, that spatial assignment is impossible -- not
-    assumed, checked directly against the real files."""
+    """Checks event-based spatial assignment status directly against the
+    REAL authoritative mapping output (processed/indofloods/indofloods_grid_events.csv,
+    produced by scripts/map_indofloods_to_grid.py from the real per-gauge
+    coordinates in data/metadata_indofloods.csv) -- not re-derived from a
+    coordinate-existence heuristic, and not assumed from history. If that
+    authoritative output is ever missing, this honestly reports BLOCKED
+    rather than silently falling back to a weaker check."""
     fe = pd.read_csv(FLOOD_EVENTS)
-    has_latlon_in_events = any("lat" in c.lower() or "lon" in c.lower() for c in fe.columns)
-    catchment_exists = CATCHMENT_FILE.exists()
     n_events = len(fe)
     n_gauges = fe["EventID"].str.extract(r"gauge-(\d+)")[0].nunique()
+
+    if not INDOFLOODS_GRID_EVENTS.exists():
+        return {
+            "n_indofloods_events": n_events,
+            "n_unique_gauges": int(n_gauges),
+            "genuine_spatial_assignment_possible": False,
+            "conclusion": (
+                f"BLOCKED -- authoritative mapping output {INDOFLOODS_GRID_EVENTS} not found; "
+                f"run scripts/map_indofloods_to_grid.py first"
+            ),
+        }
+    mapped = pd.read_csv(INDOFLOODS_GRID_EVENTS)
+    n_mapped = int((mapped["mapping_status"] == "MAPPED").sum())
     return {
         "n_indofloods_events": n_events,
         "n_unique_gauges": int(n_gauges),
-        "floodevents_csv_has_latlon_columns": has_latlon_in_events,
-        "catchment_file_exists": catchment_exists,
-        "genuine_spatial_assignment_possible": has_latlon_in_events or catchment_exists,
+        "n_events_mapped_to_canonical_cells": n_mapped,
+        "n_unique_gauges_mapped": int(mapped.loc[mapped["mapping_status"] == "MAPPED", "GaugeID"].nunique()),
+        "n_unique_canonical_cells_with_events": int(mapped.loc[mapped["mapping_status"] == "MAPPED", "cell_id"].nunique()),
+        "genuine_spatial_assignment_possible": n_mapped > 0,
         "conclusion": (
-            "IMPOSSIBLE -- no coordinate source exists for any INDOFLOODS gauge in this repo"
-            if not (has_latlon_in_events or catchment_exists)
-            else "possible -- re-run with real assignment logic"
+            f"AVAILABLE -- {n_mapped}/{len(mapped)} INDOFLOODS events genuinely mapped to canonical "
+            f"cells via data/metadata_indofloods.csv real gauge coordinates "
+            f"(scripts/map_indofloods_to_grid.py). The remaining FF V2 blocker is historical GFS "
+            f"predictor coverage, not geolocation -- see scripts/train_flash_flood_v2.py."
+            if n_mapped > 0 else
+            "BLOCKED -- mapping output exists but contains no MAPPED rows"
         ),
     }
 
@@ -181,10 +224,15 @@ def main():
 
     summary = {
         "genuine_event_based_ff": {
-            "status": "UNKNOWN for all 992 cells, all timestamps",
+            "status": ("AVAILABLE -- see processed/indofloods/indofloods_grid_events.csv for the real "
+                       "per-event cell mapping (not materialized here)"
+                       if check.get("genuine_spatial_assignment_possible")
+                       else "UNKNOWN for all 992 cells, all timestamps"),
             "reason": check["conclusion"],
             "n_indofloods_events_in_source_file": check["n_indofloods_events"],
             "n_unique_gauges_in_source_file": check["n_unique_gauges"],
+            "n_events_mapped_to_canonical_cells": check.get("n_events_mapped_to_canonical_cells"),
+            "n_unique_canonical_cells_with_events": check.get("n_unique_canonical_cells_with_events"),
         },
         "rainfall_proxy_ff": {
             "status": "PROXY_NOT_OBSERVED -- not a real flood observation",

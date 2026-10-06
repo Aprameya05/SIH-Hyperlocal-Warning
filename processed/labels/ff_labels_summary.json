@@ -1,9 +1,11 @@
 {
   "genuine_event_based_ff": {
-    "status": "UNKNOWN for all 992 cells, all timestamps",
-    "reason": "IMPOSSIBLE -- no coordinate source exists for any INDOFLOODS gauge in this repo",
+    "status": "AVAILABLE -- see processed/indofloods/indofloods_grid_events.csv for the real per-event cell mapping (not materialized here)",
+    "reason": "AVAILABLE -- 4548/4548 INDOFLOODS events genuinely mapped to canonical cells via data/metadata_indofloods.csv real gauge coordinates (scripts/map_indofloods_to_grid.py). The remaining FF V2 blocker is historical GFS predictor coverage, not geolocation -- see scripts/train_flash_flood_v2.py.",
     "n_indofloods_events_in_source_file": 4548,
-    "n_unique_gauges_in_source_file": 155
+    "n_unique_gauges_in_source_file": 155,
+    "n_events_mapped_to_canonical_cells": 4548,
+    "n_unique_canonical_cells_with_events": 75
   },
   "rainfall_proxy_ff": {
     "status": "PROXY_NOT_OBSERVED -- not a real flood observation",
