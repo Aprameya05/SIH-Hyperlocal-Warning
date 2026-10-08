@@ -52,6 +52,11 @@ class CBHead(BaseHead):
     def predict(self, features_df: pd.DataFrame, calibrated: bool = True) -> np.ndarray:
         return self._model.predict_proba(features_df, calibrated=calibrated)
 
+    def predict_contribs(self, features_df: pd.DataFrame, top_n: int = 5) -> list[dict]:
+        """2026-10-08: real per-prediction XAI, one entry per row of
+        features_df. See PanIndiaCBModel.predict_contribs for the method."""
+        return self._model.predict_contribs(features_df, top_n=top_n)
+
     def describe(self) -> dict:
         d = self._model.describe()
         d["head_name"] = self.head_name

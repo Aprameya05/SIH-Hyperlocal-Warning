@@ -22,8 +22,14 @@ feature engineering -- the documented contract is "give me a dataframe
 with these exact feature_list.json columns, get back a calibrated
 cloudburst probability per row."
 
-This module is NOT wired into backend/pipeline.py or any production path.
-It is research/historical-model code only.
+2026-10-08 correction: this module IS now the live CB head used by
+backend/models/unified_mtl/heads.py's CBHead (which production's
+backend/models/unified_mtl/inference_engine.py calls for every CB
+prediction in scripts/phase34_build_unified_forecast.py). The
+"NOT wired into any production path" claim below is now stale --
+left in place only as a dated note of this module's original scope
+at creation, not a current status claim. See describe() for the
+current, accurate status string.
 """
 from __future__ import annotations
 
@@ -76,6 +82,40 @@ class PanIndiaCBModel:
             return self.calibrator.predict(raw_probs)
         return raw_probs
 
+    def predict_contribs(self, features_df: pd.DataFrame, top_n: int = 5) -> list[dict]:
+        """2026-10-08 (Phase 11, real per-prediction XAI): returns, for
+        each row, the top_n features with the largest |contribution| to
+        this specific prediction's raw margin -- computed via XGBoost's
+        own built-in pred_contribs=True (Shapley values for tree models,
+        exact and additive: sum(contribs) + bias == raw margin for that
+        row). Deliberately NOT the `shap` package -- same mathematical
+        result for a tree model, but avoids adding another native
+        C-extension to the exact class of library (xgboost+shap
+        combination) that caused the real exit-134 double-free crash
+        this pipeline already hit once."""
+        missing = [c for c in self.feature_cols if c not in features_df.columns]
+        if missing:
+            raise ValueError(f"features_df is missing required columns: {missing}")
+        X = features_df[self.feature_cols]
+        dmat = xgb.DMatrix(X, missing=np.nan)
+        contribs = self.model.predict(dmat, pred_contribs=True)  # shape (n_rows, n_features + 1)
+        bias = contribs[:, -1]
+        feature_contribs = contribs[:, :-1]
+        out = []
+        for row_idx in range(feature_contribs.shape[0]):
+            row = feature_contribs[row_idx]
+            order = np.argsort(-np.abs(row))[:top_n]
+            out.append({
+                "top_contributing_features": [
+                    {"feature": self.feature_cols[j], "contribution": float(row[j]),
+                     "direction": "increases_risk" if row[j] > 0 else "decreases_risk"}
+                    for j in order
+                ],
+                "bias_term": float(bias[row_idx]),
+                "method": "xgboost_pred_contribs (exact Shapley values for tree models)",
+            })
+        return out
+
     def describe(self) -> dict:
         """Returns the model's identity/provenance -- intended for an MTL
         wrapper or an audit log to record which head version produced a
@@ -85,7 +125,12 @@ class PanIndiaCBModel:
             "artifact": self.name,
             "trained_on": "data/external/historical_gfs/phase20_full_predictor_dataset.csv (Phase 20, 10 cycles)",
             "n_feature_cols": len(self.feature_cols),
-            "status": "HISTORICAL/RESEARCH MODEL -- not deployed to production inference",
+            "status": "LIVE PRODUCTION MODEL (2026-10-08 correction) -- this is the CB head actually "
+                      "called by backend/models/unified_mtl/heads.py:CBHead for every pan-India "
+                      "cloudburst prediction in scripts/phase34_build_unified_forecast.py. The daily-"
+                      "resolution (not genuinely lead-aware) caveat still applies -- see "
+                      "docs/PHASE_21_PANINDIA_CB_MODEL.md -- this status string is about deployment, "
+                      "not about lead-time granularity.",
             "intended_role": "one head (CB) of a future shared-encoder TS/CB/FF multi-task architecture; "
                               "this head is currently an independent tabular model, NOT yet connected to a shared encoder",
         }
