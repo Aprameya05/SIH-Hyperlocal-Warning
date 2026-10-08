@@ -241,6 +241,18 @@ class UnifiedInferenceEngine:
         except Exception as exc:  # noqa: BLE001
             return self._unavailable("CB", cell_id, init_time_utc, valid_time_utc, lead_hours,
                                       reason=f"{type(exc).__name__}: {exc}")
+        extra = {"daily_resolution_caveat":
+                 "Trained against a DAILY cloudburst label (IMD >=64.5mm/day). All 5 lead slots "
+                 "repeat the same daily-resolution snapshot per Phase 33 audit -- this is NOT a "
+                 "genuine sub-daily 2-6h cloudburst forecast."}
+        # 2026-10-08 (Phase 11): real per-prediction XAI, not a static
+        # global-importance number repeated for every record. XAI failure
+        # must degrade gracefully and never take down the forecast itself.
+        try:
+            contribs = head.predict_contribs(features_df, top_n=5)[0]
+            extra["xai"] = contribs
+        except Exception as exc:  # noqa: BLE001
+            extra["xai"] = {"available": False, "reason": f"{type(exc).__name__}: {exc}"}
         return HazardPrediction(
             hazard="CB", cell_id=cell_id, init_time=_iso(init_time_utc), valid_time=_iso(valid_time_utc),
             lead_hours=lead_hours, probability=p,
@@ -250,10 +262,7 @@ class UnifiedInferenceEngine:
             provenance="DERIVED",
             confidence="MODERATE (LODO AUROC=0.7542 calibrated, pooled across 5 held-out dates; "
                        "see docs/PHASE_21_PANINDIA_CB_MODEL.md)",
-            extra={"daily_resolution_caveat":
-                   "Trained against a DAILY cloudburst label (IMD >=64.5mm/day). All 5 lead slots "
-                   "repeat the same daily-resolution snapshot per Phase 33 audit -- this is NOT a "
-                   "genuine sub-daily 2-6h cloudburst forecast."},
+            extra=extra,
         )
 
     # ------------------------------------------------------------------
