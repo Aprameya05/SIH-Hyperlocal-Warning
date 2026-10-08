@@ -165,8 +165,13 @@ def test_forecast_all_992_unique_cells_5_leads_each(client):
 # ---------------------------------------------------------------------------
 
 def test_forecast_sources_matches_documented_statuses(client):
+    # 2026-10-08 correction: terrain acquisition has since achieved
+    # genuine 992/992 real SRTM coverage (confirmed against
+    # data/pan_india_terrain_992.json, not assumed) -- "353_OF_992" was
+    # accurate when this test was written but went stale as terrain
+    # work continued; see backend/unified_api.py's SOURCE_STATUS note.
     d = client.get("/forecast/sources").json()
-    assert d["data_sources"]["DEM"] == "353_OF_992"
+    assert d["data_sources"]["DEM"] == "992_OF_992"
     assert d["data_sources"]["Hydrology"] == "75_OF_992"
     assert d["data_sources"]["Himawari"] == "B13_ONLY"
     assert d["data_sources"]["METAR"] == "VOBL_VOBG"
