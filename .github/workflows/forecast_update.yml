@@ -368,6 +368,20 @@ jobs:
           }
 
       - name: Build Cloudflare Pages deployment directory
+        # 2026-10-08 fix (real production outage, run 37727128213):
+        # scripts/phase34_build_unified_forecast.py crashed with
+        # ModuleNotFoundError (a dependency that was never committed to
+        # git -- now fixed separately) and the pipeline still proceeded
+        # all the way to attempting a deploy. Gating this step (and
+        # every step after it through the post-deploy smoke test) on
+        # steps.unified_artifact.outcome == 'success' makes that
+        # architecturally impossible going forward: a failed unified
+        # build now stops the ENTIRE deploy, not just the one file --
+        # per explicit instruction not to publish anything when the
+        # pipeline had a partial failure, even though
+        # data/unified_forecast.json itself was already protected from
+        # corruption (last-known-good preserved; see the commit step).
+        if: steps.unified_artifact.outcome == 'success'
         run: |
           set -e
           rm -rf pages_dist
@@ -395,6 +409,10 @@ jobs:
             --exclude='/worker/' \
             --exclude='/SIH_*/' \
             --exclude='/data/external/' \
+            --exclude='/data/_gfs_live_cb_cache/' \
+            --exclude='/data/_gfs_live_tmp/' \
+            --exclude='/data/_terrain_tile_cache/' \
+            --exclude='/data/_location_geocode_cache.json' \
             ./ pages_dist/
           echo "Oversized files remaining in pages_dist (must be empty):"
           find pages_dist -type f -size +25M
@@ -413,9 +431,11 @@ jobs:
         # scripts/phase34_build_unified_forecast.py computed and embedded
         # in the artifact itself -- this is a second, independent gate
         # right before deploy, not a re-implementation of that logic.
+        if: steps.unified_artifact.outcome == 'success'
         run: python3 scripts/ci_validate_unified_artifact.py pages_dist/data/unified_forecast.json
 
       - name: Deploy to Cloudflare Pages
+        if: steps.unified_artifact.outcome == 'success'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
@@ -429,6 +449,7 @@ jobs:
         # continue-on-error: true because this is a diagnostic check, not
         # a gate -- the deploy already happened by this point, and
         # failing the whole scheduled job here would not undo it.
+        if: steps.unified_artifact.outcome == 'success'
         continue-on-error: true
         run: |
           sleep 15
