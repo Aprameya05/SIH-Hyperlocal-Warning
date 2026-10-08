@@ -63,6 +63,47 @@ COMMON_GRID_PATH = REPO_ROOT / "data" / "pan_india_common_grid_992.json"
 # UNAVAILABLE are never eligible, regardless of generated_at_utc.
 LIVE_SOURCE_STATUSES = {"LIVE", "RECENT", "LIVE_AWS_GFS", "LIVE_NOMADS_GFS", "MIXED_LIVE_SOURCES"}
 
+# 2026-10-08 (Phase 9, freshness enforcement): the LIVE_SOURCE_STATUSES
+# comment above used to say "regardless of generated_at_utc" -- that was
+# an accurate description of a real gap, not a design choice: a
+# source_status string is frozen at artifact-GENERATION time by
+# scripts/phase34_build_unified_forecast.py, but every endpoint below
+# was serving it unchanged no matter how long the artifact had been
+# sitting on disk since then. If the scheduled GitHub Actions run stops
+# firing (cron outage, manual pause) for e.g. 2 days, every endpoint
+# would keep reporting "LIVE_AWS_GFS" on data that is genuinely 2 days
+# stale -- exactly what "never present an old artifact as LIVE" forbids.
+# GFS cycles are nominally produced every 6h and this pipeline is
+# scheduled ~5x/day (see .github/workflows/forecast_update.yml); twice
+# that cadence is a defensible, documented floor for "no longer
+# current," not an arbitrary number.
+ARTIFACT_STALE_AFTER_HOURS = 12.0
+
+
+def _reapply_request_time_freshness(artifact: dict, hazard_block: dict) -> dict:
+    """Returns hazard_block with source_status downgraded to 'STALE' if
+    the ARTIFACT itself (not just this one hazard) is older than
+    ARTIFACT_STALE_AFTER_HOURS, measured against wall-clock now at
+    REQUEST time -- not at the time the artifact was generated. The
+    original value is preserved under original_source_status so nothing
+    is destroyed, only relabeled. Never upgrades a status, only ever
+    downgrades toward STALE."""
+    generated_at = artifact.get("generated_at_utc")
+    if not generated_at or hazard_block.get("source_status") not in LIVE_SOURCE_STATUSES:
+        return hazard_block
+    try:
+        generated_dt = datetime.strptime(generated_at, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+    except ValueError:
+        return hazard_block
+    age_hours = (datetime.now(timezone.utc) - generated_dt).total_seconds() / 3600.0
+    if age_hours <= ARTIFACT_STALE_AFTER_HOURS:
+        return hazard_block
+    out = dict(hazard_block)
+    out["original_source_status"] = hazard_block.get("source_status")
+    out["source_status"] = "STALE"
+    out["artifact_age_hours"] = round(age_hours, 1)
+    return out
+
 # ---------------------------------------------------------------------------
 # Real, documented source status -- never hidden or upgraded (Phase 35 Part 11)
 # ---------------------------------------------------------------------------
@@ -72,7 +113,12 @@ SOURCE_STATUS = {
              "(FULL_IMERG_ARCHIVE_NOT_ACQUIRED, AUTOMATED_IMERG_ACQUISITION_BLOCKED)",
     "Himawari": "B13_ONLY",
     "METAR": "VOBL_VOBG",
-    "DEM": "353_OF_992",
+    # 2026-10-08 correction: terrain acquisition has since achieved
+    # genuine 992/992 real SRTM coverage -- confirmed directly against
+    # data/pan_india_terrain_992.json's terrain_status field, not
+    # assumed. The "353_OF_992" value here was accurate when written
+    # but had gone stale as terrain coverage work continued.
+    "DEM": "992_OF_992",
     "Hydrology": "75_OF_992",
     "IMDAA": "BLOCKED_CREDENTIAL",
     "INSAT": "BLOCKED_CREDENTIAL",
@@ -338,7 +384,9 @@ def resolve_location(q: str = Query(..., description="Free-text location, e.g. '
         return response
     response["hazards"] = {
         "lead_hours": lead_hours, "init_time": rec["init_time"], "valid_time": rec["valid_time"],
-        "TS": rec["TS"], "CB": rec["CB"], "FF": rec["FF"],
+        "TS": _reapply_request_time_freshness(artifact, rec["TS"]),
+        "CB": _reapply_request_time_freshness(artifact, rec["CB"]),
+        "FF": _reapply_request_time_freshness(artifact, rec["FF"]),
     }
     return response
 
@@ -482,6 +530,9 @@ def get_forecast_all():
     with open(UNIFIED_FORECAST_PATH) as f:
         artifact = json.load(f)
     artifact["forecast_source"] = "OFFLINE_ARTIFACT"
+    for rec in artifact["records"]:
+        for hz in ("TS", "CB", "FF"):
+            rec[hz] = _reapply_request_time_freshness(artifact, rec[hz])
     return artifact
 
 
@@ -519,7 +570,8 @@ def get_forecast_alerts(min_risk: str = Query("HIGH")):
                 continue  # NEVER: an unavailable/NOT_TRAINED hazard triggers an alert
             if cat not in order or order[cat] < threshold_rank:
                 continue
-            source_status = r[hz].get("source_status")
+            hz_block = _reapply_request_time_freshness(artifact, r[hz])
+            source_status = hz_block.get("source_status")
             alert_eligible = source_status in LIVE_SOURCE_STATUSES
             candidates.append({
                 "alert_id": None,  # assigned only on actual dispatch (log_alert autoincrement)
@@ -564,7 +616,7 @@ def dispatch_forecast_alert(req: DispatchRequest):
                 if r["cell_id"] == req.cell_id and r["lead_hours"] == req.lead_hours), None)
     if rec is None:
         raise HTTPException(status_code=404, detail="no matching forecast record")
-    hz = rec[req.hazard]
+    hz = _reapply_request_time_freshness(artifact, rec[req.hazard])
     if hz["probability"] is None or hz["status"] in ("NOT_TRAINED", "OUT_OF_DOMAIN_STATION_ONLY", "UNAVAILABLE"):
         raise HTTPException(status_code=422,
                              detail=f"{req.hazard} has no legitimate probability for this cell/lead "
