@@ -245,7 +245,13 @@ def main():
                        "extra": cb_pred.extra, "value_type": "probability",
                        "source_cycle": cb_cycle_date_used, "source_status": cb_source_status,
                        "cb_init_time_utc": _iso(cb_init_time_used), "cb_valid_time_utc": _iso(cb_valid_time),
-                       "lead_time_resolution": "DAILY_AGGREGATE_NOT_LEAD_SPECIFIC"},
+                       "lead_time_resolution": "DAILY_AGGREGATE_NOT_LEAD_SPECIFIC",
+                       # 2026-10-08: promoted to top-level (not just nested
+                       # under "extra") so index.html's existing h.xai
+                       # rendering -- written for the live /forecast
+                       # endpoint's _hazard_block shape -- picks this up
+                       # for the batch artifact path too, unchanged.
+                       "xai": cb_pred.extra.get("xai")},
                 "FF": {"probability": ff_pred.probability, "risk_category": ff_pred.risk_category,
                        "status": ff_pred.status, "model_version": ff_pred.model_version,
                        "provenance": ff_pred.provenance, "confidence": ff_pred.confidence,

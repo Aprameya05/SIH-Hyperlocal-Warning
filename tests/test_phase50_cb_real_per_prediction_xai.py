@@ -64,18 +64,19 @@ class TestRealPerPredictionXAI:
         out = m.predict_contribs(X, top_n=5)
         assert len(out) == 3
         for row in out:
-            assert len(row["top_contributing_features"]) == 5
-            for feat in row["top_contributing_features"]:
+            assert row["status"] == "AVAILABLE"
+            assert len(row["top_contributions"]) == 5
+            for feat in row["top_contributions"]:
                 assert feat["feature"] in m.feature_cols
-                assert feat["direction"] in ("increases_risk", "decreases_risk")
+                assert feat["provenance"] == "DERIVED"
                 assert isinstance(feat["contribution"], float)
 
-    def test_top_contributing_features_are_sorted_by_real_magnitude(self):
+    def test_top_contributions_are_sorted_by_real_magnitude(self):
         m = self._model()
         rng = np.random.default_rng(3)
         X = pd.DataFrame(rng.random((1, len(m.feature_cols))) * 10, columns=m.feature_cols)
         row = m.predict_contribs(X, top_n=5)[0]
-        mags = [abs(f["contribution"]) for f in row["top_contributing_features"]]
+        mags = [abs(f["contribution"]) for f in row["top_contributions"]]
         assert mags == sorted(mags, reverse=True)
 
     def test_inference_engine_predict_cb_populates_real_xai_in_extra(self):
@@ -89,7 +90,8 @@ class TestRealPerPredictionXAI:
         pred = eng.predict_cb("TEST_CELL", 2, datetime.now(timezone.utc), X)
         assert pred.probability is not None
         assert "xai" in pred.extra
-        assert "top_contributing_features" in pred.extra["xai"]
+        assert pred.extra["xai"]["status"] == "AVAILABLE"
+        assert "top_contributions" in pred.extra["xai"]
 
     def test_xai_failure_degrades_gracefully_without_corrupting_the_forecast(self):
         """Mandate requirement: 'XAI failure must degrade gracefully
@@ -109,5 +111,5 @@ class TestRealPerPredictionXAI:
             pred = eng.predict_cb("TEST_CELL", 2, datetime.now(timezone.utc), X)
 
         assert pred.probability is not None, "a real prediction must still be produced even if XAI crashes"
-        assert pred.extra["xai"]["available"] is False
+        assert pred.extra["xai"]["status"] == "NOT_AVAILABLE"
         assert "simulated XAI failure" in pred.extra["xai"]["reason"]
