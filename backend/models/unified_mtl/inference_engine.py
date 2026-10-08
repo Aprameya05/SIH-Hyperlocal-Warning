@@ -248,11 +248,15 @@ class UnifiedInferenceEngine:
         # 2026-10-08 (Phase 11): real per-prediction XAI, not a static
         # global-importance number repeated for every record. XAI failure
         # must degrade gracefully and never take down the forecast itself.
+        # Shape matches local_xai.py's local_shap_cb contract exactly
+        # (status/method/top_contributions) -- see predict_contribs'
+        # docstring -- so scripts/phase34_build_unified_forecast.py can
+        # promote this to the record's top-level "xai" field and
+        # index.html's existing h.xai rendering picks it up unchanged.
         try:
-            contribs = head.predict_contribs(features_df, top_n=5)[0]
-            extra["xai"] = contribs
+            extra["xai"] = head.predict_contribs(features_df, top_n=5)[0]
         except Exception as exc:  # noqa: BLE001
-            extra["xai"] = {"available": False, "reason": f"{type(exc).__name__}: {exc}"}
+            extra["xai"] = {"status": "NOT_AVAILABLE", "reason": f"{type(exc).__name__}: {exc}"}
         return HazardPrediction(
             hazard="CB", cell_id=cell_id, init_time=_iso(init_time_utc), valid_time=_iso(valid_time_utc),
             lead_hours=lead_hours, probability=p,

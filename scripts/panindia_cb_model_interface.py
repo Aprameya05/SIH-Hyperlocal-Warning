@@ -84,15 +84,22 @@ class PanIndiaCBModel:
 
     def predict_contribs(self, features_df: pd.DataFrame, top_n: int = 5) -> list[dict]:
         """2026-10-08 (Phase 11, real per-prediction XAI): returns, for
-        each row, the top_n features with the largest |contribution| to
-        this specific prediction's raw margin -- computed via XGBoost's
-        own built-in pred_contribs=True (Shapley values for tree models,
-        exact and additive: sum(contribs) + bias == raw margin for that
-        row). Deliberately NOT the `shap` package -- same mathematical
-        result for a tree model, but avoids adding another native
-        C-extension to the exact class of library (xgboost+shap
-        combination) that caused the real exit-134 double-free crash
-        this pipeline already hit once."""
+        each row, a dict in the SAME contract as
+        backend/models/unified_mtl/local_xai.py's local_shap_cb (the
+        live single-request XAI path, and what index.html's `h.xai`
+        rendering actually expects: {status, method, top_contributions:
+        [{feature, value, contribution, provenance}]}) -- so the batch
+        pipeline's XAI is visible to the same frontend code, not a
+        second incompatible shape nothing reads.
+
+        Computed via XGBoost's own built-in pred_contribs=True
+        (Shapley values for tree models, exact and additive:
+        sum(contribs) + bias == raw margin for that row). Deliberately
+        NOT the `shap` package -- same mathematical result for a tree
+        model, but avoids adding another native C-extension to the
+        exact class of library (xgboost+shap combination) that caused
+        the real exit-134 double-free crash this pipeline already hit
+        once."""
         missing = [c for c in self.feature_cols if c not in features_df.columns]
         if missing:
             raise ValueError(f"features_df is missing required columns: {missing}")
@@ -101,18 +108,21 @@ class PanIndiaCBModel:
         contribs = self.model.predict(dmat, pred_contribs=True)  # shape (n_rows, n_features + 1)
         bias = contribs[:, -1]
         feature_contribs = contribs[:, :-1]
+        method = "xgboost pred_contribs (exact Shapley values for tree models, local per-prediction)"
         out = []
         for row_idx in range(feature_contribs.shape[0]):
             row = feature_contribs[row_idx]
             order = np.argsort(-np.abs(row))[:top_n]
             out.append({
-                "top_contributing_features": [
-                    {"feature": self.feature_cols[j], "contribution": float(row[j]),
-                     "direction": "increases_risk" if row[j] > 0 else "decreases_risk"}
+                "status": "AVAILABLE",
+                "method": method,
+                "top_contributions": [
+                    {"feature": self.feature_cols[j],
+                     "value": float(X.iloc[row_idx, j]) if not pd.isna(X.iloc[row_idx, j]) else None,
+                     "contribution": float(row[j]), "provenance": "DERIVED"}
                     for j in order
                 ],
                 "bias_term": float(bias[row_idx]),
-                "method": "xgboost_pred_contribs (exact Shapley values for tree models)",
             })
         return out
 
