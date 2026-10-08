@@ -306,6 +306,7 @@ class UnifiedInferenceEngine:
                                       reason="feature row produced a non-finite PU score (incomplete "
                                              "catchment/rainfall inputs) -- refusing to report it as a value",
                                       status="PU_RANKING")
+        from local_xai import local_xai_ff
         return HazardPrediction(
             hazard="FF", cell_id=cell_id, init_time=_iso(init_time_utc), valid_time=_iso(valid_time_utc),
             lead_hours=lead_hours,
@@ -316,9 +317,16 @@ class UnifiedInferenceEngine:
             provenance="DERIVED",
             confidence="LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- "
                        "see heads.py::FFHead.describe())",
+            # 2026-10-08: top-level "xai" key for interface consistency
+            # with TS/CB (both now populate this). local_xai_ff() is
+            # honestly always NOT_AVAILABLE -- no valid SHAP/linear-
+            # attribution story exists for this PU-logistic model (see
+            # local_xai.py's module docstring) -- this is a real,
+            # correctly-labeled non-result, not a fabricated one.
             extra={"pu_ranking_score": pu_score,
                    "note": "This is a ranking score, not a calibrated P(flood). risk_category is "
-                           "NOT_AVAILABLE because no confirmed-negative-based probability exists."},
+                           "NOT_AVAILABLE because no confirmed-negative-based probability exists.",
+                   "xai": local_xai_ff()},
         )
 
     @staticmethod
