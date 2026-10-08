@@ -1,0 +1,23 @@
+{
+  "status": "INFRASTRUCTURE_ONLY_NOT_TRAINED",
+  "date": "2026-10-06",
+  "reason_not_trained": "Checked the actual overlap between INDOFLOODS event dates (processed/indofloods/indofloods_grid_events.csv, 4548 rows, 2791 unique dates, 1965-2020, 75 mapped cells) and the real archived GFS cycles present at D:\\SIH-Hyperlocal-Warning-GFS (25 distinct cycle dates, 2015-2024). Only 5 event-rows (1 unique date, 2018-07-15, 3 unique cells) land on a date with real archived GFS data. This is not enough positive coverage, and there is no corresponding real negative-day GFS coverage, to train a leakage-safe, generalizable dynamic-feature flood model -- training on 5 rows would overfit and not validate honestly.",
+  "what_is_needed_before_v2_can_train": [
+    "A GFS archive (or live NOMADS access during a real operational window) covering many of the 2791 real event dates across the 75 mapped cells, OR",
+    "A forward-looking data collection plan: start archiving current GFS cycles now (the current_cycle_cb_fetcher.py infrastructure already does this for CB) and accumulate enough real current-cycle days with and without flood events at these cells to train V2 prospectively.",
+    "Negative (non-flood) days at the same 75 cells, matched for season, to avoid an all-positive training set."
+  ],
+  "2026-10-08_update_aws_gfs_dead_end_confirmed": {
+    "hypothesis_tested": "Whether the public AWS Open Data GFS mirror (s3://noaa-gfs-bdp-pds, scripts/gfs_aws_source.py -- the same source now confirmed working for LIVE CB acquisition) could be queried for HISTORICAL cycles around the 395 INDOFLOODS event dates that fall on/after 2015-02-01 (the 0.25-degree operational GFS's earliest possible existence), as an alternative to the local D:\\ archive referenced above.",
+    "method": "Live HTTPS S3 ListBucket queries (?list-type=2&prefix=gfs.<YYYYMMDD>/00/) against noaa-gfs-bdp-pds.s3.amazonaws.com -- not inferred, not assumed.",
+    "result": "The bucket's real retention floor is 2021-01-01 (KeyCount=0 for 2020-12-15 and earlier dates tested; KeyCount=1 for 2021-01-01 onward). Re-filtering processed/indofloods/indofloods_grid_events.csv for Start Date >= 2021-01-01 returns ZERO unique event dates -- the INDOFLOODS dataset's events end in 2020, entirely before this bucket's retention window begins.",
+    "conclusion": "DEAD END, confirmed with live evidence, not merely assumed: the AWS GFS operational mirror cannot be used to backfill historical dynamic features for any existing INDOFLOODS event, no matter how much of it is downloaded. This route is closed, not still-open-but-unfinished.",
+    "the_real_remaining_option": "ERA5 reanalysis (ECMWF Copernicus Climate Data Store, free/public, hourly, 1940-present, 0.25-degree) is the only free/public source identified so far whose temporal coverage genuinely overlaps the 2791 INDOFLOODS event dates (1965-2020). It has NOT been acquired or integrated yet -- this is the next concrete step for FF V2's dynamic-feature gap, not the AWS GFS path above, which is closed."
+  },
+  "infrastructure_completed": [
+    "scripts/train_flash_flood_v2.py -- leakage-safe training pipeline skeleton, ready to run once data above exists",
+    "Feature provenance classification reused from ff_feature_adapter.FF_FEATURE_PROVENANCE",
+    "This directory reserved for the versioned model artifact once trained"
+  ],
+  "until_trained": "The existing RESEARCH_ONLY_model_c_logistic (PU-corrected, risk_score output) remains the only FF model in production. FF V2 is NOT integrated into backend/unified_api.py or scripts/phase34_build_unified_forecast.py."
+}
