@@ -208,6 +208,19 @@ class UnifiedInferenceEngine:
         except Exception as exc:  # noqa: BLE001
             return self._unavailable("TS", cell_id, init_time_utc, valid_time_utc, lead_hours,
                                       reason=f"{type(exc).__name__}: {exc}")
+        extra = {"ts_status": head.describe().get("ts_status"), "lead_time_caveat":
+                 "All 5 lead slots reuse the same daily-resolution station features; no "
+                 "sub-daily-labeled lead-time model exists (Phase 33 audit)."}
+        # 2026-10-08 (Phase 11/14): same real per-prediction XAI CB
+        # already has, reusing local_shap_ts directly (same contract
+        # the live /forecast endpoint's _hazard_block already uses) so
+        # this is visible to index.html's existing h.xai rendering the
+        # same way CB's now is -- not a second, incompatible shape.
+        try:
+            from local_xai import local_shap_ts
+            extra["xai"] = local_shap_ts(head, features_df)
+        except Exception as exc:  # noqa: BLE001
+            extra["xai"] = {"status": "NOT_AVAILABLE", "reason": f"{type(exc).__name__}: {exc}"}
         return HazardPrediction(
             hazard="TS", cell_id=cell_id, init_time=_iso(init_time_utc), valid_time=_iso(valid_time_utc),
             lead_hours=lead_hours, probability=p,
@@ -216,9 +229,7 @@ class UnifiedInferenceEngine:
             model_version="models/thunderstorm_model.pkl (Phase 25, VOBL station, time-split-validated)",
             provenance="DERIVED", confidence="MODERATE (single-station daily-feature model; "
                                               "AUROC=0.8715 on 1,001 held-out days, see heads.py::TSHead.describe())",
-            extra={"ts_status": head.describe().get("ts_status"), "lead_time_caveat":
-                   "All 5 lead slots reuse the same daily-resolution station features; no "
-                   "sub-daily-labeled lead-time model exists (Phase 33 audit)."},
+            extra=extra,
         )
 
     # ------------------------------------------------------------------
