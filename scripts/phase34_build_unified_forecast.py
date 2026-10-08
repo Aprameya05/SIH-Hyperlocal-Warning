@@ -257,7 +257,8 @@ def main():
                        "status": ff_pred.status, "model_version": ff_pred.model_version,
                        "provenance": ff_pred.provenance, "confidence": ff_pred.confidence,
                        "extra": ff_pred.extra, "value_type": "risk_score",
-                       "source_cycle": SOURCE_CYCLE_DATE, "source_status": ff_source_status},
+                       "source_cycle": SOURCE_CYCLE_DATE, "source_status": ff_source_status,
+                       "xai": ff_pred.extra.get("xai")},
                 "terrain": {
                     "elevation_m": terr.get("elevation_m"), "slope_deg": terr.get("slope_deg"),
                     "terrain_status": terr.get("terrain_status"),
