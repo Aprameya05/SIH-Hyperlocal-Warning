@@ -15,5 +15,8 @@ data/external/historical_gfs/raw/
 # scripts/gfs_live_cb_predictors.py: cycle-keyed cache + scratch download dir
 data/_gfs_live_cb_cache/
 data/_gfs_live_tmp/
+
+# scripts/location_resolver.py: geocode results cache (regenerable)
+data/_location_geocode_cache.json
 tests/.scratch_phase24_pipeline_output.json
 tests/.scratch_phase25_pipeline_output.json

@@ -297,6 +297,53 @@ def _hazard_block(pred, xai: dict) -> dict:
 
 
 # ---------------------------------------------------------------------------
+# GET /location -- resolve ANY Indian location query to its real
+# coordinates and nearest canonical cell, then return that cell's
+# hazard forecast from the offline artifact (2026-10-08 pass). Fixes
+# the "every search silently gets VOBL/Bengaluru" gap -- a query that
+# doesn't geocode, or that geocodes outside the canonical grid's
+# coverage, returns found=False / cell_id=None, never a substituted
+# location.
+# ---------------------------------------------------------------------------
+@app.get("/location")
+def resolve_location(q: str = Query(..., description="Free-text location, e.g. 'Mumbai' or 'Chennai, India'"),
+                      lead_hours: int = Query(3)):
+    import sys as _sys
+    _sys.path.insert(0, str(REPO_ROOT / "scripts"))
+    import location_resolver as _lr
+
+    resolved = _lr.geocode(q)
+    response = {
+        "query": resolved.query, "found": resolved.found,
+        "display_name": resolved.display_name,
+        "latitude": resolved.latitude, "longitude": resolved.longitude,
+        "cell_id": resolved.cell_id, "distance_to_cell_km": resolved.distance_to_cell_km,
+        "in_india_grid_bounds": resolved.in_india_grid_bounds,
+        "source": resolved.source, "from_cache": resolved.from_cache,
+        "error": resolved.error,
+        "hazards": None,
+    }
+    if not resolved.cell_id:
+        return response
+
+    if not UNIFIED_FORECAST_PATH.exists():
+        response["error"] = (response["error"] or "") + " (no hazard data: data/unified_forecast.json not found)"
+        return response
+    with open(UNIFIED_FORECAST_PATH) as f:
+        artifact = json.load(f)
+    rec = next((r for r in artifact["records"]
+                if r["cell_id"] == resolved.cell_id and r["lead_hours"] == lead_hours), None)
+    if rec is None:
+        response["error"] = (response["error"] or "") + f" (cell {resolved.cell_id} has no record for lead_hours={lead_hours})"
+        return response
+    response["hazards"] = {
+        "lead_hours": lead_hours, "init_time": rec["init_time"], "valid_time": rec["valid_time"],
+        "TS": rec["TS"], "CB": rec["CB"], "FF": rec["FF"],
+    }
+    return response
+
+
+# ---------------------------------------------------------------------------
 # GET /forecast
 # ---------------------------------------------------------------------------
 @app.get("/forecast")
