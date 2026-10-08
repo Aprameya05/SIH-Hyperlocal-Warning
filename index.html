@@ -3587,17 +3587,43 @@ function injectDrainageOverlay(map, liveData) {
         );
       }, [peakProb, alertActive, riskLabel, mapReady]);
 
-      // ── Phase 13: editorial DRIFT identity, built only from real state ──
-      // already computed above in this component: alertActive, riskLabel,
-      // peakProb, genAt, hazardCfg, activeLocation. Nothing here invents a
-      // threat -- the honest "no active warning" copy is the explicit
-      // fallback when alertActive is false.
-      const driftHeroHeadline = alertActive
-        ? `${hazardCfg.label} risk\nover the next 2-6 hours.`
-        : `India's weather,\ndown to the grid.`;
-      const driftHeroSub = alertActive
-        ? `${riskLabel} risk detected near ${activeLocation.displayName || 'your area'} * updated ${genAt}`
-        : `No active severe-weather warning right now * updated ${genAt}`;
+      // ── Phase 13/19 (2026-10-08 freshness pass): editorial DRIFT identity,
+      // built only from real state -- already computed above in this
+      // component: alertActive, riskLabel, peakProb, genAt, hazardCfg,
+      // activeLocation. Nothing here invents a threat -- the honest "no
+      // active warning" copy is the explicit fallback when alertActive is
+      // false.
+      //
+      // CRITICAL: a hard bug was found and fixed here -- this headline/sub
+      // previously showed "updated {genAt}" unconditionally, which let a
+      // forecast many hours old read as current ("risk over the next 2-6
+      // hours... updated <stale timestamp>"). isLiveData (computed
+      // upstream from the SAME generated_at age the Data Health card uses,
+      // ok<7h/warn<14h/stale>=14h) now gates whether the headline is
+      // allowed to make a current-conditions claim at all. A stale forecast
+      // never gets 2-6h-risk wording -- it gets an explicit staleness
+      // disclosure with the real age instead.
+      let dataAgeHoursForHero = null;
+      try {
+        const cleaned = (genAt || '').replace(' IST', '').trim();
+        const parsedGenAt = new Date(cleaned.replace(' ', 'T') + ':00+05:30');
+        if (!isNaN(parsedGenAt)) dataAgeHoursForHero = (Date.now() - parsedGenAt.getTime()) / 3600000;
+      } catch (_) { /* leave null -- never fabricate an age */ }
+      const ageLabelForHero = dataAgeHoursForHero != null
+        ? (dataAgeHoursForHero < 1 ? `${Math.round(dataAgeHoursForHero * 60)}m old`
+           : `${dataAgeHoursForHero.toFixed(1)}h old`)
+        : 'unknown age';
+
+      const driftHeroHeadline = !isLiveData
+        ? `Latest validated forecast\nis stale.`
+        : alertActive
+          ? `${hazardCfg.label} risk\nover the next 2-6 hours.`
+          : `India's weather,\ndown to the grid.`;
+      const driftHeroSub = !isLiveData
+        ? `Forecast initialized ${genAt} (${ageLabelForHero}) for ${activeLocation.displayName || 'your area'} -- not current conditions.`
+        : alertActive
+          ? `${riskLabel} risk detected near ${activeLocation.displayName || 'your area'} * updated ${genAt}`
+          : `No active severe-weather warning right now * updated ${genAt}`;
 
       return (
         <div className="drift-editorial" style={{ position: 'relative', width: '100%', height: '100%', minHeight: 0, background: '#060a14', overflowY: 'auto', overflowX: 'hidden', WebkitOverflowScrolling: 'touch', fontFamily: "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif" }}>
@@ -3622,17 +3648,27 @@ function injectDrainageOverlay(map, liveData) {
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: isMobile ? 12 : 18 }}>
               <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.14em', color: '#64748b' }}>DRIFT OPERATIONAL NOWCAST</span>
               <span style={{ width: 3, height: 3, borderRadius: '50%', background: '#334155' }} />
-              {isLiveData && (
+              {isLiveData ? (
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '2px 7px', borderRadius: 9999, background: 'rgba(34, 197, 94, 0.10)', border: '1px solid rgba(34, 197, 94, 0.22)', fontSize: 10, fontWeight: 700, color: '#4ade80' }}>
                   <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#22c55e', boxShadow: '0 0 6px #22c55e' }} />
                   LIVE OPS
                 </span>
+              ) : (
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '2px 7px', borderRadius: 9999, background: 'rgba(245, 158, 11, 0.12)', border: '1px solid rgba(245, 158, 11, 0.3)', fontSize: 10, fontWeight: 700, color: '#f59e0b' }}>
+                  <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#f59e0b' }} />
+                  STALE -- {ageLabelForHero}
+                </span>
               )}
-              <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 500 }}>VOBL * 13.198°N, 77.706°E</span>
+              <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 500 }}>
+                {activeLocation.displayName || 'VOBL'} * {activeLocation.latitude?.toFixed(3)}°N, {activeLocation.longitude?.toFixed(3)}°E
+              </span>
               <span style={{ width: 3, height: 3, borderRadius: '50%', background: '#334155' }} />
-              <span style={{ fontSize: 11, color: '#38bdf8', fontWeight: 600 }}>f009 Primary (+4.5h Lead)</span>
+              <span style={{ fontSize: 11, color: '#38bdf8', fontWeight: 600 }}>
+                {gridMeta?.gfs_fhour ? `f${String(gridMeta.gfs_fhour).padStart(3, '0')} Primary` : 'Lead'}
+                {gridMeta?.time_until_valid_hours != null ? ` (+${gridMeta.time_until_valid_hours.toFixed(1)}h Lead)` : ''}
+              </span>
               <span style={{ width: 3, height: 3, borderRadius: '50%', background: '#334155' }} />
-              <span style={{ fontSize: 11, color: '#64748b' }}>992 Grid Cells Active</span>
+              <span style={{ fontSize: 11, color: '#64748b' }}>992 Grid Cells (structural)</span>
             </div>
 
             {/* Confident Headline */}
@@ -9579,11 +9615,44 @@ function injectDrainageOverlay(map, liveData) {
                     : 'LIVE API'}
                 </span>
               </div>
-              {artifact && (
-                <div className="text-[11px] text-slate-500 mt-0.5">
-                  init_time: <span className="font-mono">{artifact.init_time_utc || artifact.records?.[0]?.init_time || 'n/a'}</span>
-                </div>
-              )}
+              {artifact && (() => {
+                // Priority 3 freshness disclosure: "generated_at_utc" is only
+                // when this artifact file was last (re)written by the CI bot
+                // -- it says nothing about how current the underlying GFS
+                // forecast cycle is. "init_time_utc" is the actual forecast
+                // initialization time of the weather data behind every
+                // record. These must never be conflated: a bot can rewrite
+                // this file every few hours while init_time stays pinned to
+                // a historical validation cycle (see source_status below).
+                const initTimeUtc = artifact.init_time_utc || artifact.records?.[0]?.init_time || null;
+                const generatedAtUtc = artifact.generated_at_utc || null;
+                const sourceStatus = artifact.records?.[0]?.CB?.source_status
+                  || artifact.records?.[0]?.source_status || null;
+                let ageLabel = 'n/a';
+                if (initTimeUtc) {
+                  const ageMs = Date.now() - new Date(initTimeUtc).getTime();
+                  if (!isNaN(ageMs)) {
+                    const ageDays = ageMs / 86400000;
+                    ageLabel = ageDays >= 1
+                      ? `${ageDays.toFixed(0)} day${ageDays >= 1.5 ? 's' : ''} old`
+                      : `${(ageMs / 3600000).toFixed(1)} hours old`;
+                  }
+                }
+                return (
+                  <div className="text-[11px] text-slate-500 mt-1 grid grid-cols-1 gap-0.5">
+                    <div>Artifact generated at: <span className="font-mono text-slate-400">{generatedAtUtc || 'n/a'}</span> <span className="text-slate-600">(when this file was last rebuilt -- not the weather data's age)</span></div>
+                    <div>Forecast initialized at: <span className="font-mono text-slate-400">{initTimeUtc || 'n/a'}</span></div>
+                    <div>Forecast data age: <span className={`font-mono font-bold ${ageLabel.includes('day') ? 'text-amber-400' : 'text-slate-400'}`}>{ageLabel}</span></div>
+                    {sourceStatus && (
+                      <div>Source status: <span className={`font-mono font-bold ${sourceStatus === 'FIXED_VALIDATION_FALLBACK' ? 'text-amber-400' : 'text-slate-400'}`}>{sourceStatus}</span>
+                        {sourceStatus === 'FIXED_VALIDATION_FALLBACK' && (
+                          <span className="text-amber-500/80"> -- this is a historical validation cycle, not today's weather.</span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
             <div className="flex items-center gap-2">
               {['TS', 'CB', 'FF'].map(hz => (
@@ -9658,6 +9727,43 @@ function injectDrainageOverlay(map, liveData) {
                       <div>lead_hours: <span className="font-mono text-slate-300">+{leadHours}h</span></div>
                       <div>record source: <span className="font-mono text-slate-300">{isLive ? 'LIVE /forecast' : 'bulk /forecast/all'}</span></div>
                     </div>
+                    {(() => {
+                      // Freshness badges -- Priority 3/9 (2026-10-06 pass): read the
+                      // real per-hazard status fields the backend/artifact now
+                      // expose (cb_source_status/ff_source_status on the live
+                      // /forecast response; CB.source_status/FF.source_status on
+                      // bulk artifact records) instead of a static claim. Never
+                      // shows LIVE unless the backend actually reported LIVE.
+                      const cbStatus = isLive ? (rec.cb_source_status && rec.cb_source_status.status)
+                                               : (rec.CB && rec.CB.source_status);
+                      const ffStatus = isLive ? (rec.ff_source_status && rec.ff_source_status.status)
+                                               : (rec.FF && rec.FF.source_status);
+                      const cbCycle = isLive ? (rec.cb_source_status && rec.cb_source_status.source_cycle)
+                                              : (rec.CB && rec.CB.source_cycle);
+                      const ffCycle = isLive ? (rec.ff_source_status && rec.ff_source_status.source_cycle)
+                                              : (rec.FF && rec.FF.source_cycle);
+                      const badgeClass = (s) => ({
+                        LIVE: 'bg-emerald-700 text-emerald-100',
+                        RECENT: 'bg-sky-700 text-sky-100',
+                        STALE: 'bg-amber-700 text-amber-100',
+                        FIXED_VALIDATION_FALLBACK: 'bg-amber-800 text-amber-100',
+                        UNAVAILABLE: 'bg-slate-700 text-slate-300',
+                      }[s] || 'bg-slate-700 text-slate-300');
+                      return (
+                        <div className="text-[11px] text-slate-400 flex flex-wrap gap-2">
+                          {cbStatus && (
+                            <span className={`font-mono px-1.5 py-0.5 rounded ${badgeClass(cbStatus)}`}>
+                              CB: {cbStatus}{cbCycle ? ` (${cbCycle})` : ''}
+                            </span>
+                          )}
+                          {ffStatus && (
+                            <span className={`font-mono px-1.5 py-0.5 rounded ${badgeClass(ffStatus)}`}>
+                              FF: {ffStatus}{ffCycle ? ` (${ffCycle})` : ''}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })()}
                     {liveDetailError && (
                       <div className="text-[10px] text-amber-400">Live per-cell fetch unavailable ({liveDetailError}) -- showing the bulk record instead, which is equally real, just not freshly recomputed.</div>
                     )}
@@ -9666,22 +9772,55 @@ function injectDrainageOverlay(map, liveData) {
                       const h = hazGet(hz);
                       if (!h) return null;
                       const unavailable = unifiedIsHazardUnavailable(h);
+                      // FF is architecturally never a calibrated probability (see
+                      // backend/models/unified_mtl/inference_engine.py::predict_ff).
+                      // The real PU-corrected ranking score lives in extra, not in
+                      // `probability`, and was previously never surfaced here --
+                      // it was silently collapsed into the generic UNAVAILABLE
+                      // branch below. Pull it out explicitly, truthfully labeled
+                      // as a research/ranking score, never as a probability.
+                      const ffResearchScore = hz === 'FF'
+                        ? (isLive ? rec?.extra?.ff_pu_ranking_score : h?.extra?.pu_ranking_score)
+                        : null;
                       return (
                         <div key={hz} className="border border-slate-800 rounded p-2.5">
                           <div className="flex items-center justify-between">
                             <span className="font-bold text-xs text-white">{hz}</span>
                             <span className="text-[10px] font-mono px-1.5 py-0.5 rounded"
                               style={{ background: unifiedRiskColor(h.risk_category || h.risk), color: '#000' }}>
-                              {h.risk_category || h.risk}
+                              {hz === 'FF' ? 'RESEARCH SCORE' : (h.risk_category || h.risk)}
                             </span>
                           </div>
-                          {unavailable ? (
+                          {hz === 'FF' ? (
+                            <div className="text-[11px] mt-1">
+                              {ffResearchScore !== null && ffResearchScore !== undefined ? (
+                                <div className="text-slate-300">
+                                  PU ranking score: <span className="font-mono">{Number(ffResearchScore).toFixed(3)}</span> &middot; status: {h.status}
+                                  <div className="text-[10px] text-amber-400 italic mt-0.5">
+                                    Research score only -- NOT a calibrated flood probability. No trained 2-6h flash-flood probability exists.
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="text-slate-500 italic">
+                                  UNAVAILABLE -- status: {h.status} (no ranking score exists for this cell; never shown as 0% or LOW)
+                                </div>
+                              )}
+                            </div>
+                          ) : unavailable ? (
                             <div className="text-[11px] text-slate-500 italic mt-1">
                               UNAVAILABLE -- status: {h.status} (no legitimate probability exists; never shown as 0% or LOW)
                             </div>
                           ) : (
                             <div className="text-[11px] text-slate-300 mt-1">
                               probability: <span className="font-mono">{(h.probability * 100).toFixed(2)}%</span> &middot; status: {h.status}
+                              {hz === 'CB' && (isLive ? rec.cb_lead_time_resolution : h.lead_time_resolution) === 'DAILY_AGGREGATE_NOT_LEAD_SPECIFIC' && (
+                                <div className="text-[10px] text-amber-400 italic mt-0.5">
+                                  Daily-resolution cloudburst model applied to forecast atmospheric conditions --
+                                  this value is the same for every lead slot (2-6h) for this cell/cycle.
+                                  panindia_cb_v1 is trained on daily-aggregated labels, not lead-indexed ones, so
+                                  this is NOT five independently validated lead-specific predictions. Type: Probability.
+                                </div>
+                              )}
                             </div>
                           )}
                           <div className="text-[10px] text-slate-500 mt-0.5">{h.model_version} &middot; provenance: {h.provenance}</div>
