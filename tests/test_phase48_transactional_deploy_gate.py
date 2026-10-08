@@ -65,6 +65,21 @@ def test_gate_uses_outcome_not_conclusion():
             assert "conclusion" not in s["if"]
 
 
+def test_commit_step_excludes_unified_forecast_json_on_build_failure():
+    """2026-10-08: data/unified_forecast.json must be explicitly dropped
+    from the committed file list when the real unified_artifact outcome
+    wasn't 'success' -- on top of (not instead of) the backup/restore/
+    JSON-validate protection already in this step."""
+    with open(WORKFLOW_PATH, encoding="utf-8") as f:
+        text = f.read()
+    start = text.index('- name: Commit and push forecast outputs')
+    end = text.index('- name: Build Cloudflare Pages deployment directory')
+    script = text[start:end]
+    assert "UNIFIED_ARTIFACT_OUTCOME" in script
+    assert 'steps.unified_artifact.outcome' in script
+    assert '"$UNIFIED_ARTIFACT_OUTCOME" = "success"' in script
+
+
 def test_commit_step_is_not_gated_away_entirely():
     """The commit step itself must NOT be skipped on build failure --
     it still needs to run to commit the unrelated legacy-dashboard

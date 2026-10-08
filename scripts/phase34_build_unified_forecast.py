@@ -440,4 +440,25 @@ def _iso(dt: datetime) -> str:
 
 
 if __name__ == "__main__":
+    # 2026-10-08 fix (real production crash, exit code 134 / "double free
+    # or corruption (!prev)"): the artifact write + validation above
+    # already completed correctly and printed accepted=true BEFORE this
+    # crash -- it happens during normal CPython interpreter shutdown,
+    # while garbage-collecting the native C-extension objects this
+    # script loaded (xgboost Boosters, shap TreeExplainers, cfgrib/
+    # xarray-backed GRIB datasets, OpenMP thread pools). This is a known
+    # failure class for exactly this combination of native ML libraries
+    # on Linux glibc, independent of anything this script's own Python
+    # code does. The artifact on disk is already correct and validated
+    # by this point -- os._exit(0) terminates the process immediately,
+    # skipping Python's normal object-destructor-based teardown (which
+    # is where the double-free actually occurs) rather than masking any
+    # real failure: main() only reaches this line at all when the
+    # artifact was genuinely accepted (the reject path calls
+    # sys.exit(1) itself, well before this point, and is unaffected).
+    import sys as _sys
     main()
+    _sys.stdout.flush()
+    _sys.stderr.flush()
+    import os as _os
+    _os._exit(0)

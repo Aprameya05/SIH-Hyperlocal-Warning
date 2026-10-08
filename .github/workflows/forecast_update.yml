@@ -320,10 +320,27 @@ jobs:
         # unconditionally restore the freshly-generated version after the
         # pull, so a conflict can never leave a corrupted file staged --
         # this run's own output always wins over whatever pull merged in.
+        #
+        # 2026-10-08 Phase 1 addition: data/unified_forecast.json is now
+        # EXPLICITLY excluded from the commit entirely when
+        # steps.unified_artifact.outcome != 'success' (checked via
+        # .outcome, never .conclusion, which continue-on-error overrides
+        # to always read 'success'). This is on top of, not instead of,
+        # the backup/restore/JSON-validate protection below -- a failed
+        # build must never even be CANDIDATE for commit, not merely
+        # "happen to be filtered out by always being byte-identical to
+        # the last good copy".
+        env:
+          UNIFIED_ARTIFACT_OUTCOME: ${{ steps.unified_artifact.outcome }}
         run: |
           git config --global user.name  "SIH Forecast Bot"
           git config --global user.email "bot@sih-hyperlocal.in"
-          GENERATED_FILES="forecast.json data/gfs_realtime_43295.csv data/upperair_realtime_43295.csv data/gfs_multiday_43295.json data/himawari_realtime.json data/himawari_history.json data/himawari_b08_features.json data/realtime_shap.json data/verification_today.json data/pipeline_health.json data/skill_scores.json data/forecast_log.csv data/alert_history.json data/blr_terrain.json data/unified_forecast.json"
+          GENERATED_FILES="forecast.json data/gfs_realtime_43295.csv data/upperair_realtime_43295.csv data/gfs_multiday_43295.json data/himawari_realtime.json data/himawari_history.json data/himawari_b08_features.json data/realtime_shap.json data/verification_today.json data/pipeline_health.json data/skill_scores.json data/forecast_log.csv data/alert_history.json data/blr_terrain.json"
+          if [ "$UNIFIED_ARTIFACT_OUTCOME" = "success" ]; then
+            GENERATED_FILES="$GENERATED_FILES data/unified_forecast.json"
+          else
+            echo "unified_artifact step outcome was '$UNIFIED_ARTIFACT_OUTCOME', not 'success' -- data/unified_forecast.json will NOT be committed this run; last-known-good stays authoritative"
+          fi
           mkdir -p /tmp/generated_backup
           for f in $GENERATED_FILES; do
             if [ -f "$f" ]; then
