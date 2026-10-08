@@ -262,15 +262,96 @@ def health():
             "FF": "RESEARCH_ONLY_model_c_logistic (PU-corrected)" if "FF" in engine.heads else "UNAVAILABLE",
             "shared_backbone": engine.backbone_status,
         }
-        unified_forecast_status = "READY" if (Path(__file__).parent.parent / "data" / "unified_forecast.json").exists() else "NOT_TRAINED"
+        artifact_path = Path(__file__).parent.parent / "data" / "unified_forecast.json"
+        unified_forecast_status = "READY" if artifact_path.exists() else "NOT_TRAINED"
+
+        # Pipeline health block (Priority 13, 2026-10-06 pass): lets an
+        # operator answer "is the production pipeline alive?" from one
+        # endpoint -- real generation timestamp, real source cycle, real
+        # per-hazard status, real artifact age. Additive only; every field
+        # above is unchanged.
+        pipeline_health = {"artifact_exists": artifact_path.exists()}
+        if artifact_path.exists():
+            try:
+                import json as _json
+                from datetime import datetime as _dt, timezone as _tz
+                with open(artifact_path) as _f:
+                    _doc = _json.load(_f)
+                gen_at = _doc.get("generated_at_utc")
+                age_hours = None
+                if gen_at:
+                    gen_dt = _dt.fromisoformat(gen_at.replace("Z", "+00:00"))
+                    age_hours = round((_dt.now(_tz.utc) - gen_dt).total_seconds() / 3600.0, 2)
+                records = _doc.get("records", [])
+                from collections import Counter as _Counter
+                cb_counts = _Counter((r.get("CB", {}) or {}).get("source_status") for r in records)
+                ff_counts = _Counter((r.get("FF", {}) or {}).get("source_status") for r in records)
+                ts_counts = _Counter((r.get("TS", {}) or {}).get("source_status") for r in records)
+                pipeline_health.update({
+                    "last_generated_at_utc": gen_at,
+                    "artifact_age_hours": age_hours,
+                    "artifact_age_hours_caveat": (
+                        "this is the artifact FILE's rewrite age, not the underlying GFS data's "
+                        "age -- see gfs_freshness below for the real data-freshness computation"
+                    ),
+                    "source_cycle_date": _doc.get("source_cycle_date"),
+                    "n_records": _doc.get("n_records"),
+                    "n_cells": _doc.get("n_cells"),
+                    "validation": _doc.get("validation", {}),
+                    "cb_status_counts": dict(cb_counts),
+                    "ff_status_counts": dict(ff_counts),
+                    "ts_status_counts": dict(ts_counts),
+                })
+
+                # Real GFS data freshness (2026-10-08 pass): computed from
+                # CB's own cb_init_time_utc (the actual GFS cycle init
+                # time), never from the artifact's rewrite time -- using
+                # the single centralized policy in scripts/freshness_policy.py
+                # so this never drifts from the alert gate's own notion of
+                # freshness.
+                try:
+                    import sys as _sys
+                    _sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
+                    import freshness_policy as _fp
+                    first_cb = (records[0].get("CB", {}) if records else {}) or {}
+                    cb_src_status = first_cb.get("source_status")
+                    cb_init = first_cb.get("cb_init_time_utc")
+                    is_fixed = cb_src_status == "FIXED_VALIDATION_FALLBACK"
+                    gfs_fresh = _fp.compute_freshness("GFS", cb_init, is_fixed_validation=is_fixed)
+                    pipeline_health["gfs_freshness"] = {
+                        "source_timestamp_utc": gfs_fresh.source_timestamp_utc,
+                        "age_hours": gfs_fresh.age_hours,
+                        "freshness_status": gfs_fresh.freshness_status,
+                    }
+                except Exception as _fexc:  # noqa: BLE001
+                    pipeline_health["gfs_freshness"] = {"error": f"{type(_fexc).__name__}: {_fexc}"}
+            except Exception as _exc:  # noqa: BLE001
+                pipeline_health["read_error"] = f"{type(_exc).__name__}: {_exc}"
+
+        # Live /forecast's own CB/FF cycle state (if a request has run this
+        # process -- these are module-level caches, so they reflect this
+        # worker's most recent live-fetch attempt, not the batch artifact).
+        try:
+            from backend.unified_api import _cb_cycle_status, _ff_cycle_status
+            pipeline_health["live_cb_cycle_status"] = _cb_cycle_status.get("mode")
+            pipeline_health["live_ff_cycle_status"] = _ff_cycle_status.get("mode")
+        except Exception:
+            pass
+
         base.update({
             "service": "SIH Hyperlocal Warning -- Unified Forecast + Alert Backend",
             "model_versions": model_versions,
-            "forecast_init_time": "2024-08-01T00:00:00Z",
+            # Was hardcoded to "2024-08-01T00:00:00Z" -- wrong/stale as
+            # soon as CB started genuinely using live GFS cycles (2026-10-06
+            # pass). Now reads the real artifact's own init_time_utc, which
+            # tracks whatever TS/FF's basis actually is (still the fixed
+            # validation cycle until they get a live source of their own).
+            "forecast_init_time": _doc.get("init_time_utc") if artifact_path.exists() else None,
             "grid_cells": 992,
             "lead_times_hours": [2, 3, 4, 5, 6],
             "data_source_status": SOURCE_STATUS,
             "unified_forecast_artifact_status": unified_forecast_status,
+            "pipeline_health": pipeline_health,
         })
     except Exception as exc:  # noqa: BLE001
         # Never let the unified-engine enrichment break the pre-existing
