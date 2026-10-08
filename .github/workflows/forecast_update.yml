@@ -69,7 +69,8 @@ jobs:
             "pytz>=2024.1" \
             "scipy>=1.12.0" \
             "boto3>=1.34.0" \
-            "pyproj>=3.6.0"
+            "pyproj>=3.6.0" \
+            "pyarrow>=14.0.0"
 
       - name: Install Himawari dependencies
         run: |
@@ -298,36 +299,70 @@ jobs:
           echo "Worker URL injected into index.html"
 
       - name: Commit and push forecast outputs
+        # 2026-10-08 fix: a real production bug, found and root-caused by
+        # diagnosing 9 consecutive failed scheduled runs (all failing at
+        # the "Validate unified artifact before deploy" step, every one
+        # instantly -- consistent with corrupted, not slow, JSON). `git
+        # pull ... || true` swallows a genuine MERGE CONFLICT, not just a
+        # harmless "nothing to pull" -- on conflict it leaves literal
+        # `<<<<<<<`/`=======`/`>>>>>>>` markers written into the working
+        # tree files, and the very next `git add`/`git commit` then
+        # happily commits that broken JSON. This was previously masked
+        # for data/unified_forecast.json because, before CB started using
+        # genuinely live GFS data, the file barely changed between runs
+        # (nearly every byte identical except generated_at_utc), so a
+        # real line-level conflict was rare. Once CB began varying across
+        # most of its 4,960 records every run (2026-10-06), concurrent/
+        # back-to-back runs' pulls started conflicting on this file
+        # almost every time -- exactly matching when the failures began.
+        # Fix: back up EVERY generated file this step adds (not just
+        # forecast.json, which already had this protection) and
+        # unconditionally restore the freshly-generated version after the
+        # pull, so a conflict can never leave a corrupted file staged --
+        # this run's own output always wins over whatever pull merged in.
         run: |
           git config --global user.name  "SIH Forecast Bot"
           git config --global user.email "bot@sih-hyperlocal.in"
-          cp forecast.json /tmp/forecast_generated.json
-          git pull origin main --no-rebase || true
-          cp /tmp/forecast_generated.json forecast.json
-          git add forecast.json
-          git add \
-            data/gfs_realtime_43295.csv \
-            data/upperair_realtime_43295.csv \
-            data/gfs_multiday_43295.json \
-            data/himawari_realtime.json \
-            data/himawari_history.json \
-            data/himawari_b08_features.json \
-            data/realtime_shap.json \
-            data/verification_today.json \
-            data/pipeline_health.json \
-            data/skill_scores.json \
-            data/forecast_log.csv \
-            data/alert_history.json \
-            data/blr_terrain.json \
-            data/unified_forecast.json \
-            2>/dev/null || true
+          GENERATED_FILES="forecast.json data/gfs_realtime_43295.csv data/upperair_realtime_43295.csv data/gfs_multiday_43295.json data/himawari_realtime.json data/himawari_history.json data/himawari_b08_features.json data/realtime_shap.json data/verification_today.json data/pipeline_health.json data/skill_scores.json data/forecast_log.csv data/alert_history.json data/blr_terrain.json data/unified_forecast.json"
+          mkdir -p /tmp/generated_backup
+          for f in $GENERATED_FILES; do
+            if [ -f "$f" ]; then
+              mkdir -p "/tmp/generated_backup/$(dirname "$f")"
+              cp "$f" "/tmp/generated_backup/$f"
+            fi
+          done
+          git pull origin main --no-rebase || {
+            echo "git pull reported a conflict -- aborting the merge rather than risking corrupted generated files"
+            git merge --abort || true
+          }
+          for f in $GENERATED_FILES; do
+            if [ -f "/tmp/generated_backup/$f" ]; then
+              cp "/tmp/generated_backup/$f" "$f"
+            fi
+          done
+          python3 -c "
+          import json, sys
+          path = 'data/unified_forecast.json'
+          try:
+              with open(path) as f:
+                  json.load(f)
+          except Exception as exc:
+              print(f'ERROR: {path} is not valid JSON after restore ({exc}) -- refusing to commit it')
+              sys.exit(1)
+          print(f'OK: {path} is valid JSON, safe to commit')
+          "
+          git add $GENERATED_FILES 2>/dev/null || true
           git diff --staged --quiet || \
             git commit -m "auto: forecast $(date -u '+%Y-%m-%d %H:%M UTC')"
           git push origin main --force-with-lease || git push origin main || {
             echo "Push failed -- attempting rebase and retry"
-            git pull origin main --rebase
-            cp /tmp/forecast_generated.json forecast.json
-            git add forecast.json
+            git pull origin main --rebase || { echo "rebase conflict -- aborting"; git rebase --abort || true; }
+            for f in $GENERATED_FILES; do
+              if [ -f "/tmp/generated_backup/$f" ]; then
+                cp "/tmp/generated_backup/$f" "$f"
+              fi
+            done
+            git add $GENERATED_FILES 2>/dev/null || true
             git diff --staged --quiet || git commit -m "auto: forecast retry $(date -u '+%Y-%m-%d %H:%M UTC')"
             git push origin main
           }
