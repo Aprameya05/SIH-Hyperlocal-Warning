@@ -22,6 +22,28 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
+      # 2026-10-10: moved from AFTER "Run pipeline" to immediately after
+      # checkout. This workflow is the sole writer of
+      # data/pan_india_grid.json (docs/PIPELINE_OWNERSHIP.md), and this
+      # workflow has been failing on EVERY run for several days straight
+      # (confirmed via the GitHub Checks API across 10+ consecutive runs,
+      # all failing at "Build canonical forecast" immediately after this
+      # pull step). The pull used to run AFTER backend/pipeline.py had
+      # already written an UNCOMMITTED data/pan_india_grid.json to the
+      # working tree -- racing a remote-state merge against an in-flight
+      # local write of the exact file this workflow is supposed to be the
+      # single source of truth for. Pulling first, before any local file
+      # is touched, removes that race entirely: the working tree is
+      # fully synced with origin/main before backend/pipeline.py (or
+      # anything else) writes a single byte.
+      - name: Sync latest cross-workflow artifacts
+        run: |
+          git fetch origin main
+          git -c user.name="github-actions[bot]" -c user.email="github-actions[bot]@users.noreply.github.com" pull origin main --no-rebase --no-edit || {
+            echo "git pull reported a conflict -- aborting the merge rather than risking a corrupted working tree"
+            git merge --abort || true
+          }
+
       - name: Install eccodes system library
         run: |
           sudo apt-get update -qq
@@ -40,13 +62,39 @@ jobs:
       - name: Run pipeline
         run: python backend/pipeline.py
 
-      - name: Sync latest cross-workflow artifacts
-        run: |
-          git fetch origin main
-          git -c user.name="github-actions[bot]" -c user.email="github-actions[bot]@users.noreply.github.com" pull origin main --no-rebase --no-edit || true
+      - name: Sync real panindia_cb_v1 CB probabilities into the grid
+        # 2026-10-10: the DEPLOYED frontend's location search
+        # (assets/location_engine.js) reads cloudburst_probability from
+        # this file, populated above by backend/pipeline.py's
+        # deterministic physics-baseline formula -- confirmed by
+        # directly inspecting the live site's real network traffic that
+        # this is NEVER data/unified_forecast.json (the real trained
+        # panindia_cb_v1 model's output). This overwrites each cell's
+        # cloudburst_probability with the real calibrated value when
+        # one exists, joined on cell_id -- pure stdlib, no new
+        # dependency, safe to run in this workflow's minimal
+        # environment. Reads whatever data/unified_forecast.json is
+        # currently on main (this workflow doesn't generate that file
+        # itself) -- the pull step above guarantees it's the latest
+        # committed version, not stale from checkout time.
+        run: python scripts/sync_unified_cb_into_pan_india_grid.py
+        continue-on-error: true
 
       - name: Build canonical forecast
-        run: python canonical_forecast_writer.py
+        # 2026-10-10: this step has failed on every run for several days
+        # straight with only a generic "Process completed with exit code
+        # 1" visible via the public GitHub Checks annotations API (full
+        # job logs require repo sign-in this session has no credentials
+        # for). Wrapped to surface the REAL Python traceback as a
+        # ::error:: workflow command, which DOES appear as a public
+        # annotation -- closing that diagnostic gap for whoever debugs
+        # the next failure, with or without log access.
+        run: |
+          python canonical_forecast_writer.py 2> /tmp/canonical_forecast_writer_stderr.log || {
+            echo "::error::canonical_forecast_writer.py failed: $(tail -c 3000 /tmp/canonical_forecast_writer_stderr.log | tr '\n' ' ')"
+            cat /tmp/canonical_forecast_writer_stderr.log
+            exit 1
+          }
 
       - name: Dispatch alerts if hazard thresholds exceeded
         env:
