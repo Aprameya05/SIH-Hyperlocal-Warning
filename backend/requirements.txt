@@ -1,8 +1,19 @@
 # Core pipeline
+xarray>=2024.0.0
 cfgrib>=0.9.10
 eccodes>=1.4.0
 numpy>=1.24.0
 requests>=2.31.0
+
+# Schema validation (validate_canonical_forecast.py::validate_schema,
+# called by canonical_forecast_writer.py before every publish). This
+# was missing from this file -- the clean .github/workflows/update_grid.yml
+# runner installs ONLY from this file, so canonical_forecast_writer.py
+# correctly, safely refused to publish ("jsonschema package not
+# installed -- cannot validate schema", exit 1) on every real CI run
+# rather than silently skip validation. Draft7Validator (the only API
+# used) has been stable since early 3.x, so a generous floor is safe.
+jsonschema>=4.17.0
 
 # Flow routing
 pysheds>=0.3.5
