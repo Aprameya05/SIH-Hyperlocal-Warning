@@ -4898,19 +4898,19 @@ function injectDrainageOverlay(map, liveData) {
               <div className="grid grid-cols-2 gap-2 my-1 font-mono text-xs">
                 <div>
                   <div className="text-[11px] text-[#607d8b]">TEMP</div>
-                  <div className="text-sm font-bold text-white">{liveData?.metar?.temp_c != null ? `${liveData.metar.temp_c}°C` : '28.6°C'}</div>
+                  <div className="text-sm font-bold text-white">{liveData?.metar?.temp_c != null ? `${liveData.metar.temp_c}°C` : 'N/A'}</div>
                 </div>
                 <div>
                   <div className="text-[11px] text-[#607d8b]">WIND</div>
-                  <div className="text-xs font-bold text-white">{liveData?.metar?.wind_dir != null ? `${liveData.metar.wind_dir}° / ${liveData.metar.wind_speed_kt} kts` : '260° / 13 kts'}</div>
+                  <div className="text-xs font-bold text-white">{liveData?.metar?.wind_dir != null ? `${liveData.metar.wind_dir}° / ${liveData.metar.wind_speed_kt} kts` : 'N/A'}</div>
                 </div>
                 <div>
                   <div className="text-[11px] text-[#607d8b]">RH</div>
-                  <div className="text-sm font-bold text-white">{liveData?.metar?.rh_pct != null ? `${liveData.metar.rh_pct}%` : '78%'}</div>
+                  <div className="text-sm font-bold text-white">{liveData?.metar?.rh_pct != null ? `${liveData.metar.rh_pct}%` : 'N/A'}</div>
                 </div>
                 <div>
                   <div className="text-[11px] text-[#607d8b]">VISIBILITY</div>
-                  <div className="text-sm font-bold text-white">{liveData?.metar?.visibility_km != null ? `${liveData.metar.visibility_km} km` : '10 km'}</div>
+                  <div className="text-sm font-bold text-white">{liveData?.metar?.visibility_km != null ? `${liveData.metar.visibility_km} km` : 'N/A'}</div>
                 </div>
               </div>
               <div className="text-[11px] font-mono text-[#3d5066] border-t border-[#172338] pt-1.5 flex items-center gap-1">
