@@ -270,7 +270,17 @@ jobs:
         env:
           MALLOC_ARENA_MAX: "1"
           OMP_NUM_THREADS: "1"
-        run: python scripts/phase34_build_unified_forecast.py
+        # 2026-10-10: surfaces the real Python traceback (if any -- a
+        # native SIGABRT/exit-134 crash has no catchable traceback, but
+        # any OTHER failure path now does) as a ::error:: workflow
+        # command, visible via the public GitHub Checks annotations API
+        # without needing repo sign-in for full job logs.
+        run: |
+          python scripts/phase34_build_unified_forecast.py 2> /tmp/unified_artifact_stderr.log || {
+            echo "::error::phase34_build_unified_forecast.py failed: $(tail -c 3000 /tmp/unified_artifact_stderr.log | tr '\n' ' ')"
+            cat /tmp/unified_artifact_stderr.log
+            exit 1
+          }
         continue-on-error: true
 
       - name: Send WhatsApp alerts
