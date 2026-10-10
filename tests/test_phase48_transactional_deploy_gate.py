@@ -15,6 +15,22 @@ outcome, which (unlike `conclusion`) is not overridden by that step's
 own `continue-on-error: true`. This test asserts the gate is actually
 present on every one of those steps, structurally, so a future edit
 can't silently remove it.
+
+2026-10-10 update: `steps.unified_artifact.outcome` itself turned out
+to be the wrong signal -- the real exit-134 native crash this process
+hits on the Linux CI runner happens AFTER the artifact is already
+correctly written (confirmed: the original incident showed
+accepted=true already printed before the crash), so gating on the
+Python process's own exit code permanently blocked every commit for
+2+ days even once the artifact itself was genuinely good. The gate
+now reads `steps.unified_artifact_check.outputs.ok` instead -- an
+independent re-validation of the artifact's actual on-disk content
+and freshness, decoupled from the process's exit code entirely. See
+tests/test_phase58_artifact_freshness_check_decoupled_from_exit_code.py
+for that step's own logic tests. This file's tests are updated to
+match the new gate expression; the underlying principle they verify
+(every deploy-path step must gate on SOME real, non-overridden
+signal, never silently proceed) is unchanged.
 """
 import yaml
 from pathlib import Path
@@ -29,7 +45,7 @@ GATED_STEP_NAMES = [
     "Post-deploy smoke test (public site actually serves the fresh artifact)",
 ]
 
-EXPECTED_GATE = "steps.unified_artifact.outcome == 'success'"
+EXPECTED_GATE = "steps.unified_artifact_check.outputs.ok == 'true'"
 
 
 def _steps():
@@ -51,33 +67,34 @@ def test_every_deploy_path_step_is_gated_on_unified_artifact_success():
     assert not missing_gate, f"these steps must gate on {EXPECTED_GATE!r}: {missing_gate}"
 
 
-def test_gate_uses_outcome_not_conclusion():
-    """`conclusion` is overridden by continue-on-error (always shows
-    'success' even when the underlying command failed); `outcome` is
-    the real, unoverridden result. Using the wrong field here would
-    silently defeat the entire gate -- this is the exact distinction
-    that caused the earlier public-API misdiagnosis during this
-    incident's investigation."""
+def test_gate_uses_the_independent_check_not_the_raw_process_outcome():
+    """2026-10-10: `steps.unified_artifact.outcome` (the Python
+    process's own exit code) turned out to be unreliable -- a native
+    crash in cleanup code that runs AFTER the real work finished
+    permanently reads as failure under that signal, no matter how good
+    the artifact actually is. The gate must read
+    steps.unified_artifact_check.outputs.ok (independent re-validation
+    of the artifact's real content/freshness) instead."""
     steps = _steps()
     for s in steps:
         if s.get("if") and "unified_artifact" in s["if"]:
-            assert "outcome" in s["if"], f"step {s['name']!r} must gate on .outcome, not .conclusion"
-            assert "conclusion" not in s["if"]
+            assert "unified_artifact_check.outputs.ok" in s["if"], \
+                f"step {s['name']!r} must gate on the independent artifact check, not the raw process outcome"
 
 
 def test_commit_step_excludes_unified_forecast_json_on_build_failure():
     """2026-10-08: data/unified_forecast.json must be explicitly dropped
-    from the committed file list when the real unified_artifact outcome
-    wasn't 'success' -- on top of (not instead of) the backup/restore/
-    JSON-validate protection already in this step."""
+    from the committed file list when the artifact wasn't genuinely
+    fresh and valid this run -- on top of (not instead of) the
+    backup/restore/JSON-validate protection already in this step."""
     with open(WORKFLOW_PATH, encoding="utf-8") as f:
         text = f.read()
     start = text.index('- name: Commit and push forecast outputs')
     end = text.index('- name: Build Cloudflare Pages deployment directory')
     script = text[start:end]
     assert "UNIFIED_ARTIFACT_OUTCOME" in script
-    assert 'steps.unified_artifact.outcome' in script
-    assert '"$UNIFIED_ARTIFACT_OUTCOME" = "success"' in script
+    assert 'steps.unified_artifact_check.outputs.ok' in script
+    assert '"$UNIFIED_ARTIFACT_OUTCOME" = "true"' in script
 
 
 def test_commit_step_is_not_gated_away_entirely():
