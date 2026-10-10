@@ -28,10 +28,23 @@ whatever the producing process's exit code was. This test verifies
 that validation logic directly (extracted from the workflow's inline
 Python, since the workflow itself can't be executed in pytest) against
 the real production artifact and deliberately corrupted variants.
+
+2026-10-10 hardening: per explicit feedback that "modification time
+alone is insufficient proof of successful generation" and "the
+artifact must demonstrably belong to the current run," two further
+checks were added (and are verified here): (1) the artifact's actual
+filesystem mtime must be newer than a marker timestamp captured
+OUTSIDE and BEFORE the generator step runs -- real, external proof
+the file was touched this run, not merely a self-reported timestamp
+inside the same file being validated; (2) record/cell/lead counts are
+re-derived directly from the records array itself (not merely trusted
+from the self-reported validation dict, which is computed by the same
+process being validated).
 """
 import json
-import tempfile
-from datetime import datetime, timedelta, timezone
+import os
+import time
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
@@ -44,10 +57,21 @@ REQUIRED_VALIDATION_KEYS = [
 ]
 
 
-def check_artifact(path: Path, max_age_minutes: float = 30.0) -> tuple[bool, str]:
+def check_artifact(path: Path, marker_epoch: float, max_age_minutes: float = 30.0) -> tuple[bool, str]:
     """Same logic as the workflow's inline Python step -- kept here as
     a single source of truth so a change to one can be tested against
-    the other, rather than drifting silently apart."""
+    the other, rather than drifting silently apart. marker_epoch: the
+    pre-build marker timestamp (seconds since epoch) captured OUTSIDE
+    and BEFORE the generator step -- the file's own mtime must be
+    newer than this to prove this run actually touched it."""
+    try:
+        mtime_epoch = os.path.getmtime(path)
+    except Exception as exc:
+        return False, f"{path} missing or stat-unreadable ({type(exc).__name__}: {exc})"
+    if mtime_epoch < marker_epoch:
+        return False, (f"filesystem mtime ({mtime_epoch:.0f}) is OLDER than the pre-build marker "
+                        f"({marker_epoch:.0f}) -- provably the untouched last-known-good artifact")
+
     try:
         with open(path, encoding="utf-8") as f:
             artifact = json.load(f)
@@ -63,11 +87,25 @@ def check_artifact(path: Path, max_age_minutes: float = 30.0) -> tuple[bool, str
     if age_minutes > max_age_minutes:
         return False, f"artifact is {age_minutes:.1f} minutes old -- not fresh"
 
+    records = artifact.get("records", [])
+    if len(records) != 4960:
+        return False, f"expected exactly 4960 records, found {len(records)} (re-derived directly)"
+    unique_cells = {r.get("cell_id") for r in records}
+    if len(unique_cells) != 992:
+        return False, f"expected exactly 992 unique cell_ids, found {len(unique_cells)} (re-derived directly)"
+    lead_hours_by_cell: dict = {}
+    for r in records:
+        lead_hours_by_cell.setdefault(r.get("cell_id"), set()).add(r.get("lead_hours"))
+    incomplete_cells = [c for c, leads in lead_hours_by_cell.items() if len(leads) != 5]
+    if incomplete_cells:
+        return False, f"{len(incomplete_cells)} cell(s) lack exactly 5 distinct lead_hours (re-derived directly)"
+
     v = artifact.get("validation", {})
     failed_keys = [k for k in REQUIRED_VALIDATION_KEYS if not v.get(k)]
     if failed_keys:
         return False, f"validation keys failed: {failed_keys}"
-    return True, f"OK: artifact is {age_minutes:.1f} min old, all validation keys true"
+    return True, (f"OK: artifact is {age_minutes:.1f} min old, mtime proves this-run origin, "
+                  f"4960 records / 992 cells / 5 leads re-derived directly, all validation keys true")
 
 
 @pytest.fixture
@@ -85,9 +123,10 @@ def test_stale_committed_artifact_fails_the_freshness_check(real_artifact_dict, 
     check's freshness requirement, never be treated as 'this run's
     output' just because its content happens to be valid."""
     p = tmp_path / "artifact.json"
+    marker = time.time() - 5  # marker clearly before the write, so only the age check should trip
     with open(p, "w", encoding="utf-8") as f:
         json.dump(real_artifact_dict, f)
-    ok, reason = check_artifact(p)
+    ok, reason = check_artifact(p, marker_epoch=marker)
     assert ok is False
     assert "minutes old" in reason or "not fresh" in reason
 
@@ -96,9 +135,10 @@ def test_freshly_timestamped_valid_artifact_passes(real_artifact_dict, tmp_path)
     d = dict(real_artifact_dict)
     d["generated_at_utc"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f+00:00")
     p = tmp_path / "artifact.json"
+    marker = time.time() - 5
     with open(p, "w", encoding="utf-8") as f:
         json.dump(d, f)
-    ok, reason = check_artifact(p)
+    ok, reason = check_artifact(p, marker_epoch=marker)
     assert ok is True, reason
 
 
@@ -107,25 +147,59 @@ def test_fresh_but_structurally_invalid_artifact_fails(real_artifact_dict, tmp_p
     d["generated_at_utc"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f+00:00")
     d["validation"]["exactly_992_cells"] = False
     p = tmp_path / "artifact.json"
+    marker = time.time() - 5
     with open(p, "w", encoding="utf-8") as f:
         json.dump(d, f)
-    ok, reason = check_artifact(p)
+    ok, reason = check_artifact(p, marker_epoch=marker)
     assert ok is False
     assert "exactly_992_cells" in reason
 
 
 def test_missing_artifact_fails_gracefully(tmp_path):
-    ok, reason = check_artifact(tmp_path / "does_not_exist.json")
+    ok, reason = check_artifact(tmp_path / "does_not_exist.json", marker_epoch=time.time())
     assert ok is False
-    assert "missing or unparseable" in reason
+    assert "missing or stat-unreadable" in reason
 
 
 def test_corrupted_json_fails_gracefully(tmp_path):
     p = tmp_path / "artifact.json"
     p.write_text("<<<<<<< HEAD\nnot valid json\n=======\n>>>>>>>", encoding="utf-8")
-    ok, reason = check_artifact(p)
+    ok, reason = check_artifact(p, marker_epoch=time.time() - 60)
     assert ok is False
     assert "missing or unparseable" in reason
+
+
+def test_untouched_file_with_future_marker_fails_the_mtime_check(real_artifact_dict, tmp_path):
+    """2026-10-10 hardening: even a freshly-timestamped, structurally
+    valid artifact must fail if its real filesystem mtime predates the
+    pre-build marker -- this is the actual, external proof this run's
+    generator step touched the file, independent of the file's own
+    self-reported generated_at_utc content."""
+    d = dict(real_artifact_dict)
+    d["generated_at_utc"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f+00:00")
+    p = tmp_path / "artifact.json"
+    with open(p, "w", encoding="utf-8") as f:
+        json.dump(d, f)
+    marker_in_the_future = time.time() + 3600  # simulates a marker captured after the file was written
+    ok, reason = check_artifact(p, marker_epoch=marker_in_the_future)
+    assert ok is False
+    assert "mtime" in reason
+
+
+def test_wrong_record_count_fails_even_if_validation_dict_lies(real_artifact_dict, tmp_path):
+    """The record/cell/lead counts must be re-derived directly from
+    the records array, not merely trusted from the self-reported
+    validation dict (which is computed by the same process)."""
+    d = json.loads(json.dumps(real_artifact_dict))
+    d["generated_at_utc"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f+00:00")
+    d["records"] = d["records"][:100]  # truncate -- but leave validation dict's lie intact
+    p = tmp_path / "artifact.json"
+    marker = time.time() - 5
+    with open(p, "w", encoding="utf-8") as f:
+        json.dump(d, f)
+    ok, reason = check_artifact(p, marker_epoch=marker)
+    assert ok is False
+    assert "4960 records" in reason or "992" in reason
 
 
 def test_workflow_uses_the_independent_check_not_the_process_exit_code():
@@ -143,3 +217,17 @@ def test_workflow_uses_the_independent_check_not_the_process_exit_code():
     import re
     live_gates = re.findall(r"if: steps\.unified_artifact\.outcome == 'success'", text)
     assert live_gates == [], f"found {len(live_gates)} gate(s) still reading the unreliable process exit code"
+
+
+def test_workflow_has_a_pre_build_marker_step_before_the_generator():
+    """The mtime cross-check needs a marker captured OUTSIDE and
+    BEFORE scripts/phase34_build_unified_forecast.py runs -- verify
+    that step exists and genuinely precedes the generator step in the
+    workflow's step order."""
+    workflow_path = REPO_ROOT / ".github" / "workflows" / "forecast_update.yml"
+    text = workflow_path.read_text(encoding="utf-8")
+    marker_idx = text.index("Record pre-build marker timestamp")
+    generator_idx = text.index("id: unified_artifact\n")
+    check_idx = text.index("id: unified_artifact_check")
+    assert marker_idx < generator_idx < check_idx
+    assert "pre_unified_artifact_marker.txt" in text

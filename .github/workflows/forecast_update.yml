@@ -229,6 +229,20 @@ jobs:
       - name: Build canonical forecast
         run: python canonical_forecast_writer.py
 
+      - name: Record pre-build marker timestamp (proves the artifact belongs to THIS run)
+        # 2026-10-10: a timestamp alone inside the artifact's own JSON
+        # content (generated_at_utc) is not independent proof -- it is
+        # written by the same process being validated, so a bug or a
+        # stale cached value there wouldn't be caught by cross-checking
+        # the file against itself. This captures the OS-level wall-clock
+        # time from a point OUTSIDE and BEFORE the generator step, so
+        # the next step can require data/unified_forecast.json's actual
+        # filesystem mtime (not its self-reported content) to be newer
+        # than this marker -- real, external proof the file was written
+        # during this run, not coincidentally already-fresh from
+        # something else.
+        run: date -u +%s > /tmp/pre_unified_artifact_marker.txt
+
       - name: Generate unified SIH forecast artifact (TS/CB/FF, 992 cells x 5 leads)
         id: unified_artifact
         # 2026-10-06 production-plumbing pass (updated same day, Phase 3):
@@ -308,9 +322,23 @@ jobs:
         # reject) AND passes every one of the script's own validation
         # keys again -- so this cannot be tricked by a stale artifact
         # that merely happens to be valid.
+        #
+        # 2026-10-10 hardening: a timestamp alone is not sufficient
+        # proof of successful generation this run -- the artifact's own
+        # generated_at_utc is self-reported by the same process being
+        # validated, and a 30-minute window alone could theoretically
+        # (if unlikely) still match an unrelated stale file. Added: (1)
+        # the file's actual OS-level mtime must be newer than a marker
+        # timestamp captured OUTSIDE and BEFORE the generator step --
+        # real, external proof the file was touched during this run,
+        # not merely self-reported as such; (2) explicit record/cell
+        # counts re-derived directly from the records array itself
+        # (len(records)==4960, len(unique cell_ids)==992), not merely
+        # trusting the validation dict's own booleans, which are
+        # computed by the same process.
         run: |
           python3 -c "
-          import json, sys
+          import json, os, sys
           from datetime import datetime, timezone
 
           def fail(reason):
@@ -320,6 +348,23 @@ jobs:
               sys.exit(0)
 
           path = 'data/unified_forecast.json'
+
+          try:
+              with open('/tmp/pre_unified_artifact_marker.txt') as f:
+                  marker_epoch = int(f.read().strip())
+          except Exception as exc:
+              fail(f'pre-build marker missing or unreadable ({type(exc).__name__}: {exc}) -- '
+                   f'cannot prove this run touched the file at all')
+
+          try:
+              mtime_epoch = os.path.getmtime(path)
+          except Exception as exc:
+              fail(f'{path} missing or stat-unreadable ({type(exc).__name__}: {exc})')
+          if mtime_epoch < marker_epoch:
+              fail(f'{path} filesystem mtime ({mtime_epoch:.0f}) is OLDER than the pre-build marker '
+                   f'for this run ({marker_epoch}) -- this is provably the untouched last-known-good '
+                   f'artifact from a previous run, not something this run wrote')
+
           try:
               with open(path, encoding='utf-8') as f:
                   artifact = json.load(f)
@@ -336,6 +381,21 @@ jobs:
               fail(f'artifact is {age_minutes:.1f} minutes old -- not freshly written this run '
                    f'(the script left the old last-known-good artifact untouched, a genuine reject)')
 
+          records = artifact.get('records', [])
+          if len(records) != 4960:
+              fail(f'expected exactly 4960 records, found {len(records)} (re-derived directly, '
+                   f'not trusting the self-reported validation dict)')
+          unique_cells = {r.get('cell_id') for r in records}
+          if len(unique_cells) != 992:
+              fail(f'expected exactly 992 unique cell_ids, found {len(unique_cells)} (re-derived directly)')
+          lead_hours_by_cell = {}
+          for r in records:
+              lead_hours_by_cell.setdefault(r.get('cell_id'), set()).add(r.get('lead_hours'))
+          incomplete_cells = [c for c, leads in lead_hours_by_cell.items() if len(leads) != 5]
+          if incomplete_cells:
+              fail(f'{len(incomplete_cells)} cell(s) do not have exactly 5 distinct lead_hours '
+                   f'(re-derived directly): {incomplete_cells[:5]}')
+
           v = artifact.get('validation', {})
           required_true = [
               'exactly_992_cells', 'exactly_4960_records', 'all_5_lead_slots_present_per_cell',
@@ -346,7 +406,8 @@ jobs:
           if failed_keys:
               fail(f'validation keys failed: {failed_keys}')
 
-          print(f'OK: artifact is {age_minutes:.1f} min old, all validation keys true')
+          print(f'OK: artifact is {age_minutes:.1f} min old, mtime proves this-run origin, '
+                f'4960 records across 992 cells x 5 leads re-derived directly, all validation keys true')
           with open('/tmp/unified_artifact_check_ok.txt', 'w') as f:
               f.write('true')
           "
