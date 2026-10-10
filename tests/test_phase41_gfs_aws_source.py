@@ -94,3 +94,31 @@ def test_cape_over_india_bbox_is_physically_plausible(tmp_path):
     assert 0.0 <= cape_min
     assert cape_max < 10000.0  # physically implausible above this for CAPE in J/kg
     assert cape_max > 0.0, "all-zero CAPE across all of India would indicate a decode/crop bug, not real data"
+
+
+def test_validate_grib_does_not_import_xarray_or_cfgrib():
+    """2026-10-10: a real Linux CI run showed validate_grib's earlier
+    xarray+cfgrib implementation (with a del+gc.collect() mitigation)
+    still crashed with 'double free or corruption (!prev)' at
+    interpreter shutdown -- confirming gc.collect() alone does not fix
+    this class of native memory-management defect. Switched to
+    eccodes' own low-level GRIB message API, which never goes through
+    cfgrib's index/backend-management layer at all. This structural
+    guard catches a future regression back to the crash-prone
+    implementation, independent of whether a given test environment
+    can actually reproduce the Linux-specific crash itself."""
+    import ast
+    import inspect
+    source = inspect.getsource(g.validate_grib)
+    tree = ast.parse(source)
+    imported_names = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            imported_names.update(alias.name for alias in node.names)
+        elif isinstance(node, ast.ImportFrom) and node.module:
+            imported_names.add(node.module)
+    assert "xarray" not in imported_names, (
+        "validate_grib must not import xarray -- this is the crash-prone cfgrib "
+        "wrapper path, confirmed still crashing on real Linux CI even with gc.collect()"
+    )
+    assert "eccodes" in imported_names, "validate_grib should use eccodes' own low-level API directly"

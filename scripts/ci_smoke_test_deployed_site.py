@@ -30,8 +30,19 @@ import urllib.error
 import urllib.request
 
 SITE = sys.argv[1] if len(sys.argv) > 1 else "https://sih-hyperlocal-warning.pages.dev"
-MAX_ATTEMPTS = 6
-RETRY_DELAY_S = 10
+# 2026-10-10: the first retry/backoff version of this script (20s
+# initial wait + 6 attempts x 10s = ~90s total) was tested against a
+# REAL run and still exhausted every attempt with HTTP 403 -- but a
+# direct manual curl against the same URL, 5 minutes after that same
+# deploy, returned 200. So this genuinely is Cloudflare edge
+# propagation, confirmed by real before/after evidence, not a
+# persistent failure -- it just takes longer than 90s sometimes.
+# Widened to a bounded ~4.5 minute total window (30s initial + 16
+# attempts x 15s), based on that real observed resolution time, not a
+# guess. Still bounded and finite -- a genuinely broken deployment
+# will still exhaust this and fail loudly.
+MAX_ATTEMPTS = 16
+RETRY_DELAY_S = 15
 
 
 def _fetch(url):
@@ -52,23 +63,31 @@ def _fetch(url):
 def check_with_retry(url, label):
     """Retries on failure with backoff -- real transient CDN
     propagation delays resolve within this window; a genuinely broken
-    deployment will still fail every attempt and be reported as such."""
+    deployment will still fail every attempt and be reported as such.
+
+    2026-10-10: stdout is fully buffered (not a tty) on the real GitHub
+    Actions runner -- the first version of this retry loop's "attempt
+    N/M failed" lines all showed up with IDENTICAL timestamps in the
+    real job log, even though real wall-clock time (confirmed via a
+    direct manual curl minutes later) genuinely elapsed between
+    attempts. flush=True on every print makes the log actually show
+    real per-attempt timestamps for whoever debugs this next."""
     last_detail = None
     for attempt in range(1, MAX_ATTEMPTS + 1):
         status, body, detail = _fetch(url)
         if status == 200:
             if attempt > 1:
                 print(f"{label}: HTTP 200 (succeeded on attempt {attempt}/{MAX_ATTEMPTS} -- "
-                      f"earlier attempt(s) hit transient CDN propagation delay)")
+                      f"earlier attempt(s) hit transient CDN propagation delay)", flush=True)
             else:
-                print(f"{label}: HTTP 200")
+                print(f"{label}: HTTP 200", flush=True)
             return status, body
         last_detail = detail or f"HTTP {status}"
-        print(f"{label}: attempt {attempt}/{MAX_ATTEMPTS} failed ({last_detail})")
+        print(f"{label}: attempt {attempt}/{MAX_ATTEMPTS} failed ({last_detail})", flush=True)
         if attempt < MAX_ATTEMPTS:
             time.sleep(RETRY_DELAY_S)
     print(f"{label}: FAILED after {MAX_ATTEMPTS} attempts ({last_detail}) -- "
-          f"this is NOT a propagation delay, the deployment is genuinely unreachable")
+          f"this is NOT a propagation delay, the deployment is genuinely unreachable", flush=True)
     return None, None
 
 
@@ -76,7 +95,7 @@ def main():
     # Longer initial wait than the old single-shot 15s -- gives the
     # first real attempt a better chance before burning a retry on an
     # almost-certain propagation-window failure.
-    time.sleep(20)
+    time.sleep(30)
 
     frontend_status, _ = check_with_retry(SITE + "/", "frontend")
     uf_status, uf_body = check_with_retry(SITE + "/data/unified_forecast.json", "unified_forecast.json")
