@@ -3977,7 +3977,20 @@ function injectDrainageOverlay(map, liveData) {
                       </div>
                       <div style={{ fontSize: 9, color: '#475569', marginTop: 6 }}>
                         Cell {R.pan_india.cell?.lat}°N {R.pan_india.cell?.lon}°E * {R.pan_india.distance_km} km away * GFS {R.pan_india.gfs_cycle}
+                        {R.pan_india.forecast_lead_hours != null && ` * f${String(R.pan_india.forecast_lead_hours).padStart(3, '0')}`}
+                        {R.pan_india.time_until_valid_hours != null && ` (+${R.pan_india.time_until_valid_hours.toFixed(1)}h)`}
                       </div>
+                      {/* 2026-10-10: TS was the only one of the three
+                          pan-India hazards with no honesty caveat at all --
+                          it is ALSO backend/pipeline.py's physics-baseline
+                          formula here (confirmed via the real
+                          is_calibrated_probability field), not a trained
+                          model, for every cell outside VOBL. */}
+                      {!R.pan_india.is_calibrated_probability && (
+                        <div style={{ fontSize: 9, color: '#64748b', marginTop: 2 }}>
+                          TS: physics-baseline formula, not a trained model (VOBL/Bengaluru has a real trained model separately)
+                        </div>
+                      )}
                       {R.pan_india.cb_probability_source && R.pan_india.cb_probability_source.includes('panindia_cb_v1') ? (
                         <div style={{ fontSize: 9, color: '#38bdf8', marginTop: 2 }}>
                           CB: real trained model ({R.pan_india.cb_source_status || 'cycle unknown'}) -- daily-resolution target, not 5 independent lead-specific predictions

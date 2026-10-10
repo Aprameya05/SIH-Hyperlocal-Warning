@@ -163,6 +163,23 @@ console.log('test_against_real_on_disk_grid_file (catches key-name mismatches ag
     const m = E.findNearestCell(realGrid, E.VOBL_LAT, E.VOBL_LON);
     check('real on-disk grid_cells key is read correctly (not silently empty)', m.available === true, m.reason);
     if (m.available) check('matched cell has a thunderstorm_probability field', 'thunderstorm_probability' in m.cell);
+
+    // 2026-10-10: backend/pipeline.py's "forecasts[]" is the real source
+    // of truth (added in a later phase than the legacy flat-field
+    // mirror); confirm the honesty fields (model_type, value_type,
+    // is_calibrated_probability) genuinely exist on a real on-disk cell
+    // -- not just asserted to exist in a synthetic test fixture.
+    if (realGrid.forecasts && realGrid.forecasts.length) {
+      const primary = realGrid.forecasts.find(f => f.is_primary) || realGrid.forecasts[0];
+      const b = E.buildLocationBundle(E.VOBL_LAT, E.VOBL_LON, realGrid, null, null);
+      check('real forecasts[] exists and has a primary entry', !!primary, 'no forecasts[] or no primary entry');
+      check('pan_india.model_type surfaces the real on-disk value',
+            b.pan_india.model_type === 'physics_baseline', b.pan_india.model_type);
+      check('pan_india.is_calibrated_probability surfaces the real on-disk value (false for physics-baseline)',
+            b.pan_india.is_calibrated_probability === false);
+    } else {
+      console.log('  [SKIP] real on-disk grid has no forecasts[] yet (stale/legacy-schema artifact)');
+    }
   }
 }
 
