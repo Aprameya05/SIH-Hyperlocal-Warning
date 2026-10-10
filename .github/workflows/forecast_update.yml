@@ -283,6 +283,76 @@ jobs:
           }
         continue-on-error: true
 
+      - name: Verify unified artifact is genuinely fresh and valid (independent of process exit code)
+        id: unified_artifact_check
+        # 2026-10-10: two separate attempts (os._exit(0), then
+        # MALLOC_ARENA_MAX=1/OMP_NUM_THREADS=1/nthread=1) to fix the real
+        # exit-134 "double free or corruption (!prev)" native crash in
+        # the step above have both failed to stop it from happening on
+        # every real CI run (confirmed via the GitHub Checks annotations
+        # API) -- yet the ORIGINAL incident report that started this
+        # investigation showed the crash happens AFTER the script already
+        # printed accepted=true, i.e. after scripts/phase34_build_unified_
+        # forecast.py's own atomic os.replace() already safely wrote a
+        # genuinely valid data/unified_forecast.json to disk. Relying on
+        # the Python process's OWN exit code to decide
+        # steps.unified_artifact.outcome is therefore the wrong signal --
+        # a native crash in cleanup code that runs AFTER the real work
+        # finished will always masquerade as a build failure under that
+        # scheme, no matter how the crash itself is eventually fixed.
+        # This step instead independently re-validates the artifact's
+        # actual on-disk content and freshness, decoupled from whatever
+        # the process's exit code was. A file is only accepted here if
+        # it is BOTH freshly written during this exact job run (not the
+        # old last-known-good artifact left untouched by a genuine
+        # reject) AND passes every one of the script's own validation
+        # keys again -- so this cannot be tricked by a stale artifact
+        # that merely happens to be valid.
+        run: |
+          python3 -c "
+          import json, sys
+          from datetime import datetime, timezone
+
+          def fail(reason):
+              print(f'NOT OK: {reason}')
+              with open('/tmp/unified_artifact_check_ok.txt', 'w') as f:
+                  f.write('false')
+              sys.exit(0)
+
+          path = 'data/unified_forecast.json'
+          try:
+              with open(path, encoding='utf-8') as f:
+                  artifact = json.load(f)
+          except Exception as exc:
+              fail(f'{path} missing or unparseable ({type(exc).__name__}: {exc})')
+
+          generated_at = artifact.get('generated_at_utc')
+          try:
+              generated_dt = datetime.fromisoformat(generated_at.replace('Z', '+00:00'))
+          except Exception as exc:
+              fail(f'generated_at_utc missing or unparseable ({generated_at!r}: {exc})')
+          age_minutes = (datetime.now(timezone.utc) - generated_dt).total_seconds() / 60.0
+          if age_minutes > 30:
+              fail(f'artifact is {age_minutes:.1f} minutes old -- not freshly written this run '
+                   f'(the script left the old last-known-good artifact untouched, a genuine reject)')
+
+          v = artifact.get('validation', {})
+          required_true = [
+              'exactly_992_cells', 'exactly_4960_records', 'all_5_lead_slots_present_per_cell',
+              'lead_time_arithmetic_correct_for_every_record', 'all_present_probabilities_in_0_1_range',
+              'ff_never_carries_a_fabricated_probability', 'no_unavailable_probability_mapped_to_a_risk_category',
+          ]
+          failed_keys = [k for k in required_true if not v.get(k)]
+          if failed_keys:
+              fail(f'validation keys failed: {failed_keys}')
+
+          print(f'OK: artifact is {age_minutes:.1f} min old, all validation keys true')
+          with open('/tmp/unified_artifact_check_ok.txt', 'w') as f:
+              f.write('true')
+          "
+          echo "ok=$(cat /tmp/unified_artifact_check_ok.txt)" >> "$GITHUB_OUTPUT"
+        continue-on-error: true
+
       - name: Send WhatsApp alerts
         env:
           WORKER_URL: ${{ secrets.WORKER_URL }}
@@ -354,24 +424,32 @@ jobs:
         # this run's own output always wins over whatever pull merged in.
         #
         # 2026-10-08 Phase 1 addition: data/unified_forecast.json is now
-        # EXPLICITLY excluded from the commit entirely when
-        # steps.unified_artifact.outcome != 'success' (checked via
-        # .outcome, never .conclusion, which continue-on-error overrides
-        # to always read 'success'). This is on top of, not instead of,
-        # the backup/restore/JSON-validate protection below -- a failed
-        # build must never even be CANDIDATE for commit, not merely
-        # "happen to be filtered out by always being byte-identical to
-        # the last good copy".
+        # EXPLICITLY excluded from the commit entirely unless
+        # steps.unified_artifact_check.outputs.ok == 'true'. This is on
+        # top of, not instead of, the backup/restore/JSON-validate
+        # protection below -- a failed build must never even be
+        # CANDIDATE for commit, not merely "happen to be filtered out by
+        # always being byte-identical to the last good copy".
+        #
+        # 2026-10-10: switched the gate's source from
+        # steps.unified_artifact.outcome (the Python process's own exit
+        # code) to steps.unified_artifact_check.outputs.ok (an
+        # independent re-validation of the artifact's actual on-disk
+        # content and freshness) -- see that step's own comment for why:
+        # the real exit-134 native crash this process hits on Linux
+        # happens AFTER the artifact is already correctly written, so
+        # gating on exit code alone permanently blocks every commit even
+        # once the artifact itself is genuinely good.
         env:
-          UNIFIED_ARTIFACT_OUTCOME: ${{ steps.unified_artifact.outcome }}
+          UNIFIED_ARTIFACT_OUTCOME: ${{ steps.unified_artifact_check.outputs.ok }}
         run: |
           git config --global user.name  "SIH Forecast Bot"
           git config --global user.email "bot@sih-hyperlocal.in"
           GENERATED_FILES="forecast.json data/gfs_realtime_43295.csv data/upperair_realtime_43295.csv data/gfs_multiday_43295.json data/himawari_realtime.json data/himawari_history.json data/himawari_b08_features.json data/realtime_shap.json data/verification_today.json data/pipeline_health.json data/skill_scores.json data/forecast_log.csv data/alert_history.json data/blr_terrain.json"
-          if [ "$UNIFIED_ARTIFACT_OUTCOME" = "success" ]; then
+          if [ "$UNIFIED_ARTIFACT_OUTCOME" = "true" ]; then
             GENERATED_FILES="$GENERATED_FILES data/unified_forecast.json"
           else
-            echo "unified_artifact step outcome was '$UNIFIED_ARTIFACT_OUTCOME', not 'success' -- data/unified_forecast.json will NOT be committed this run; last-known-good stays authoritative"
+            echo "unified_artifact_check outputs.ok was '$UNIFIED_ARTIFACT_OUTCOME', not 'true' -- data/unified_forecast.json will NOT be committed this run; last-known-good stays authoritative"
           fi
           mkdir -p /tmp/generated_backup
           for f in $GENERATED_FILES; do
@@ -423,14 +501,14 @@ jobs:
         # git -- now fixed separately) and the pipeline still proceeded
         # all the way to attempting a deploy. Gating this step (and
         # every step after it through the post-deploy smoke test) on
-        # steps.unified_artifact.outcome == 'success' makes that
+        # steps.unified_artifact_check.outputs.ok == 'true' makes that
         # architecturally impossible going forward: a failed unified
         # build now stops the ENTIRE deploy, not just the one file --
         # per explicit instruction not to publish anything when the
         # pipeline had a partial failure, even though
         # data/unified_forecast.json itself was already protected from
         # corruption (last-known-good preserved; see the commit step).
-        if: steps.unified_artifact.outcome == 'success'
+        if: steps.unified_artifact_check.outputs.ok == 'true'
         run: |
           set -e
           rm -rf pages_dist
@@ -480,11 +558,11 @@ jobs:
         # scripts/phase34_build_unified_forecast.py computed and embedded
         # in the artifact itself -- this is a second, independent gate
         # right before deploy, not a re-implementation of that logic.
-        if: steps.unified_artifact.outcome == 'success'
+        if: steps.unified_artifact_check.outputs.ok == 'true'
         run: python3 scripts/ci_validate_unified_artifact.py pages_dist/data/unified_forecast.json
 
       - name: Deploy to Cloudflare Pages
-        if: steps.unified_artifact.outcome == 'success'
+        if: steps.unified_artifact_check.outputs.ok == 'true'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
@@ -498,7 +576,7 @@ jobs:
         # continue-on-error: true because this is a diagnostic check, not
         # a gate -- the deploy already happened by this point, and
         # failing the whole scheduled job here would not undo it.
-        if: steps.unified_artifact.outcome == 'success'
+        if: steps.unified_artifact_check.outputs.ok == 'true'
         continue-on-error: true
         run: |
           sleep 15
