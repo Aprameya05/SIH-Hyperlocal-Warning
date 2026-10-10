@@ -269,17 +269,42 @@ def validate_grib(path: Path) -> dict:
     resource-lifecycle fix, not a mechanism for ignoring or hiding a
     crash: the actual decode result (variables found, or a real
     exception) is still computed and returned normally either way."""
+    # 2026-10-10: confirmed via a REAL Linux CI run (full raw job log,
+    # not just the summary annotation) that the earlier del+gc.collect()
+    # mitigation did NOT stop this crash -- it still recurs at the exact
+    # same location. Per explicit instruction not to assume gc.collect()
+    # alone fixes a native memory-management defect: switched to
+    # eccodes' own low-level GRIB message API (codes_grib_new_from_file
+    # / codes_get / codes_release) instead of xarray+cfgrib's wrapper.
+    # This is a genuinely different, more minimal code path -- it never
+    # goes through cfgrib's own index/backend-management layer at all,
+    # which is the layer implicated in this documented class of
+    # cfgrib/eccodes double-free-at-exit bug. Every opened message is
+    # explicitly, individually released (codes_release) before the file
+    # handle itself is closed -- eccodes' own documented, supported
+    # resource-lifecycle contract for this API, not an improvised one.
+    # scripts/gfs_live_cb_predictors.py's real decode path (xarray's
+    # multi-variable merge, which this simple single-field validation
+    # does not need) is UNCHANGED and keeps its own del+gc.collect() as
+    # defense in depth -- it has not crashed across two consecutive
+    # real CI runs since that fix landed.
     try:
-        import xarray as xr
+        import eccodes
     except ImportError:
-        return {"readable": False, "reason": "xarray/cfgrib not installed in this environment"}
+        return {"readable": False, "reason": "eccodes not installed in this environment"}
     try:
-        ds = xr.open_dataset(str(path), engine="cfgrib", backend_kwargs={"indexpath": ""})
-        varnames = list(ds.data_vars)
-        ds.close()
-        del ds
-        import gc
-        gc.collect()
+        varnames = []
+        with open(path, "rb") as f:
+            while True:
+                gid = eccodes.codes_grib_new_from_file(f)
+                if gid is None:
+                    break
+                try:
+                    varnames.append(eccodes.codes_get(gid, "shortName"))
+                finally:
+                    eccodes.codes_release(gid)
+        if not varnames:
+            return {"readable": False, "reason": "no GRIB messages found in file"}
         return {"readable": True, "variables": varnames}
     except Exception as exc:
         return {"readable": False, "reason": f"{type(exc).__name__}: {exc}"}
