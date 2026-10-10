@@ -3987,6 +3987,19 @@ function injectDrainageOverlay(map, liveData) {
                           CB: physics-baseline formula, not a trained model
                         </div>
                       )}
+                      {/* 2026-10-10: the pan-India ff_probability shown above
+                          comes from backend/pipeline.py's deterministic
+                          physics-baseline formula, not the real FF model
+                          (RESEARCH_ONLY_model_c_logistic, PU-ranking only --
+                          no valid operational flood probability exists).
+                          Showing it as a plain percentage with an implied
+                          risk level, with no caveat, misrepresents a
+                          heuristic as a calibrated flood probability --
+                          exactly what must never happen per this project's
+                          own FF-honesty rule. */}
+                      <div style={{ fontSize: 9, color: '#64748b', marginTop: 2 }}>
+                        FF: physics-baseline formula, not a validated flood probability (real FF model is research-only)
+                      </div>
                     </div>
                   );
                 }
@@ -4027,6 +4040,9 @@ function injectDrainageOverlay(map, liveData) {
                           <div style={{ fontSize: 8, color: '#64748b' }}>FF ROUTED</div>
                           <div style={{ fontSize: 12, fontWeight: 700, color: '#f59e0b' }}>{fmtPct(R.pan_india.ff_probability_terrain_adjusted)}</div>
                         </div>
+                      </div>
+                      <div style={{ fontSize: 9, color: '#64748b', marginTop: 6 }}>
+                        FF BASE/ROUTED: physics-baseline formula, not a validated flood probability (real FF model is research-only)
                       </div>
                     </div>
                   );
