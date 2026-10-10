@@ -2091,10 +2091,10 @@ function AlertLogTable() {
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 14 }}>
           {[
-            { label: 'PROBABILITY OF DETECTION', val: summary.pod != null ? (summary.pod * 100).toFixed(0) + '%' : '83%', sub: 'Target > 75%', col: '#22c55e' },
-            { label: 'FALSE ALARM RATIO', val: summary.far != null ? (summary.far * 100).toFixed(0) + '%' : '17%', sub: 'Target < 25%', col: '#eab308' },
-            { label: 'CRITICAL SUCCESS INDEX', val: summary.csi != null ? summary.csi.toFixed(3) : '0.714', sub: 'Threat Score', col: '#38bdf8' },
-            { label: 'MEAN LEAD TIME', val: summary.mean_lead_time_hr != null ? `${summary.mean_lead_time_hr}h` : '5.3h', sub: 'Exceeds 2h minimum', col: '#38bdf8' },
+            { label: 'PROBABILITY OF DETECTION', val: summary.pod != null ? (summary.pod * 100).toFixed(0) + '%' : 'N/A', sub: summary.pod != null ? 'Target > 75%' : 'no verified events in window', col: '#22c55e' },
+            { label: 'FALSE ALARM RATIO', val: summary.far != null ? (summary.far * 100).toFixed(0) + '%' : 'N/A', sub: summary.far != null ? 'Target < 25%' : 'no verified events in window', col: '#eab308' },
+            { label: 'CRITICAL SUCCESS INDEX', val: summary.csi != null ? summary.csi.toFixed(3) : 'N/A', sub: summary.csi != null ? 'Threat Score' : 'no verified events in window', col: '#38bdf8' },
+            { label: 'MEAN LEAD TIME', val: summary.mean_lead_time_hr != null ? `${summary.mean_lead_time_hr}h` : 'N/A', sub: summary.mean_lead_time_hr != null ? 'Exceeds 2h minimum' : 'no verified events in window', col: '#38bdf8' },
           ].map(chip => (
             <div key={chip.label} style={{
               padding: '14px 16px', borderRadius: 14,
@@ -4436,10 +4436,10 @@ function injectDrainageOverlay(map, liveData) {
               gap: isMobile ? 8 : 14, marginBottom: 28
             }}>
               {[
-                { label: 'PROBABILITY OF DETECTION', val: alertLog?.summary_30d?.pod != null ? (alertLog.summary_30d.pod * 100).toFixed(0) + '%' : '83%', sub: 'Target > 75%' },
-                { label: 'FALSE ALARM RATIO (FAR)', val: alertLog?.summary_30d?.far != null ? (alertLog.summary_30d.far * 100).toFixed(0) + '%' : '17%', sub: 'Target < 25%' },
-                { label: 'CRITICAL SUCCESS INDEX', val: alertLog?.summary_30d?.csi != null ? alertLog.summary_30d.csi.toFixed(3) : '0.714', sub: 'Threat Score' },
-                { label: 'MEAN OPERATIONAL LEAD', val: alertLog?.summary_30d?.mean_lead_time_hr != null ? `${alertLog.summary_30d.mean_lead_time_hr}h` : '5.3h', sub: 'Exceeds 2h minimum' },
+                { label: 'PROBABILITY OF DETECTION', val: alertLog?.summary_30d?.pod != null ? (alertLog.summary_30d.pod * 100).toFixed(0) + '%' : 'N/A', sub: alertLog?.summary_30d?.pod != null ? 'Target > 75%' : 'no verified events in window' },
+                { label: 'FALSE ALARM RATIO (FAR)', val: alertLog?.summary_30d?.far != null ? (alertLog.summary_30d.far * 100).toFixed(0) + '%' : 'N/A', sub: alertLog?.summary_30d?.far != null ? 'Target < 25%' : 'no verified events in window' },
+                { label: 'CRITICAL SUCCESS INDEX', val: alertLog?.summary_30d?.csi != null ? alertLog.summary_30d.csi.toFixed(3) : 'N/A', sub: alertLog?.summary_30d?.csi != null ? 'Threat Score' : 'no verified events in window' },
+                { label: 'MEAN OPERATIONAL LEAD', val: alertLog?.summary_30d?.mean_lead_time_hr != null ? `${alertLog.summary_30d.mean_lead_time_hr}h` : 'N/A', sub: alertLog?.summary_30d?.mean_lead_time_hr != null ? 'Exceeds 2h minimum' : 'no verified events in window' },
               ].map(chip => (
                 <div key={chip.label} style={{
                   padding: '12px 16px', borderRadius: 14,

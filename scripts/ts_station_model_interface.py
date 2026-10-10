@@ -61,6 +61,14 @@ class VOBLThunderstormModel:
             with open(MODEL_PATH, "rb") as f:
                 bundle = pickle.load(f)
         self.model = bundle["model"]
+        # 2026-10-10: same defense-in-depth as panindia_cb_model_interface.py
+        # against the real exit-134 "double free or corruption (!prev)"
+        # crash traced to multi-threaded xgboost/OpenBLAS native cleanup
+        # on Linux glibc -- confirmed still happening in CI.
+        try:
+            self.model.get_booster().set_param({"nthread": 1})
+        except Exception:
+            pass
         self.feature_cols = bundle["features"]
         self.threshold = bundle["threshold"]
 
