@@ -4009,10 +4009,25 @@ function injectDrainageOverlay(map, liveData) {
                           risk level, with no caveat, misrepresents a
                           heuristic as a calibrated flood probability --
                           exactly what must never happen per this project's
-                          own FF-honesty rule. */}
+                          own FF-honesty rule. ff_research_status
+                          additionally distinguishes whether a real,
+                          research-only PU ranking ALSO exists for this
+                          specific cell (true for only 71/992 cells --
+                          genuine sparse INDOFLOODS catchment coverage,
+                          not a bug) from the 921/992 cells where no real
+                          FF model coverage exists at all. */}
                       <div style={{ fontSize: 9, color: '#64748b', marginTop: 2 }}>
                         FF: physics-baseline formula, not a validated flood probability (real FF model is research-only)
                       </div>
+                      {R.pan_india.ff_research_status === 'RESEARCH_ONLY_PU_SCORE_AVAILABLE' ? (
+                        <div style={{ fontSize: 9, color: '#a78bfa', marginTop: 2 }}>
+                          FF research coverage: a real PU ranking score exists for this cell ({R.pan_india.ff_research_pu_score?.toFixed(2)}) -- research-only, not an operational probability
+                        </div>
+                      ) : (
+                        <div style={{ fontSize: 9, color: '#64748b', marginTop: 2, fontStyle: 'italic' }}>
+                          FF research coverage: UNAVAILABLE for this cell (no catchment/rainfall data)
+                        </div>
+                      )}
                     </div>
                   );
                 }

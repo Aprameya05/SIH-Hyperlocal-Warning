@@ -153,6 +153,25 @@ console.log('test_cb_probability_source_passes_through_the_real_trained_model_la
   check('cb_source_status surfaces the real live source status', b.pan_india.cb_source_status === 'LIVE_AWS_GFS');
 }
 
+console.log('test_ff_research_status_defaults_to_no_coverage_when_sync_has_not_run');
+{
+  const grid = makeGrid(); // cells here have NO flash_flood_research_status field
+  const b = E.buildLocationBundle(13.0, 77.0, grid, null, null);
+  check('ff_research_status defaults to NO_RESEARCH_COVERAGE', b.pan_india.ff_research_status === 'NO_RESEARCH_COVERAGE');
+  check('ff_research_pu_score is null when no real score exists', b.pan_india.ff_research_pu_score === null);
+}
+
+console.log('test_ff_research_status_passes_through_a_real_pu_score');
+{
+  const grid = makeGrid();
+  grid.grid_cells[0].flash_flood_research_status = 'RESEARCH_ONLY_PU_SCORE_AVAILABLE';
+  grid.grid_cells[0].flash_flood_research_pu_score = 1.0;
+  const b = E.buildLocationBundle(13.0, 77.0, grid, null, null);
+  check('ff_research_status surfaces real research coverage', b.pan_india.ff_research_status === 'RESEARCH_ONLY_PU_SCORE_AVAILABLE');
+  check('ff_research_pu_score surfaces the real score', b.pan_india.ff_research_pu_score === 1.0);
+  check('ff_probability (physics-baseline) is untouched', b.pan_india.ff_probability === grid.grid_cells[0].flash_flood_probability);
+}
+
 console.log('test_against_real_on_disk_grid_file (catches key-name mismatches against the real file)');
 {
   const gridPath = path.join(ROOT, 'data', 'pan_india_grid.json');

@@ -245,7 +245,30 @@ def fetch_cycle_subset(cycle: CycleInfo, fhour: int, out_path: Path,
 def validate_grib(path: Path) -> dict:
     """Opens the subset file with cfgrib and reports what variables
     actually decoded -- never assumes a successful HTTP fetch means a
-    readable GRIB file."""
+    readable GRIB file.
+
+    2026-10-10: this exact call (xr.open_dataset(..., engine="cfgrib"))
+    is the precise, confirmed source of a real production "double free
+    or corruption (!prev)" crash -- found by pulling the FULL raw job
+    log for a real GitHub Actions run (not just the public
+    check-run-annotations summary) and locating the exact timestamp:
+    the crash happens immediately after this function's own successful
+    return, during this short script's CPython interpreter shutdown,
+    specifically in the "Preflight -- AWS Open Data GFS mirror" step
+    (a separate, isolated heredoc script -- NOT
+    scripts/phase34_build_unified_forecast.py, which was wrongly
+    assumed to be the only place this happens, and NOT an
+    xgboost/shap/OpenMP issue, which an earlier, now-understood-to-be-
+    irrelevant MALLOC_ARENA_MAX/OMP_NUM_THREADS mitigation targeted).
+    cfgrib/eccodes double-free-at-exit bugs are a documented class of
+    issue tied to the underlying eccodes C library's own index/handle
+    finalization running too late, at implicit interpreter-shutdown
+    refcounting time rather than at an explicit, controlled point.
+    del + gc.collect() here forces that finalization to happen
+    synchronously, in this function, under our control -- a real
+    resource-lifecycle fix, not a mechanism for ignoring or hiding a
+    crash: the actual decode result (variables found, or a real
+    exception) is still computed and returned normally either way."""
     try:
         import xarray as xr
     except ImportError:
@@ -254,6 +277,9 @@ def validate_grib(path: Path) -> dict:
         ds = xr.open_dataset(str(path), engine="cfgrib", backend_kwargs={"indexpath": ""})
         varnames = list(ds.data_vars)
         ds.close()
+        del ds
+        import gc
+        gc.collect()
         return {"readable": True, "variables": varnames}
     except Exception as exc:
         return {"readable": False, "reason": f"{type(exc).__name__}: {exc}"}
