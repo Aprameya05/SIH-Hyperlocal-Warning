@@ -115,6 +115,20 @@
           generated_at_utc: panIndiaGrid.generated_at_utc,
           gfs_cycle: panIndiaGrid.gfs_cycle,
           gfs_fhour: panIndiaGrid.gfs_fhour,
+          // 2026-10-10: backend/pipeline.py already computes these honest
+          // per-cell labels (confirmed against a real, freshly-generated
+          // data/pan_india_grid.json) but they were never passed through
+          // to the frontend -- this surfaces them so the UI can show, for
+          // every hazard value from THIS source, whether it is a
+          // calibrated probability or an uncalibrated physics-baseline
+          // heuristic score, matching the real per-cell truth rather than
+          // a single static caveat sentence.
+          model_type: c.model_type || 'physics_baseline',
+          value_type: c.value_type || 'heuristic_risk_score',
+          is_calibrated_probability: c.is_calibrated_probability === true,
+          forecast_lead_hours: c.forecast_lead_hours ?? null,
+          forecast_valid_at_utc: c.forecast_valid_at_utc || null,
+          time_until_valid_hours: c.time_until_valid_hours ?? null,
         };
       } else {
         panIndiaOut = { available: false, reason: match.reason };
