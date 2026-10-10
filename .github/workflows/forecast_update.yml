@@ -248,6 +248,28 @@ jobs:
         # legacy VOBL dashboard deploy that the rest of this job produces;
         # the step's own exit code (visible in the Action run log) still
         # shows this clearly rather than silently looking green.
+        #
+        # 2026-10-10: the prior os._exit(0) fix (added to the script's
+        # __main__ guard, on the theory the "double free or corruption
+        # (!prev)" crash happened during CPython's post-return interpreter
+        # shutdown) was verified on this session's own Windows dev
+        # machine -- which CANNOT reproduce a glibc heap-corruption abort
+        # at all, Windows doesn't use glibc's malloc. That "verification"
+        # was never meaningful evidence for the real failure. Confirmed via
+        # the GitHub Checks annotations API (job logs require repo sign-in
+        # this session has no credentials for, but check-run annotations
+        # are public) that the real Ubuntu runner is STILL hitting exit
+        # code 134 on every run since, meaning the crash happens somewhere
+        # os._exit(0) never gets reached -- most likely DURING execution
+        # in a native-extension worker thread (xgboost/OpenMP), not only
+        # at shutdown. MALLOC_ARENA_MAX=1 and OMP_NUM_THREADS=1 are the
+        # standard, widely-documented mitigation for exactly this "double
+        # free or corruption (!prev)" signature from multi-threaded
+        # xgboost/OpenBLAS on Linux glibc (thread-local malloc arenas
+        # racing on the same corrupted heap region) -- not a blind guess.
+        env:
+          MALLOC_ARENA_MAX: "1"
+          OMP_NUM_THREADS: "1"
         run: python scripts/phase34_build_unified_forecast.py
         continue-on-error: true
 

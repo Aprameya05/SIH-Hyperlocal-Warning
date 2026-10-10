@@ -62,6 +62,16 @@ class PanIndiaCBModel:
         # already returns P(class=1) directly -- no wrapper needed.
         self.model = xgb.Booster()
         self.model.load_model(str(ARTIFACT_DIR / f"{artifact_name}_model.json"))
+        # 2026-10-10: real production crash (exit 134, "double free or
+        # corruption (!prev)") traced to this exact class of multi-
+        # threaded xgboost/OpenBLAS native cleanup on Linux glibc --
+        # confirmed still happening in CI via the GitHub Checks
+        # annotations API after an earlier, Windows-only-verified fix
+        # turned out not to address it. nthread=1 here is defense in
+        # depth alongside the workflow's own MALLOC_ARENA_MAX=1 /
+        # OMP_NUM_THREADS=1 env vars -- OMP_NUM_THREADS does not always
+        # fully constrain XGBoost's own internal thread pool sizing.
+        self.model.set_param({"nthread": 1})
         cal_path = ARTIFACT_DIR / f"{artifact_name}_calibrator.pkl"
         self.calibrator = None
         if cal_path.exists():
