@@ -3940,9 +3940,27 @@ function injectDrainageOverlay(map, liveData) {
                 if (!R) return unavailable('Telemetry loading…');
                 if (selectedArchitecture === 'PAN_INDIA') {
                   if (!R.pan_india.available) return unavailable(R.pan_india.reason);
+                  // 2026-10-10: R.pan_india.generated_at_utc was computed and
+                  // stored on activeLocation.freshness but never actually
+                  // read or displayed anywhere -- dead state. The pan-India
+                  // TS/CB/FF values shown here could be hours or days stale
+                  // (the live site was found serving an 8-day-old grid) with
+                  // no visible indication. 12h threshold matches this
+                  // project's ARTIFACT_STALE_AFTER_HOURS convention
+                  // (backend/unified_api.py) -- twice the ~4-6h GFS cadence.
+                  const gridAgeHours = R.pan_india.generated_at_utc
+                    ? (Date.now() - new Date(R.pan_india.generated_at_utc).getTime()) / 3600000
+                    : null;
+                  const gridIsStale = gridAgeHours !== null && gridAgeHours > 12;
                   return (
                     <div>
                       <div style={{ fontSize: 9, color: '#64748b', marginBottom: 6 }}>{R.pan_india.source}</div>
+                      {gridIsStale && (
+                        <div style={{ fontSize: 9, color: '#f59e0b', background: 'rgba(245,158,11,0.1)',
+                                      padding: '3px 6px', borderRadius: 4, marginBottom: 6, fontWeight: 700 }}>
+                          STALE -- grid data is {gridAgeHours.toFixed(0)}h old, not current
+                        </div>
+                      )}
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
                         <div style={{ background: 'rgba(255,255,255,0.03)', padding: '5px 7px', borderRadius: 6 }}>
                           <div style={{ fontSize: 8, color: '#64748b' }}>TS</div>
@@ -3960,6 +3978,15 @@ function injectDrainageOverlay(map, liveData) {
                       <div style={{ fontSize: 9, color: '#475569', marginTop: 6 }}>
                         Cell {R.pan_india.cell?.lat}°N {R.pan_india.cell?.lon}°E * {R.pan_india.distance_km} km away * GFS {R.pan_india.gfs_cycle}
                       </div>
+                      {R.pan_india.cb_probability_source && R.pan_india.cb_probability_source.includes('panindia_cb_v1') ? (
+                        <div style={{ fontSize: 9, color: '#38bdf8', marginTop: 2 }}>
+                          CB: real trained model ({R.pan_india.cb_source_status || 'cycle unknown'}) -- daily-resolution target, not 5 independent lead-specific predictions
+                        </div>
+                      ) : (
+                        <div style={{ fontSize: 9, color: '#64748b', marginTop: 2 }}>
+                          CB: physics-baseline formula, not a trained model
+                        </div>
+                      )}
                     </div>
                   );
                 }

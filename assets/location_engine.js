@@ -87,6 +87,14 @@
           source: 'Pan-India Hazard Engine (backend/pipeline.py::hazard_probabilities)',
           ts_probability: c.thunderstorm_probability,
           cb_probability: c.cloudburst_probability,
+          // 2026-10-10: when scripts/sync_unified_cb_into_pan_india_grid.py
+          // has run, these carry the REAL trained panindia_cb_v1 model's
+          // provenance; when absent (sync hasn't run yet, or this cell had
+          // no live CB value this cycle), cb_probability is still the OLD
+          // physics-baseline formula's number -- never silently claimed to
+          // be the trained model's output.
+          cb_probability_source: c.cloudburst_probability_source || 'backend/pipeline.py physics-baseline formula (not a trained model)',
+          cb_source_status: c.cloudburst_source_status || null,
           ff_probability: c.flash_flood_probability,
           ff_probability_terrain_adjusted: c.flash_flood_probability_terrain_adjusted,
           terrain: c.terrain,
