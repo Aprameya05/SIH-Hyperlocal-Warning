@@ -26,18 +26,35 @@ resolution (same value at every lead slot, honestly documented
 elsewhere), so any one lead's record carries the right value; this
 reads lead_hours=2 (the first canonical slot) per cell.
 
-Deliberately does NOT touch thunderstorm_probability or
-flash_flood_probability: TS has no trained pan-India model (VOBL-only,
-and the physics-baseline fallback used elsewhere is already honestly
-labeled as such) and FF has no valid operational probability (PU
-ranking score only) -- overwriting either would misrepresent an
-unavailable/different-scope result as this grid's existing
-probability semantics. Only CB has a real, trained, pan-India,
-calibrated probability to substitute in.
+Deliberately does NOT overwrite thunderstorm_probability or
+flash_flood_probability: TS has no trained pan-India model (VOBL-only;
+assets/location_engine.js already independently computes VOBL
+applicability by distance, so it needs no sync here) and FF has no
+valid OPERATIONAL probability (PU ranking score only) -- overwriting
+flash_flood_probability itself would misrepresent an unavailable/
+different-scope research result as this grid's existing probability
+semantics. Only CB has a real, trained, pan-India, calibrated
+probability to substitute in for the number itself.
 
 A cell_id present in pan_india_grid.json but absent/UNAVAILABLE in
-unified_forecast.json is left completely untouched (keeps its
-existing physics-baseline value) -- never zeroed, never guessed.
+unified_forecast.json is left completely untouched for that field --
+never zeroed, never guessed.
+
+2026-10-10 addition: real pan-India per-hazard coverage audit (via the
+live production unified_forecast.json) found FF's genuine research-
+only PU ranking score exists for only 71/992 cells (sparse real
+INDOFLOODS catchment coverage -- a genuine data limitation, not a
+bug), honestly represented as probability=null/UNAVAILABLE in
+unified_forecast.json for the other 921 -- but NONE of that honest
+per-cell status ever reached data/pan_india_grid.json, the file the
+deployed frontend actually reads, which only ever carries the OLD
+physics-baseline flash_flood_probability (a number for every cell,
+with no "research coverage exists here" concept at all). Added
+flash_flood_research_status/flash_flood_research_pu_score (additive
+fields, the existing flash_flood_probability number is untouched) so
+the frontend CAN distinguish "a real research-only PU ranking exists
+for this cell" from "only the physics-baseline heuristic exists here"
+-- the actual data the honesty requirement needs, not present before.
 """
 from __future__ import annotations
 
@@ -70,6 +87,26 @@ def build_cb_lookup(unified: dict) -> dict[str, dict]:
     return out
 
 
+def build_ff_research_status_lookup(unified: dict) -> dict[str, dict]:
+    """cell_id -> {pu_score, model_version} ONLY where a real PU
+    ranking score genuinely exists (never fabricates a status for a
+    cell outside real INDOFLOODS catchment coverage) -- additive
+    metadata, never touches flash_flood_probability itself."""
+    out = {}
+    for rec in unified.get("records", []):
+        if rec.get("lead_hours") != SYNC_LEAD_HOURS:
+            continue
+        ff = rec.get("FF", {})
+        pu_score = ff.get("extra", {}).get("pu_ranking_score")
+        if pu_score is None:
+            continue
+        out[rec["cell_id"]] = {
+            "pu_score": pu_score,
+            "model_version": ff.get("model_version"),
+        }
+    return out
+
+
 def main() -> int:
     if not UNIFIED_PATH.exists():
         print(f"SKIP: {UNIFIED_PATH} does not exist -- nothing to sync")
@@ -84,25 +121,35 @@ def main() -> int:
         grid = json.load(f)
 
     cb_lookup = build_cb_lookup(unified)
-    if not cb_lookup:
-        print("SKIP: no real CB probabilities found in the unified artifact "
-              "(all UNAVAILABLE for this lead) -- leaving pan_india_grid.json untouched")
+    ff_lookup = build_ff_research_status_lookup(unified)
+    if not cb_lookup and not ff_lookup:
+        print("SKIP: no real CB probabilities or FF research scores found in the unified "
+              "artifact (all UNAVAILABLE for this lead) -- leaving pan_india_grid.json untouched")
         return 0
 
     cells = grid.get("grid_cells") or grid.get("cells") or []
-    n_updated = 0
+    n_cb_updated = 0
+    n_ff_updated = 0
     for cell in cells:
-        cb = cb_lookup.get(cell.get("cell_id"))
-        if cb is None:
-            continue
-        cell["cloudburst_probability"] = cb["probability"]
-        cell["cloudburst_probability_source"] = "panindia_cb_v1 (Phase 21, LODO-validated XGBoost, REAL trained model)"
-        cell["cloudburst_probability_model_version"] = cb["model_version"]
-        cell["cloudburst_source_status"] = cb["source_status"]
-        n_updated += 1
+        cid = cell.get("cell_id")
+        cb = cb_lookup.get(cid)
+        if cb is not None:
+            cell["cloudburst_probability"] = cb["probability"]
+            cell["cloudburst_probability_source"] = "panindia_cb_v1 (Phase 21, LODO-validated XGBoost, REAL trained model)"
+            cell["cloudburst_probability_model_version"] = cb["model_version"]
+            cell["cloudburst_source_status"] = cb["source_status"]
+            n_cb_updated += 1
+        ff = ff_lookup.get(cid)
+        if ff is not None:
+            cell["flash_flood_research_status"] = "RESEARCH_ONLY_PU_SCORE_AVAILABLE"
+            cell["flash_flood_research_pu_score"] = ff["pu_score"]
+            cell["flash_flood_research_model_version"] = ff["model_version"]
+        else:
+            cell["flash_flood_research_status"] = "NO_RESEARCH_COVERAGE"
 
-    print(f"Synced real panindia_cb_v1 CB probabilities into {n_updated}/{len(cells)} "
-          f"cells of {GRID_PATH} (lead_hours={SYNC_LEAD_HOURS})")
+    print(f"Synced real panindia_cb_v1 CB probabilities into {n_cb_updated}/{len(cells)} cells, "
+          f"FF research-only status into all {len(cells)} cells ({len(ff_lookup)} with a real "
+          f"PU score) of {GRID_PATH} (lead_hours={SYNC_LEAD_HOURS})")
 
     tmp_path = GRID_PATH.with_suffix(".json.tmp")
     with open(tmp_path, "w", encoding="utf-8") as f:

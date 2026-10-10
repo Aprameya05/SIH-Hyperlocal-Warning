@@ -95,6 +95,50 @@ def test_wrong_lead_hours_is_ignored():
     assert lookup == {}
 
 
+def test_ff_research_status_marks_cells_with_a_real_pu_score(tmp_path):
+    """2026-10-10: real production coverage audit found FF's genuine
+    PU ranking score only exists for 71/992 cells (sparse real
+    INDOFLOODS catchment coverage), honestly null for the rest in
+    unified_forecast.json -- but none of that honest status ever
+    reached pan_india_grid.json, the file the deployed frontend
+    actually reads. These additive fields close that gap without
+    touching flash_flood_probability itself."""
+    unified_records = [
+        {"cell_id": "IND_8.0_77.0", "lead_hours": 2,
+         "FF": {"model_version": "RESEARCH_ONLY_model_c_logistic",
+                "extra": {"pu_ranking_score": 1.0}}},
+    ]
+    grid_cells = [
+        {"cell_id": "IND_8.0_77.0", "lat": 8.0, "lon": 77.0, "flash_flood_probability": 0.0001},
+    ]
+    result = _run_sync(tmp_path, unified_records, grid_cells)
+    cell = result["grid_cells"][0]
+    assert cell["flash_flood_probability"] == 0.0001, "the physics-baseline number itself must be untouched"
+    assert cell["flash_flood_research_status"] == "RESEARCH_ONLY_PU_SCORE_AVAILABLE"
+    assert cell["flash_flood_research_pu_score"] == 1.0
+
+
+def test_ff_research_status_marks_cells_with_no_real_coverage(tmp_path):
+    """A cell with no real PU score must be explicitly labeled
+    NO_RESEARCH_COVERAGE, never silently left without any status at
+    all (which the frontend could mistake for 'not yet checked').
+    Realistic scenario: CB always has full coverage in production
+    (confirmed against a real artifact: 992/992), so the unified
+    artifact is never truly 'empty' -- only this specific cell lacks
+    FF research coverage, matching the real 921/992 majority case."""
+    unified_records = [
+        {"cell_id": "IND_6.0_68.0", "lead_hours": 2,
+         "CB": {"probability": 0.01, "model_version": "panindia_cb_v1", "source_status": "LIVE_AWS_GFS"}},
+    ]
+    grid_cells = [
+        {"cell_id": "IND_6.0_68.0", "lat": 6.0, "lon": 68.0, "flash_flood_probability": 0.0},
+    ]
+    result = _run_sync(tmp_path, unified_records, grid_cells)
+    cell = result["grid_cells"][0]
+    assert cell["flash_flood_research_status"] == "NO_RESEARCH_COVERAGE"
+    assert "flash_flood_research_pu_score" not in cell
+
+
 def test_pan_india_grid_json_is_not_committed_by_forecast_update_workflow():
     """docs/PIPELINE_OWNERSHIP.md: data/pan_india_grid.json must stay the
     sole domain of update_grid.yml/backend/pipeline.py. Re-adding it to

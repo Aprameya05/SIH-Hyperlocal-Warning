@@ -97,6 +97,17 @@
           cb_source_status: c.cloudburst_source_status || null,
           ff_probability: c.flash_flood_probability,
           ff_probability_terrain_adjusted: c.flash_flood_probability_terrain_adjusted,
+          // 2026-10-10: same gap class as cb_probability_source --
+          // flash_flood_probability above is ALWAYS the old
+          // physics-baseline heuristic (a number for every cell); this
+          // surfaces whether a real research-only PU ranking score ALSO
+          // exists for this cell (true for only 71/992 cells, per real
+          // INDOFLOODS catchment coverage -- confirmed against a live
+          // production artifact), so the UI can honestly distinguish
+          // "only the heuristic exists" from "a real, if research-only,
+          // model result also exists here."
+          ff_research_status: c.flash_flood_research_status || 'NO_RESEARCH_COVERAGE',
+          ff_research_pu_score: c.flash_flood_research_pu_score ?? null,
           terrain: c.terrain,
           // Falls back to the older on-disk field names (pwat/apcp_mm) when
           // the newer ones aren't present yet (file predates this turn's

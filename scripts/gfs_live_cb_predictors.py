@@ -134,7 +134,25 @@ def _decode_subset_to_rows(grib_path: Path, cells: list[dict]) -> dict[str, np.n
     """Opens the byte-range subset file once per decode group (handles
     the isobaricInhPa/heightAboveGround/surface merge conflicts cfgrib
     has when asked to merge everything at once) and extracts every
-    required raw column, vectorised across all cells."""
+    required raw column, vectorised across all cells.
+
+    2026-10-10: this loop opens and closes a cfgrib/xarray dataset up
+    to len(_DECODE_GROUPS) times PER LEAD (called once per forecast
+    lead, so dozens of opens across a real run) -- the exact usage
+    pattern most likely to accumulate the unreleased native eccodes
+    index/handle state behind a real, confirmed production crash:
+    "double free or corruption (!prev)" at interpreter shutdown,
+    traced (via the full raw job log of a real GitHub Actions run, not
+    just the summary annotation) to this same xr.open_dataset(...,
+    engine="cfgrib") call pattern in the separate, much simpler
+    gfs_aws_source.py::validate_grib(). del + gc.collect() after each
+    close forces eccodes' own finalization to happen synchronously and
+    immediately, under our control, rather than deferred to implicit
+    CPython refcounting -- the actual documented cause of this class
+    of cfgrib/eccodes bug. This does not change what data is extracted
+    or hide any real decode failure; _open_filtered's own
+    try/except already handles and logs a genuine decode error."""
+    import gc
     columns: dict[str, np.ndarray] = {}
     for group in _DECODE_GROUPS:
         ds = _open_filtered(grib_path, group)
@@ -155,6 +173,8 @@ def _decode_subset_to_rows(grib_path: Path, cells: list[dict]) -> dict[str, np.n
             ds.close()
         except Exception:
             pass
+        del ds
+        gc.collect()
     return columns
 
 

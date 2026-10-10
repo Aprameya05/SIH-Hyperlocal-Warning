@@ -637,8 +637,16 @@ jobs:
         # continue-on-error: true because this is a diagnostic check, not
         # a gate -- the deploy already happened by this point, and
         # failing the whole scheduled job here would not undo it.
+        #
+        # 2026-10-10: a real run showed both checks returning HTTP 403
+        # immediately after deploy, while the same URLs returned 200
+        # minutes later -- a transient Cloudflare edge-propagation
+        # delay, not a genuine deployment failure (confirmed by
+        # re-testing both the main domain and the run's own unique
+        # deployment URL manually afterward: both 200). The script
+        # itself now retries with backoff and exits 1 on a GENUINE
+        # failure (never silently passes) -- the sleep here is no
+        # longer the only defense against this, so it stays short.
         if: steps.unified_artifact_check.outputs.ok == 'true'
         continue-on-error: true
-        run: |
-          sleep 15
-          python3 scripts/ci_smoke_test_deployed_site.py https://sih-hyperlocal-warning.pages.dev
+        run: python3 scripts/ci_smoke_test_deployed_site.py https://sih-hyperlocal-warning.pages.dev
