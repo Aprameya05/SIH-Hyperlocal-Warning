@@ -217,7 +217,7 @@ class UnifiedInferenceEngine:
         # this is visible to index.html's existing h.xai rendering the
         # same way CB's now is -- not a second, incompatible shape.
         try:
-            from local_xai import local_shap_ts
+            from backend.models.unified_mtl.local_xai import local_shap_ts
             extra["xai"] = local_shap_ts(head, features_df)
         except Exception as exc:  # noqa: BLE001
             extra["xai"] = {"status": "NOT_AVAILABLE", "reason": f"{type(exc).__name__}: {exc}"}
@@ -306,7 +306,28 @@ class UnifiedInferenceEngine:
                                       reason="feature row produced a non-finite PU score (incomplete "
                                              "catchment/rainfall inputs) -- refusing to report it as a value",
                                       status="PU_RANKING")
-        from local_xai import local_xai_ff
+        # 2026-10-08: top-level "xai" key for interface consistency with
+        # TS/CB (both now populate this). local_xai_ff() is honestly
+        # always NOT_AVAILABLE -- no valid SHAP/linear-attribution story
+        # exists for this PU-logistic model (see local_xai.py's module
+        # docstring) -- this is a real, correctly-labeled non-result,
+        # not a fabricated one.
+        #
+        # 2026-10-10: a real production incident showed this import had
+        # NO exception handling at all, unlike predict_cb/predict_ts's
+        # identical-looking calls -- an uncaught ModuleNotFoundError
+        # here (a bare 'from local_xai import', now fixed to the full
+        # package path) crashed the entire batch loop in
+        # scripts/phase34_build_unified_forecast.py, taking down every
+        # cell's prediction, not just this one's XAI. Per explicit
+        # instruction: if FF XAI genuinely cannot be computed, return an
+        # explicit NOT_AVAILABLE value, never crash the real prediction
+        # (probability/pu_ranking_score) that was already computed above.
+        try:
+            from backend.models.unified_mtl.local_xai import local_xai_ff
+            ff_xai = local_xai_ff()
+        except Exception as exc:  # noqa: BLE001
+            ff_xai = {"status": "NOT_AVAILABLE", "reason": f"{type(exc).__name__}: {exc}"}
         return HazardPrediction(
             hazard="FF", cell_id=cell_id, init_time=_iso(init_time_utc), valid_time=_iso(valid_time_utc),
             lead_hours=lead_hours,
@@ -317,16 +338,10 @@ class UnifiedInferenceEngine:
             provenance="DERIVED",
             confidence="LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- "
                        "see heads.py::FFHead.describe())",
-            # 2026-10-08: top-level "xai" key for interface consistency
-            # with TS/CB (both now populate this). local_xai_ff() is
-            # honestly always NOT_AVAILABLE -- no valid SHAP/linear-
-            # attribution story exists for this PU-logistic model (see
-            # local_xai.py's module docstring) -- this is a real,
-            # correctly-labeled non-result, not a fabricated one.
             extra={"pu_ranking_score": pu_score,
                    "note": "This is a ranking score, not a calibrated P(flood). risk_category is "
                            "NOT_AVAILABLE because no confirmed-negative-based probability exists.",
-                   "xai": local_xai_ff()},
+                   "xai": ff_xai},
         )
 
     @staticmethod

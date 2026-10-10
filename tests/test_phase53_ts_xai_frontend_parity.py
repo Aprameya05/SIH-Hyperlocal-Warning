@@ -56,7 +56,16 @@ class TestTSXAIFrontendParity:
         from unittest.mock import patch
         from inference_engine import UnifiedInferenceEngine
         from ts_station_model_interface import VOBLThunderstormModel, VOBL_CELL_ID
-        import local_xai
+        # 2026-10-10: inference_engine.py now imports via the full
+        # package path (from backend.models.unified_mtl.local_xai
+        # import local_shap_ts) -- fixing the real production
+        # ModuleNotFoundError a bare 'from local_xai import' caused in
+        # a genuine clean-checkout subprocess (see
+        # tests/test_phase62_clean_checkout_local_xai_import.py). The
+        # patch target below must match that same dotted path, not the
+        # bare module object, which is now a different sys.modules
+        # entry.
+        from backend.models.unified_mtl import local_xai
 
         eng = UnifiedInferenceEngine()
         m = VOBLThunderstormModel()
