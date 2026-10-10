@@ -139,6 +139,64 @@ def test_ff_research_status_marks_cells_with_no_real_coverage(tmp_path):
     assert "flash_flood_research_pu_score" not in cell
 
 
+def test_nested_forecasts_grid_cells_list_is_synced_identically_to_the_top_level_mirror(tmp_path):
+    """2026-10-10: a live browser check against the real production site
+    found 'FF research coverage: UNAVAILABLE' displayed for IND_14.0_74.0
+    even though that cell's real PU score (RESEARCH_ONLY_PU_SCORE_AVAILABLE)
+    was present in data/pan_india_grid.json's top-level grid_cells array.
+    Root cause: index.html's own loader comment states
+    d.forecasts[primary].grid_cells -- not the top-level d.grid_cells -- is
+    "the actual source of truth" the deployed frontend reads; the top-level
+    array is only a compatibility-mirror fallback. The first version of this
+    sync script updated only the top-level mirror, so the nested array the
+    UI actually uses silently kept the old, unsynced cell objects. This test
+    reproduces the real production artifact shape (a forecasts[] list, each
+    entry carrying its own full grid_cells array) and asserts both the
+    top-level mirror AND the nested array end up with identical, real
+    CB/FF sync results -- not just one or the other."""
+    unified_records = [
+        {"cell_id": "IND_14.0_74.0", "lead_hours": 2,
+         "CB": {"probability": 0.33, "model_version": "panindia_cb_v1", "source_status": "LIVE_AWS_GFS"},
+         "FF": {"model_version": "RESEARCH_ONLY_model_c_logistic", "extra": {"pu_ranking_score": 1.0}}},
+    ]
+    top_level_cells = [
+        {"cell_id": "IND_14.0_74.0", "lat": 14.0, "lon": 74.0,
+         "cloudburst_probability": 0.0, "flash_flood_probability": 0.0004},
+    ]
+    nested_cells = [
+        {"cell_id": "IND_14.0_74.0", "lat": 14.0, "lon": 74.0,
+         "cloudburst_probability": 0.0, "flash_flood_probability": 0.0004},
+    ]
+
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("sync_mod", SCRIPT_PATH)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+
+    unified_path = tmp_path / "unified_forecast.json"
+    grid_path = tmp_path / "pan_india_grid.json"
+    unified_path.write_text(json.dumps({"records": unified_records}), encoding="utf-8")
+    grid_path.write_text(json.dumps({
+        "grid_cells": top_level_cells,
+        "forecasts": [
+            {"is_primary": True, "forecast_lead_hours": 9, "grid_cells": nested_cells},
+        ],
+    }), encoding="utf-8")
+    mod.UNIFIED_PATH = unified_path
+    mod.GRID_PATH = grid_path
+    mod.main()
+    result = json.loads(grid_path.read_text(encoding="utf-8"))
+
+    top_cell = result["grid_cells"][0]
+    nested_cell = result["forecasts"][0]["grid_cells"][0]
+    for cell, label in ((top_cell, "top-level mirror"), (nested_cell, "nested forecasts[].grid_cells")):
+        assert cell["cloudburst_probability"] == 0.33, f"{label}: CB probability not synced"
+        assert cell["flash_flood_research_status"] == "RESEARCH_ONLY_PU_SCORE_AVAILABLE", (
+            f"{label}: FF research status not synced"
+        )
+        assert cell["flash_flood_research_pu_score"] == 1.0, f"{label}: FF PU score not synced"
+
+
 def test_pan_india_grid_json_is_not_committed_by_forecast_update_workflow():
     """docs/PIPELINE_OWNERSHIP.md: data/pan_india_grid.json must stay the
     sole domain of update_grid.yml/backend/pipeline.py. Re-adding it to

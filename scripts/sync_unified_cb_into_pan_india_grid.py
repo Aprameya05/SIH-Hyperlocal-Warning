@@ -127,29 +127,58 @@ def main() -> int:
               "artifact (all UNAVAILABLE for this lead) -- leaving pan_india_grid.json untouched")
         return 0
 
-    cells = grid.get("grid_cells") or grid.get("cells") or []
-    n_cb_updated = 0
-    n_ff_updated = 0
-    for cell in cells:
-        cid = cell.get("cell_id")
-        cb = cb_lookup.get(cid)
-        if cb is not None:
-            cell["cloudburst_probability"] = cb["probability"]
-            cell["cloudburst_probability_source"] = "panindia_cb_v1 (Phase 21, LODO-validated XGBoost, REAL trained model)"
-            cell["cloudburst_probability_model_version"] = cb["model_version"]
-            cell["cloudburst_source_status"] = cb["source_status"]
-            n_cb_updated += 1
-        ff = ff_lookup.get(cid)
-        if ff is not None:
-            cell["flash_flood_research_status"] = "RESEARCH_ONLY_PU_SCORE_AVAILABLE"
-            cell["flash_flood_research_pu_score"] = ff["pu_score"]
-            cell["flash_flood_research_model_version"] = ff["model_version"]
-        else:
-            cell["flash_flood_research_status"] = "NO_RESEARCH_COVERAGE"
+    def sync_cell_list(cells):
+        """Applies the CB/FF sync to one grid_cells list in place. Returns
+        (n_cb_updated, n_ff_updated) for that list.
 
-    print(f"Synced real panindia_cb_v1 CB probabilities into {n_cb_updated}/{len(cells)} cells, "
-          f"FF research-only status into all {len(cells)} cells ({len(ff_lookup)} with a real "
-          f"PU score) of {GRID_PATH} (lead_hours={SYNC_LEAD_HOURS})")
+        2026-10-10: index.html's own loader comment is explicit that
+        d.forecasts[primary].grid_cells -- NOT the top-level d.grid_cells --
+        is "the actual source of truth" the frontend reads (top-level
+        grid_cells is a compatibility mirror used only as a fallback when
+        forecasts[] is absent). The first version of this function only
+        updated the top-level mirror, so these fields were correctly present
+        in data/pan_india_grid.json's top-level array but silently absent
+        from the nested array the deployed UI actually renders -- confirmed
+        via a live browser check against the real production site showing
+        'FF research coverage: UNAVAILABLE' for IND_14.0_74.0 even though
+        that cell has a real PU score. Every grid_cells list in the artifact
+        (top-level mirror AND each forecasts[] entry's own list) must be
+        updated identically so neither path can silently diverge again.
+        """
+        n_cb, n_ff = 0, 0
+        for cell in cells:
+            cid = cell.get("cell_id")
+            cb = cb_lookup.get(cid)
+            if cb is not None:
+                cell["cloudburst_probability"] = cb["probability"]
+                cell["cloudburst_probability_source"] = "panindia_cb_v1 (Phase 21, LODO-validated XGBoost, REAL trained model)"
+                cell["cloudburst_probability_model_version"] = cb["model_version"]
+                cell["cloudburst_source_status"] = cb["source_status"]
+                n_cb += 1
+            ff = ff_lookup.get(cid)
+            if ff is not None:
+                cell["flash_flood_research_status"] = "RESEARCH_ONLY_PU_SCORE_AVAILABLE"
+                cell["flash_flood_research_pu_score"] = ff["pu_score"]
+                cell["flash_flood_research_model_version"] = ff["model_version"]
+            else:
+                cell["flash_flood_research_status"] = "NO_RESEARCH_COVERAGE"
+        return n_cb, n_ff
+
+    top_level_cells = grid.get("grid_cells") or grid.get("cells") or []
+    n_cb_updated, n_ff_updated = sync_cell_list(top_level_cells)
+
+    n_forecast_lists = 0
+    for forecast_entry in grid.get("forecasts") or []:
+        nested_cells = forecast_entry.get("grid_cells")
+        if nested_cells:
+            sync_cell_list(nested_cells)
+            n_forecast_lists += 1
+
+    print(f"Synced real panindia_cb_v1 CB probabilities into {n_cb_updated}/{len(top_level_cells)} "
+          f"top-level cells, FF research-only status into all {len(top_level_cells)} top-level cells "
+          f"({len(ff_lookup)} with a real PU score), and mirrored the same sync into "
+          f"{n_forecast_lists} forecasts[].grid_cells list(s) (the array the deployed frontend "
+          f"actually reads) of {GRID_PATH} (lead_hours={SYNC_LEAD_HOURS})")
 
     tmp_path = GRID_PATH.with_suffix(".json.tmp")
     with open(tmp_path, "w", encoding="utf-8") as f:
