@@ -1,0 +1,48 @@
+<svg viewBox="0 0 1200 260" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#040b16"/>
+      <stop offset="55%" stop-color="#0a1a2f"/>
+      <stop offset="100%" stop-color="#0c2744"/>
+    </linearGradient>
+    <linearGradient id="grid" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#2ea8ff" stop-opacity="0.0"/>
+      <stop offset="50%" stop-color="#2ea8ff" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#2ea8ff" stop-opacity="0.0"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="260" fill="url(#bg)"/>
+  <g stroke="#1c3a5c" stroke-width="1" opacity="0.55">
+    <line x1="0" y1="40" x2="1200" y2="40"/>
+    <line x1="0" y1="80" x2="1200" y2="80"/>
+    <line x1="0" y1="120" x2="1200" y2="120"/>
+    <line x1="0" y1="160" x2="1200" y2="160"/>
+    <line x1="0" y1="200" x2="1200" y2="200"/>
+    <line x1="0" y1="220" x2="1200" y2="220"/>
+    <line x1="150" y1="0" x2="150" y2="260"/>
+    <line x1="350" y1="0" x2="350" y2="260"/>
+    <line x1="550" y1="0" x2="550" y2="260"/>
+    <line x1="750" y1="0" x2="750" y2="260"/>
+    <line x1="950" y1="0" x2="950" y2="260"/>
+    <line x1="1150" y1="0" x2="1150" y2="260"/>
+  </g>
+  <rect x="0" y="0" width="1200" height="4" fill="url(#grid)"/>
+  <g opacity="0.9">
+    <circle cx="930" cy="70" r="3" fill="#ffb648"/>
+    <circle cx="1010" cy="110" r="4.5" fill="#ff7a45"/>
+    <circle cx="1070" cy="60" r="2.5" fill="#2ea8ff"/>
+    <circle cx="870" cy="150" r="3" fill="#2ea8ff"/>
+    <circle cx="1000" cy="180" r="3.5" fill="#ffb648"/>
+    <circle cx="1120" cy="150" r="2.5" fill="#6fd3ff"/>
+    <circle cx="820" cy="90" r="2" fill="#6fd3ff"/>
+  </g>
+  <text x="60" y="108" font-family="Segoe UI, Arial, sans-serif" font-size="58" font-weight="700" fill="#eaf4ff" letter-spacing="2">DRIFT</text>
+  <text x="62" y="140" font-family="Segoe UI, Arial, sans-serif" font-size="17" fill="#7fb8e8" letter-spacing="1">HYPERLOCAL THUNDERSTORM · CLOUDBURST · FLASH-FLOOD WARNING SYSTEM</text>
+  <text x="62" y="170" font-family="Consolas, monospace" font-size="13" fill="#4c7498">Smart India Hackathon · SIH26077 · GFS + Himawari-9 + XGBoost/PU-ranking</text>
+  <rect x="60" y="195" width="2" height="2" fill="none"/>
+  <text x="62" y="205" font-family="Consolas, monospace" font-size="12" fill="#2ea8ff">pan-India 992-cell grid</text>
+  <text x="250" y="205" font-family="Consolas, monospace" font-size="12" fill="#2ea8ff">·</text>
+  <text x="265" y="205" font-family="Consolas, monospace" font-size="12" fill="#2ea8ff">VOBL station XGBoost</text>
+  <text x="460" y="205" font-family="Consolas, monospace" font-size="12" fill="#2ea8ff">·</text>
+  <text x="475" y="205" font-family="Consolas, monospace" font-size="12" fill="#2ea8ff">periodic GitHub Actions automation</text>
+</svg>
