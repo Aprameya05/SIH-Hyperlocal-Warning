@@ -3,84 +3,84 @@
     "slot": 0,
     "available": true,
     "model_used": "nowcast_slot0_xgb_v6_temporal.pkl",
-    "prob": 0.001,
+    "prob": 0.0125,
     "threshold": 0.12,
     "base_value": 2.3716,
     "top_features": [
       {
         "feature": "K_INDEX",
-        "shap": -0.87938,
-        "value": 25.7344,
-        "direction": "decreases_risk"
-      },
-      {
-        "feature": "LIFTED_INDEX",
-        "shap": -0.76298,
-        "value": 0.7973,
+        "shap": -0.87578,
+        "value": 31.7864,
         "direction": "decreases_risk"
       },
       {
         "feature": "TOTALS_TOTALS",
-        "shap": -0.75681,
-        "value": 40.6014,
+        "shap": -0.69852,
+        "value": 43.2207,
         "direction": "decreases_risk"
       },
       {
-        "feature": "MIN_3d_avg",
-        "shap": -0.60954,
-        "value": 20.0,
+        "feature": "LIFTED_INDEX",
+        "shap": -0.69293,
+        "value": -2.0259,
         "direction": "decreases_risk"
       },
       {
         "feature": "wet_bulb_potential_temp",
-        "shap": -0.58901,
+        "shap": -0.5988,
         "value": 0.0,
         "direction": "decreases_risk"
       },
       {
+        "feature": "MIN_3d_avg",
+        "shap": -0.57872,
+        "value": 20.0,
+        "direction": "decreases_risk"
+      },
+      {
         "feature": "DRNRF",
-        "shap": -0.55817,
+        "shap": -0.56822,
         "value": 0.0,
         "direction": "decreases_risk"
       },
       {
         "feature": "CAPE",
-        "shap": -0.55142,
-        "value": 35.0,
-        "direction": "decreases_risk"
-      },
-      {
-        "feature": "ERA5_T2M",
-        "shap": -0.49081,
-        "value": 294.1,
-        "direction": "decreases_risk"
-      },
-      {
-        "feature": "LABEL_lag1",
-        "shap": -0.45937,
-        "value": 0.0,
-        "direction": "decreases_risk"
+        "shap": 0.50815,
+        "value": 459.0,
+        "direction": "increases_risk"
       },
       {
         "feature": "RF",
-        "shap": -0.42103,
+        "shap": -0.42601,
         "value": 0.0,
-        "direction": "decreases_risk"
-      },
-      {
-        "feature": "PRECIP_WATER",
-        "shap": -0.38894,
-        "value": 34.8691,
         "direction": "decreases_risk"
       },
       {
         "feature": "ERA5_SP",
-        "shap": -0.33772,
-        "value": 91625.8313,
+        "shap": -0.41632,
+        "value": 91786.9875,
+        "direction": "decreases_risk"
+      },
+      {
+        "feature": "LABEL_lag1",
+        "shap": -0.36439,
+        "value": 0.0,
+        "direction": "decreases_risk"
+      },
+      {
+        "feature": "slot_month_clim",
+        "shap": -0.30334,
+        "value": 0.02,
+        "direction": "decreases_risk"
+      },
+      {
+        "feature": "ERA5_v_700hPa",
+        "shap": -0.24471,
+        "value": -3.4793,
         "direction": "decreases_risk"
       }
     ],
-    "computed_at": "2026-10-20 03:19 IST"
+    "computed_at": "2026-10-20 07:40 IST"
   },
   "1": {
     "slot": 1,
@@ -92,243 +92,243 @@
     "top_features": [
       {
         "feature": "RF",
-        "shap": -0.81169,
+        "shap": -0.98352,
         "value": 0.0,
         "direction": "decreases_risk"
       },
       {
         "feature": "ts_any_yesterday",
-        "shap": -0.76141,
+        "shap": -0.85312,
         "value": 0.0,
         "direction": "decreases_risk"
       },
       {
         "feature": "rf_std_7d",
-        "shap": -0.75395,
+        "shap": -0.77169,
+        "value": 0.0,
+        "direction": "decreases_risk"
+      },
+      {
+        "feature": "DRNRF",
+        "shap": -0.73569,
         "value": 0.0,
         "direction": "decreases_risk"
       },
       {
         "feature": "ERA5_u_700hPa",
-        "shap": -0.71636,
-        "value": -2.9724,
-        "direction": "decreases_risk"
-      },
-      {
-        "feature": "TOTALS_TOTALS",
-        "shap": -0.71498,
-        "value": 40.6014,
+        "shap": -0.7332,
+        "value": -3.205,
         "direction": "decreases_risk"
       },
       {
         "feature": "MIN_lag1",
-        "shap": -0.71298,
+        "shap": -0.70066,
         "value": 20.0,
         "direction": "decreases_risk"
       },
       {
-        "feature": "DRNRF",
-        "shap": -0.6802,
-        "value": 0.0,
+        "feature": "ERA5_SP",
+        "shap": -0.64656,
+        "value": 91786.9875,
         "direction": "decreases_risk"
       },
       {
         "feature": "ERA5_v_500hPa",
-        "shap": -0.54135,
-        "value": -3.8348,
-        "direction": "decreases_risk"
-      },
-      {
-        "feature": "K_INDEX",
-        "shap": -0.5237,
-        "value": 25.7344,
+        "shap": -0.55274,
+        "value": -2.5145,
         "direction": "decreases_risk"
       },
       {
         "feature": "ERA5_t_500hPa",
-        "shap": -0.48964,
-        "value": 269.5315,
+        "shap": -0.48816,
+        "value": 269.5037,
+        "direction": "decreases_risk"
+      },
+      {
+        "feature": "TOTALS_TOTALS",
+        "shap": -0.46669,
+        "value": 43.2207,
+        "direction": "decreases_risk"
+      },
+      {
+        "feature": "K_INDEX",
+        "shap": -0.46605,
+        "value": 31.7864,
         "direction": "decreases_risk"
       },
       {
         "feature": "wet_bulb_potential_temp",
-        "shap": -0.42633,
+        "shap": -0.40487,
         "value": 0.0,
-        "direction": "decreases_risk"
-      },
-      {
-        "feature": "PRECIP_WATER",
-        "shap": -0.40126,
-        "value": 34.8691,
         "direction": "decreases_risk"
       }
     ],
-    "computed_at": "2026-10-20 03:19 IST"
+    "computed_at": "2026-10-20 07:40 IST"
   },
   "2": {
     "slot": 2,
     "available": true,
     "model_used": "nowcast_slot2_xgb_v6_temporal.pkl",
-    "prob": 0.005,
+    "prob": 0.0083,
     "threshold": 0.13,
     "base_value": 1.4007,
     "top_features": [
       {
         "feature": "K_INDEX",
-        "shap": -1.19503,
-        "value": 25.7344,
+        "shap": -1.40281,
+        "value": 31.7864,
         "direction": "decreases_risk"
       },
       {
         "feature": "TOTALS_TOTALS",
-        "shap": -1.13923,
-        "value": 40.6014,
+        "shap": -0.56783,
+        "value": 43.2207,
         "direction": "decreases_risk"
       },
       {
-        "feature": "ERA5_T2M",
-        "shap": 0.84886,
-        "value": 294.1,
-        "direction": "increases_risk"
-      },
-      {
-        "feature": "CAPE",
-        "shap": -0.51298,
-        "value": 35.0,
-        "direction": "decreases_risk"
-      },
-      {
-        "feature": "ERA5_CAPE",
-        "shap": -0.40592,
-        "value": 35.0,
+        "feature": "EVP",
+        "shap": -0.37403,
+        "value": 5.0,
         "direction": "decreases_risk"
       },
       {
         "feature": "SSH",
-        "shap": -0.39488,
+        "shap": -0.34276,
         "value": 300.0,
         "direction": "decreases_risk"
       },
       {
-        "feature": "LIFTED_INDEX",
-        "shap": -0.36994,
-        "value": 0.7973,
-        "direction": "decreases_risk"
-      },
-      {
-        "feature": "PRECIP_WATER",
-        "shap": -0.32364,
-        "value": 34.8691,
-        "direction": "decreases_risk"
-      },
-      {
-        "feature": "ERA5_q_700hPa",
-        "shap": -0.30494,
-        "value": 0.0053,
-        "direction": "decreases_risk"
-      },
-      {
-        "feature": "MIN",
-        "shap": -0.29231,
-        "value": 20.0,
-        "direction": "decreases_risk"
-      },
-      {
         "feature": "RF_3d",
-        "shap": -0.27715,
+        "shap": -0.33723,
         "value": 0.0,
         "direction": "decreases_risk"
       },
       {
+        "feature": "CAPE",
+        "shap": 0.32884,
+        "value": 459.0,
+        "direction": "increases_risk"
+      },
+      {
         "feature": "DOY_sin",
-        "shap": -0.26621,
+        "shap": -0.3287,
         "value": -0.9456,
+        "direction": "decreases_risk"
+      },
+      {
+        "feature": "PRECIP_WATER",
+        "shap": -0.29385,
+        "value": 37.8267,
+        "direction": "decreases_risk"
+      },
+      {
+        "feature": "MIN",
+        "shap": -0.29155,
+        "value": 20.0,
+        "direction": "decreases_risk"
+      },
+      {
+        "feature": "ERA5_q_700hPa",
+        "shap": -0.28915,
+        "value": 0.0067,
+        "direction": "decreases_risk"
+      },
+      {
+        "feature": "doy",
+        "shap": -0.27691,
+        "value": 293.0,
+        "direction": "decreases_risk"
+      },
+      {
+        "feature": "lapse_rate_850_500",
+        "shap": -0.23374,
+        "value": 0.0,
         "direction": "decreases_risk"
       }
     ],
-    "computed_at": "2026-10-20 03:19 IST"
+    "computed_at": "2026-10-20 07:40 IST"
   },
   "3": {
     "slot": 3,
     "available": true,
     "model_used": "nowcast_slot3_xgb_v6_temporal.pkl",
-    "prob": 0.0025,
+    "prob": 0.0106,
     "threshold": 0.12,
     "base_value": 3.0765,
     "top_features": [
       {
         "feature": "K_INDEX",
-        "shap": -1.35191,
-        "value": 25.7344,
-        "direction": "decreases_risk"
-      },
-      {
-        "feature": "TOTALS_TOTALS",
-        "shap": -0.9575,
-        "value": 40.6014,
-        "direction": "decreases_risk"
-      },
-      {
-        "feature": "MIN",
-        "shap": -0.90227,
-        "value": 20.0,
+        "shap": -1.39727,
+        "value": 31.7864,
         "direction": "decreases_risk"
       },
       {
         "feature": "LIFTED_INDEX",
-        "shap": -0.89514,
-        "value": 0.7973,
+        "shap": -0.91857,
+        "value": -2.0259,
         "direction": "decreases_risk"
       },
       {
-        "feature": "ERA5_T2M",
-        "shap": -0.44968,
-        "value": 294.1,
+        "feature": "MIN",
+        "shap": -0.82246,
+        "value": 20.0,
+        "direction": "decreases_risk"
+      },
+      {
+        "feature": "TOTALS_TOTALS",
+        "shap": -0.47521,
+        "value": 43.2207,
+        "direction": "decreases_risk"
+      },
+      {
+        "feature": "ERA5_u_500hPa",
+        "shap": -0.422,
+        "value": -7.1642,
         "direction": "decreases_risk"
       },
       {
         "feature": "wet_bulb_potential_temp",
-        "shap": -0.3833,
+        "shap": -0.39164,
         "value": 0.0,
         "direction": "decreases_risk"
       },
       {
         "feature": "MIN_3d_avg",
-        "shap": -0.35165,
+        "shap": -0.3552,
         "value": 20.0,
         "direction": "decreases_risk"
       },
       {
-        "feature": "ERA5_u_500hPa",
-        "shap": -0.34192,
-        "value": -5.0232,
-        "direction": "decreases_risk"
-      },
-      {
         "feature": "ERA5_SP",
-        "shap": -0.31891,
-        "value": 91625.8313,
-        "direction": "decreases_risk"
-      },
-      {
-        "feature": "EVP",
-        "shap": -0.31708,
-        "value": 5.0,
+        "shap": -0.34162,
+        "value": 91786.9875,
         "direction": "decreases_risk"
       },
       {
         "feature": "rf_std_7d",
-        "shap": 0.30462,
+        "shap": 0.29711,
         "value": 0.0,
         "direction": "increases_risk"
       },
       {
-        "feature": "ERA5_v_700hPa",
-        "shap": -0.23189,
-        "value": -2.8782,
+        "feature": "EVP",
+        "shap": -0.28782,
+        "value": 5.0,
         "direction": "decreases_risk"
+      },
+      {
+        "feature": "ERA5_q_850hPa",
+        "shap": -0.24721,
+        "value": 0.0132,
+        "direction": "decreases_risk"
+      },
+      {
+        "feature": "ERA5_CAPE",
+        "shap": 0.23112,
+        "value": 459.0,
+        "direction": "increases_risk"
       }
     ],
-    "computed_at": "2026-10-20 03:19 IST"
+    "computed_at": "2026-10-20 07:40 IST"
   }
 }
