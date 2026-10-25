@@ -1,6 +1,6 @@
 {
  "artifact_type": "unified_forecast (Phase 34 UNIFIED SIH INFERENCE ENGINE -- NOT a claim that all 15 hazard x lead combinations are trained; see hazard status per record and docs/PHASE_34_UNIFIED_SIH_INFERENCE.md)",
- "generated_at_utc": "2026-10-25T19:04:58.432921+00:00",
+ "generated_at_utc": "2026-10-25T20:06:39.606371+00:00",
  "init_time_utc": "2024-08-01T00:00:00Z",
  "lead_hours_supported": [
   2,
@@ -106,7 +106,7 @@
     "fhour": 6,
     "source_used": "LIVE_AWS_GFS",
     "bytes": 14284058,
-    "elapsed_s": 9.7,
+    "elapsed_s": 17.6,
     "fields_found": 20,
     "fields_missing": []
    },
@@ -114,7 +114,7 @@
     "fhour": 9,
     "source_used": "LIVE_AWS_GFS",
     "bytes": 14157972,
-    "elapsed_s": 8.4,
+    "elapsed_s": 15.5,
     "fields_found": 20,
     "fields_missing": []
    },
@@ -122,7 +122,7 @@
     "fhour": 12,
     "source_used": "LIVE_AWS_GFS",
     "bytes": 13769613,
-    "elapsed_s": 8.3,
+    "elapsed_s": 15.1,
     "fields_found": 20,
     "fields_missing": []
    },
@@ -130,7 +130,7 @@
     "fhour": 15,
     "source_used": "LIVE_AWS_GFS",
     "bytes": 14001871,
-    "elapsed_s": 8.3,
+    "elapsed_s": 15.0,
     "fields_found": 20,
     "fields_missing": []
    },
@@ -138,7 +138,7 @@
     "fhour": 18,
     "source_used": "LIVE_AWS_GFS",
     "bytes": 13740456,
-    "elapsed_s": 8.0,
+    "elapsed_s": 15.2,
     "fields_found": 20,
     "fields_missing": []
    },
@@ -146,7 +146,7 @@
     "fhour": 21,
     "source_used": "LIVE_AWS_GFS",
     "bytes": 14210700,
-    "elapsed_s": 8.3,
+    "elapsed_s": 16.0,
     "fields_found": 20,
     "fields_missing": []
    },
@@ -154,7 +154,7 @@
     "fhour": 24,
     "source_used": "LIVE_AWS_GFS",
     "bytes": 14267101,
-    "elapsed_s": 8.4,
+    "elapsed_s": 15.4,
     "fields_found": 20,
     "fields_missing": []
    },
@@ -162,7 +162,7 @@
     "fhour": 27,
     "source_used": "LIVE_AWS_GFS",
     "bytes": 13467037,
-    "elapsed_s": 8.4,
+    "elapsed_s": 15.0,
     "fields_found": 20,
     "fields_missing": []
    }
@@ -171,7 +171,7 @@
   "n_leads_requested": 8,
   "n_leads_live": 8,
   "total_bytes": 111898808,
-  "elapsed_s": 68.4,
+  "elapsed_s": 125.5,
   "from_cache": false
  },
  "xai": {
@@ -98410,7 +98410,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.34792548701325565,
+     "pu_ranking_score": 0.34792548701325593,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -98564,7 +98564,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.34792548701325565,
+     "pu_ranking_score": 0.34792548701325593,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -98718,7 +98718,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.34792548701325565,
+     "pu_ranking_score": 0.34792548701325593,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -98872,7 +98872,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.34792548701325565,
+     "pu_ranking_score": 0.34792548701325593,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -99026,7 +99026,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.34792548701325565,
+     "pu_ranking_score": 0.34792548701325593,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -143910,7 +143910,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.2480740517228905,
+     "pu_ranking_score": 0.24807405172289043,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -144064,7 +144064,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.2480740517228905,
+     "pu_ranking_score": 0.24807405172289043,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -144218,7 +144218,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.2480740517228905,
+     "pu_ranking_score": 0.24807405172289043,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -144372,7 +144372,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.2480740517228905,
+     "pu_ranking_score": 0.24807405172289043,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -144526,7 +144526,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.2480740517228905,
+     "pu_ranking_score": 0.24807405172289043,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -233790,7 +233790,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.35955952559465765,
+     "pu_ranking_score": 0.359559525594658,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -233944,7 +233944,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.35955952559465765,
+     "pu_ranking_score": 0.359559525594658,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -234098,7 +234098,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.35955952559465765,
+     "pu_ranking_score": 0.359559525594658,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -234252,7 +234252,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.35955952559465765,
+     "pu_ranking_score": 0.359559525594658,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -234406,7 +234406,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.35955952559465765,
+     "pu_ranking_score": 0.359559525594658,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -234560,7 +234560,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.2156968055581973,
+     "pu_ranking_score": 0.21569680555819737,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -234714,7 +234714,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.2156968055581973,
+     "pu_ranking_score": 0.21569680555819737,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -234868,7 +234868,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.2156968055581973,
+     "pu_ranking_score": 0.21569680555819737,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -235022,7 +235022,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.2156968055581973,
+     "pu_ranking_score": 0.21569680555819737,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -235176,7 +235176,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.2156968055581973,
+     "pu_ranking_score": 0.21569680555819737,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -237560,7 +237560,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.033708391706880156,
+     "pu_ranking_score": 0.03370839170688014,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -237714,7 +237714,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.033708391706880156,
+     "pu_ranking_score": 0.03370839170688014,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -237868,7 +237868,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.033708391706880156,
+     "pu_ranking_score": 0.03370839170688014,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -238022,7 +238022,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.033708391706880156,
+     "pu_ranking_score": 0.03370839170688014,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -238176,7 +238176,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.033708391706880156,
+     "pu_ranking_score": 0.03370839170688014,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -255890,7 +255890,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.9646208042840072,
+     "pu_ranking_score": 0.96462080428401,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -256044,7 +256044,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.9646208042840072,
+     "pu_ranking_score": 0.96462080428401,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -256198,7 +256198,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.9646208042840072,
+     "pu_ranking_score": 0.96462080428401,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -256352,7 +256352,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.9646208042840072,
+     "pu_ranking_score": 0.96462080428401,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -256506,7 +256506,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.9646208042840072,
+     "pu_ranking_score": 0.96462080428401,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -256660,7 +256660,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.2829156470975846,
+     "pu_ranking_score": 0.2829156470975847,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -256814,7 +256814,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.2829156470975846,
+     "pu_ranking_score": 0.2829156470975847,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -256968,7 +256968,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.2829156470975846,
+     "pu_ranking_score": 0.2829156470975847,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -257122,7 +257122,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.2829156470975846,
+     "pu_ranking_score": 0.2829156470975847,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -257276,7 +257276,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.2829156470975846,
+     "pu_ranking_score": 0.2829156470975847,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -257430,7 +257430,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.7990230046126375,
+     "pu_ranking_score": 0.7990230046126382,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -257584,7 +257584,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.7990230046126375,
+     "pu_ranking_score": 0.7990230046126382,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -257738,7 +257738,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.7990230046126375,
+     "pu_ranking_score": 0.7990230046126382,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -257892,7 +257892,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.7990230046126375,
+     "pu_ranking_score": 0.7990230046126382,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -258046,7 +258046,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.7990230046126375,
+     "pu_ranking_score": 0.7990230046126382,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -259660,7 +259660,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.8765274207635252,
+     "pu_ranking_score": 0.8765274207635249,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -259814,7 +259814,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.8765274207635252,
+     "pu_ranking_score": 0.8765274207635249,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -259968,7 +259968,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.8765274207635252,
+     "pu_ranking_score": 0.8765274207635249,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -260122,7 +260122,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.8765274207635252,
+     "pu_ranking_score": 0.8765274207635249,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -260276,7 +260276,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.8765274207635252,
+     "pu_ranking_score": 0.8765274207635249,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -260430,7 +260430,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.9491534697573667,
+     "pu_ranking_score": 0.9491534697573681,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -260584,7 +260584,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.9491534697573667,
+     "pu_ranking_score": 0.9491534697573681,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -260738,7 +260738,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.9491534697573667,
+     "pu_ranking_score": 0.9491534697573681,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -260892,7 +260892,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.9491534697573667,
+     "pu_ranking_score": 0.9491534697573681,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -261046,7 +261046,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.9491534697573667,
+     "pu_ranking_score": 0.9491534697573681,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -280300,7 +280300,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.09389214873467251,
+     "pu_ranking_score": 0.09389214873467247,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -280454,7 +280454,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.09389214873467251,
+     "pu_ranking_score": 0.09389214873467247,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -280608,7 +280608,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.09389214873467251,
+     "pu_ranking_score": 0.09389214873467247,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -280762,7 +280762,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.09389214873467251,
+     "pu_ranking_score": 0.09389214873467247,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -280916,7 +280916,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.09389214873467251,
+     "pu_ranking_score": 0.09389214873467247,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -304670,7 +304670,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.8049893282478913,
+     "pu_ranking_score": 0.8049893282478917,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -304824,7 +304824,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.8049893282478913,
+     "pu_ranking_score": 0.8049893282478917,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -304978,7 +304978,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.8049893282478913,
+     "pu_ranking_score": 0.8049893282478917,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -305132,7 +305132,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.8049893282478913,
+     "pu_ranking_score": 0.8049893282478917,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -305286,7 +305286,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.8049893282478913,
+     "pu_ranking_score": 0.8049893282478917,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -308440,7 +308440,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.8963093222706305,
+     "pu_ranking_score": 0.896309322270631,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -308594,7 +308594,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.8963093222706305,
+     "pu_ranking_score": 0.896309322270631,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -308748,7 +308748,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.8963093222706305,
+     "pu_ranking_score": 0.896309322270631,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -308902,7 +308902,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.8963093222706305,
+     "pu_ranking_score": 0.896309322270631,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -309056,7 +309056,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.8963093222706305,
+     "pu_ranking_score": 0.896309322270631,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -425550,7 +425550,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.7457761992031872,
+     "pu_ranking_score": 0.7457761992031882,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -425704,7 +425704,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.7457761992031872,
+     "pu_ranking_score": 0.7457761992031882,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -425858,7 +425858,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.7457761992031872,
+     "pu_ranking_score": 0.7457761992031882,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -426012,7 +426012,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.7457761992031872,
+     "pu_ranking_score": 0.7457761992031882,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -426166,7 +426166,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.7457761992031872,
+     "pu_ranking_score": 0.7457761992031882,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -427780,7 +427780,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.5123642066166711,
+     "pu_ranking_score": 0.5123642066166755,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -427934,7 +427934,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.5123642066166711,
+     "pu_ranking_score": 0.5123642066166755,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -428088,7 +428088,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.5123642066166711,
+     "pu_ranking_score": 0.5123642066166755,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -428242,7 +428242,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.5123642066166711,
+     "pu_ranking_score": 0.5123642066166755,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -428396,7 +428396,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.5123642066166711,
+     "pu_ranking_score": 0.5123642066166755,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -471660,7 +471660,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.8275626402927256,
+     "pu_ranking_score": 0.8275626402927255,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -471814,7 +471814,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.8275626402927256,
+     "pu_ranking_score": 0.8275626402927255,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -471968,7 +471968,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.8275626402927256,
+     "pu_ranking_score": 0.8275626402927255,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -472122,7 +472122,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.8275626402927256,
+     "pu_ranking_score": 0.8275626402927255,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
@@ -472276,7 +472276,7 @@
     "provenance": "DERIVED",
     "confidence": "LOW (PU ranking caveated AUROC=0.590; no confirmed negatives exist -- see heads.py::FFHead.describe())",
     "extra": {
-     "pu_ranking_score": 0.8275626402927256,
+     "pu_ranking_score": 0.8275626402927255,
      "note": "This is a ranking score, not a calibrated P(flood). risk_category is NOT_AVAILABLE because no confirmed-negative-based probability exists.",
      "xai": {
       "status": "NOT_AVAILABLE",
