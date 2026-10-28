@@ -1,18 +1,5 @@
 [
   {
-    "timestamp_utc": "2026-10-27T20:40:00",
-    "timestamp_ist": "2026-10-28T02:10:00",
-    "vobl_bt_celsius": -22.49,
-    "min_bt_50km": -59.49,
-    "mean_bt_50km": -23.6,
-    "cold_pixels_count": 118,
-    "storm_detected": true,
-    "nearest_pixel_dist_km": 15.53,
-    "threshold_celsius": -40.0,
-    "data_source": "Himawari-9 Band 13 (10.4um) via NOAA AWS S3",
-    "bt_trend_1h": null
-  },
-  {
     "timestamp_utc": "2026-10-27T21:30:00",
     "timestamp_ist": "2026-10-28T03:00:00",
     "vobl_bt_celsius": -14.58,
@@ -76,5 +63,18 @@
     "threshold_celsius": -40.0,
     "data_source": "Himawari-9 Band 13 (10.4um) via NOAA AWS S3",
     "bt_trend_1h": null
+  },
+  {
+    "timestamp_utc": "2026-10-28T21:50:00",
+    "timestamp_ist": "2026-10-29T03:20:00",
+    "vobl_bt_celsius": 10.91,
+    "min_bt_50km": -12.63,
+    "mean_bt_50km": 11.35,
+    "cold_pixels_count": 0,
+    "storm_detected": false,
+    "nearest_pixel_dist_km": null,
+    "threshold_celsius": -40.0,
+    "data_source": "Himawari-9 Band 13 (10.4um) via NOAA AWS S3",
+    "bt_trend_1h": -21.16
   }
 ]
