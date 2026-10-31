@@ -50,6 +50,8 @@ from backend.models.unified_mtl.inference_engine import (  # noqa: E402
 )
 from backend.models.unified_mtl.lead_time_interface import LEAD_HOURS  # noqa: E402
 from backend import forecast_integrity as integrity  # noqa: E402
+from backend.location_api import router as _location_router  # noqa: E402
+app.include_router(_location_router)      # /v1/* location-aware endpoints
 from backend.models.unified_mtl.local_xai import local_shap_cb, local_shap_ts, local_xai_ff  # noqa: E402
 from ts_station_model_interface import VOBL_CELL_ID  # noqa: E402
 
