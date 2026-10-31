@@ -48,7 +48,7 @@
     thunderstorm: [
       [],
       ['Watch: review the outlook for the next hours.', 'Secure loose outdoor items.'],
-      ['Alert: postpone outdoor events and flights-line work.', 'Move to sturdy shelter if lightning is seen.', 'Avoid open ground and tall isolated objects.'],
+      ['Alert: postpone outdoor events and ramp or flight-line work.', 'Move to sturdy shelter if lightning is seen.', 'Avoid open ground and tall isolated objects.'],
       ['Warning: shelter indoors now.', 'Unplug sensitive electronics; stay away from windows.', 'Suspend outdoor operations until the cell passes.']
     ],
     extreme_rainfall: [
