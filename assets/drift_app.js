@@ -181,13 +181,15 @@
       });
       if (!ov) {
         legend = rs ? '<b>RESEARCH ONLY</b> — PU-learning ranking (not a probability)<div class="bar" style="background:' + gradient('res') + '"></div><span>low → high rank</span>' :
-          '<b>' + esc(L.label) + (L.id.match(/^(cape|cin|screen|qpe|extent|trigger)$/) ? ' · ' + esc(hourName()) : '') + '</b><div class="bar" style="background:' + gradient(L.ramp) + '"></div><span>0 → ' + L.max + ' ' + esc(L.unit) + '</span><br><span class="mute">' + esc(L.kind) + '</span>';
+          '<b>' + esc(L.label) + (L.id.match(/^(cape|cin|screen|qpe|extent|trigger)$/) ? ' · ' + esc(hourName()) : '') + '</b><div class="bar" style="background:' + gradient(L.ramp) + '"></div><span>0 → ' + L.max + ' ' + esc(L.unit) + '</span><details><summary>About this layer</summary><div class="small mute">' + esc(L.kind) + '</div>@@COV@@</details>';
         var ls = layerStats(L, rows);
         if (L.hl) stats = '<b>' + ls.n + '</b> of ' + ls.total + ' cells meet the highlight rule (≈ ' + Math.round(ls.area / 1000).toLocaleString('en-IN') + ' thousand km²)' + (ls.max != null ? ' · max ' + (+ls.max).toFixed(L.max <= 1 ? 2 : 0) + ' ' + esc(L.unit) + ' at ' + ls.maxCell[0] + '°N ' + ls.maxCell[1] + '°E' : '');
         else if (ls.max != null) stats = 'Max ' + (+ls.max).toFixed(L.max <= 1 ? 2 : 0) + ' ' + esc(L.unit) + ' at ' + ls.maxCell[0] + '°N ' + ls.maxCell[1] + '°E · ' + ls.total + ' cells with data';
       }
     }
     src.setData(data);
+    var cov = '<div class="small mute" style="margin-top:4px">Grid: 1°×1° cells (~111 km) over 6–37°N, 68–98°E. Cell-level guidance, not point forecasts.' + (st.onlyIndia ? ' Cells outside the India outline are hidden.' : ' Cells outside India show model guidance only.') + '</div>';
+    legend = legend.indexOf('@@COV@@') >= 0 ? legend.replace('@@COV@@', cov) : (legend ? legend + '<details><summary>About this view</summary>' + cov + '</details>' : legend);
     $('legend').innerHTML = legend + (stats ? '<div class="small" style="margin-top:4px">' + stats + '</div>' : ''); $('legend').style.display = (legend || stats) ? 'block' : 'none';
     $('overlay').style.display = ov ? 'flex' : 'none'; $('overlay').innerHTML = ov;
     if (map.getLayer('sel')) map.setFilter('sel', ['==', ['get', 'i'], st.sel == null ? -1 : st.sel]);
@@ -204,12 +206,24 @@
     map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-right');
     if (window.ResizeObserver) new ResizeObserver(function () { map.resize(); }).observe($('mapwrap'));
     window.addEventListener('resize', function () { map.resize(); });
+    // External basemap tiles are optional decoration. If they fail, hide that layer and say so: the India outline,
+    // land fill and every grid cell are local and keep working.
+    var tileFailures = 0;
+    map.on('error', function (e) {
+      var src = e && (e.sourceId || (e.source && e.source.id));
+      if (src !== 'base') return;
+      if (++tileFailures === 3 && map.getLayer('base')) {
+        map.setLayoutProperty('base', 'visibility', 'none'); st.basemap = 'UNAVAILABLE';
+        var n = $('maplabel'); if (n) n.insertAdjacentHTML('beforeend', '<span class="chip STALE" id="tilenote"><i></i>Basemap tiles unavailable · grid and outline unaffected</span>');
+      }
+    });
     var inited = false;
     function onReady() {
       if (inited) return; inited = true;
       map.addSource('cells', { type: 'geojson', data: features([]) });
       map.addSource('india', { type: 'geojson', data: st.outline || { type: 'FeatureCollection', features: [] } });
       map.addSource('centre', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+      map.addLayer({ id: 'india-fill', type: 'fill', source: 'india', paint: { 'fill-color': '#16243f', 'fill-opacity': 0.85 } });
       map.addLayer({ id: 'fill', type: 'fill', source: 'cells', paint: { 'fill-color': ['get', 'color'], 'fill-opacity': ['get', 'op'] } });
       map.addLayer({ id: 'grid', type: 'line', source: 'cells', paint: { 'line-color': '#9fb3d8', 'line-opacity': 0.1, 'line-width': 0.5 } });
       map.addLayer({ id: 'india-line', type: 'line', source: 'india', paint: { 'line-color': '#e6f1ff', 'line-width': 1.4, 'line-opacity': 0.9 } });
@@ -443,6 +457,39 @@
     paint(); renderAlerts(); renderDetail(); renderTimeline();
   }
 
+
+  /* ------------------------------------------------------------------ guided tour (drives the real UI) */
+  function bestCell(fn) { var bi = -1, bv = -1e9; st.cells.forEach(function (c, i) { if (!visible(c[0], c[1], 'l' + i)) return; var v = fn(c); if (v != null && v > bv) { bv = v; bi = i; } }); return bi; }
+  function cellAt(lat, lon) { var bi = -1, bd = 1e9; st.cells.forEach(function (c, i) { var d = Math.abs(c[0] - lat) + Math.abs(c[1] - lon); if (d < bd) { bd = d; bi = i; } }); return bi; }
+  function go(hz, layer) { if (st.mode !== 'live') setMode('live'); st.hazard = hz; st.layer = layer; st.research = false; refresh(); }
+  var TOUR = [
+    { t: 'DRIFT at national scale', b: 'DRIFT screens severe-weather hazards across India on a <b>992-cell grid</b> (1° cells, 6–37°N, 68–98°E). LIVE mode shows only integrity-checked data; anything DRIFT cannot support stays <b>unavailable</b>. Colours here are GFS model guidance, not warnings.',
+      a: function () { go('thunderstorm', 'cape'); st.sel = null; refresh(); if (map) map.fitBounds([[68.5, 6.5], [97.8, 37.2]], { padding: 20, duration: 600 }); } },
+    { t: 'Thunderstorm: pick a region', b: '<b>CAPE</b> (J/kg) is stored convective energy: how strongly a rising air parcel can accelerate. <b>CIN</b> is the "cap": energy needed to get parcels rising at all. High CAPE with weak CIN is the ingredient list for storms. These are <b>model inputs</b>, not a thunderstorm probability. Use the CAPE slider to see where YOUR threshold is met.',
+      a: function () { go('thunderstorm', 'screen'); var i = bestCell(function (c) { return val(c, 'cape_' + st.hour); }); if (i >= 0) { select(i); if (map) map.flyTo({ center: [st.cells[i][1], st.cells[i][0]], zoom: 5, duration: 700 }); } } },
+    { t: 'Thunderstorm: station evidence vs national coverage', b: 'Only <b>one station (VOBL, Bengaluru)</b> has a trained thunderstorm model, METAR and satellite evidence, with explanations of which inputs raised or lowered its score. Everywhere else DRIFT has <b>guidance fields only</b>; it does not claim a pan-India thunderstorm forecast. Model score here is uncalibrated, not a probability.',
+      a: function () { go('thunderstorm', 'cape'); var i = cellAt(13, 78); select(i); setPanel('detail'); if (map) map.flyTo({ center: [78, 13], zoom: 5.5, duration: 700 }); var h = $('hzinfo'); if (h && h.scrollIntoView) h.scrollIntoView({ block: 'start', behavior: 'smooth' }); } },
+    { t: 'Extreme rainfall: intensity and extent', b: 'GFS precipitation at two model hours (f6, f9) with a threshold you control; the legend states how many cells and roughly how many km² exceed it. This is <b>model guidance</b>, not observed rain, and the two hours are not summed because their accumulation windows are not verified.',
+      a: function () { go('extreme_rainfall', 'extent'); st.thr.rain = 5; refresh(); var i = bestCell(function (c) { return val(c, 'qpe_' + st.hour); }); if (i >= 0) select(i); if (map) map.fitBounds([[68.5, 6.5], [97.8, 37.2]], { padding: 20, duration: 600 }); } },
+    { t: 'Heavy-rain outlook is not a cloudburst forecast', b: 'The <b>daily heavy-rain-day score</b> ranks cells for rainfall ≥ 64.5 mm/24 h across the whole day. A <b>cloudburst</b> is far more intense and localised (often quoted ≥ 100 mm/h over a few tens of km²). DRIFT has no verified cloudburst labels or sub-hourly rainfall input, so cloudburst prediction is <b>unavailable</b>.',
+      a: function () { go('extreme_rainfall', 'cb'); setPanel('detail'); var h = $('hzinfo'); if (h && h.scrollIntoView) h.scrollIntoView({ block: 'start', behavior: 'smooth' }); } },
+    { t: 'Flash flood: triggers and terrain, no prediction', b: 'DRIFT shows <b>context</b>: GFS rain trigger on cells with high SRTM-derived susceptibility. It does not predict floods. Missing for live operation: observed flood labels, gauge/soil-moisture inputs (gauge hydrology exists for only 75 of 992 cells) and a validated model.',
+      a: function () { go('flash_flood', 'trigger'); st.thr.rainTrig = 3; refresh(); var i = bestCell(function (c) { var q = val(c, 'qpe_' + st.hour), s = val(c, 'ff_susceptibility_proxy'); return (q != null && s != null && s >= st.thr.susc) ? q : null; }); if (i >= 0) select(i); setPanel('detail'); } },
+    { t: 'Simulation: an extreme event', b: '<b>SIMULATION mode uses synthetic data only.</b> The amber banner, SIMULATION badges and striped header cannot be mistaken for live output. Press <b>Run event</b>: conditions intensify, cells change level, and WATCH → ALERT → WARNING are issued.',
+      a: function () { setMode('sim'); Object.assign(st.sc.params, S.PRESETS.extreme); resetRun(); refresh(); setPanel('alerts'); if (map) map.fitBounds([[68.5, 6.5], [97.8, 37.2]], { padding: 20, duration: 600 }); } },
+    { t: 'Simulation: warning and notification lifecycle', b: 'Each issued level lists affected cells and recommended actions, then a <b>simulated</b> lifecycle (eligible → recorded → dispatch attempted → provider accepted → delivery confirmed). No network request is made and no recipient exists. Real DRIFT alerting stays disabled until a hazard model passes the alert-eligibility policy.',
+      a: function () { setMode('sim'); Object.assign(st.sc.params, S.PRESETS.extreme); resetRun(); refresh(); setPanel('alerts'); st.speed = 700; togglePlay(); } }
+  ];
+  var tourI = -1;
+  function tourGo(i) {
+    var el = $('tour'); if (!el) return;
+    if (i < 0 || i >= TOUR.length) { tourI = -1; stopPlay(); el.style.display = 'none'; return; }
+    tourI = i; var s = TOUR[i]; el.style.display = 'block';
+    el.innerHTML = '<div class="row"><b>Guided tour · ' + (i + 1) + ' / ' + TOUR.length + '</b><span class="spacer"></span><button class="btn" id="tour-x" aria-label="Close tour">✕</button></div><h3>' + esc(s.t) + '</h3><p class="small">' + s.b + '</p><div class="row"><button class="btn" id="tour-b"' + (i === 0 ? ' disabled' : '') + '>Back</button><button class="btn primary" id="tour-n">' + (i === TOUR.length - 1 ? 'Finish' : 'Next') + '</button></div>';
+    $('tour-x').onclick = function () { tourGo(-1); }; $('tour-b').onclick = function () { tourGo(i - 1); }; $('tour-n').onclick = function () { tourGo(i + 1); };
+    stopPlay(); try { s.a(); } catch (e) { /* a tour step must never break the app */ }
+  }
+
   /* ------------------------------------------------------------------ mode / refresh */
   function resetRun() { stopPlay(); st.t = 0; st.lcShown = {}; recompute(); }
   function newScenario() { st.sc = S.createScenario(st.hazard); resetRun(); }
@@ -475,11 +522,12 @@
   function refresh() { banner(); renderHazardTabs(); renderControls(); renderHazardInfo(); renderDetail(); renderAlerts(); renderSources(); renderEval(); renderTimeline(); paint(); }
 
   function boot() {
+    if ($('tour-start')) $('tour-start').onclick = function () { tourGo(0); };
     $('m-live').onclick = function () { setMode('live'); }; $('m-sim').onclick = function () { setMode('sim'); };
     Array.prototype.forEach.call(document.querySelectorAll('.rtabs button'), function (b) { b.onclick = function () { setPanel(b.dataset.p); }; });
     initMap();
     load().then(function () { st.loading = false; st.layer = layerDefs()[st.hazard][0].id; setOutlineSource(); if (location.hash === '#sim') setMode('sim'); else refresh(); });
-    window.__drift = { getMap: function () { return map; }, ready: function () { return mapReady; }, state: st, setMode: setMode, select: select, refresh: refresh, setT: setT };
+    window.__drift = { inIndiaPoint: inIndiaPoint, cellInIndia: cellInIndia, tour: function (i) { tourGo(i); }, getMap: function () { return map; }, ready: function () { return mapReady; }, state: st, setMode: setMode, select: select, refresh: refresh, setT: setT };
   }
   boot();
 })();

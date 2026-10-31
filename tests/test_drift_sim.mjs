@@ -66,3 +66,12 @@ test('presets order severity: mild < severe <= extreme', () => {
   assert.ok(peak('mild') < peak('severe') || peak('mild') === 0);
   assert.equal(peak('extreme'), 3);
 });
+
+test('an extreme event BUILDS: each hazard escalates through WATCH then ALERT then WARNING, in order', () => {
+  for (const h of Object.keys(S.HAZARDS)) {
+    const n = S.narrative(S.createScenario(h, S.PRESETS.extreme));
+    assert.equal(n[0].peakLevel, 0, h + ' starts quiet');
+    assert.deepEqual(n.filter(x => x.issued).map(x => x.issued.kind), ['WATCH', 'ALERT', 'WARNING'], h);
+    const hours = n.filter(x => x.issued).map(x => x.t); assert.deepEqual(hours, [...hours].sort((a, b) => a - b));
+  }
+});

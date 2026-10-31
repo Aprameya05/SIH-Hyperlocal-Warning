@@ -6,7 +6,7 @@
 <title>DRIFT Command Centre</title>
 <meta name="description" content="Pan-India severe-weather command centre: live NWP guidance and model outputs with explicit provenance, plus a clearly marked scenario simulation.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230b1220'/%3E%3Cpath d='M6 20c4-8 8-8 10-3s6 4 10-5' stroke='%2338bdf8' stroke-width='3' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
-<link href="https://cdn.jsdelivr.net/npm/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet">
+<link href="assets/vendor/maplibre-gl.css" rel="stylesheet">
 <style>
 :root{--bg:#0b1220;--panel:#111a2e;--panel2:#16213a;--line:#24324f;--text:#e6edf7;--mute:#93a4c3;--accent:#38bdf8;
   --ok:#34d399;--warn:#fbbf24;--bad:#f87171;--sim:#f59e0b;--r:10px;--gap:12px}
@@ -43,7 +43,7 @@ select,input[type=range]{width:100%}select{background:var(--panel2);color:var(--
 #map{position:absolute;inset:0}
 #maplabel{position:absolute;left:10px;top:10px;z-index:2;display:flex;gap:6px;flex-wrap:wrap;max-width:calc(100% - 60px)}
 #legend{position:absolute;left:10px;bottom:10px;z-index:2;background:color-mix(in srgb,var(--panel) 92%,transparent);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:11px;max-width:260px}
-#legend .bar{height:8px;border-radius:4px;margin:4px 0}
+#legend details summary{cursor:pointer;color:var(--accent);font-size:11px;margin-top:4px}#legend .bar{height:8px;border-radius:4px;margin:4px 0}
 #overlay{position:absolute;inset:0;z-index:1;display:none;align-items:center;justify-content:center;text-align:center;padding:24px;background:rgba(8,12,22,.72);font-weight:600;pointer-events:none}
 .sim-mark{position:absolute;right:10px;top:10px;z-index:2;background:var(--sim);color:#1b1100;font-weight:800;padding:4px 10px;border-radius:6px;letter-spacing:.08em;display:none}
 #timeline{padding:12px}
@@ -75,6 +75,9 @@ table{width:100%;border-collapse:collapse;font-size:13px}td,th{padding:4px 0;bor
 .mark{position:absolute;top:-4px;bottom:-4px;width:4px;margin-left:-2px;border-radius:2px;background:var(--warn)}.mark.l2{background:var(--sim)}.mark.l3{background:var(--bad)}
 .cursor{position:absolute;top:-6px;bottom:-6px;width:2px;margin-left:-1px;background:#fff;box-shadow:0 0 6px #fff}
 .btn small.mute{font-weight:400}
+#tour{position:fixed;left:16px;bottom:16px;z-index:20;width:min(380px,calc(100vw - 32px));box-shadow:0 10px 40px rgba(0,0,0,.5);border-color:var(--accent)}
+#tour h3{margin:6px 0}.btn.primary{background:var(--accent);color:#04121f;border-color:transparent}
+@media (max-width:760px){#tour{left:8px;right:8px;bottom:8px;width:auto;max-height:46vh;overflow:auto}}
 footer{padding:8px 16px;color:var(--mute);font-size:11px;border-top:1px solid var(--line)}
 .lvl0{color:var(--mute)}.lvl1{color:var(--warn)}.lvl2{color:var(--sim)}.lvl3{color:var(--bad)}
 @media (max-width:1100px){main{grid-template-columns:260px minmax(0,1fr)}section.right{grid-column:1/-1}}
@@ -89,6 +92,7 @@ footer{padding:8px 16px;color:var(--mute);font-size:11px;border-top:1px solid va
     <button id="m-sim" class="sim" aria-pressed="false">SIMULATION</button>
   </div>
   <span class="spacer"></span>
+  <button class="btn primary" id="tour-start">Guided tour</button>
   <span id="fresh" class="chip UNAVAILABLE"><i></i><span>loading…</span></span>
   <a class="btn" href="index.html" id="home-link">&larr; Bengaluru nowcast home</a>
 </header>
@@ -118,8 +122,9 @@ footer{padding:8px 16px;color:var(--mute);font-size:11px;border-top:1px solid va
     </div>
   </section>
 </main>
+<div id="tour" class="card" role="dialog" aria-label="Guided tour" style="display:none"></div>
 <footer>DRIFT outputs are research/advisory model outputs, not IMD/NDMA warnings. For official warnings consult IMD, NDMA and local authorities.</footer>
-<script src="https://cdn.jsdelivr.net/npm/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+<script src="assets/vendor/maplibre-gl.js"></script>
 <script src="assets/drift_sim.js"></script>
 <script src="assets/drift_app.js"></script>
 </body>

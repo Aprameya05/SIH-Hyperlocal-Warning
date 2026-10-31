@@ -73,7 +73,8 @@
     p.seed = p.seed == null ? 7 : p.seed;
     return { hazard: hazard, params: p, label: SIM_LABEL, simulated: true };
   }
-  function envelope(t) { return clamp(0.35 + 0.65 * Math.sin(Math.PI * (t + 0.5) / (HOURS + 1)), 0, 1); }
+  // Linear onset over 4 h (so an event visibly BUILDS through WATCH and ALERT before WARNING), then decay.
+  function envelope(t) { return clamp(t <= 4 ? 0.1 + 0.9 * t / 4 : 1 - 0.25 * (t - 4), 0.05, 1); }
   function centre(p, t) {
     var b = p.bearing * Math.PI / 180;
     return [p.lat + p.speed * t * Math.cos(b), p.lon + p.speed * t * Math.sin(b)];
@@ -94,7 +95,7 @@
     for (var k = Math.max(0, t - 2); k <= t; k++) rain3 += base(sc, k, i) * 56;      // mm per hour -> 3 h accumulation
     if (sc.hazard === 'extreme_rainfall') return Math.min(rain3, h.max);
     var ter = 0.6 + 0.8 * terrain(CELLS[i][0], CELLS[i][1]);
-    return clamp((rain3 / 100) * (0.4 + 0.6 * sc.params.moisture) * ter, 0, 1);
+    return clamp((rain3 / 140) * (0.4 + 0.6 * sc.params.moisture) * ter, 0, 1);
   }
   function levelOf(sc, v) {
     var h = HAZARDS[sc.hazard], x = v / h.max, th = h.thresholds;

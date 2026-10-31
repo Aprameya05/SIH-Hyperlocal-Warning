@@ -1,0 +1,7 @@
+{
+  "name": "drift-e2e",
+  "private": true,
+  "description": "Project-local browser tests for the DRIFT command centre (uses the system Chrome; no browser download)",
+  "scripts": { "test": "node --test *.spec.mjs" },
+  "devDependencies": { "playwright-core": "1.49.1" }
+}
