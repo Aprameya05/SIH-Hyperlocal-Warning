@@ -102,7 +102,7 @@ gate (`backend/alert_policy.py`) whose production registries are empty, so no au
 | Grey/blank basemap | Tiles are optional. After 3 tile failures the app hides them and shows “Basemap tiles unavailable”; the India outline, land fill and grid keep working. |
 | “Source is STALE — values are withheld” | Data older than 12 h. Re-run the refresh commands in section 1 (or wait for CI). Withholding is intended. |
 | “LIVE feed unavailable” | `data/drift_live.json` missing/invalid: run `scripts/build_drift_live.py`; check `scripts/ci_validate_drift_live.py` output. |
-| Map frame looks blank in a hidden/background tab | Browsers pause rendering for hidden tabs; focus the tab. |
+| Map looks blank for a few seconds, then appears | Root cause (measured): in an unfocused/embedded browser pane `requestAnimationFrame` is throttled to ~2 fps, and MapLibre loads its style and draws on animation frames. Click into the page (or use a normal focused browser window). Panels and data are unaffected; the in-app pane reports `ready` after a few seconds. |
 | Blank page offline | Serve over http (not `file://`); everything needed is in the bundle. |
 | Stale page after redeploy | The service worker is network-first for data and drift pages; hard-reload once. |
 | Browser tests | `cd tests/e2e && npm install && PYTHON=python3 npm test` (uses system Chrome; set `CHROME_PATH` if needed; `DRIFT_SHOTS=1` regenerates `docs/demo_screenshots`). |
