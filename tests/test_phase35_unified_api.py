@@ -226,9 +226,12 @@ def test_dispatch_accepts_legitimate_cb_probability_and_reports_truthful_deliver
     when a real candidate happens to exist; otherwise it is skipped with an
     honest reason rather than asserting a candidate must be present."""
     candidates = client.get("/forecast/alerts", params={"min_risk": "HIGH"}).json()["candidates"]
-    cb_candidates = [c for c in candidates if c["hazard"] == "CB"]
+    # M0: only candidates the API itself flags alert_eligible are dispatchable. Daily-outlook
+    # candidates (no lead time) and withheld/historical values are never eligible by design.
+    cb_candidates = [c for c in candidates if c["hazard"] == "CB" and c.get("alert_eligible")]
     if not cb_candidates:
-        pytest.skip("no HIGH/SEVERE CB candidate in the current real artifact -- nothing to dispatch-test")
+        pytest.skip("no alert-eligible HIGH/SEVERE CB candidate in the current real artifact -- "
+                    "nothing to dispatch-test")
     cb_candidate = cb_candidates[0]
     r = client.post("/forecast/alerts/dispatch",
                      json={"cell_id": cb_candidate["cell_id"], "hazard": "CB", "lead_hours": cb_candidate["lead_hours"]})
@@ -250,8 +253,14 @@ def test_dispatch_never_reports_sent_without_confirmation(client):
     -- whether that is because no provider is configured (legacy path) or
     because the 2026-10-06 freshness gate skipped it outright."""
     r = client.post("/forecast/alerts/dispatch", json={"cell_id": "IND_8.0_76.0", "hazard": "CB", "lead_hours": 2})
-    assert r.json()["delivery_status"].startswith("NOT_SENT")
-    assert "SENT" not in r.json()["delivery_status"].replace("NOT_SENT", "")
+    if r.status_code == 200:
+        assert r.json()["delivery_status"].startswith("NOT_SENT")
+        assert "SENT" not in r.json()["delivery_status"].replace("NOT_SENT", "")
+    else:
+        # M0: a withheld (non-lead-specific / historical) value is refused outright with 422, which
+        # is stricter than a NOT_SENT body: nothing is sent and nothing claims to be.
+        assert r.status_code == 422 and "refusing to dispatch" in r.json()["detail"]
+        assert "SENT" not in r.text.replace("NOT_SENT", "")
 
 
 # ---------------------------------------------------------------------------

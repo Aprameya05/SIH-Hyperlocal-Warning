@@ -49,6 +49,7 @@ from backend.models.unified_mtl.inference_engine import (  # noqa: E402
     UnifiedInferenceEngine, compute_valid_time, assert_no_leakage, InferenceLeakageError,
 )
 from backend.models.unified_mtl.lead_time_interface import LEAD_HOURS  # noqa: E402
+from backend import forecast_integrity as integrity  # noqa: E402
 from backend.models.unified_mtl.local_xai import local_shap_cb, local_shap_ts, local_xai_ff  # noqa: E402
 from ts_station_model_interface import VOBL_CELL_ID  # noqa: E402
 
@@ -91,9 +92,10 @@ def _reapply_request_time_freshness(artifact: dict, hazard_block: dict) -> dict:
     generated_at = artifact.get("generated_at_utc")
     if not generated_at or hazard_block.get("source_status") not in LIVE_SOURCE_STATUSES:
         return hazard_block
-    try:
-        generated_dt = datetime.strptime(generated_at, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
-    except ValueError:
+    # M0: the old strict strptime('%Y-%m-%dT%H:%M:%SZ') raised on the real artifact's
+    # '2026-10-30T21:46:28.474323+00:00' shape, so this downgrade silently never ran.
+    generated_dt = integrity.parse_utc(generated_at)
+    if generated_dt is None:
         return hazard_block
     age_hours = (datetime.now(timezone.utc) - generated_dt).total_seconds() / 3600.0
     if age_hours <= ARTIFACT_STALE_AFTER_HOURS:
@@ -107,6 +109,20 @@ def _reapply_request_time_freshness(artifact: dict, hazard_block: dict) -> dict:
 # ---------------------------------------------------------------------------
 # Real, documented source status -- never hidden or upgraded (Phase 35 Part 11)
 # ---------------------------------------------------------------------------
+def _load_unified_artifact() -> dict:
+    """Read data/unified_forecast.json through the M0 integrity layer. A legacy
+    (pre-M0) artifact is sanitised on load, so historical-replay values and the
+    duplicated daily CB value can never be served as current lead forecasts,
+    and time-dependent status is re-evaluated against request time."""
+    if not UNIFIED_FORECAST_PATH.exists():
+        raise HTTPException(status_code=503,
+                             detail="data/unified_forecast.json not found -- run "
+                                    "scripts/phase34_build_unified_forecast.py first")
+    with open(UNIFIED_FORECAST_PATH) as f:
+        raw = json.load(f)
+    return integrity.refresh_request_time_status(integrity.sanitize_artifact(raw))
+
+
 SOURCE_STATUS = {
     "GFS": "READY",
     "IMERG": "REAL_SAMPLE_VALIDATED (1 day, 2024-08-01); LIMITED_ARCHIVE "
@@ -523,16 +539,8 @@ def get_forecast(cell_id: str = Query(...), lead_hours: int = Query(...),
 # ---------------------------------------------------------------------------
 @app.get("/forecast/all")
 def get_forecast_all():
-    if not UNIFIED_FORECAST_PATH.exists():
-        raise HTTPException(status_code=503,
-                             detail="data/unified_forecast.json not found -- run "
-                                    "scripts/phase34_build_unified_forecast.py first")
-    with open(UNIFIED_FORECAST_PATH) as f:
-        artifact = json.load(f)
+    artifact = _load_unified_artifact()
     artifact["forecast_source"] = "OFFLINE_ARTIFACT"
-    for rec in artifact["records"]:
-        for hz in ("TS", "CB", "FF"):
-            rec[hz] = _reapply_request_time_freshness(artifact, rec[hz])
     return artifact
 
 
@@ -550,48 +558,68 @@ def get_forecast_sources():
 # ---------------------------------------------------------------------------
 @app.get("/forecast/alerts")
 def get_forecast_alerts(min_risk: str = Query("HIGH")):
-    """Scans the offline artifact (deterministic, no live recomputation)
-    for records whose TS/CB probability is real AND whose risk_category
-    is HIGH or SEVERE (or min_risk, if looser). FF NEVER appears here --
-    it has no probability to alert on, by design (Phase 34/35)."""
-    if not UNIFIED_FORECAST_PATH.exists():
-        raise HTTPException(status_code=503, detail="data/unified_forecast.json not found")
-    with open(UNIFIED_FORECAST_PATH) as f:
-        artifact = json.load(f)
+    """Read-only evaluation of the offline artifact; never dispatches.
+
+    M0: every candidate carries an explicit class so a historical or
+    non-lead-specific model output can never be read as an operational warning:
+      MODEL_GENERATED_CANDIDATE            lead-specific model output (none exist yet)
+      MODEL_GENERATED_DAILY_OUTLOOK_CANDIDATE  daily aggregate, no lead time, never alert-eligible
+    No candidate is ever an official warning or a verified event
+    (is_official_warning=False, verified=False). Eligibility comes from the same
+    integrity.eligible_for_alert() rule the dispatch gate uses, so the two cannot
+    disagree. FF never appears (it has no probability)."""
+    artifact = _load_unified_artifact()
     order = {"LOW": 0, "MODERATE": 1, "HIGH": 2, "SEVERE": 3}
     threshold_rank = order.get(min_risk.upper(), 2)
+    common = {"alert_id": None, "status": "CANDIDATE", "is_official_warning": False, "verified": False,
+              "delivery_status": "NOT_SENT: evaluation only, no dispatch requested"}
 
     candidates = []
     for r in artifact["records"]:
         for hz in ("TS", "CB"):
-            p = r[hz]["probability"]
-            cat = r[hz]["risk_category"]
-            if p is None or r[hz]["status"] in ("NOT_TRAINED", "OUT_OF_DOMAIN_STATION_ONLY", "UNAVAILABLE"):
-                continue  # NEVER: an unavailable/NOT_TRAINED hazard triggers an alert
+            blk = r[hz]
+            p, cat = blk.get("probability"), blk.get("risk_category")
+            if p is None or blk.get("status") in ("NOT_TRAINED", "OUT_OF_DOMAIN_STATION_ONLY", "UNAVAILABLE"):
+                continue  # NEVER: an unavailable/NOT_TRAINED/withheld hazard is a candidate
             if cat not in order or order[cat] < threshold_rank:
                 continue
-            hz_block = _reapply_request_time_freshness(artifact, r[hz])
-            source_status = hz_block.get("source_status")
-            alert_eligible = source_status in LIVE_SOURCE_STATUSES
-            candidates.append({
-                "alert_id": None,  # assigned only on actual dispatch (log_alert autoincrement)
+            valid_time = blk.get("valid_time_utc") or r["valid_time"]
+            eligible, reasons = integrity.eligible_for_alert(blk, hazard=hz, valid_time=valid_time)
+            candidates.append({**common,
+                "candidate_class": "MODEL_GENERATED_CANDIDATE",
                 "cell_id": r["cell_id"], "hazard": hz, "lead_hours": r["lead_hours"],
-                "probability": p, "risk": cat, "valid_time": r["valid_time"],
-                "trigger_features": r[hz].get("extra", {}),
-                "status": "CANDIDATE",
-                "delivery_status": "NOT_SENT: evaluation only, no dispatch requested",
-                "source_status": source_status,
-                "alert_eligible": alert_eligible,
-                "alert_eligibility_note": (
-                    "eligible for dispatch" if alert_eligible else
-                    f"a POST /forecast/alerts/dispatch for this candidate will return "
-                    f"SKIPPED_NO_ALERT -- its source_status is {source_status!r}, not a live status "
-                    f"(e.g. CB currently serves a FIXED_VALIDATION_FALLBACK cycle, never dispatched "
-                    f"as if it reflected current weather)"
-                ),
+                "probability": p, "risk": cat, "valid_time": valid_time,
+                "model_init_time_utc": blk.get("model_init_time_utc"),
+                "operational_lead_hours": blk.get("operational_lead_hours"),
+                "temporal_status": blk.get("temporal_status"),
+                "trigger_features": blk.get("extra", {}),
+                "source_status": blk.get("source_status"),
+                "alert_eligible": eligible, "alert_eligibility_reasons": reasons,
             })
+    for cid, entry in (artifact.get("daily_outlook") or {}).items():
+        cb = entry["CB"]
+        cat = cb.get("risk_category")
+        if cb.get("probability") is None or cat not in order or order[cat] < threshold_rank:
+            continue
+        candidates.append({**common,
+            "candidate_class": "MODEL_GENERATED_DAILY_OUTLOOK_CANDIDATE",
+            "cell_id": cid, "hazard": "CB", "lead_hours": None, "lead_specific": False,
+            "probability": cb["probability"], "risk": cat,
+            "valid_time": None, "window_start_utc": cb["window_start_utc"], "window_end_utc": cb["window_end_utc"],
+            "model_init_time_utc": cb["model_init_time_utc"],
+            "operational_lead_hours": None,
+            "event_class": cb["event_class"], "event_definition": cb["event_definition"],
+            "temporal_status": cb["temporal_status"], "source_status": cb["source_status"],
+            "alert_eligible": False,
+            "alert_eligibility_reasons": ["daily aggregate: no lead-specific forecast exists, so a "
+                                          "2-6 h warning cannot be issued from it"],
+        })
     return {"forecast_source": "OFFLINE_ARTIFACT", "min_risk": min_risk.upper(),
-            "n_candidates": len(candidates), "candidates": candidates}
+            "artifact_mode": artifact.get("artifact_mode"),
+            "forecast_horizon_support": artifact.get("forecast_horizon_support"),
+            "n_candidates": len(candidates),
+            "n_alert_eligible": sum(1 for c in candidates if c["alert_eligible"]),
+            "candidates": candidates}
 
 
 class DispatchRequest(BaseModel):
@@ -608,10 +636,7 @@ def dispatch_forecast_alert(req: DispatchRequest):
     if req.hazard not in ("TS", "CB"):
         raise HTTPException(status_code=400,
                              detail="FF has no legitimate probability and can never be dispatched as an alert")
-    if not UNIFIED_FORECAST_PATH.exists():
-        raise HTTPException(status_code=503, detail="data/unified_forecast.json not found")
-    with open(UNIFIED_FORECAST_PATH) as f:
-        artifact = json.load(f)
+    artifact = _load_unified_artifact()
     rec = next((r for r in artifact["records"]
                 if r["cell_id"] == req.cell_id and r["lead_hours"] == req.lead_hours), None)
     if rec is None:
@@ -632,6 +657,11 @@ def dispatch_forecast_alert(req: DispatchRequest):
     # a truthful SKIPPED_NO_ALERT instead.
     now_dt = datetime.now(timezone.utc)
     skip_reasons = []
+    # M0: same rule the candidate listing uses (backend/forecast_integrity.py), so listing
+    # and dispatch cannot disagree about whether a value is a current forecast.
+    _eligible, _elig_reasons = integrity.eligible_for_alert(
+        hz, hazard=req.hazard, valid_time=hz.get("valid_time_utc") or hz.get("cb_valid_time_utc") or rec["valid_time"])
+    skip_reasons.extend(_elig_reasons)
     if req.lead_hours not in LEAD_HOURS:
         skip_reasons.append(f"lead_hours {req.lead_hours} is not a valid lead slot {list(LEAD_HOURS)}")
     # CB carries its own cb_valid_time_utc (2026-10-06 Phase 3) independent

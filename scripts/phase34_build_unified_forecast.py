@@ -44,6 +44,7 @@ from backend.models.unified_mtl.inference_engine import (  # noqa: E402
     UnifiedInferenceEngine, compute_valid_time, assert_no_leakage,
 )
 from backend.models.unified_mtl.lead_time_interface import LEAD_HOURS  # noqa: E402
+from backend import forecast_integrity as integrity  # noqa: E402
 
 OUTPUT_PATH = REPO_ROOT / "data" / "unified_forecast.json"
 # FIXED_VALIDATION_FALLBACK cycle: the one real, Phase-32/32B-validated
@@ -334,6 +335,11 @@ def main():
         "records": records,
     }
 
+    # M0 (CRITICAL_BUGS #16): the engine emits a fixed 2024-08-01 replay cycle for TS/FF
+    # and one daily CB value repeated across the five lead slots. Neither may be published
+    # as a current lead-specific forecast, so withhold them here at the source (originals
+    # are preserved under historical_reference / daily_outlook, never deleted).
+    artifact = integrity.sanitize_artifact(artifact)
     validation = validate_artifact(artifact)
     artifact["validation"] = validation
 
@@ -358,6 +364,10 @@ def main():
         reject_reasons.append("a TS/CB probability outside [0,1] was found")
     if not validation.get("ff_never_carries_a_fabricated_probability"):
         reject_reasons.append("an FF record carried a 'probability' field (FF must be risk_score-only)")
+    if not validation.get("no_historical_or_duplicated_value_presented_as_current_lead_forecast"):
+        reject_reasons.append("a historical-replay or non-lead-specific value is presented as a current forecast")
+    if not validation.get("time_semantics_block_present"):
+        reject_reasons.append("artifact is missing the M0 time_semantics / forecast_horizon_support blocks")
     if not validation.get("no_unavailable_probability_mapped_to_a_risk_category"):
         reject_reasons.append("a NULL-probability record was mapped to a non-NOT_AVAILABLE risk_category")
 
@@ -429,7 +439,20 @@ def validate_artifact(artifact: dict) -> dict:
         for r in records for hz in ("TS", "CB", "FF")
     )
 
+    # M0: a value may carry a probability / PU score only if it is a CURRENT forecast.
+    never_historical_as_current = all(
+        (r[hz].get("probability") is None
+         and ((r[hz].get("extra") or {}).get("pu_ranking_score") is None))
+        or r[hz].get("temporal_status") == integrity.TemporalStatus.CURRENT
+        for r in records for hz in ("TS", "CB", "FF")
+    )
+    has_time_semantics = (artifact.get("schema_version", 1) >= integrity.SCHEMA_VERSION
+                          and "time_semantics" in artifact
+                          and "forecast_horizon_support" in artifact)
+
     return {
+        "no_historical_or_duplicated_value_presented_as_current_lead_forecast": never_historical_as_current,
+        "time_semantics_block_present": has_time_semantics,
         "exactly_992_cells": n_unique_cells == 992,
         "n_unique_cells": n_unique_cells,
         "exactly_4960_records": len(records) == 4960,

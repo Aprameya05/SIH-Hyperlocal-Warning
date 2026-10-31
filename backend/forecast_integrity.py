@@ -376,6 +376,45 @@ def sanitize_artifact(artifact: dict, *, now=None) -> dict:
     return art
 
 
+def refresh_request_time_status(artifact: dict, *, now=None) -> dict:
+    """Re-evaluate time-dependent status against REQUEST time. An artifact that
+    was CURRENT when built is STALE/EXPIRED hours later; this only ever
+    downgrades (never upgrades) and returns a copy. Withheld values stay
+    withheld."""
+    now_dt = parse_utc(now) or datetime.now(timezone.utc)
+    art = copy.deepcopy(artifact)
+    issued_at = art.get("generated_at_utc")
+    changed = 0
+    for cid, entry in (art.get("daily_outlook") or {}).items():
+        cb = entry.get("CB") or {}
+        if cb.get("temporal_status") != TemporalStatus.CURRENT:
+            continue
+        ts = classify_time(model_init=cb.get("model_init_time_utc"), valid_end=cb.get("window_end_utc"),
+                           issued_at=issued_at, now=now_dt)
+        if ts != TemporalStatus.CURRENT:
+            cb["temporal_status"] = ts
+            cb["presentable_as_current_forecast"] = False
+            cb["source_status"] = _SOURCE_STATUS_FOR.get(ts, cb.get("source_status"))
+            changed += 1
+    for rec in art.get("records", []):
+        for hz in HAZARDS:
+            block = rec.get(hz)
+            if not block or block.get("temporal_status") != TemporalStatus.CURRENT or block.get("probability") is None:
+                continue
+            ts = classify_time(model_init=block.get("model_init_time_utc"), valid_end=block.get("valid_time_utc"),
+                               issued_at=issued_at, now=now_dt)
+            if ts != TemporalStatus.CURRENT:
+                rec[hz] = withhold_hazard_block(
+                    block, temporal_status=ts,
+                    reason=f"Became {ts} at request time {iso_z(now_dt)} (issued {iso_z(parse_utc(issued_at))}).",
+                    model_init=block.get("model_init_time_utc"), valid_time=block.get("valid_time_utc"),
+                    issued_at=issued_at, preserve=True)
+                changed += 1
+    art.setdefault("integrity", {})["request_time_evaluated_at_utc"] = iso_z(now_dt)
+    art["integrity"]["request_time_downgrades"] = changed
+    return art
+
+
 def eligible_for_alert(hazard_block: dict, *, hazard: str, valid_time, now=None) -> tuple[bool, list]:
     """Single source of truth for 'may this value be dispatched as an alert?'.
     Used by BOTH the candidate listing and the dispatch gate so they cannot

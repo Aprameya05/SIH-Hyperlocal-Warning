@@ -239,3 +239,33 @@ def test_alert_eligibility_is_single_source_of_truth():
     ok_, _ = fi.eligible_for_alert({"probability": None, "temporal_status": TS_.CURRENT},
                                    hazard="CB", valid_time=future, now=NOW)
     assert not ok_
+
+
+# ---------------------------------------------------------------- request-time refresh (D)
+def test_request_time_refresh_downgrades_a_once_current_daily_outlook():
+    built = fi.sanitize_artifact(_artifact(), now=NOW)
+    assert built["daily_outlook"]["IND_13.0_78.0"]["CB"]["temporal_status"] == TS_.CURRENT
+    later = NOW + timedelta(hours=30)               # past the window end (init + 27 h)
+    out = fi.refresh_request_time_status(built, now=later)
+    cb = out["daily_outlook"]["IND_13.0_78.0"]["CB"]
+    assert cb["temporal_status"] in (TS_.EXPIRED, TS_.STALE) and cb["presentable_as_current_forecast"] is False
+    assert built["daily_outlook"]["IND_13.0_78.0"]["CB"]["temporal_status"] == TS_.CURRENT   # input untouched
+
+
+def test_request_time_refresh_withholds_a_lead_value_whose_valid_time_passed():
+    cb = _cb_block(prob=0.4, lead_res="HOURLY", init="2026-10-31T00:00:00+00:00")
+    rec = _record("IND_1.0_1.0", 2, cb=cb)
+    rec["valid_time"] = "2026-10-31T06:00:00Z"
+    built = fi.sanitize_artifact(_artifact([rec]), now=NOW)
+    assert built["records"][0]["CB"]["probability"] == 0.4
+    out = fi.refresh_request_time_status(built, now=NOW + timedelta(hours=4))
+    blk = out["records"][0]["CB"]
+    assert blk["probability"] is None and blk["temporal_status"] == TS_.EXPIRED
+    assert blk["historical_reference"]["probability"] == 0.4
+
+
+def test_request_time_refresh_never_upgrades_a_withheld_value():
+    built = fi.sanitize_artifact(_artifact(), now=NOW)
+    out = fi.refresh_request_time_status(built, now=NOW)
+    assert all(r["FF"]["temporal_status"] == TS_.HISTORICAL_REPLAY for r in out["records"])
+    assert all(r["CB"]["probability"] is None for r in out["records"])
