@@ -50,7 +50,7 @@ def check(path, max_age_min=None, require_cells=False, now=None):
     if any(len(c) != len(cols) for c in cells):
         v.append("ragged cell rows")
     for s in d.get("sources") or []:
-        if s.get("state") not in ("FRESH", "STALE", "UNAVAILABLE"):
+        if s.get("state") not in ("FRESH", "STALE", "UNAVAILABLE", "STATIC"):
             v.append(f"bad state for {s.get('id')}")
     return v
 

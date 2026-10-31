@@ -68,10 +68,17 @@ table{width:100%;border-collapse:collapse;font-size:13px}td,th{padding:4px 0;bor
 .log{font-family:ui-monospace,Menlo,monospace;font-size:11px;background:var(--panel2);border-radius:8px;padding:8px;max-height:180px;overflow:auto}
 .log div{padding:2px 0}.log .s{color:var(--sim)}
 .slot{border:1px solid var(--line);border-radius:8px;padding:8px;margin:6px 0;background:var(--panel2)}
+.seg2{display:flex;gap:6px}.seg2 button{flex:1;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:6px;cursor:pointer;font-weight:700}
+.seg2 button small{display:block;font-weight:400;color:var(--mute);font-size:11px}.seg2 button[aria-pressed=true],.btn[aria-pressed=true]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.chip.STATIC i,.chip.LOADING i{background:var(--accent)}
+.ev{border-left:2px solid var(--line);padding:4px 0 4px 10px;margin:6px 0}
+.mark{position:absolute;top:-4px;bottom:-4px;width:4px;margin-left:-2px;border-radius:2px;background:var(--warn)}.mark.l2{background:var(--sim)}.mark.l3{background:var(--bad)}
+.cursor{position:absolute;top:-6px;bottom:-6px;width:2px;margin-left:-1px;background:#fff;box-shadow:0 0 6px #fff}
+.btn small.mute{font-weight:400}
 footer{padding:8px 16px;color:var(--mute);font-size:11px;border-top:1px solid var(--line)}
 .lvl0{color:var(--mute)}.lvl1{color:var(--warn)}.lvl2{color:var(--sim)}.lvl3{color:var(--bad)}
 @media (max-width:1100px){main{grid-template-columns:260px minmax(0,1fr)}section.right{grid-column:1/-1}}
-@media (max-width:760px){main{grid-template-columns:1fr;padding:8px}.center{order:-1}section.right{order:0}aside{order:1}#mapwrap{height:58vh}header{padding:8px 10px}.seg button{padding:6px 10px}.brand small{display:none}}
+@media (max-width:760px){#legend{max-width:62%;font-size:10px;padding:5px 7px;bottom:28px}#legend .mute{display:none}main{grid-template-columns:1fr;padding:8px}.center{order:-1}section.right{order:0}aside{order:1}#mapwrap{height:58vh}header{padding:8px 10px}.seg button{padding:6px 10px}.brand small{display:none}}
 </style>
 </head>
 <body>

@@ -46,3 +46,23 @@ test('engine contains no network or storage calls', () => {
   const src = fs.readFileSync(new URL('../assets/drift_sim.js', import.meta.url), 'utf8');
   for (const bad of ['fetch(', 'XMLHttpRequest', 'sendBeacon', 'WebSocket', 'localStorage', 'twilio', 'ntfy']) assert.ok(!src.includes(bad), bad);
 });
+
+test('narrative is an end-to-end event: conditions evolve, cells change, warnings are issued with a simulated lifecycle', () => {
+  for (const h of Object.keys(S.HAZARDS)) {
+    const n = S.narrative(S.createScenario(h));
+    assert.equal(n.length, 7);
+    assert.ok(n.some(x => x.cellsChanged > 0), h + ' cells change level');
+    const issued = n.filter(x => x.issued);
+    assert.ok(issued.length >= 2, h + ' escalating warnings');
+    assert.deepEqual(issued.map(x => x.issued.level), [...issued.map(x => x.issued.level)].sort(), 'levels only escalate');
+    assert.equal(issued[issued.length - 1].issued.kind, 'WARNING');
+    const lc = issued[0].issued.lifecycle;
+    assert.ok(lc.length === 5 && lc.every(e => e.simulated && e.sent === false));
+    assert.ok(n[0].peakLevel < n[3].peakLevel, h + ' becomes more severe');
+  }
+});
+test('presets order severity: mild < severe <= extreme', () => {
+  const peak = p => Math.max(...S.narrative(S.createScenario('thunderstorm', S.PRESETS[p])).map(x => x.peakLevel));
+  assert.ok(peak('mild') < peak('severe') || peak('mild') === 0);
+  assert.equal(peak('extreme'), 3);
+});

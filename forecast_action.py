@@ -1183,12 +1183,18 @@ def main():
 
     # ── Verification metrics ──────────────────────────────────────────────────
     slot2_30d = verification.get("metrics_30day", {}).get("2", {})
+
+    def _m(d, key, nd):
+        """Metric or None. A missing/undefined score is None -- never coerced to 0.0 (zero reads as 'perfectly wrong')."""
+        v = (d or {}).get(key)
+        return None if v is None else round(float(v), nd)
+
     forecast["verification"] = {
-        "pod":           round(float(slot2_30d.get("POD", 0)), 3) if slot2_30d else None,
-        "far":           round(float(slot2_30d.get("FAR", 0)), 3) if slot2_30d else None,
-        "hss":           round(float(slot2_30d.get("HSS", 0)), 3) if slot2_30d else None,
-        "brier":         round(float(slot2_30d.get("Brier", 0)), 4) if slot2_30d else None,
-        "csi":           round(float(slot2_30d.get("CSI", 0)), 3) if slot2_30d else None,
+        "pod":           _m(slot2_30d, "POD", 3),
+        "far":           _m(slot2_30d, "FAR", 3),
+        "hss":           _m(slot2_30d, "HSS", 3),
+        "brier":         _m(slot2_30d, "Brier", 4),
+        "csi":           _m(slot2_30d, "CSI", 3),
         "n_days":        slot2_30d.get("n_days"),
         "n_ts":          slot2_30d.get("n_ts"),
         "date_verified": verification.get("generated_at"),
@@ -1196,12 +1202,7 @@ def main():
         "window":        "30-day",
         "available":     bool(slot2_30d),
         "all_slots_30d": {
-            str(k): {
-                "pod":   round(float(v.get("POD", 0)), 3),
-                "far":   round(float(v.get("FAR", 0)), 3),
-                "hss":   round(float(v.get("HSS", 0)), 3),
-                "brier": round(float(v.get("Brier", 0)), 4),
-            }
+            str(k): {"pod": _m(v, "POD", 3), "far": _m(v, "FAR", 3), "hss": _m(v, "HSS", 3), "brier": _m(v, "Brier", 4)}
             for k, v in verification.get("metrics_30day", {}).items()
         },
     }

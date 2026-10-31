@@ -143,7 +143,43 @@
       return { stage: s[0], note: s[1], atMinute: +(m + s[2]).toFixed(1), simulated: true, sent: false };
     });
   }
-  return { GRID: GRID, HOURS: HOURS, TARGET_BAND: TARGET_BAND, LEVELS: LEVELS, HAZARDS: HAZARDS, ACTIONS: ACTIONS,
+  /* End-to-end event narrative: per simulated hour, how the hazard evolves, which cells change level, and when a
+   * WATCH / ALERT / WARNING is issued (with its simulated notification lifecycle). Purely synthetic. */
+  var ISSUE_KIND = ['', 'WATCH', 'ALERT', 'WARNING'];
+  function narrative(sc) {
+    var out = [], maxSoFar = 0, prev = null, issuedLevel = 0, clock = 0;
+    for (var t = 0; t <= HOURS; t++) {
+      var f = frame(sc, t), changed = 0, newly = 0, esc = 0, i;
+      for (i = 0; i < CELLS.length; i++) {
+        var pl = prev ? prev.levels[i] : 0;
+        if (f.levels[i] !== pl) changed++;
+        if (f.levels[i] >= 1 && pl === 0) newly++;
+        if (f.levels[i] > pl) esc++;
+      }
+      var stage = f.peakLevel === 0 ? (maxSoFar > 0 ? 'DECAYED' : 'BUILDING') :
+                  f.peakLevel < maxSoFar ? 'WEAKENING' : f.peakLevel === 3 ? 'SEVERE' : f.peakLevel === 2 ? 'INTENSIFYING' : 'DEVELOPING';
+      var issued = null;
+      if (f.peakLevel > issuedLevel) {
+        issuedLevel = f.peakLevel;
+        var top = warnings(sc, 3).filter(function (w) { return w.validHour <= t; });
+        issued = { kind: ISSUE_KIND[issuedLevel], level: issuedLevel, atHour: t,
+                   headline: 'SIMULATED ' + ISSUE_KIND[issuedLevel] + ' issued - ' + HAZARDS[sc.hazard].label,
+                   cells: f.counts[issuedLevel] + (issuedLevel < 3 ? f.counts[3] : 0), actions: ACTIONS[sc.hazard][issuedLevel].slice(),
+                   examples: top, lifecycle: lifecycle({ level: issuedLevel }, clock) };
+        clock += 4;
+      }
+      maxSoFar = Math.max(maxSoFar, f.peakLevel);
+      out.push({ t: t, stage: stage, peakLevel: f.peakLevel, peakName: LEVELS[f.peakLevel], counts: f.counts.slice(),
+                 cellsChanged: changed, cellsNewlyAffected: newly, cellsEscalated: esc, centre: f.centre,
+                 inTargetBand: f.inTargetBand, issued: issued,
+                 headline: 'T+' + t + ' h - ' + stage.toLowerCase() + ': ' + (f.counts[1] + f.counts[2] + f.counts[3]) +
+                           ' cells at WATCH or above, ' + esc + ' escalated' });
+      prev = f;
+    }
+    return out;
+  }
+  var PRESETS = { mild: { intensity: 0.45 }, severe: { intensity: 0.75 }, extreme: { intensity: 1.0, radius: 2.0 } };
+  return { PRESETS: PRESETS, narrative: narrative, GRID: GRID, HOURS: HOURS, TARGET_BAND: TARGET_BAND, LEVELS: LEVELS, HAZARDS: HAZARDS, ACTIONS: ACTIONS,
            CELLS: CELLS, SIM_LABEL: SIM_LABEL, createScenario: createScenario, frame: frame, warnings: warnings,
            lifecycle: lifecycle, levelOf: levelOf };
 });

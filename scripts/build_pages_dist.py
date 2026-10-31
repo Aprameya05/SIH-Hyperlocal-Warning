@@ -28,6 +28,12 @@ ALLOW_FILES = [
     "data/drift_live.json", "data/gfs_multiday_43295.json", "data/skill_scores.json",
     "data/blr_terrain.json", "data/hazard_evaluation.json",
 ]
+# Files published under a different name: index.html references ./night1.png etc. at the site root, but the sources
+# live in dev/. They were never published before (the hero backgrounds 404ed); publish them at the referenced path.
+ALIAS_FILES = {
+    "morning1.png": "dev/morning1.png", "afternoon1.png": "dev/afternoon1.png",
+    "evening1.png": "dev/evening1.png", "night1.png": "dev/night1.png",
+}
 # Directories published recursively.
 ALLOW_DIRS = ["assets"]
 
@@ -70,6 +76,11 @@ def build(out_dir: Path, repo_root: Path = REPO_ROOT) -> list[str]:
         else:
             shutil.copy2(src, dst)
         copied.append(rel)
+    for dst_rel, src_rel in ALIAS_FILES.items():
+        src = repo_root / src_rel
+        if src.exists():
+            shutil.copy2(src, out_dir / dst_rel)
+            copied.append(dst_rel)
     for d in ALLOW_DIRS:
         for src in sorted((repo_root / d).rglob("*")) if (repo_root / d).exists() else []:
             if src.is_file():
@@ -95,7 +106,7 @@ def check(out_dir: Path) -> list[str]:
                 problems.append(f"forbidden file published: {rel} (matches {pat})")
         if f.stat().st_size > MAX_FILE_BYTES:
             problems.append(f"file over 25 MiB: {rel}")
-        if rel not in ALLOW_FILES and not any(rel.startswith(d + "/") for d in ALLOW_DIRS):
+        if rel not in ALLOW_FILES and rel not in ALIAS_FILES and not any(rel.startswith(d + "/") for d in ALLOW_DIRS):
             problems.append(f"not on the allow-list: {rel}")
     return problems
 

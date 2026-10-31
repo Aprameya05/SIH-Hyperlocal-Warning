@@ -91,3 +91,9 @@ def test_peak_and_alert_cannot_come_from_a_fallback_slot():
     fc = {"generated_at": "2026-10-31 15:30 IST", "alert_active": True, "peak_probability": 0.4,
           "slots": [{"slot": 3, "ts_probability": 0.4, "ts_predicted": True, "source": "model_defaults", "fallback": True}]}
     assert not fi.verify_vobl_forecast(fc)["ok"]          # the CI gate rejects exactly the old producer behaviour
+
+
+def test_forecast_json_verification_block_does_not_coerce_undefined_to_zero():
+    src = (ROOT / "forecast_action.py").read_text()
+    assert 'float(slot2_30d.get("POD", 0))' not in src and 'float(v.get("POD", 0))' not in src
+    assert "def _m(d, key, nd)" in src

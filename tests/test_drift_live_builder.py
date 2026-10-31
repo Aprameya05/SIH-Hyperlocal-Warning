@@ -24,9 +24,11 @@ def test_live_feed_has_three_hazards_and_no_heuristic_probability():
 def test_nulls_are_preserved_not_zero_filled():
     d = b.build()
     cols = d["grid"]["columns"]
-    assert cols[:5] == ["lat", "lon", "cape", "cin", "qpe_mm"]
+    assert cols[:2] == ["lat", "lon"] and "cape_0" in cols and "qpe_1" in cols and "ff_susceptibility_proxy" in cols
     assert len(d["grid"]["cells"]) == 992 and all(len(c) == len(cols) for c in d["grid"]["cells"])
-    assert any(c[6] is None for c in d["grid"]["cells"])               # PU rank absent outside coverage stays null
+    assert any(c[cols.index("ff_research_pu_rank")] is None for c in d["grid"]["cells"])   # absent outside coverage stays null
+    assert d["grid"]["terrain"]["hydrology_cells"] < 992                                     # sparse hydrology is not filled
+    assert d["hazards"]["extreme_rainfall"]["distinctions"][-1]["status"] == "UNAVAILABLE"  # no cloudburst prediction
 
 
 def test_a_grid_failing_integrity_is_emitted_unavailable(monkeypatch):
@@ -41,7 +43,7 @@ def test_a_grid_failing_integrity_is_emitted_unavailable(monkeypatch):
 def test_stale_sources_are_marked_stale():
     from datetime import datetime, timedelta, timezone
     d = b.build(now=datetime.now(timezone.utc) + timedelta(days=3))
-    assert {s["state"] for s in d["sources"] if s["id"] != "vobl_station"} <= {"STALE", "UNAVAILABLE"}
+    assert {s["state"] for s in d["sources"] if s["id"] not in ("vobl_station", "terrain_hydrology")} <= {"STALE", "UNAVAILABLE"}
 
 
 def test_evaluation_includes_climatology_baseline_and_flags_uncalibrated_score():
