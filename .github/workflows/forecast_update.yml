@@ -574,34 +574,10 @@ jobs:
           set -e
           rm -rf pages_dist
           mkdir -p pages_dist
-          rsync -a \
-            --exclude='/.git/' \
-            --exclude='/.github/' \
-            --exclude='/.pytest_cache/' \
-            --exclude='/__pycache__/' \
-            --exclude='/backend/' \
-            --exclude='/dev/' \
-            --exclude='/docs/' \
-            --exclude='/DBSIH-Historical-GFSraw/' \
-            --exclude='/imd_rain/' \
-            --exclude='/models/' \
-            --exclude='/notebooks/' \
-            --exclude='/pages/' \
-            --exclude='/pages_dist/' \
-            --exclude='/processed/' \
-            --exclude='/rag/' \
-            --exclude='/results/' \
-            --exclude='/schemas/' \
-            --exclude='/scripts/' \
-            --exclude='/tests/' \
-            --exclude='/worker/' \
-            --exclude='/SIH_*/' \
-            --exclude='/data/external/' \
-            --exclude='/data/_gfs_live_cb_cache/' \
-            --exclude='/data/_gfs_live_tmp/' \
-            --exclude='/data/_terrain_tile_cache/' \
-            --exclude='/data/_location_geocode_cache.json' \
-            ./ pages_dist/
+          # ALLOW-LIST publish (was a deny-list rsync that also shipped data/subscribers.json, research
+          # CSVs and stale internal state). Only files the frontend/service worker fetch are copied;
+          # the script fails the build if anything forbidden (subscribers, secrets, CSV, pkl...) is present.
+          python3 scripts/build_pages_dist.py pages_dist
           echo "Oversized files remaining in pages_dist (must be empty):"
           find pages_dist -type f -size +25M
           if [ -n "$(find pages_dist -type f -size +25M)" ]; then

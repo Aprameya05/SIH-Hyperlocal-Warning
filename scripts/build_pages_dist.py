@@ -1,0 +1,90 @@
+#!/usr/bin/env python3
+"""
+scripts/build_pages_dist.py
+===========================
+Builds the Cloudflare Pages bundle from an explicit ALLOW-LIST (never "everything except a deny-list").
+
+Why: the old deploy rsynced the whole repo minus a deny-list, which published data/subscribers.json (a real
+name and email), research CSVs, internal state files and stale proxies. Only files the frontend or service
+worker actually fetch are published now, and a FORBIDDEN check fails the build if anything sensitive slips in.
+
+Usage:  python3 scripts/build_pages_dist.py [OUT_DIR]      (default: pages_dist)
+"""
+from __future__ import annotations
+
+import fnmatch
+import shutil
+import sys
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+
+# Single files that are published (relative to the repo root).
+ALLOW_FILES = [
+    "index.html", "drift.html", "sw.js", "manifest.json",
+    "forecast.json", "alert_log.json",
+    "data/pan_india_grid.json", "data/canonical_forecast.json", "data/unified_forecast.json",
+    "data/drift_live.json", "data/gfs_multiday_43295.json", "data/skill_scores.json",
+    "data/blr_terrain.json", "data/hazard_evaluation.json",
+]
+# Directories published recursively.
+ALLOW_DIRS = ["assets"]
+
+# Nothing matching these may ever be in the bundle (checked after the copy; the build fails if found).
+FORBIDDEN_GLOBS = [
+    "*subscribers*", "*.env", "*secret*", "*credential*", "*.pkl", "*.csv", "*.grib2", "*.grb2",
+    "phase_0_4_19_results.json", "*ctt_grid*", "*alert_history*", "*.db",
+]
+MAX_FILE_BYTES = 25 * 1024 * 1024  # Cloudflare Pages per-file limit
+
+
+def build(out_dir: Path, repo_root: Path = REPO_ROOT) -> list[str]:
+    if out_dir.exists():
+        shutil.rmtree(out_dir)
+    out_dir.mkdir(parents=True)
+    copied: list[str] = []
+    for rel in ALLOW_FILES:
+        src = repo_root / rel
+        if not src.exists():
+            continue  # optional files (e.g. drift_live.json before its first build) are simply absent
+        dst = out_dir / rel
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(src, dst)
+        copied.append(rel)
+    for d in ALLOW_DIRS:
+        for src in sorted((repo_root / d).rglob("*")) if (repo_root / d).exists() else []:
+            if src.is_file():
+                rel = str(src.relative_to(repo_root))
+                dst = out_dir / rel
+                dst.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(src, dst)
+                copied.append(rel)
+    problems = check(out_dir)
+    if problems:
+        raise SystemExit("ERROR: publish bundle violates the allow-list contract:\n  " + "\n  ".join(problems))
+    return copied
+
+
+def check(out_dir: Path) -> list[str]:
+    problems = []
+    for f in out_dir.rglob("*"):
+        if not f.is_file():
+            continue
+        rel = str(f.relative_to(out_dir))
+        for pat in FORBIDDEN_GLOBS:
+            if fnmatch.fnmatch(f.name.lower(), pat) or fnmatch.fnmatch(rel.lower(), pat):
+                problems.append(f"forbidden file published: {rel} (matches {pat})")
+        if f.stat().st_size > MAX_FILE_BYTES:
+            problems.append(f"file over 25 MiB: {rel}")
+        if rel not in ALLOW_FILES and not any(rel.startswith(d + "/") for d in ALLOW_DIRS):
+            problems.append(f"not on the allow-list: {rel}")
+    return problems
+
+
+if __name__ == "__main__":
+    out = Path(sys.argv[1]) if len(sys.argv) > 1 else REPO_ROOT / "pages_dist"
+    files = build(out)
+    total = sum((out / f).stat().st_size for f in files)
+    print(f"Published {len(files)} files ({total / 1e6:.1f} MB) to {out} from the allow-list:")
+    for f in files:
+        print("  ", f)
