@@ -129,9 +129,9 @@ if (fs.existsSync(artifactPath)) {
   const ffRecord = artifact.records.find(r => r.FF.probability !== null);
   check('no FF record in the offline artifact ever carries a non-null probability',
     ffRecord === undefined);
-  const unavailableSample = artifact.records.find(r => r.TS.status === 'OUT_OF_DOMAIN_STATION_ONLY');
-  check('an OUT_OF_DOMAIN_STATION_ONLY TS record has risk_category NOT_AVAILABLE, never LOW',
-    unavailableSample && unavailableSample.TS.risk_category === 'NOT_AVAILABLE');
+  // M0: withheld blocks carry a withheld status; the invariant is that a null-probability block is NEVER mapped to LOW
+  const nullAsRisk = artifact.records.find(r => ['TS', 'CB', 'FF'].some(hz => r[hz].probability === null && r[hz].risk_category !== 'NOT_AVAILABLE'));
+  check('a null-probability block has risk_category NOT_AVAILABLE, never LOW', nullAsRisk === undefined);
 } else {
   check('offline artifact data/unified_forecast.json exists (run scripts/phase34_build_unified_forecast.py)', false);
 }

@@ -377,7 +377,8 @@ def main():
 
     tmp_path = OUTPUT_PATH.with_suffix(".json.tmp")
     with open(tmp_path, "w") as f:
-        json.dump(artifact, f, indent=1)
+        # compact: the file is published and must stay under the 25 MiB hosting limit (alias dropped, no indent)
+        json.dump(integrity.compact_for_publish(artifact), f, separators=(",", ":"))
 
     if reject_reasons:
         try:

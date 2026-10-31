@@ -219,7 +219,9 @@ def test_artifact_provenance_present_on_every_record(artifact):
 
 
 def test_artifact_hazard_status_values_are_from_the_documented_set(artifact):
-    allowed = {"BASELINE", "TRAINED", "PU_RANKING", "OUT_OF_DOMAIN_STATION_ONLY", "NOT_TRAINED", "UNAVAILABLE"}
+    # M0: blocks withheld by backend/forecast_integrity carry an explicit withheld status
+    allowed = {"BASELINE", "TRAINED", "PU_RANKING", "OUT_OF_DOMAIN_STATION_ONLY", "NOT_TRAINED", "UNAVAILABLE",
+               "HISTORICAL_REPLAY_NOT_A_CURRENT_FORECAST", "LEAD_TIME_NOT_SUPPORTED", "WITHHELD_NO_TIME_PROVENANCE"}
     for r in artifact["records"][:500]:
         for hz in ("TS", "CB", "FF"):
             assert r[hz]["status"] in allowed

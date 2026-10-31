@@ -41,8 +41,8 @@ check('a block with no temporal provenance is unavailable (legacy)', F.blockStat
 check('presentable_as_current_forecast=false overrides', F.isCurrentBlock({ temporal_status: 'CURRENT', probability: 0.5, presentable_as_current_forecast: false }) === false);
 check('a missing block is unavailable', F.blockState(undefined).available === false);
 
-console.log('legacy artifact guard (the committed 2024-replay artifact)');
-const legacy = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'unified_forecast.json'), 'utf8'));
+console.log('legacy artifact guard (pre-M0 2024-replay artifact sample, tests/fixtures)');
+const legacy = JSON.parse(fs.readFileSync(path.join(ROOT, 'tests', 'fixtures', 'legacy_unified_sample.json'), 'utf8'));
 const guarded = F.guardUnifiedArtifact(legacy);
 let presented = 0, total = 0;
 for (const r of guarded.records) for (const hz of ['TS', 'CB', 'FF']) {
@@ -57,8 +57,12 @@ check('withheld legacy blocks no longer claim TRAINED / MIXED_LIVE_SOURCES prove
 check('guard preserves the original value for research', guarded.records.find(r => r.CB.historical_reference && r.CB.historical_reference.probability != null) !== undefined);
 check('guard keeps the original timestamp with the preserved value', guarded.records.every(r => !r.CB.historical_reference || r.CB.historical_reference.model_init_time_utc));
 check('guard does not mutate the input', legacy.records[0].CB.probability !== null || legacy.records[0].CB.temporal_status === undefined);
-const v2 = { schema_version: 2, integrity: { applied: true }, records: [{ CB: { temporal_status: 'CURRENT', probability: 0.2 } }] };
-check('a v2 artifact passes through untouched', F.guardUnifiedArtifact(v2) === v2);
+const v3 = { schema_version: 3, integrity: { applied: true }, records: [{ CB: { temporal_status: 'CURRENT', probability: 0.2, model_init_time_utc: '2026-10-31T00:00:00Z', valid_time_utc: '2026-10-31T04:00:00Z', generated_at_utc: '2026-10-31T02:00:00Z' } }] };
+check('a fully-provenanced v3 artifact passes through untouched', F.guardUnifiedArtifact(v3) === v3);
+const forged = { schema_version: 3, integrity: { applied: true }, records: [{ CB: { temporal_status: 'CURRENT', probability: 0.9 }, TS: { temporal_status: 'HISTORICAL_REPLAY', probability: 0.4, extra: { pu_ranking_score: 0.8 } } }] };
+const fg = F.guardUnifiedArtifact(forged);
+check('a self-declared integrity.applied flag is NOT trusted: a CURRENT block without provenance is withheld', fg.records[0].CB.probability === null && fg.records[0].TS.probability === null);
+check('the client guard strips PU scores from withheld blocks', !(fg.records[0].TS.extra && fg.records[0].TS.extra.pu_ranking_score != null));
 
 console.log('predictors');
 check('null predictor -> UNAVAILABLE, never 0', F.formatPredictor(null) === 'UNAVAILABLE' && F.formatPredictor(undefined, 1, 'mm') === 'UNAVAILABLE');

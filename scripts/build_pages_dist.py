@@ -13,6 +13,7 @@ Usage:  python3 scripts/build_pages_dist.py [OUT_DIR]      (default: pages_dist)
 from __future__ import annotations
 
 import fnmatch
+import json
 import shutil
 import sys
 from pathlib import Path
@@ -38,6 +39,21 @@ FORBIDDEN_GLOBS = [
 MAX_FILE_BYTES = 25 * 1024 * 1024  # Cloudflare Pages per-file limit
 
 
+def _write_slim_unified(src: Path, dst: Path) -> None:
+    """The public copy omits per-record research/historical references and explanations. They are withheld values
+    (never current forecasts), and keeping them pushes the file past the 25 MiB hosting limit. The full artifact
+    stays in the repository and behind the API."""
+    art = json.load(open(src))
+    for r in art.get("records") or []:
+        for hz in ("TS", "CB", "FF"):
+            b = r.get(hz)
+            if isinstance(b, dict):
+                for k in ("research_reference", "historical_reference", "xai"):
+                    b.pop(k, None)
+    art["published_variant"] = "SLIM_NO_RESEARCH_REFERENCES"
+    dst.write_text(json.dumps(art, separators=(",", ":")))
+
+
 def build(out_dir: Path, repo_root: Path = REPO_ROOT) -> list[str]:
     if out_dir.exists():
         shutil.rmtree(out_dir)
@@ -49,7 +65,10 @@ def build(out_dir: Path, repo_root: Path = REPO_ROOT) -> list[str]:
             continue  # optional files (e.g. drift_live.json before its first build) are simply absent
         dst = out_dir / rel
         dst.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(src, dst)
+        if rel == "data/unified_forecast.json":
+            _write_slim_unified(src, dst)
+        else:
+            shutil.copy2(src, dst)
         copied.append(rel)
     for d in ALLOW_DIRS:
         for src in sorted((repo_root / d).rglob("*")) if (repo_root / d).exists() else []:

@@ -84,20 +84,33 @@
    */
   function guardUnifiedArtifact(art) {
     if (!art || !Array.isArray(art.records)) return art;
-    var v2 = (art.schema_version || 1) >= 2 && art.integrity && art.integrity.applied;
-    if (v2) return art;
+    // Never trust the artifact's own flags (schema_version / integrity.applied are self-declared): a block is only
+    // allowed to carry a value if it is CURRENT AND carries the provenance a verified v3 block carries.
+    function provenanced(b) {
+      return b.temporal_status === 'CURRENT' && !!b.model_init_time_utc && !!b.valid_time_utc && !!b.generated_at_utc;
+    }
+    var clean = (art.schema_version || 1) >= 3 && art.records.every(function (r) {
+      return ['TS', 'CB', 'FF'].every(function (hz) {
+        var b = r[hz]; if (!b) return true;
+        var hasValue = b.probability != null || (b.extra && b.extra.pu_ranking_score != null) || (b.xai && b.xai.top_contributions);
+        return !hasValue || provenanced(b);
+      });
+    });
+    if (clean) return art;
     var out = Object.assign({}, art, { client_guard: 'LEGACY_ARTIFACT_WITHHELD', lead_slots_available: false });
     out.records = art.records.map(function (r) {
       var rec = Object.assign({}, r);
       ['TS', 'CB', 'FF'].forEach(function (hz) {
         if (!r[hz]) return;
         var b = Object.assign({}, r[hz]);
-        if (b.temporal_status !== 'CURRENT') {
+        if (!provenanced(b)) {
           b.historical_reference = { designation: 'LEGACY_UNVERIFIED', probability: b.probability,
             pu_ranking_score: b.extra && b.extra.pu_ranking_score,
             model_init_time_utc: b.cb_init_time_utc || r.init_time || null,
             note: 'withheld by client guard: artifact has no time provenance' };
           b.probability = null; b.risk_category = 'NOT_AVAILABLE';
+          if (b.extra) { b.extra = Object.assign({}, b.extra); delete b.extra.pu_ranking_score; }
+          if (b.xai) b.xai = { status: 'WITHHELD' };
           b.temporal_status = 'LEGACY_UNVERIFIED'; b.presentable_as_current_forecast = false;
           // a withheld value must not keep claiming a live/trained provenance
           b.status = 'WITHHELD_NO_TIME_PROVENANCE'; b.source_status = 'LEGACY_UNVERIFIED';

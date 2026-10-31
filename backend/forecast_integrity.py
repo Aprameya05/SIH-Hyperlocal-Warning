@@ -738,3 +738,14 @@ def annotate_grid(doc: dict) -> dict:
     }
     doc["hazard_definitions"] = GRID_HAZARD_DEFINITIONS
     return doc
+
+
+def compact_for_publish(artifact: dict) -> dict:
+    """Drop the in-memory `historical_reference` alias from serialised blocks (it duplicates `research_reference`).
+    Keeps the published file under the 25 MiB per-file hosting limit. sanitize_artifact re-adds the alias on load."""
+    for r in artifact.get("records") or []:
+        for hz in ("TS", "CB", "FF"):
+            b = r.get(hz)
+            if isinstance(b, dict) and "research_reference" in b:
+                b.pop("historical_reference", None)
+    return artifact

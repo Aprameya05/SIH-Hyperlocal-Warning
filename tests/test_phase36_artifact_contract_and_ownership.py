@@ -79,12 +79,15 @@ def test_existing_artifact_cb_never_claims_live_offline():
     for r in doc["records"][:50]:  # sample; full scan is redundant given uniform generation
         cb = r.get("CB", {})
         if "source_status" in cb:
-            assert cb["source_status"] in ({"FIXED_VALIDATION_FALLBACK", "UNAVAILABLE"} | live_cb_statuses)
+            # M0: a withheld block's source_status mirrors its withheld temporal status
+            assert cb["source_status"] in ({"FIXED_VALIDATION_FALLBACK", "UNAVAILABLE", "NOT_LEAD_SPECIFIC",
+                                            "HISTORICAL_REPLAY", "STALE", "EXPIRED", "LEGACY_UNVERIFIED"} | live_cb_statuses)
             if cb["source_status"] in live_cb_statuses:
                 assert "cb_init_time_utc" in cb and "cb_valid_time_utc" in cb, (
                     "a LIVE CB record must carry its own timestamps, never borrow the fixed fallback cycle's")
         if "source_status" in r.get("FF", {}):
-            assert r["FF"]["source_status"] in ("FIXED_VALIDATION_FALLBACK", "UNAVAILABLE")
+            assert r["FF"]["source_status"] in ("FIXED_VALIDATION_FALLBACK", "UNAVAILABLE", "NOT_LEAD_SPECIFIC",
+                                                "HISTORICAL_REPLAY", "STALE", "EXPIRED", "LEGACY_UNVERIFIED")
 
 
 def test_ff_value_type_is_risk_score_never_probability():
