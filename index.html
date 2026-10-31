@@ -87,6 +87,7 @@
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <!-- Location engine: coordinate -> multi-architecture bundle, plain script (not JSX) -->
   <script src="./assets/location_engine.js"></script>
+  <script src="./assets/forecast_integrity.js"></script>
 
   
   <style>
@@ -2188,7 +2189,7 @@ function AlertLogTable() {
                       background: outcomeBg, color: outcomeCol, border: `1px solid ${outcomeCol}33`,
                       letterSpacing: '0.04em'
                     }}>
-                      {isHit ? '✓ VERIFIED HIT' : isFA ? '⚠ FALSE ALARM' : isMiss ? '✗ MISSED EVENT' : (e.outcome || 'VERIFIED')}
+                      {window.DriftForecastIntegrity.classifyAlertEvent(e).label}
                     </span>
                   </div>
 
@@ -2941,6 +2942,8 @@ function injectDrainageOverlay(map, liveData) {
               leadH: cell.forecast_lead_hours ?? null,
               validAt: cell.forecast_valid_at_utc ?? null,
               timeUntilValidH: cell.time_until_valid_hours ?? null,
+              operationalLeadH: cell.operational_lead_hours ?? cell.time_until_valid_hours ?? null,
+              nwpLeadH: cell.nwp_lead_hours ?? cell.forecast_lead_hours ?? null,
               drivers: {
                 cape: cell.cape ?? null,
                 cin: cell.cin ?? null,
@@ -3416,8 +3419,19 @@ function injectDrainageOverlay(map, liveData) {
                 gfs_cycle: d.gfs_cycle,
                 gfs_fhour: usable ? usable.forecast_lead_hours : (d.gfs_fhour ?? 0),
                 is_primary_forecast: usable ? (usable.is_primary === true) : true,
-                forecast_valid_at_utc: usable ? usable.forecast_valid_at_utc : d.generated_at_utc,
-                time_until_valid_hours: usable ? usable.time_until_valid_hours : 0,
+                // M0: never invent a valid time or a 0 h lead when the primary lead is missing.
+                forecast_valid_at_utc: usable ? usable.forecast_valid_at_utc : null,
+                time_until_valid_hours: usable ? (usable.time_until_valid_hours ?? null) : null,
+                // Operational lead = valid - ISSUED (backend field, else computed here); never model init.
+                operational_lead_hours: window.DriftForecastIntegrity.resolveOperationalLead({
+                  operational_lead_hours: usable ? usable.operational_lead_hours : null,
+                  forecast_valid_at_utc: usable ? usable.forecast_valid_at_utc : null,
+                  generated_at_utc: d.generated_at_utc,
+                  time_until_valid_hours: usable ? usable.time_until_valid_hours : null,
+                }),
+                unavailable_predictors: window.DriftForecastIntegrity.unavailablePredictors(d, cells),
+                hazard_value_types: d.hazard_value_types ?? null,
+                lead_semantics: d.lead_semantics ?? null,
                 model_type: (usable && usable.model_type) || d.model_type || 'physics_baseline',
                 grid_step_deg: d.grid_step_deg,
                 forecast_unavailable: false,
@@ -3617,13 +3631,13 @@ function injectDrainageOverlay(map, liveData) {
       const driftHeroHeadline = !isLiveData
         ? `Latest validated forecast\nis stale.`
         : alertActive
-          ? `${hazardCfg.label} risk\nover the next 2-6 hours.`
+          ? `${hazardCfg.label} risk\nin the station model's slots.`
           : `India's weather,\ndown to the grid.`;
       const driftHeroSub = !isLiveData
         ? `Forecast initialized ${genAt} (${ageLabelForHero}) for ${activeLocation.displayName || 'your area'} -- not current conditions.`
         : alertActive
           ? `${riskLabel} risk detected near ${activeLocation.displayName || 'your area'} * updated ${genAt}`
-          : `No active severe-weather warning right now * updated ${genAt}`;
+          : `No model-generated advisory right now * updated ${genAt}`;
 
       return (
         <div className="drift-editorial" style={{ position: 'relative', width: '100%', height: '100%', minHeight: 0, background: '#060a14', overflowY: 'auto', overflowX: 'hidden', WebkitOverflowScrolling: 'touch', fontFamily: "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif" }}>
@@ -3664,8 +3678,8 @@ function injectDrainageOverlay(map, liveData) {
               </span>
               <span style={{ width: 3, height: 3, borderRadius: '50%', background: '#334155' }} />
               <span style={{ fontSize: 11, color: '#38bdf8', fontWeight: 600 }}>
-                {gridMeta?.gfs_fhour ? `f${String(gridMeta.gfs_fhour).padStart(3, '0')} Primary` : 'Lead'}
-                {gridMeta?.time_until_valid_hours != null ? ` (+${gridMeta.time_until_valid_hours.toFixed(1)}h Lead)` : ''}
+                {gridMeta?.gfs_fhour ? `NWP f${String(gridMeta.gfs_fhour).padStart(3, '0')}` : 'NWP hour unavailable'}
+                {` * operational lead ${window.DriftForecastIntegrity.leadLabel(gridMeta?.operational_lead_hours)}`}
               </span>
               <span style={{ width: 3, height: 3, borderRadius: '50%', background: '#334155' }} />
               <span style={{ fontSize: 11, color: '#64748b' }}>992 Grid Cells (structural)</span>
@@ -3683,6 +3697,10 @@ function injectDrainageOverlay(map, liveData) {
             {/* Subtitle */}
             <p className="drift-hero-sub" style={{ marginTop: isMobile ? 10 : 14, fontSize: isMobile ? 13 : 15, color: '#94a3b8', maxWidth: 620, lineHeight: 1.5, margin: '12px 0 20px' }}>
               {driftHeroSub}
+              <div data-testid="advisory-disclaimer" style={{ marginTop: 8, fontSize: 11, color: '#fbbf24', lineHeight: 1.45 }}>
+                AI-generated model advisory - NOT an official IMD/NDMA warning. Heuristic scores are not calibrated
+                probabilities. Check official IMD/NDMA bulletins before acting.
+              </div>
             </p>
 
             {/* Telemetry Quick-Bar */}
@@ -3714,9 +3732,12 @@ function injectDrainageOverlay(map, liveData) {
               <div className="drift-telemetry-card" style={{ padding: '10px 14px', borderRadius: 12, background: 'rgba(15, 23, 42, 0.6)', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
                 <div style={{ fontSize: 10, color: '#64748b', fontWeight: 600, letterSpacing: '0.06em' }}>OPERATIONAL HORIZON</div>
                 <div style={{ fontSize: 14, fontWeight: 700, color: '#f8fafc', marginTop: 3 }}>
-                  {gridMeta?.time_until_valid_hours != null ? `+${gridMeta.time_until_valid_hours.toFixed(1)}h` : '+4.5h Lead'}
+                  {window.DriftForecastIntegrity.leadLabel(gridMeta?.operational_lead_hours)}
                 </div>
-                <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 2 }}>GFS Cycle {gridMeta?.gfs_cycle || '00Z'} (Primary)</div>
+                <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 2 }}>
+                  {gridMeta ? `valid minus issue time * NWP init ${gridMeta.gfs_cycle || 'UNAVAILABLE'}` : 'loading'}
+                  {gridMeta && gridMeta.operational_lead_hours != null && !window.DriftForecastIntegrity.meetsTargetLead(gridMeta.operational_lead_hours) ? ' * outside the 2-6 h target' : ''}
+                </div>
               </div>
             </div>
           </section>
@@ -3978,7 +3999,7 @@ function injectDrainageOverlay(map, liveData) {
                       <div style={{ fontSize: 9, color: '#475569', marginTop: 6 }}>
                         Cell {R.pan_india.cell?.lat}°N {R.pan_india.cell?.lon}°E * {R.pan_india.distance_km} km away * GFS {R.pan_india.gfs_cycle}
                         {R.pan_india.forecast_lead_hours != null && ` * f${String(R.pan_india.forecast_lead_hours).padStart(3, '0')}`}
-                        {R.pan_india.time_until_valid_hours != null && ` (+${R.pan_india.time_until_valid_hours.toFixed(1)}h)`}
+                        {R.pan_india.time_until_valid_hours != null && ` (operational lead ${window.DriftForecastIntegrity.leadLabel(R.pan_india.time_until_valid_hours)})`}
                       </div>
                       {/* 2026-10-10: TS was the only one of the three
                           pan-India hazards with no honesty caveat at all --
@@ -4253,12 +4274,12 @@ function injectDrainageOverlay(map, liveData) {
               {['thunderstorm', 'cloudburst', 'flash_flood'].map((hk) => {
                 const cfgMap = {
                   thunderstorm: ['⚡', 'THUNDERSTORM', 'ts_probability', 'Convective initiation & lightning hazard'],
-                  cloudburst: ['🌧', 'CLOUDBURST', 'cb_probability', 'Extreme localized cloud water content'],
+                  cloudburst: ['🌧', 'CLOUDBURST', 'cb_probability', 'Station-model score. The pan-India map uses a daily heavy-rain-day score (>= 64.5 mm/24 h proxy), not a verified hourly cloudburst'],
                   flash_flood: ['🌊', 'FLASH FLOOD', 'ff_probability', 'Terrain runoff & drainage accumulation']
                 };
                 const [icon, label, probKey, desc] = cfgMap[hk];
                 const p = hk === 'thunderstorm'
-                  ? (liveData?.peak_probability ?? (slots.length > 0 ? Math.max(...slots.map(s => s.ts_probability || s.probability || 0)) : null))
+                  ? (liveData?.peak_probability ?? (() => { const v = slots.map(s => s.ts_probability ?? s.probability ?? null).filter(x => x != null); return v.length ? Math.max(...v) : null; })())
                   : (slots.length > 0 ? Math.max(...slots.map(s => s[probKey] ?? null).filter(v => v != null)) : null);
                 const known = p != null && isFinite(p);
                 const sev = !known ? null : p >= 0.55 ? 'EXTREME' : p >= 0.35 ? 'HIGH' : p >= 0.15 ? 'MODERATE' : 'LOW';
@@ -4302,22 +4323,25 @@ function injectDrainageOverlay(map, liveData) {
               const d = selectedCellDetail || {
                 name: activeLocation.displayName || 'VOBL / Bengaluru Airport',
                 cellLat: activeLocation.latitude, cellLon: activeLocation.longitude,
-                ts: liveData?.peak_probability ?? 0.15,
+                ts: liveData?.peak_probability ?? null,
                 cb: slots.length > 0 ? Math.max(...slots.map(s => s.cb_probability || 0)) : null,
                 ff: slots.length > 0 ? Math.max(...slots.map(s => s.ff_probability || 0)) : null,
                 modelType: 'physics_baseline',
                 validAt: gridMeta?.forecast_valid_at_utc || null,
-                leadH: gridMeta?.time_until_valid_hours ?? 4.5,
+                operationalLeadH: gridMeta?.operational_lead_hours ?? null,
+                // M0: these used to fall back to invented literals (CAPE 1420, CIN -42, PWAT 44.8, CTT -58.2,
+                // shear 18.4, K-index 36.2, convergence 4.2e-5, elevation 915 m). A missing reading is shown
+                // as UNAVAILABLE; nothing is fabricated.
                 drivers: {
-                  cape: liveData?.sounding?.cape_jkg ?? 1420,
-                  cin: liveData?.sounding?.cin_jkg ?? -42,
-                  pwat_mm: liveData?.sounding?.pwat_mm ?? 44.8,
-                  convergence_s: liveData?.satellite?.himawari9?.vobl_bt_celsius != null ? 0.000042 : null,
-                  ctt_c: liveData?.satellite?.himawari9?.vobl_bt_celsius ?? -58.2,
-                  wind_shear_ms: 18.4,
-                  k_index: liveData?.sounding?.k_index ?? 36.2,
+                  cape: liveData?.sounding?.cape_jkg ?? null,
+                  cin: liveData?.sounding?.cin_jkg ?? null,
+                  pwat_mm: liveData?.sounding?.pwat_mm ?? null,
+                  convergence_s: null,
+                  ctt_c: liveData?.satellite?.himawari9?.vobl_bt_celsius ?? null,
+                  wind_shear_ms: null,
+                  k_index: liveData?.sounding?.k_index ?? null,
                 },
-                terrain: { elevation_m: 915, flood_susceptibility: 0.42 }
+                terrain: null
               };
 
               const hazards = [
@@ -4341,7 +4365,7 @@ function injectDrainageOverlay(map, liveData) {
                         {d.name || `${d.cellLat.toFixed(3)}°N, ${d.cellLon.toFixed(3)}°E`}
                       </div>
                       <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 3 }}>
-                        Grid cell {d.cellLat.toFixed(2)}°N, {d.cellLon.toFixed(2)}°E * Primary Horizon: GFS f009 (+4.5h)
+                        Grid cell {d.cellLat.toFixed(2)}°N, {d.cellLon.toFixed(2)}°E * NWP {d.nwpLeadH != null ? `f${String(d.nwpLeadH).padStart(3, '0')}` : (gridMeta?.gfs_fhour ? `f${String(gridMeta.gfs_fhour).padStart(3, '0')}` : 'hour unavailable')} * operational lead {window.DriftForecastIntegrity.leadLabel(d.operationalLeadH ?? null)}
                       </div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -4375,7 +4399,7 @@ function injectDrainageOverlay(map, liveData) {
                     </div>
 
                     <div style={{ padding: '16px 18px', borderRadius: 14, background: 'rgba(15, 23, 42, 0.5)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                      <div style={{ fontSize: 10, fontWeight: 700, color: '#64748b', letterSpacing: '0.08em' }}>CLOUD TOP TEMP (CTT)</div>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: '#64748b', letterSpacing: '0.08em' }}>CTT PROXY (GFS saturated-layer temp)</div>
                       <div style={{ fontSize: 24, fontWeight: 700, color: '#f8fafc', margin: '6px 0 2px' }}>
                         {d.drivers.ctt_c != null ? `${d.drivers.ctt_c.toFixed(1)}°C` : 'UNAVAILABLE'}
                       </div>
@@ -4389,10 +4413,16 @@ function injectDrainageOverlay(map, liveData) {
                       <div style={{ fontSize: 24, fontWeight: 700, color: '#f8fafc', margin: '6px 0 2px' }}>
                         {d.drivers.wind_shear_ms != null ? `${d.drivers.wind_shear_ms.toFixed(1)}` : 'UNAVAILABLE'} <span style={{ fontSize: 12, color: '#64748b' }}>m/s</span>
                       </div>
-                      <div style={{ fontSize: 11, color: '#64748b' }}>0-6 km bulk shear layer</div>
+                      <div style={{ fontSize: 11, color: '#64748b' }}>850-200 hPa wind shear (GFS)</div>
                     </div>
                   </div>
 
+                  {gridMeta?.unavailable_predictors?.length > 0 && (
+                    <div data-testid="unavailable-predictors" style={{ marginTop: 14, fontSize: 11, color: '#fbbf24', lineHeight: 1.5 }}>
+                      Not computed in the current pan-India grid (null in every cell, never zero): {gridMeta.unavailable_predictors.join(', ')}.
+                      Hazard scores for the grid were computed without them.
+                    </div>
+                  )}
                   <div style={{ marginTop: 18, paddingTop: 14, borderTop: '1px solid rgba(255, 255, 255, 0.05)', fontSize: 11, color: '#64748b', lineHeight: 1.5 }}>
                     * PHYSICS CONTRIBUTION -- deterministic contributors derived from thermodynamic physics baseline formulas (not SHAP; this grid cell is evaluated using physics baselines, not an empirical ML model). Click any cell on the map above to inspect its live coordinates.
                   </div>
@@ -4404,16 +4434,23 @@ function injectDrainageOverlay(map, liveData) {
           {/* ── 5. FORECAST TIMELINE (Primary Operational Horizon) ────────────── */}
           <section style={{ padding: isMobile ? '28px 18px' : '44px 56px', borderBottom: '1px solid rgba(255, 255, 255, 0.07)' }}>
             <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', color: '#64748b', marginBottom: 4 }}>FORECAST TIMELINE</div>
-            <div style={{ fontSize: 13, color: '#94a3b8', marginBottom: isMobile ? 14 : 20 }}>Primary operational production horizon (+4.5h lead)</div>
+            <div style={{ fontSize: 13, color: '#94a3b8', marginBottom: isMobile ? 14 : 20 }}>Primary NWP horizon; operational lead is measured from issue time</div>
             {(() => {
-              if (!gridMeta || gridMeta.forecast_unavailable || !gridMeta.is_primary_forecast) {
+              if (!gridMeta) {
                 return (
                   <div style={{ padding: 18, borderRadius: 12, background: 'rgba(15, 23, 42, 0.45)', color: '#64748b', fontSize: 13 }}>
-                    Forecast unavailable -- no primary (f009) forecast lead was produced this cycle.
+                    Loading forecast...
                   </div>
                 );
               }
-              const leadH = gridMeta.time_until_valid_hours != null ? gridMeta.time_until_valid_hours : null;
+              if (gridMeta.forecast_unavailable || !gridMeta.is_primary_forecast) {
+                return (
+                  <div style={{ padding: 18, borderRadius: 12, background: 'rgba(15, 23, 42, 0.45)', color: '#64748b', fontSize: 13 }}>
+                    Forecast unavailable -- no primary forecast lead was produced this cycle.
+                  </div>
+                );
+              }
+              const leadH = gridMeta.operational_lead_hours != null ? gridMeta.operational_lead_hours : null;
               const validAt = gridMeta.forecast_valid_at_utc ?? null;
               return (
                 <div style={{
@@ -4428,7 +4465,7 @@ function injectDrainageOverlay(map, liveData) {
                     <div style={{ flex: 1, minWidth: 60, height: 2, background: 'linear-gradient(90deg, rgba(56, 189, 248, 0.2), #2563eb)' }} />
                     <div style={{ textAlign: 'center' }}>
                       <div style={{ fontSize: isMobile ? 22 : 32, fontWeight: 700, color: '#38bdf8', letterSpacing: '-0.02em' }}>
-                        {leadH != null ? `${leadH >= 0 ? '+' : ''}${leadH.toFixed(1)}h` : '+4.5h'}
+                        {window.DriftForecastIntegrity.leadLabel(leadH)}
                       </div>
                       <div style={{ fontSize: 10, color: '#64748b', fontWeight: 600 }}>OPERATIONAL LEAD</div>
                     </div>
@@ -4443,7 +4480,11 @@ function injectDrainageOverlay(map, liveData) {
                   <div style={{ marginTop: 16, paddingTop: 14, borderTop: '1px solid rgba(255, 255, 255, 0.05)', fontSize: 12, color: '#64748b', lineHeight: 1.5 }}>
                     Forecast valid {validAt ? new Date(validAt).toUTCString().replace(' GMT', ' UTC') : '--'} * Generated {gridMeta.generated_at_utc ? new Date(gridMeta.generated_at_utc).toUTCString().replace(' GMT', ' UTC') : genAt} * GFS cycle {gridMeta.gfs_cycle ?? '--'}
                     <div style={{ marginTop: 4, color: '#94a3b8', fontSize: 11 }}>
-                      f006 (secondary, +1.5h) exists as informational context only -- it does not meet the 2-6h operational minimum on its own; f009 (+4.5h) is the production primary.
+                      {leadH == null
+                        ? 'Operational lead could not be determined from the artifact timestamps.'
+                        : window.DriftForecastIntegrity.meetsTargetLead(leadH)
+                          ? `Operational lead ${window.DriftForecastIntegrity.leadLabel(leadH)} (valid minus issue time) is inside the 2-6 h target.`
+                          : `Operational lead ${window.DriftForecastIntegrity.leadLabel(leadH)} (valid minus issue time) is OUTSIDE the 2-6 h target: this is not a 2-6 h forecast. The NWP forecast hour is not the warning lead time.`}
                     </div>
                   </div>
                 </div>
@@ -4494,11 +4535,11 @@ function injectDrainageOverlay(map, liveData) {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
               <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', color: '#64748b' }}>OPERATIONAL ALERT LOG &amp; MISSION TIMELINE</div>
               {alertLog?.summary_30d?.n_events && (
-                <span style={{ fontSize: 11, color: '#94a3b8' }}>{alertLog.summary_30d.n_events} verified events logged</span>
+                <span style={{ fontSize: 11, color: '#94a3b8' }}>{alertLog.summary_30d.n_events} events in the 30-day scorecard window</span>
               )}
             </div>
             <div style={{ fontSize: 13, color: '#94a3b8', marginBottom: isMobile ? 14 : 20 }}>
-              Live verification event stream from alert_log.json archive
+              Hand-maintained log of model alerts and recorded outcomes (alert_log.json). Not an official or independently verified warning record.
             </div>
 
             {/* 30-Day Metrics Strip */}
@@ -4582,7 +4623,7 @@ function injectDrainageOverlay(map, liveData) {
                               background: outcomeBg, color: outcomeCol, border: `1px solid ${outcomeCol}33`,
                               letterSpacing: '0.04em'
                             }}>
-                              {isHit ? '✓ VERIFIED HIT' : isFA ? '⚠ FALSE ALARM' : isMiss ? '✗ MISSED EVENT' : (ev.outcome || 'VERIFIED')}
+                              {window.DriftForecastIntegrity.classifyAlertEvent(ev).label}
                             </span>
                           </div>
 
@@ -9528,6 +9569,10 @@ function injectDrainageOverlay(map, liveData) {
     // for assets/location_engine.js.
     function unifiedIsHazardUnavailable(hazardBlock) {
       if (!hazardBlock) return true;
+      // M0: a value that is historical replay / not lead-specific / expired / stale is unavailable even if
+      // a number is present; only temporal_status === 'CURRENT' (or a block with no temporal field at all,
+      // i.e. pre-M0 shaped test data) can be shown as a forecast.
+      if (hazardBlock.temporal_status && hazardBlock.temporal_status !== 'CURRENT') return true;
       return hazardBlock.probability === null || hazardBlock.probability === undefined;
     }
 
@@ -9567,7 +9612,7 @@ function injectDrainageOverlay(map, liveData) {
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const data = await res.json();
             if (!cancelled) {
-              setArtifact(data);
+              setArtifact(window.DriftForecastIntegrity.guardUnifiedArtifact(data));
               setForecastSource(data.forecast_source || 'LIVE_API');
             }
             return;
@@ -9582,7 +9627,7 @@ function injectDrainageOverlay(map, liveData) {
               if (!res2.ok) throw new Error(`HTTP ${res2.status}`);
               const data2 = await res2.json();
               if (!cancelled) {
-                setArtifact(data2);
+                setArtifact(window.DriftForecastIntegrity.guardUnifiedArtifact(data2));
                 setForecastSource('OFFLINE_ARTIFACT');
               }
             } catch (offlineErr) {
@@ -9712,7 +9757,14 @@ function injectDrainageOverlay(map, liveData) {
                 return (
                   <div className="text-[11px] text-slate-500 mt-1 grid grid-cols-1 gap-0.5">
                     <div>Artifact generated at: <span className="font-mono text-slate-400">{generatedAtUtc || 'n/a'}</span> <span className="text-slate-600">(when this file was last rebuilt -- not the weather data's age)</span></div>
-                    <div>Forecast initialized at: <span className="font-mono text-slate-400">{initTimeUtc || 'n/a'}</span></div>
+                    <div>{(artifact.time_semantics || artifact.client_guard) ? 'Replay-cycle init (legacy field -- NOT current data)' : 'Forecast initialized at'}: <span className="font-mono text-slate-400">{initTimeUtc || 'n/a'}</span></div>
+                    {artifact.time_semantics && (
+                      <div>Issued at: <span className="font-mono text-slate-400">{artifact.time_semantics.issued_at_utc || 'n/a'}</span>
+                        {artifact.time_semantics.model_init_times_utc?.CB_daily_outlook && (
+                          <span className="text-slate-500"> &middot; daily outlook model init: <span className="font-mono text-slate-400">{artifact.time_semantics.model_init_times_utc.CB_daily_outlook}</span></span>
+                        )}
+                      </div>
+                    )}
                     <div>Forecast data age: <span className={`font-mono font-bold ${ageLabel.includes('day') ? 'text-amber-400' : 'text-slate-400'}`}>{ageLabel}</span></div>
                     {sourceStatus && (
                       <div>Source status: <span className={`font-mono font-bold ${sourceStatus === 'FIXED_VALIDATION_FALLBACK' ? 'text-amber-400' : 'text-slate-400'}`}>{sourceStatus}</span>
@@ -9734,6 +9786,17 @@ function injectDrainageOverlay(map, liveData) {
               ))}
             </div>
           </div>
+
+          {artifact && (artifact.client_guard || artifact.forecast_horizon_support?.lead_specific_forecasts_available === false) && (
+            <div data-testid="no-lead-forecast-banner" className="rounded-md border border-amber-700 bg-amber-950/40 p-3 text-[12px] text-amber-200">
+              <b>No lead-specific forecast is available.</b> The 2-6 h lead slots are intentionally blank: historical-replay
+              values and a single daily value copied across lead slots are withheld because they are not forecasts.
+              {artifact.forecast_horizon_support?.daily_outlook_available_cells > 0 && (
+                <span> A daily heavy-rain-day outlook (not lead-specific, not a verified cloudburst) exists for {artifact.forecast_horizon_support.daily_outlook_available_cells} cells in <span className="font-mono">daily_outlook</span>.</span>
+              )}
+              <div className="mt-1 text-[11px] text-amber-300/80">AI-generated model output - NOT an official IMD/NDMA warning.</div>
+            </div>
+          )}
 
           {/* Lead-time selector -- Requirement 3 */}
           <div className="flex items-center gap-2">
@@ -9872,14 +9935,26 @@ function injectDrainageOverlay(map, liveData) {
                                   </div>
                                 </div>
                               ) : (
-                                <div className="text-slate-500 italic">
-                                  UNAVAILABLE -- status: {h.status} (no ranking score exists for this cell; never shown as 0% or LOW)
+                                <div className="text-slate-500 italic" data-testid="hazard-unavailable">
+                                  UNAVAILABLE -- status: {h.status} (no current ranking score for this cell; never shown as 0% or LOW)
+                                  {h.historical_reference && h.historical_reference.pu_ranking_score != null && (
+                                    <div className="text-[10px] text-slate-500 not-italic mt-0.5">
+                                      {h.historical_reference.designation === 'HISTORICAL_REPLAY' ? 'Historical replay research score' : 'Withheld research score (no time provenance)'} (model init {h.historical_reference.model_init_time_utc || 'unknown'}): {Number(h.historical_reference.pu_ranking_score).toFixed(3)} -- not current, not a probability.
+                                    </div>
+                                  )}
                                 </div>
                               )}
                             </div>
                           ) : unavailable ? (
-                            <div className="text-[11px] text-slate-500 italic mt-1">
+                            <div className="text-[11px] text-slate-500 italic mt-1" data-testid="hazard-unavailable">
                               UNAVAILABLE -- status: {h.status} (no legitimate probability exists; never shown as 0% or LOW)
+                              {h.temporal_status && <div className="text-[10px] text-amber-400 not-italic mt-0.5">{window.DriftForecastIntegrity.blockState(h).headline}</div>}
+                              {h.unavailable_reason && <div className="text-[10px] text-slate-500 mt-0.5">{h.unavailable_reason}</div>}
+                              {h.historical_reference && h.historical_reference.probability != null && (
+                                <div className="text-[10px] text-slate-500 mt-0.5">
+                                  {h.historical_reference.designation === 'HISTORICAL_REPLAY' ? 'Historical replay value' : 'Withheld value (no time provenance)'} (model init {h.historical_reference.model_init_time_utc || 'unknown'}), research only: {(h.historical_reference.probability * 100).toFixed(2)}%
+                                </div>
+                              )}
                             </div>
                           ) : (
                             <div className="text-[11px] text-slate-300 mt-1">
