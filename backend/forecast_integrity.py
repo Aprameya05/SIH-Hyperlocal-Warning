@@ -445,3 +445,104 @@ def eligible_for_alert(hazard_block: dict, *, hazard: str, valid_time, now=None)
     elif v <= now_dt:
         reasons.append(f"valid_time {iso_z(v)} is not in the future")
     return (not reasons, reasons)
+
+
+# ---------------------------------------------------------------------------
+# pan-India grid (data/pan_india_grid.json) semantics: additive only
+# ---------------------------------------------------------------------------
+
+GRID_PREDICTORS = ("cape", "cin", "k_index", "totals_totals", "wind_shear_ms", "pwat_mm",
+                   "ctt_c", "convergence_s", "ctt_drop_rate_c_hr", "qpe_mm")
+TARGET_LEAD_WINDOW_HOURS = (2, 6)
+
+GRID_HAZARD_DEFINITIONS = {
+    "thunderstorm": ("Fixed-weight heuristic over GFS instability indices. A risk score, NOT a calibrated "
+                     "probability, even though the legacy field is named thunderstorm_probability."),
+    "cloudburst": ("Field named cloudburst_probability. Where the source is panindia_cb_v1 it is an "
+                   "uncalibrated-for-this-use model score for a heavy-rain DAY (IMD gridded rainfall >= 64.5 "
+                   "mm/24 h at 0.25 deg), not a verified hourly cloudburst. Heavy rainfall, extreme "
+                   "short-duration rainfall and verified cloudbursts are distinct events; none is "
+                   "verified here."),
+    "flash_flood": ("Heuristic derived from the cloudburst/thunderstorm scores. A risk score, NOT a flood "
+                    "probability and not validated against flood observations."),
+    "official_warning": ("None of these values is an IMD/NDMA warning. DRIFT outputs are model advisories "
+                         "only."),
+}
+
+
+def predictor_availability(cells: list) -> dict:
+    """Per-predictor null counts. Nulls are reported, never filled."""
+    n = len(cells)
+    out = {}
+    for k in GRID_PREDICTORS:
+        n_null = sum(1 for c in cells if c.get(k) is None)
+        out[k] = {"n_null": n_null, "n_cells": n,
+                  "status": ("UNAVAILABLE_ALL_CELLS" if n and n_null == n
+                             else "AVAILABLE" if n_null == 0 else "PARTIAL")}
+    return out
+
+
+def annotate_grid(doc: dict) -> dict:
+    """Add explicit time semantics, per-cell operational lead, predictor availability and honest value
+    types to a pan_india_grid document, IN PLACE (additive: no existing field is changed or removed).
+    operational_lead_hours = valid - issued; forecast_lead_hours stays the NWP hour."""
+    issued = doc.get("generated_at_utc")
+    leads = doc.get("forecasts") or []
+    mirror = doc.get("grid_cells") or []
+
+    def _annotate_cells(cells):
+        for c in cells:
+            c["nwp_lead_hours"] = c.get("forecast_lead_hours")
+            op = operational_lead_hours(c.get("forecast_valid_at_utc"), issued)
+            c["operational_lead_hours"] = op
+            lo, hi = TARGET_LEAD_WINDOW_HOURS
+            c["within_2_6h_target"] = (lo <= op <= hi) if op is not None else None
+
+    for f in leads:
+        cells = f.get("grid_cells") or []
+        _annotate_cells(cells)
+        f["predictor_availability"] = predictor_availability(cells)
+    _annotate_cells(mirror)
+
+    primary = next((f for f in leads if f.get("is_primary")), None)
+    basis = (primary or {}).get("grid_cells") or mirror
+    avail = predictor_availability(basis)
+    ops = [c["operational_lead_hours"] for c in basis if c.get("operational_lead_hours") is not None]
+    op_med = sorted(ops)[len(ops) // 2] if ops else None
+    lo, hi = TARGET_LEAD_WINDOW_HOURS
+
+    doc["time_semantics"] = {
+        "definitions": TIME_DEFINITIONS,
+        "model_init_time_utc": iso_z(parse_utc(doc.get("gfs_cycle_init_utc"))),
+        "artifact_generated_at_utc": iso_z(parse_utc(issued)),
+        "issued_at_utc": iso_z(parse_utc(issued)),
+        "data_acquired_at_utc": None,
+        "published_at_utc": None,
+        "note": ("forecast_lead_hours / nwp_lead_hours are the NWP forecast hour. time_until_valid_hours and "
+                 "operational_lead_hours are valid - issued: the lead a user actually gets. Download time "
+                 "and deploy delay are not measured (null)."),
+    }
+    doc["lead_semantics"] = {
+        "target_window_hours": list(TARGET_LEAD_WINDOW_HOURS),
+        "primary_median_operational_lead_hours": op_med,
+        "primary_meets_2_to_6h_target": (lo <= op_med <= hi) if op_med is not None else None,
+    }
+    doc["predictor_availability"] = avail
+    doc["unavailable_predictors"] = sorted(k for k, v in avail.items() if v["status"] == "UNAVAILABLE_ALL_CELLS")
+    doc["predictor_availability_note"] = ("Predictors listed in unavailable_predictors are null in every cell: "
+                                          "null means 'not computed', never zero. Hazard scores in this "
+                                          "artifact were computed WITHOUT them.")
+
+    def _count(pred):
+        return sum(1 for c in basis if pred(c))
+    cb_model = _count(lambda c: str(c.get("cloudburst_probability_source", "")).startswith("panindia_cb_v1"))
+    doc["hazard_value_types"] = {
+        "thunderstorm": ("HEURISTIC_RISK_SCORE" if _count(lambda c: c.get("is_calibrated_probability") is not True)
+                         == len(basis) else "MIXED"),
+        "cloudburst": {"MODEL_SCORE_UNCALIBRATED": cb_model, "HEURISTIC_RISK_SCORE": len(basis) - cb_model},
+        "flash_flood": ("HEURISTIC_RISK_SCORE" if _count(lambda c: c.get("is_calibrated_probability") is not True)
+                        == len(basis) else "MIXED"),
+        "calibrated_probability_cells": _count(lambda c: c.get("is_calibrated_probability") is True),
+    }
+    doc["hazard_definitions"] = GRID_HAZARD_DEFINITIONS
+    return doc

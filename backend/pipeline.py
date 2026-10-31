@@ -49,6 +49,7 @@ from atomic_write import atomic_write_json, AtomicWriteError  # noqa: E402
 # file computed a local duplicate-check string ("{lat:.1f}_{lon:.1f}", no
 # "IND_" prefix) and never persisted it into the cell object at all.
 from regrid import cell_id_for  # noqa: E402
+from backend.forecast_integrity import annotate_grid  # noqa: E402
 
 terrain_grid = get_terrain_grid()
 
@@ -1007,6 +1008,10 @@ def run(cycle_override: str = None):
         "features_active": legacy["features_active"],
         "grid_cells": legacy["grid_cells"],
     }
+
+    # M0: additive time semantics (operational lead = valid - issued), explicit list of unavailable
+    # predictors and honest hazard value types. See backend/forecast_integrity.py.
+    annotate_grid(output)
 
     try:
         atomic_write_json(OUT_FILE, output, indent=None)
