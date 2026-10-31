@@ -69,12 +69,9 @@ def test_an_unavailable_init_time_is_rejected_not_relabelled(client):
 def test_operational_lead_is_measured_from_issue_time_not_model_init(client):
     d = _get(client, lead=4)
     for hz in ("ts", "cb", "ff"):
-        op, nwp = d[hz]["operational_lead_hours"], d[hz]["nwp_lead_hours"]
-        assert op is not None and op < 0                 # a 2024 valid time is long past at issue time
-        assert op != nwp
-    issued = fi.parse_utc(d["issued_at_utc"])
-    expected = fi.operational_lead_hours(d["valid_time"], issued)
-    assert d["cb"]["operational_lead_hours"] == pytest.approx(expected, abs=0.01)
+        # M0.1 (Q1/Q2/Q5): no availability time exists, and a 2024 valid time is past -> null + status, never negative
+        assert d[hz]["operational_lead_hours"] is None
+        assert d[hz]["operational_lead_status"] in ("NOT_APPLICABLE_PAST_VALID_TIME", "UNAVAILABLE_NO_AVAILABILITY_TIME")
 
 
 def test_issue_time_is_request_time(client):
@@ -114,5 +111,5 @@ def test_unsupported_leads_are_rejected_or_reported_unavailable(client):
 def test_time_semantics_definitions_are_exposed_to_clients(client):
     d = _get(client)
     defs = d["time_semantics"]["definitions"]
-    assert "operational_lead_hours" in defs and "nwp_lead_hours" in defs and "issued_at_utc" in defs
+    assert {"operational_lead_hours", "nwp_forecast_hour", "generated_at_utc", "forecast_available_time_utc"} <= set(defs)
     assert d["time_semantics"]["model_init_times_utc_by_hazard"]["TS"].startswith("2025-12-31")

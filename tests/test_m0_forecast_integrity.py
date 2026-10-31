@@ -78,8 +78,11 @@ def test_operational_lead_is_valid_minus_issue_not_valid_minus_init():
     assert fi.operational_lead_hours(valid, issued) != fi.nwp_lead_hours(valid, init)
 
 
-def test_operational_lead_is_negative_when_valid_time_already_passed():
-    assert fi.operational_lead_hours("2024-08-01T02:00:00Z", ISSUED) < 0
+def test_past_valid_time_is_never_a_lead_and_never_negative():
+    """M0.1 (owner decision Q2/Q5): a past or invalid lead returns null + an explicit status, never a negative number."""
+    assert fi.operational_lead_hours("2024-08-01T02:00:00Z", ISSUED) is None
+    m = fi.lead_metadata("2026-10-30T18:00:00Z", "2024-08-01T02:00:00Z", ISSUED)
+    assert m["operational_lead_hours"] is None and m["operational_lead_status"] == "NOT_APPLICABLE_PAST_VALID_TIME"
 
 
 def test_operational_lead_function_has_no_model_init_parameter():
@@ -134,7 +137,8 @@ def test_historical_replay_is_not_masked_by_a_2026_generation_timestamp():
     assert ref["pu_ranking_score"] == 0.8                     # original preserved
     assert ref["model_init_time_utc"] == "2024-08-01T00:00:00Z"   # original timestamp kept
     assert ref["designation"] == TS_.HISTORICAL_REPLAY
-    assert ff["operational_lead_hours"] < 0
+    assert ff["operational_lead_hours"] is None                  # never a negative lead (Q2/Q5)
+    assert ff["operational_lead_status"] == "NOT_APPLICABLE_PAST_VALID_TIME"
 
 
 def test_trained_mixed_live_label_is_replaced_for_withheld_values():
@@ -152,16 +156,66 @@ def test_fixed_validation_fallback_is_always_historical_even_with_recent_looking
     assert art["artifact_mode"] == "HISTORICAL_REPLAY_ONLY"
 
 
-def test_genuinely_current_lead_specific_value_is_kept():
-    cb = _cb_block(prob=0.4, lead_res="HOURLY", init="2026-10-31T00:00:00+00:00")
-    rec = _record("IND_1.0_1.0", 2, cb=cb)
-    rec["valid_time"] = "2026-10-31T06:00:00Z"
-    art = fi.sanitize_artifact(_artifact([rec]), now=NOW)
-    out = art["records"][0]["CB"]
-    assert out["probability"] == 0.4 and out["temporal_status"] == TS_.CURRENT
-    assert out["operational_lead_hours"] == pytest.approx(3.12, abs=0.05)   # valid - issued, not valid - init
-    assert out["nwp_lead_hours"] == 6.0
-    assert art["integrity"]["counts"]["current_lead_specific"] == 1
+def _lead_specific_record(cid, lead, prob, head="synthetic_cb_lead_head"):
+    """SYNTHETIC lead-specific slot: distinct NWP hour, valid time, input fingerprint and probability per lead."""
+    init = "2026-10-31T00:00:00+00:00"
+    valid = (datetime(2026, 10, 31, 0, tzinfo=timezone.utc) + timedelta(hours=lead + 2)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    r = _record(cid, lead, cb=_cb_block(prob=prob, lead_res="HOURLY", init=init))
+    r["valid_time"] = valid
+    r["CB"].update({"valid_time_utc": valid, "value_type": "CALIBRATED_PROBABILITY", "event_class": "SYNTHETIC_EVENT",
+                    "lead_basis": {"model_head": head, "nwp_forecast_hour": lead + 2,
+                                   "input_fingerprint": f"fp-{lead}", "inference_id": f"inf-{lead}"}})
+    return r
+
+
+@pytest.fixture
+def synthetic_contract(monkeypatch):
+    """Exercises the lead-specific CONTRACT with an injected capable head. It proves the verifier's rules only,
+    not that DRIFT can forecast by lead (the production registry is empty)."""
+    monkeypatch.setattr(fi, "LEAD_CAPABLE_HEADS", frozenset({"synthetic_cb_lead_head"}))
+    monkeypatch.setattr(fi, "ALLOW_SYNTHETIC_FIXTURES", True)
+
+
+def _synthetic_artifact(leads=(2, 3, 4, 5, 6)):
+    a = _artifact([_lead_specific_record("IND_13.0_78.0", L, 0.1 * L) for L in leads],
+                  generated="2026-10-31T02:52:12+00:00")
+    a["cb_live_fetch"] = {"status": "LIVE_AWS_GFS", "init_time_utc": "2026-10-31T00:00:00+00:00"}
+    a["forecast_available_time_utc"] = "2026-10-31T03:10:00+00:00"
+    a["forecast_available_provenance"] = "SYNTHETIC_TEST"
+    return a
+
+
+def test_genuinely_current_lead_specific_values_are_kept_with_distinct_leads(synthetic_contract):
+    art = fi.sanitize_artifact(_synthetic_artifact(), now=NOW)
+    cbs = [r["CB"] for r in sorted(art["records"], key=lambda r: r["lead_hours"])]
+    assert all(b["temporal_status"] == TS_.CURRENT for b in cbs)
+    assert len({b["probability"] for b in cbs}) == 5                       # distinct predictions
+    assert len({b["valid_time_utc"] for b in cbs}) == 5                    # distinct valid times
+    assert [b["nwp_forecast_hour"] for b in cbs] == [4.0, 5.0, 6.0, 7.0, 8.0]
+    leads = [b["operational_lead_hours"] for b in cbs]
+    assert all(isinstance(x, float) and x > 0 for x in leads) and leads == sorted(leads)  # from AVAILABILITY time
+    assert art["forecast_horizon_support"]["lead_specific_forecasts_available"] is True
+    assert art["integrity"]["counts"]["current_lead_specific"] >= 5
+
+
+def test_the_same_synthetic_artifact_is_rejected_by_the_production_policy():
+    """Without the injected head/synthetic switch (production) nothing is lead-specific and the fixture is invalid."""
+    art = fi.sanitize_artifact(_synthetic_artifact(), now=NOW)
+    assert all(r["CB"]["probability"] is None for r in art["records"])
+    assert {r["CB"]["temporal_status"] for r in art["records"]} <= {TS_.INVALID_PROVENANCE, TS_.NOT_LEAD_SPECIFIC}
+
+
+def test_hourly_label_without_a_capable_head_or_basis_is_not_lead_specific():
+    r = _record("IND_1.0_1.0", 2, cb=_cb_block(prob=0.4, lead_res="HOURLY", init="2026-10-31T00:00:00+00:00"))
+    art = fi.sanitize_artifact(_artifact([r]), now=NOW)
+    assert art["records"][0]["CB"]["probability"] is None
+    assert art["records"][0]["CB"]["temporal_status"] == TS_.NOT_LEAD_SPECIFIC     # the label is never sufficient
+
+
+def test_duplicated_fingerprint_head_not_registered_is_withheld(synthetic_contract):
+    r = _lead_specific_record("IND_13.0_78.0", 3, 0.3, head="some_other_head")
+    art = fi.sanitize_artifact(_synthetic_artifact([2]) | {"records": [r]}, now=NOW)
+    assert art["records"][0]["CB"]["probability"] is None
 
 
 def test_stale_artifact_downgrades_at_read_time():
@@ -203,11 +257,12 @@ def test_sanitize_is_idempotent_and_does_not_mutate_input():
 
 def test_time_semantics_block_defines_every_term_and_flags_legacy_fields():
     ts = fi.sanitize_artifact(_artifact(), now=NOW)["time_semantics"]
-    for k in ("model_init_time_utc", "data_acquired_at_utc", "artifact_generated_at_utc",
-              "issued_at_utc", "valid_time_utc", "nwp_lead_hours", "operational_lead_hours"):
+    for k in ("model_init_time_utc", "data_acquired_at_utc", "generated_at_utc",
+              "forecast_available_time_utc", "valid_time_utc", "nwp_forecast_hour", "operational_lead_hours"):
         assert k in ts["definitions"]
-    assert ts["data_acquired_at_utc"] is None and ts["published_at_utc"] is None
-    assert "2024-08-01" in ts["legacy_field_note"] and "REPLAY" in ts["legacy_field_note"]
+    assert ts["data_acquired_at_utc"] is None and ts["forecast_available_time_utc"] is None
+    assert ts["forecast_available_status"] == "NOT_SUPPLIED_BY_PIPELINE"        # never invented
+    assert "2024-08-01" in ts["legacy_field_note"] and "replay" in ts["legacy_field_note"].lower()
 
 
 # ---------------------------------------------------------------- real committed artifact
@@ -225,20 +280,32 @@ def test_real_legacy_artifact_cannot_masquerade_as_current_lead_forecasts():
 
 
 # ---------------------------------------------------------------- alert eligibility (C)
-def test_alert_eligibility_is_single_source_of_truth():
-    ok = {"probability": 0.8, "temporal_status": TS_.CURRENT}
-    future = "2026-11-01T00:00:00Z"
-    assert fi.eligible_for_alert(ok, hazard="TS", valid_time=future, now=NOW) == (True, [])
-    ok_, why = fi.eligible_for_alert(ok, hazard="FF", valid_time=future, now=NOW)
-    assert not ok_ and any("FF" in w for w in why)
-    ok_, why = fi.eligible_for_alert({"probability": 0.9, "temporal_status": TS_.HISTORICAL_REPLAY},
-                                     hazard="CB", valid_time=future, now=NOW)
-    assert not ok_ and any("HISTORICAL_REPLAY" in w for w in why)
-    ok_, why = fi.eligible_for_alert(ok, hazard="CB", valid_time="2024-08-01T02:00:00Z", now=NOW)
-    assert not ok_ and any("not in the future" in w for w in why)
-    ok_, _ = fi.eligible_for_alert({"probability": None, "temporal_status": TS_.CURRENT},
-                                   hazard="CB", valid_time=future, now=NOW)
-    assert not ok_
+def test_alert_eligibility_is_one_gate_and_production_registries_are_empty(synthetic_contract):
+    """Owner decisions Q14/Q18: every alert goes through backend/alert_policy.evaluate; production registries are
+    empty so nothing is eligible; a test policy with explicit registries shows the contract can be satisfied."""
+    from backend import alert_policy as ap
+    cand = {"probability": 0.8, "temporal_status": TS_.CURRENT, "value_type": "CALIBRATED_PROBABILITY",
+            "event_class": "SYNTHETIC_EVENT", "lead_specific": True, "operational_lead_hours": 3.5,
+            "operational_lead_status": "OK", "forecast_available_time_utc": "2026-10-31T02:30:00+00:00",
+            "forecast_available_provenance": "SYNTHETIC_TEST", "generated_at_utc": "2026-10-31T02:20:00+00:00",
+            "valid_time_utc": "2026-11-01T00:00:00Z", "synthetic_fixture": True}
+    ok, why = ap.evaluate(cand, hazard="TS", now=NOW)                                  # production policy
+    assert not ok and {"HORIZON_NOT_REGISTERED", "SEMANTICS_NOT_REGISTERED", "SYNTHETIC_ARTIFACT_IN_PRODUCTION",
+                       "AVAILABILITY_PROVENANCE_NOT_OBSERVED"} <= set(why)
+    pol = ap.AlertPolicy(supported_alert_horizons={"TS": (2, 6)},
+                         alertable_semantics={"TS": {("SYNTHETIC_EVENT", "CALIBRATED_PROBABILITY")}}, allow_synthetic=True)
+    assert ap.evaluate(cand, hazard="TS", now=NOW, policy=pol) == (True, [])
+    # a missing availability time is ineligible and is never inferred
+    no_avail = dict(cand, forecast_available_time_utc=None)
+    ok, why = ap.evaluate(no_avail, hazard="TS", now=NOW, policy=pol)
+    assert not ok and "NO_AVAILABILITY_TIME" in why
+    for hz in ("FF",):
+        assert "HAZARD_NEVER_ALERTABLE" in ap.evaluate(cand, hazard=hz, now=NOW, policy=pol)[1]
+    for bad in ("HEURISTIC_RISK_SCORE", "MODEL_SCORE_UNCALIBRATED", "RESEARCH_ONLY_PU_RANKING"):
+        assert "VALUE_TYPE_NOT_ALERTABLE" in ap.evaluate(dict(cand, value_type=bad), hazard="TS", now=NOW, policy=pol)[1]
+    assert "DAILY_OUTLOOK_NOT_ALERTABLE" in ap.evaluate(dict(cand, is_daily_outlook=True), hazard="TS", now=NOW, policy=pol)[1]
+    assert "OPERATIONAL_LEAD_NOT_POSITIVE" in ap.evaluate(dict(cand, operational_lead_hours=0), hazard="TS", now=NOW, policy=pol)[1]
+    assert "LEAD_OUTSIDE_SUPPORTED_HORIZON" in ap.evaluate(dict(cand, operational_lead_hours=9), hazard="TS", now=NOW, policy=pol)[1]
 
 
 # ---------------------------------------------------------------- request-time refresh (D)
@@ -252,16 +319,13 @@ def test_request_time_refresh_downgrades_a_once_current_daily_outlook():
     assert built["daily_outlook"]["IND_13.0_78.0"]["CB"]["temporal_status"] == TS_.CURRENT   # input untouched
 
 
-def test_request_time_refresh_withholds_a_lead_value_whose_valid_time_passed():
-    cb = _cb_block(prob=0.4, lead_res="HOURLY", init="2026-10-31T00:00:00+00:00")
-    rec = _record("IND_1.0_1.0", 2, cb=cb)
-    rec["valid_time"] = "2026-10-31T06:00:00Z"
-    built = fi.sanitize_artifact(_artifact([rec]), now=NOW)
-    assert built["records"][0]["CB"]["probability"] == 0.4
-    out = fi.refresh_request_time_status(built, now=NOW + timedelta(hours=4))
+def test_request_time_refresh_withholds_a_lead_value_whose_valid_time_passed(synthetic_contract):
+    built = fi.sanitize_artifact(_synthetic_artifact([2]), now=NOW)
+    assert built["records"][0]["CB"]["probability"] is not None
+    out = fi.refresh_request_time_status(built, now=NOW + timedelta(hours=8))      # valid time (06:00Z) has passed
     blk = out["records"][0]["CB"]
-    assert blk["probability"] is None and blk["temporal_status"] == TS_.EXPIRED
-    assert blk["historical_reference"]["probability"] == 0.4
+    assert blk["probability"] is None and blk["temporal_status"] in (TS_.EXPIRED, TS_.STALE)
+    assert blk["historical_reference"]["probability"] is not None                   # original preserved
 
 
 def test_request_time_refresh_never_upgrades_a_withheld_value():

@@ -368,6 +368,10 @@ def main():
         reject_reasons.append("a historical-replay or non-lead-specific value is presented as a current forecast")
     if not validation.get("time_semantics_block_present"):
         reject_reasons.append("artifact is missing the M0 time_semantics / forecast_horizon_support blocks")
+    _rep = integrity.verify_artifact_report(artifact)
+    validation["independent_integrity_report_ok"] = _rep["ok"]
+    if not _rep["ok"]:
+        reject_reasons.append(f"independent integrity verification failed: {_rep['counts_by_code']}")
     if not validation.get("no_unavailable_probability_mapped_to_a_risk_category"):
         reject_reasons.append("a NULL-probability record was mapped to a non-NOT_AVAILABLE risk_category")
 

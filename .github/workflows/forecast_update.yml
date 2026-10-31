@@ -337,82 +337,18 @@ jobs:
         # trusting the validation dict's own booleans, which are
         # computed by the same process.
         run: |
-          python3 -c "
-          import json, os, sys
-          from datetime import datetime, timezone
-
-          def fail(reason):
-              print(f'NOT OK: {reason}')
-              with open('/tmp/unified_artifact_check_ok.txt', 'w') as f:
-                  f.write('false')
-              sys.exit(0)
-
-          path = 'data/unified_forecast.json'
-
-          try:
-              with open('/tmp/pre_unified_artifact_marker.txt') as f:
-                  marker_epoch = int(f.read().strip())
-          except Exception as exc:
-              fail(f'pre-build marker missing or unreadable ({type(exc).__name__}: {exc}) -- '
-                   f'cannot prove this run touched the file at all')
-
-          try:
-              mtime_epoch = os.path.getmtime(path)
-          except Exception as exc:
-              fail(f'{path} missing or stat-unreadable ({type(exc).__name__}: {exc})')
-          if mtime_epoch < marker_epoch:
-              fail(f'{path} filesystem mtime ({mtime_epoch:.0f}) is OLDER than the pre-build marker '
-                   f'for this run ({marker_epoch}) -- this is provably the untouched last-known-good '
-                   f'artifact from a previous run, not something this run wrote')
-
-          try:
-              with open(path, encoding='utf-8') as f:
-                  artifact = json.load(f)
-          except Exception as exc:
-              fail(f'{path} missing or unparseable ({type(exc).__name__}: {exc})')
-
-          generated_at = artifact.get('generated_at_utc')
-          try:
-              generated_dt = datetime.fromisoformat(generated_at.replace('Z', '+00:00'))
-          except Exception as exc:
-              fail(f'generated_at_utc missing or unparseable ({generated_at!r}: {exc})')
-          age_minutes = (datetime.now(timezone.utc) - generated_dt).total_seconds() / 60.0
-          if age_minutes > 30:
-              fail(f'artifact is {age_minutes:.1f} minutes old -- not freshly written this run '
-                   f'(the script left the old last-known-good artifact untouched, a genuine reject)')
-
-          records = artifact.get('records', [])
-          if len(records) != 4960:
-              fail(f'expected exactly 4960 records, found {len(records)} (re-derived directly, '
-                   f'not trusting the self-reported validation dict)')
-          unique_cells = {r.get('cell_id') for r in records}
-          if len(unique_cells) != 992:
-              fail(f'expected exactly 992 unique cell_ids, found {len(unique_cells)} (re-derived directly)')
-          lead_hours_by_cell = {}
-          for r in records:
-              lead_hours_by_cell.setdefault(r.get('cell_id'), set()).add(r.get('lead_hours'))
-          incomplete_cells = [c for c, leads in lead_hours_by_cell.items() if len(leads) != 5]
-          if incomplete_cells:
-              fail(f'{len(incomplete_cells)} cell(s) do not have exactly 5 distinct lead_hours '
-                   f'(re-derived directly): {incomplete_cells[:5]}')
-
-          v = artifact.get('validation', {})
-          required_true = [
-              'exactly_992_cells', 'exactly_4960_records', 'all_5_lead_slots_present_per_cell',
-              'lead_time_arithmetic_correct_for_every_record', 'all_present_probabilities_in_0_1_range',
-              'ff_never_carries_a_fabricated_probability', 'no_unavailable_probability_mapped_to_a_risk_category',
-          ]
-          failed_keys = [k for k in required_true if not v.get(k)]
-          if failed_keys:
-              fail(f'validation keys failed: {failed_keys}')
-
-          print(f'OK: artifact is {age_minutes:.1f} min old, mtime proves this-run origin, '
-                f'4960 records across 992 cells x 5 leads re-derived directly, all validation keys true')
-          with open('/tmp/unified_artifact_check_ok.txt', 'w') as f:
-              f.write('true')
-          "
+          # Independent, fail-closed verification (scripts/ci_validate_unified_artifact.py): re-derives every rule
+          # from the data; the artifact's own `validation` block is ignored. Marker/mtime/age checks are retained.
+          python3 scripts/ci_validate_unified_artifact.py data/unified_forecast.json \
+            --marker /tmp/pre_unified_artifact_marker.txt --max-age-minutes 30 \
+            --ok-file /tmp/unified_artifact_check_ok.txt || true
+          [ -f /tmp/unified_artifact_check_ok.txt ] || echo false > /tmp/unified_artifact_check_ok.txt
           echo "ok=$(cat /tmp/unified_artifact_check_ok.txt)" >> "$GITHUB_OUTPUT"
         continue-on-error: true
+
+      - name: Verify VOBL forecast contract (fail closed)
+        # fallback / defaulted / climatology slots must never drive alert_active or peak_probability
+        run: python3 scripts/ci_validate_vobl_forecast.py forecast.json
 
       - name: Send WhatsApp alerts
         env:
@@ -421,40 +357,11 @@ jobs:
         run: python send_alerts.py
         continue-on-error: true
 
-      - name: Push alert notification
-        run: |
-          ALERT=$(python -c "
-          import json, sys
-          try:
-              d = json.load(open('forecast.json'))
-              if d.get('alert_active'):
-                  pk = d.get('peak_slot', '?')
-                  prob = round(d.get('peak_probability', 0)*100, 1)
-                  slot_names = {0:'00:01-06:00',1:'06:01-12:00',2:'12:01-18:00',3:'18:01-24:00'}
-                  window = slot_names.get(pk, str(pk))
-                  regime = d.get('convective_initiation', {}).get('monsoon_regime', '')
-                  cape = d.get('convective_initiation', {}).get('cape_now', 0)
-                  sigmet = d.get('sigmet_bulletin') or ''
-                  intensity = 'SEVERE' if prob >= 70 else 'MODERATE' if prob >= 40 else 'LIGHT'
-                  msg = f'VOBL TS ALERT {intensity} | Slot {pk} ({window} IST) | {prob}% probability | CAPE {cape:.0f} J/kg | Regime {regime}'
-                  if sigmet:
-                      msg += f'\n---\n{sigmet}'
-                  print(msg)
-          except Exception as e:
-              pass
-          ")
-          if [ -n "$ALERT" ]; then
-            curl -s -o /dev/null -X POST \
-              -H "Title: VOBL Thunderstorm Alert" \
-              -H "Priority: high" \
-              -H "Tags: thunder,cloud,rotating_light" \
-              -d "$ALERT" \
-              https://ntfy.sh/csir-vobl-thunderstorm || true
-            echo "Alert notification sent"
-          else
-            echo "No alert -- notification skipped"
-          fi
-        continue-on-error: true
+      - name: Push alert notification (withheld unless eligible)
+        # Previously this POSTed "VOBL TS ALERT ... % probability" (plus raw SIGMET text) to a public ntfy topic
+        # straight from forecast.json with no freshness/fallback/eligibility check. Now it evaluates the alert
+        # policy and records why nothing is sent. Nothing is published to ntfy from here.
+        run: python3 scripts/automated_alert_guard.py forecast.json
 
       - name: Inject Worker URL into dashboard
         run: |
@@ -598,6 +505,10 @@ jobs:
         if: steps.unified_artifact_check.outputs.ok == 'true'
         run: python3 scripts/ci_validate_unified_artifact.py pages_dist/data/unified_forecast.json
 
+
+      - name: Validate pan-India grid before deploy (fail closed)
+        if: steps.unified_artifact_check.outputs.ok == 'true'
+        run: python3 scripts/ci_validate_pan_india_grid.py pages_dist/data/pan_india_grid.json
       - name: Deploy to Cloudflare Pages
         if: steps.unified_artifact_check.outputs.ok == 'true'
         env:

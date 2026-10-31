@@ -11193,16 +11193,11 @@ Source: csir-thunderstorm-bengaluru.pages.dev | IMD Station 43295`;
       );
       const [pushThreshold, setPushThreshold] = React.useState(35);
 
-      React.useEffect(() => {
-        if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
-        if (maxProb * 100 >= pushThreshold) {
-          const lastFired = (() => { try { return Number(localStorage.getItem('sih_last_auto') || 0); } catch { return 0; } })();
-          if (Date.now() - lastFired > 15 * 60 * 1000) {
-            new Notification('⚡ IMD Alert -- VOBL', { body: `Prob: ${Math.round(maxProb*100)}% -- exceeds ${pushThreshold}% threshold.`, icon:'/manifest.json', tag:'sih-auto' });
-            try { localStorage.setItem('sih_last_auto', String(Date.now())); } catch {}
-          }
-        }
-      }, [maxProb, pushThreshold]);
+      // P0: the automatic browser alert is DISABLED. It used to fire a VOBL browser notification whenever the displayed
+      // probability crossed a threshold, with no provenance, freshness or eligibility check, and it borrowed an
+      // official body's name. Automated forecast alerts now require the shared alert policy (backend/alert_policy.py),
+      // whose production registries are empty. Manual opt-in controls remain; nothing fires automatically.
+      const autoBrowserAlertsEnabled = false;
 
       const enableNotifications = async () => {
 
@@ -11210,8 +11205,8 @@ Source: csir-thunderstorm-bengaluru.pages.dev | IMD Station 43295`;
         const perm = await Notification.requestPermission();
         setNotifStatus(perm);
         if (perm === 'granted') {
-          new Notification('⚡ IMD TS Alert -- Subscribed', {
-            body: `You'll be notified when thunderstorm probability exceeds ${pushThreshold}% at VOBL.`,
+          new Notification('DRIFT notifications enabled', {
+            body: 'Automatic hazard alerts are currently unavailable: forecast provenance does not yet meet the alert eligibility contract. This is not an official IMD/NDMA channel.',
             icon: '/manifest.json'
           });
         }

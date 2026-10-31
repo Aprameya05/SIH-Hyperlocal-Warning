@@ -79,7 +79,7 @@ def test_forecast_all_never_serves_a_non_current_value_as_a_forecast(legacy_clie
                or (r[hz].get("extra") or {}).get("pu_ranking_score") is not None)
            and r[hz].get("temporal_status") != "CURRENT"]
     assert bad == []
-    assert art["schema_version"] == 2
+    assert art["schema_version"] == 3
     assert art["forecast_horizon_support"]["lead_specific_forecasts_available"] is False
 
 
@@ -207,21 +207,16 @@ def test_builder_validation_requires_time_semantics_block():
 
 
 # ---------------------------------------------------------------- positive path (replaces coverage of the skipped phase35 test)
-def test_a_genuinely_current_lead_specific_candidate_is_listed_eligible_and_dispatches_truthfully(tmp_path, monkeypatch):
-    """The gate must still ACCEPT a legitimate value: current init, lead-specific, future valid time,
-    live source. With no Twilio/webhook configured the truthful result is NOT_SENT, never SENT."""
+def test_production_policy_lists_no_eligible_candidate_and_dispatch_is_refused(tmp_path, monkeypatch):
+    """M0.1 (Q14/Q18): registries are empty, so even a fresh, future-valid candidate is listed INELIGIBLE with reasons,
+    and a manual dispatch is refused rather than silently sent. (The positive contract is proven with an injected
+    synthetic policy in test_m0_forecast_integrity.py::test_alert_eligibility_is_one_gate...)"""
     now = datetime.now(timezone.utc)
-    init = (now - timedelta(hours=2)).replace(minute=0, second=0, microsecond=0)
     valid = (now + timedelta(hours=3)).replace(minute=0, second=0, microsecond=0)
-    art = _legacy_artifact(generated_at=(now - timedelta(minutes=30)).isoformat(), cb_init=init.isoformat())
+    art = _legacy_artifact(generated_at=(now - timedelta(minutes=30)).isoformat(),
+                           cb_init=(now - timedelta(hours=2)).isoformat())
     for r in art["records"]:
         r["valid_time"] = valid.strftime("%Y-%m-%dT%H:%M:%SZ")
-        r["init_time"] = init.strftime("%Y-%m-%dT%H:%M:%SZ")
-        r["CB"]["lead_time_resolution"] = "HOURLY"          # genuinely lead-specific
-        r["CB"]["source_status"] = "LIVE_AWS_GFS"
-        r["CB"]["cb_valid_time_utc"] = valid.strftime("%Y-%m-%dT%H:%M:%SZ")
-        r["FF"]["source_status"] = "UNAVAILABLE"
-        r["FF"]["extra"] = {}
     p = tmp_path / "u.json"
     p.write_text(json.dumps(art))
     monkeypatch.setattr(api, "UNIFIED_FORECAST_PATH", p)
@@ -229,13 +224,6 @@ def test_a_genuinely_current_lead_specific_candidate_is_listed_eligible_and_disp
     monkeypatch.setattr(api, "RECIPIENTS", [])
     with TestClient(api.app, raise_server_exceptions=False) as c:
         listing = c.get("/forecast/alerts", params={"min_risk": "HIGH"}).json()
-        lead_specific = [x for x in listing["candidates"] if x["candidate_class"] == "MODEL_GENERATED_CANDIDATE"]
-        assert lead_specific and all(x["alert_eligible"] for x in lead_specific)
-        assert all(x["is_official_warning"] is False and x["verified"] is False for x in lead_specific)
-        assert all(x["operational_lead_hours"] > 0 for x in lead_specific)       # lead measured from ISSUE time
-        x = lead_specific[0]
-        r = c.post("/forecast/alerts/dispatch",
-                   json={"cell_id": x["cell_id"], "hazard": "CB", "lead_hours": x["lead_hours"]})
-        assert r.status_code == 200, r.text
-        d = r.json()
-        assert d["status"] == "DISPATCHED" and d["delivery_status"] == "NOT_SENT" and d["sms_count"] == 0
+        assert not [x for x in listing["candidates"] if x.get("alert_eligible")]
+        r = c.post("/forecast/alerts/dispatch", json={"cell_id": "IND_13.0_78.0", "hazard": "CB", "lead_hours": 3})
+        assert r.status_code in (400, 404, 409, 422), r.text

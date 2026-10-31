@@ -1,7 +1,7 @@
 // CSIR Thunderstorm Nowcast — Service Worker
 // Version: 2.0.0 — Offline-first with background sync
 
-const CACHE_NAME = 'csir-ts-v2';
+const CACHE_NAME = 'drift-v3';
 const FORECAST_URL = './forecast.json';
 const DATA_URLS = [
   './',
@@ -117,12 +117,12 @@ self.addEventListener('sync', event => {
 // ── Push notifications ────────────────────────────────────────────
 self.addEventListener('push', event => {
   const data = event.data ? event.data.json() : {};
-  const title = data.title || '⚡ CSIR Thunderstorm Alert — VOBL';
+  const title = data.title || 'DRIFT notification';
   const options = {
-    body: data.body || 'Thunderstorm probability elevated. Check dashboard.',
+    body: data.body || 'Open DRIFT for details. Not an official IMD/NDMA warning.',
     icon: './manifest.json',
     badge: './manifest.json',
-    tag: 'ts-alert',
+    tag: 'drift-notice',
     requireInteraction: true,
     data: { url: data.url || '/' },
     actions: [

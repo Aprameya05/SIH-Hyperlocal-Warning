@@ -124,7 +124,7 @@ def _load_unified_artifact() -> dict:
                                     "scripts/phase34_build_unified_forecast.py first")
     with open(UNIFIED_FORECAST_PATH) as f:
         raw = json.load(f)
-    return integrity.refresh_request_time_status(integrity.sanitize_artifact(raw))
+    return integrity.sanitize_artifact(raw)
 
 
 SOURCE_STATUS = {
@@ -392,21 +392,22 @@ def resolve_location(q: str = Query(..., description="Free-text location, e.g. '
     if not resolved.cell_id:
         return response
 
-    if not UNIFIED_FORECAST_PATH.exists():
+    try:
+        artifact = _load_unified_artifact()     # verified view: no raw artifact is ever served (was a bypass)
+    except HTTPException:
         response["error"] = (response["error"] or "") + " (no hazard data: data/unified_forecast.json not found)"
         return response
-    with open(UNIFIED_FORECAST_PATH) as f:
-        artifact = json.load(f)
     rec = next((r for r in artifact["records"]
                 if r["cell_id"] == resolved.cell_id and r["lead_hours"] == lead_hours), None)
     if rec is None:
         response["error"] = (response["error"] or "") + f" (cell {resolved.cell_id} has no record for lead_hours={lead_hours})"
         return response
     response["hazards"] = {
-        "lead_hours": lead_hours, "init_time": rec["init_time"], "valid_time": rec["valid_time"],
-        "TS": _reapply_request_time_freshness(artifact, rec["TS"]),
-        "CB": _reapply_request_time_freshness(artifact, rec["CB"]),
-        "FF": _reapply_request_time_freshness(artifact, rec["FF"]),
+        "lead_hours": lead_hours, "forecast_status": "NO_CURRENT_LEAD_FORECAST",
+        "legacy_time_note": "init_time/valid_time are legacy replay-cycle fields, not the time of current data.",
+        "init_time": rec["init_time"], "valid_time": rec["valid_time"],
+        "TS": rec["TS"], "CB": rec["CB"], "FF": rec["FF"],
+        "daily_outlook": (artifact.get("daily_outlook") or {}).get(resolved.cell_id),
     }
     return response
 
@@ -697,7 +698,7 @@ def dispatch_forecast_alert(req: DispatchRequest):
                 if r["cell_id"] == req.cell_id and r["lead_hours"] == req.lead_hours), None)
     if rec is None:
         raise HTTPException(status_code=404, detail="no matching forecast record")
-    hz = _reapply_request_time_freshness(artifact, rec[req.hazard])
+    hz = rec[req.hazard]
     if hz["probability"] is None or hz["status"] in ("NOT_TRAINED", "OUT_OF_DOMAIN_STATION_ONLY", "UNAVAILABLE"):
         raise HTTPException(status_code=422,
                              detail=f"{req.hazard} has no legitimate probability for this cell/lead "
@@ -772,12 +773,19 @@ def dispatch_forecast_alert(req: DispatchRequest):
         "sms_sent": sms_count > 0, "sms_count": sms_count, "webhook_sent": wh_ok,
         "error": "; ".join(errors) or None,
     })
-    delivery_status = "SENT" if (sms_count > 0 or wh_ok) else "NOT_SENT"
+    # Honest lifecycle: "accepted by the provider" is NOT "delivered". No delivery receipt is available, so the
+    # strongest state is PROVIDER_ACCEPTED_UNCONFIRMED; DELIVERY_CONFIRMED is unreachable here.
+    accepted = sms_count > 0 or wh_ok
+    delivery_status = "PROVIDER_ACCEPTED_UNCONFIRMED" if accepted else "NOT_SENT"
+    lifecycle = {"eligible": True, "recorded": True, "dispatch_attempted": True,
+                 "provider_accepted": accepted, "delivery_confirmed": False,
+                 "state": "PROVIDER_ACCEPTED" if accepted else "NOT_SENT"}
     return {
         "alert_id": alert_id, "cell_id": req.cell_id, "hazard": req.hazard, "lead_hours": req.lead_hours,
         "probability": hz["probability"], "risk": hz["risk_category"], "valid_time": rec["valid_time"],
         "trigger_features": hz.get("extra", {}),
-        "status": "DISPATCHED", "delivery_status": delivery_status,
+        "status": "DISPATCHED", "delivery_status": delivery_status, "lifecycle": lifecycle,
+        "delivery_confirmation": "NOT_SUPPORTED",
         "sms_count": sms_count, "webhook_sent": wh_ok, "errors": errors,
     }
 

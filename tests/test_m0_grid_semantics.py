@@ -42,16 +42,18 @@ def _doc(valid="2026-10-31T03:00:00+00:00", n=3, **cell_kw):
 def test_operational_lead_is_valid_minus_issued_and_differs_from_nwp_hour():
     d = annotate_grid(_doc())
     c = d["forecasts"][0]["grid_cells"][0]
+    # M0.1 (Q1): the grid records no forecast availability time, so the operational lead is null + explicit status
     assert c["nwp_lead_hours"] == 9
-    assert c["operational_lead_hours"] == pytest.approx(1.095, abs=0.01)
-    assert c["within_2_6h_target"] is False
-    assert d["lead_semantics"]["primary_meets_2_to_6h_target"] is False
+    assert c["operational_lead_hours"] is None
+    assert c["operational_lead_status"] == "UNAVAILABLE_NO_AVAILABILITY_TIME"
+    assert d["lead_semantics"]["primary_meets_2_to_6h_target"] is None
 
 
-def test_a_genuine_2_to_6h_lead_is_recognised():
+def test_a_valid_time_in_the_window_is_not_a_2_to_6h_lead_without_availability_time():
+    """Previously valid-minus-generation was treated as the lead. Without a recorded availability time it is not."""
     d = annotate_grid(_doc(valid="2026-10-31T06:30:00+00:00"))
-    assert d["lead_semantics"]["primary_meets_2_to_6h_target"] is True
-    assert d["forecasts"][0]["grid_cells"][0]["within_2_6h_target"] is True
+    assert d["lead_semantics"]["primary_meets_2_to_6h_target"] is None
+    assert d["forecasts"][0]["grid_cells"][0]["operational_lead_hours"] is None
 
 
 def test_unavailable_predictors_are_reported_and_stay_null():
@@ -102,8 +104,8 @@ def test_time_semantics_block_and_missing_times_degrade_to_null():
     d = annotate_grid(_doc())
     ts = d["time_semantics"]
     assert ts["model_init_time_utc"] == "2026-10-30T18:00:00Z"
-    assert ts["issued_at_utc"] == "2026-10-31T01:54:18Z"
-    assert ts["data_acquired_at_utc"] is None and ts["published_at_utc"] is None
+    assert ts["artifact_generated_at_utc"] == "2026-10-31T01:54:18Z"
+    assert ts["data_acquired_at_utc"] is None and ts["forecast_available_time_utc"] is None
     d2 = annotate_grid({"forecasts": [], "grid_cells": [{"cell_id": "x"}]})       # nothing known
     assert d2["grid_cells"][0]["operational_lead_hours"] is None
     assert d2["lead_semantics"]["primary_meets_2_to_6h_target"] is None
@@ -131,5 +133,5 @@ def test_real_committed_grid_reports_exactly_the_seven_audited_unavailable_predi
     assert set(out["unavailable_predictors"]) == SEVEN_NULL                 # the audit finding, now explicit
     primary_after = [c for f in out["forecasts"] if f["is_primary"] for c in f["grid_cells"]]
     assert {k: sum(1 for c in primary_after if c.get(k) is None) for k in GRID_PREDICTORS} == null_before
-    assert out["lead_semantics"]["primary_meets_2_to_6h_target"] is False   # ~1.1 h, not 2-6 h
-    assert out["lead_semantics"]["primary_median_operational_lead_hours"] < 2
+    assert out["lead_semantics"]["primary_meets_2_to_6h_target"] is None    # no availability time -> no lead claim
+    assert out["lead_semantics"]["operational_lead_hours"] is None

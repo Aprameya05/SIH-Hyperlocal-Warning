@@ -80,6 +80,11 @@ jobs:
         run: python scripts/sync_unified_cb_into_pan_india_grid.py
         continue-on-error: true
 
+      - name: Verify pan-India grid integrity (fail closed)
+        # Independent gate: re-derives the grid contract from the data. A violation fails the job, so no canonical
+        # build, no alert dispatch and no commit happen; the last-known-good grid on main is untouched.
+        run: python3 scripts/ci_validate_pan_india_grid.py data/pan_india_grid.json
+
       - name: Build canonical forecast
         # 2026-10-10: this step has failed on every run for several days
         # straight with only a generic "Process completed with exit code
