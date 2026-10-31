@@ -269,3 +269,14 @@ def test_request_time_refresh_never_upgrades_a_withheld_value():
     out = fi.refresh_request_time_status(built, now=NOW)
     assert all(r["FF"]["temporal_status"] == TS_.HISTORICAL_REPLAY for r in out["records"])
     assert all(r["CB"]["probability"] is None for r in out["records"])
+
+
+def test_local_explanations_are_not_left_attached_to_a_withheld_value():
+    ts = {"probability": 0.0022, "risk_category": "LOW", "status": "BASELINE", "source_status": "RECENT",
+          "extra": {"xai": {"status": "AVAILABLE", "top_contributions": [{"feature": "TT", "contribution": 1.0}]}},
+          "xai": {"status": "AVAILABLE", "top_contributions": [{"feature": "TT", "contribution": 1.0}]}}
+    art = fi.sanitize_artifact(_artifact([_record("IND_13.0_77.0", 2, ts=ts)]), now=NOW)
+    out = art["records"][0]["TS"]
+    assert out["probability"] is None and out["xai"]["status"] == "WITHHELD"
+    assert out["extra"]["xai"]["status"] == "WITHHELD"
+    assert out["historical_reference"]["xai"]["top_contributions"][0]["feature"] == "TT"   # preserved

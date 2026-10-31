@@ -76,9 +76,15 @@ def test_forecast_vobl_cell_has_real_probability_and_shap(client):
     r = client.get("/forecast", params={"cell_id": "IND_13.0_78.0", "lead_hours": 3})
     assert r.status_code == 200
     d = r.json()
-    assert d["ts"]["probability"] is not None
-    assert d["ts"]["xai"]["status"] == "AVAILABLE"
-    assert len(d["ts"]["xai"]["top_contributions"]) > 0
+    # M0: the VOBL feature row is the CSV's last row (dated 2025-12-31), not current data, so the
+    # top-level value is withheld and the real probability + SHAP live under historical_replay.
+    assert d["ts"]["probability"] is None and d["ts"]["temporal_status"] == "HISTORICAL_REPLAY"
+    assert d["forecast_status"] == "NO_CURRENT_FORECAST"
+    replay = d["historical_replay"]
+    assert replay["designation"] == "HISTORICAL_REPLAY"
+    assert replay["ts"]["probability"] is not None
+    assert replay["ts"]["xai"]["status"] == "AVAILABLE"
+    assert len(replay["ts"]["xai"]["top_contributions"]) > 0
 
 
 def test_forecast_none_never_becomes_zero(client):
@@ -117,7 +123,8 @@ def test_forecast_rejects_malformed_init_time(client):
 def test_forecast_includes_data_sources_block(client):
     d = client.get("/forecast", params={"cell_id": "IND_13.0_78.0", "lead_hours": 3}).json()
     assert d["data_sources"] == SOURCE_STATUS
-    assert d["forecast_source"] == "LIVE_INFERENCE"
+    # M0: this endpoint runs on a fixed 2024 replay cycle; calling that LIVE_INFERENCE was the defect.
+    assert d["forecast_source"] == "HISTORICAL_REPLAY_INFERENCE"
 
 
 def test_forecast_terrain_missing_status_for_blocked_cell(client):
@@ -284,10 +291,15 @@ def test_existing_alerts_get_endpoint_preserved(client):
 
 def test_xai_available_for_cb_with_complete_features(client):
     d = client.get("/forecast", params={"cell_id": "IND_8.0_76.0", "lead_hours": 2}).json()
-    if d["cb"]["probability"] is not None:
-        assert d["cb"]["xai"]["status"] in ("AVAILABLE", "NOT_AVAILABLE")
+    # M0: explanations travel with the value they explain. The top-level (withheld) CB shows none;
+    # the replay CB value keeps its explanation.
+    assert d["cb"]["probability"] is None
+    assert d["cb"]["xai"]["status"] in ("WITHHELD", "NOT_AVAILABLE")
+    if d["historical_replay"]["cb"]["probability"] is not None:
+        assert d["historical_replay"]["cb"]["xai"]["status"] in ("AVAILABLE", "NOT_AVAILABLE")
 
 
 def test_xai_not_available_for_ff(client):
     d = client.get("/forecast", params={"cell_id": "IND_13.0_78.0", "lead_hours": 3}).json()
-    assert d["ff"]["xai"]["status"] == "NOT_AVAILABLE"
+    assert d["historical_replay"]["ff"]["xai"]["status"] == "NOT_AVAILABLE"   # FF has no SHAP, by design
+    assert d["ff"]["probability"] is None

@@ -54,6 +54,10 @@ from backend.models.unified_mtl.local_xai import local_shap_cb, local_shap_ts, l
 from ts_station_model_interface import VOBL_CELL_ID  # noqa: E402
 
 UNIFIED_FORECAST_PATH = REPO_ROOT / "data" / "unified_forecast.json"
+# The single cycle for which this API's CB/FF/TS feature tables exist (Phase 20 dataset). M0:
+# everything computed from it is a HISTORICAL REPLAY, never a current forecast.
+REPLAY_INIT_DT = datetime(2024, 8, 1, 0, 0, tzinfo=timezone.utc)
+REPLAY_INIT_TIMES = frozenset({"2024-08-01T00:00:00Z"})
 TERRAIN_PATH = REPO_ROOT / "data" / "pan_india_terrain_992.json"
 COMMON_GRID_PATH = REPO_ROOT / "data" / "pan_india_common_grid_992.json"
 
@@ -421,7 +425,14 @@ def get_forecast(cell_id: str = Query(...), lead_hours: int = Query(...),
         except ValueError:
             raise HTTPException(status_code=400, detail="init_time must be ISO-8601 'YYYY-MM-DDTHH:MM:SSZ'")
     else:
-        init_dt = datetime(2024, 8, 1, 0, 0, tzinfo=timezone.utc)  # the one real validated cycle
+        init_dt = REPLAY_INIT_DT   # explicit replay default; the response is NOT a current forecast (M0)
+    if integrity.iso_z(init_dt) not in REPLAY_INIT_TIMES:
+        # M0: the CB/FF/TS inputs wired into this endpoint exist only for the fixed replay cycle.
+        # Accepting any other init_time would label 2024 inputs with a different date.
+        raise HTTPException(status_code=422,
+                             detail=f"no input data exists for init_time {integrity.iso_z(init_dt)}; the only "
+                                    f"available (historical replay) cycle(s): {sorted(REPLAY_INIT_TIMES)}. "
+                                    f"There is no live lead-specific forecast yet.")
 
     try:
         valid_dt = compute_valid_time(init_dt, lead_hours)
@@ -504,16 +515,61 @@ def get_forecast(cell_id: str = Query(...), lead_hours: int = Query(...),
     )
     CB_FF_FIXED_SOURCE_CYCLE_UTC = cb_ff_source_cycle_utc
 
+    # ---- M0 integrity: nothing computed here is a current, lead-specific forecast ----------------
+    issued_at = datetime.now(timezone.utc)
+    ts_data_date = str(ts_feat["date"].iloc[0]) if ts_feat is not None and "date" in ts_feat.columns else None
+    hz_init = {
+        "TS": ts_data_date or integrity.iso_z(init_dt),
+        "CB": cb_ff_source_cycle_utc if cb_mode == "LIVE" else integrity.iso_z(init_dt),
+        "FF": _ff_cycle_status.get("resolved_date") or integrity.iso_z(init_dt),
+    }
+    originals = {"TS": _hazard_block(ts_pred, ts_xai), "CB": _hazard_block(cb_pred, cb_xai),
+                 "FF": _hazard_block(ff_pred, ff_xai)}
+    withheld = {}
+    for hz, blk in originals.items():
+        status = integrity.classify_time(model_init=hz_init[hz], valid_end=valid_dt, issued_at=issued_at)
+        if status == integrity.TemporalStatus.CURRENT:
+            # No lead-specific head exists (docs: Phase 33 audit), so even current inputs cannot
+            # yield an independent forecast for this lead slot.
+            status = integrity.TemporalStatus.NOT_LEAD_SPECIFIC
+        reason = (
+            "Model inputs are not current (data/model init " + str(hz_init[hz]) + "); output is a historical "
+            "replay for research only, not a forecast of the present."
+            if status == integrity.TemporalStatus.HISTORICAL_REPLAY else
+            "The engine has no lead-specific head: one whole-day value cannot be offered as an independent "
+            f"{lead_hours} h forecast.")
+        withheld[hz] = integrity.withhold_hazard_block(
+            blk, temporal_status=status, reason=reason, model_init=hz_init[hz], valid_time=valid_dt,
+            issued_at=issued_at, preserve=True)
+    ff_pu_score = ff_pred.extra.get("pu_ranking_score")
+
     return {
         "cell_id": cell_id, "lat": cell["lat"], "lon": cell["lon"],
         "init_time": _iso(init_dt), "valid_time": _iso(valid_dt), "lead_hours": lead_hours,
-        "ts": _hazard_block(ts_pred, ts_xai),
-        "cb": _hazard_block(cb_pred, cb_xai),
-        "ff": _hazard_block(ff_pred, ff_xai),
-        "extra": {"ff_pu_ranking_score": ff_pred.extra.get("pu_ranking_score")},
+        "forecast_status": "NO_CURRENT_FORECAST",
+        "forecast_source": "HISTORICAL_REPLAY_INFERENCE",
+        "legacy_time_note": ("init_time/valid_time are the replay cycle's (2024-08-01), kept for "
+                              "compatibility. They are NOT the time of current data."),
+        "issued_at_utc": integrity.iso_z(issued_at),
+        "time_semantics": {"definitions": integrity.TIME_DEFINITIONS,
+                           "model_init_times_utc_by_hazard": {k: integrity.iso_z(integrity.parse_utc(v))
+                                                              for k, v in hz_init.items()}},
+        "forecast_horizon_support": {
+            "lead_specific_forecasts_available": False, "supported_operational_horizons_hours": [],
+            "message": "UNAVAILABLE: no genuine lead-specific forecast exists yet."},
+        "ts": withheld["TS"], "cb": withheld["CB"], "ff": withheld["FF"],
+        "historical_replay": {
+            "designation": "HISTORICAL_REPLAY",
+            "init_time": _iso(init_dt), "valid_time": _iso(valid_dt),
+            "note": "Model output on a fixed historical cycle, with its ORIGINAL timestamps. For research "
+                    "and replay only; never a current or operational forecast.",
+            "ts": originals["TS"], "cb": originals["CB"], "ff": originals["FF"],
+            "ff_pu_ranking_score": ff_pu_score,
+        },
+        "extra": {"ff_pu_ranking_score": None,
+                  "ff_pu_ranking_score_note": "withheld: see historical_replay.ff_pu_ranking_score"},
         "terrain": terrain_block,
         "data_sources": SOURCE_STATUS,
-        "forecast_source": "LIVE_INFERENCE",
         "data_cycle_status": data_cycle_status,
         "cb_ff_source_cycle_utc": CB_FF_FIXED_SOURCE_CYCLE_UTC,
         "cb_lead_time_resolution": "DAILY_AGGREGATE_NOT_LEAD_SPECIFIC",

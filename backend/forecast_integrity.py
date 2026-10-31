@@ -190,6 +190,17 @@ def withhold_hazard_block(block: dict, *, temporal_status: str, reason: str,
         extra["pu_ranking_score"] = None
         extra["pu_ranking_score_withheld_reason"] = reason
         out["extra"] = extra
+    # Local explanations (SHAP etc.) describe the withheld value, so they must not stay attached
+    # to a block that now shows no forecast. Preserve them in the reference only.
+    xai = block.get("xai") or (block.get("extra") or {}).get("xai")
+    if xai:
+        ref["xai"] = xai
+        withheld_xai = {"status": "WITHHELD", "reason": reason}
+        if "xai" in out:
+            out["xai"] = withheld_xai
+        if isinstance(out.get("extra"), dict) and "xai" in out["extra"]:
+            out["extra"] = dict(out["extra"])
+            out["extra"]["xai"] = withheld_xai
     if preserve:
         out["historical_reference"] = ref
     out["probability"] = None
@@ -251,10 +262,10 @@ def sanitize_record_hazard(record: dict, hz: str, *, issued_at, now=None) -> dic
             or (block.get("extra") or {}).get("pu_ranking_score") is not None):
         return withhold_hazard_block(
             block, temporal_status=status,
-            reason=(f"Inputs come from model init {iso_z(parse_utc(init))}, which is more than "
-                    f"{int(HISTORICAL_AFTER_HOURS)} h before this artifact was issued "
-                    f"({iso_z(parse_utc(issued_at))}). Retained for research/replay only; "
-                    f"not a forecast of the present."),
+            reason=(f"Inputs are not current: the record's model init is {iso_z(parse_utc(init))}, more "
+                    f"than {int(HISTORICAL_AFTER_HOURS)} h before this artifact was issued "
+                    f"({iso_z(parse_utc(issued_at))}). TS and FF have no live data source wired in. "
+                    f"Retained for research/replay only; not a forecast of the present."),
             model_init=init, valid_time=valid_time, issued_at=issued_at, preserve=True)
     return annotate_current_block(block, model_init=init, valid_time=valid_time,
                                   issued_at=issued_at, temporal_status=status)
