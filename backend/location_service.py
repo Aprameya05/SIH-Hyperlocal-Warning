@@ -279,7 +279,7 @@ class Store:
             "max_3h_fhour": None if not valid else hours[p3.index(max(valid))]["fhour"],
             "accumulated_24h_mm": total, "imd_24h_category": None if total is None else next(n for t, n in IMD_24H_BANDS if total < t),
             "imd_category_note": "IMD daily-rainfall classes applied to MODEL rainfall over the available window; not an observation",
-            "spatial_extent_within_0.5deg": extent, "neighbourhood": "5x5 cells (+-0.5 deg), land cells only"}
+            "spatial_extent_within_half_degree": extent, "neighbourhood": "5x5 cells (+-0.5 deg), land cells only"}
         return h
 
     def ff_hazard(self, cid, fl, hours, hour, st):
