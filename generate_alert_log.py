@@ -130,15 +130,17 @@ def recompute_summary(events: list) -> dict:
     n_ts_obs = hits + misses
     n_alert = hits + false_alarms
 
-    pod = round(hits / n_ts_obs, 3) if n_ts_obs > 0 else 0.0
-    far = round(false_alarms / n_alert, 3) if n_alert > 0 else 0.0
+    # M0: a skill score whose denominator is zero is UNDEFINED, not 0. Returning 0.0 made the dashboard
+    # show "POD 0% / CSI 0.000" beside a log full of older hits when the 30-day window was empty.
+    pod = round(hits / n_ts_obs, 3) if n_ts_obs > 0 else None
+    far = round(false_alarms / n_alert, 3) if n_alert > 0 else None
     denom_csi = hits + misses + false_alarms
-    csi = round(hits / denom_csi, 3) if denom_csi > 0 else 0.0
+    csi = round(hits / denom_csi, 3) if denom_csi > 0 else None
 
     # Heidke Skill Score
     n = len(recent)
     expected = ((hits + false_alarms) * (hits + misses) + (correct_rejections + false_alarms) * (correct_rejections + misses)) / n if n > 0 else 0
-    hss = round((hits + correct_rejections - expected) / (n - expected), 3) if n > expected else 0.0
+    hss = round((hits + correct_rejections - expected) / (n - expected), 3) if n > expected else None
 
     lead_times = [e["lead_time_min"] for e in recent if e.get("lead_time_min") is not None]
     mean_lead = round(sum(lead_times) / len(lead_times)) if lead_times else None
@@ -156,7 +158,11 @@ def recompute_summary(events: list) -> dict:
         "hss": hss,
         "mean_lead_time_min": mean_lead,
         "mean_lead_time_hr": mean_lead_hr,
-        "note": "Computed from verified events in alert_log.json only (slot-2, 30-day rolling window).",
+        "window_days": 30,
+        "n_events_in_log_total": len(events),
+        "note": ("Computed from recorded events in alert_log.json only (30-day rolling window). "
+                 "A score is null when its denominator is zero (undefined), never 0. "
+                 + ("No recorded event falls inside the window." if not recent else "")).strip(),
     }
 
 
