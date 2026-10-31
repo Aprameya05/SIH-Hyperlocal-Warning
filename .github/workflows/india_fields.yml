@@ -25,16 +25,22 @@ jobs:
           python-version: "3.11"
           cache: pip
       - name: Install dependencies
-        run: pip install numpy pandas eccodes shapely pillow fastapi httpx
+        run: pip install numpy pandas eccodes shapely pillow fastapi httpx xgboost
       - name: Ingest the latest complete cycle (all-or-nothing, atomic)
         # exits non-zero and leaves the previous artifact untouched if any hour fails download or verification
         run: python scripts/ingest_india_fields.py
       - name: Independent verification (fail closed)
         run: python scripts/ci_validate_india_fields.py --max-age-hours 20
-      - name: Commit artifact
+      - name: Apply the evaluated pan-India models to the new cycle
+        # always writes an artifact; model_evaluated=false (with a reason) when no lead passed its gate or the cycle is unsupported
+        run: |
+          python scripts/predict_ts_panindia.py
+          python scripts/predict_rain_panindia.py
+      - name: Commit artifacts (only reached if every step above succeeded)
+
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/india_fields_latest.json
+          git add data/india_fields_latest.json data/india_ts_model_latest.json data/india_rain_model_latest.json
           git diff --staged --quiet || git commit -m "Auto: India GFS fields $(date -u +%Y%m%dT%H%MZ)"
           git pull --rebase origin ${{ github.ref_name }} && git push

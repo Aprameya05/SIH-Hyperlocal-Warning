@@ -130,7 +130,7 @@ test('all three hazard views: every layer renders; every hazard panel is populat
     await shot(page, '03_layer_' + h);
   }
   await page.click('[data-p=hazards]'); const t = await page.textContent('#p-hazards');
-  assert.match(t, /not a probability/i); assert.match(t, /Cloudburst prediction\s*UNAVAILABLE/); assert.match(t, /Short-duration extreme rainfall\s*UNAVAILABLE/);
+  assert.match(t, /not a probability/i); assert.match(t, /Cloudburst prediction\s*UNAVAILABLE/); assert.match(t, /Short-duration heavy rainfall \(3 h\)/); assert.match(t, /does not predict cloudbursts/);
   assert.match(t, /Flash-flood prediction UNAVAILABLE/); assert.match(t, /heuristic, unvalidated/); assert.match(t, /Missing for live flash-flood prediction/);
   assert.match(t, /Pan-India model|UNAVAILABLE/); await shot(page, '04_hazard_panels');
   clean(w); await ctx.close();
