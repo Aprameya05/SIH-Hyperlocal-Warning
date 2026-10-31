@@ -699,6 +699,8 @@ def annotate_grid(doc: dict) -> dict:
             c["nwp_lead_hours"] = c.get("forecast_lead_hours")
             c["operational_lead_hours"] = None
             c["operational_lead_status"] = "UNAVAILABLE_NO_AVAILABILITY_TIME"
+            if c.get("flash_flood_research_pu_score") is not None:
+                c["flash_flood_research_designation"] = "RESEARCH_ONLY_PU_RANKING_NOT_A_PROBABILITY"
 
     for f in leads:
         cells = f.get("grid_cells") or []
