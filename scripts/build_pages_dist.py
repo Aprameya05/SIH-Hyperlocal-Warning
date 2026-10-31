@@ -33,6 +33,7 @@ ALLOW_FILES = [
 ALIAS_FILES = {
     "morning1.png": "dev/morning1.png", "afternoon1.png": "dev/afternoon1.png",
     "evening1.png": "dev/evening1.png", "night1.png": "dev/night1.png",
+    "favicon.ico": "assets/favicon.ico",
 }
 # Directories published recursively.
 ALLOW_DIRS = ["assets"]
