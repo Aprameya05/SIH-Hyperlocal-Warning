@@ -54,7 +54,7 @@
   }
 
   function create(a) {
-    var grid = a.grid, places = a.places, fields = a.fields, statics = a.statics, live = a.live || null, ts = a.tsmodel || null;
+    var grid = a.grid, places = a.places, fields = a.fields, statics = a.statics, live = a.live || null, ts = a.tsmodel || null, rain = a.rainmodel || null;
     var S = { grid: grid, cells: grid.cells, idx: {}, byLL: {}, states: grid.states, districts: grid.districts, fcol: {}, sidx: {}, cb: {}, ts: ts };
     grid.cells.forEach(function (c, i) { S.idx[c[0]] = i; S.byLL[key(c[1], c[2])] = i; });
     S.problems = fields ? verifyFields(fields, grid) : ['fields artifact missing'];
@@ -67,6 +67,8 @@
     }
     S.tsOk = !!(ts && ts.meta && ts.meta.model_evaluated); S.tsIdx = {};
     if (ts) ts.cells.forEach(function (c, i) { S.tsIdx[c] = i; });
+    S.rain = rain; S.rainOk = !!(rain && rain.meta && rain.meta.model_evaluated); S.rainIdx = {};
+    if (rain) rain.cells.forEach(function (c, i) { S.rainIdx[c] = i; });
     S.places = (places && places.places) || [];
 
     S.resolve = function (lat, lon) {
@@ -156,11 +158,23 @@
       }
       return h;
     };
+    S.shortDuration = function (cid) {
+      var target = '3 h CMORPH rainfall at the 0.25 deg cell >= threshold (short-duration heavy rainfall; NOT cloudburst)';
+      var out = { status: 'UNAVAILABLE', target: target, reason: (rain && rain.meta && rain.meta.reason) || 'no evaluated short-duration rainfall model artifact' };
+      if (!(S.rainOk && S.rainIdx[cid] != null)) return out;
+      var m = rain.meta, i = S.rainIdx[cid], feats = m.features, tg = {};
+      m.targets.forEach(function (k) {
+        var a = rain.explanations[k][i];
+        tg[k] = { value: rain.targets[k][i], threshold_mm_per_3h: m.target_info[k].threshold_mm_per_3h, lead_h: m.target_info[k].lead_h, valid_time_utc: m.target_info[k].valid_time_utc, evaluation: m.target_info[k],
+                  explanation_top3_treeshap: [0, 2, 4].map(function (j) { return { feature: feats[a[j]], contribution: a[j + 1] }; }) };
+      });
+      return { status: 'AVAILABLE_EVALUATED', target: target, model_version: m.model_version, model_init_utc: m.cycle_init_utc, value_type: m.value_type, calibrated: m.calibrated, not_cloudburst: true, evaluation_ref: m.evaluation_ref, limits: m.limits, targets: tg };
+    };
     S.rainHazard = function (cid, fl, hours) {
       var c = S.cells[S.idx[cid]], cb = S.cb[key(Math.floor(c[1] + 0.5), Math.floor(c[2] + 0.5))];
       var h = { pathway: 'extreme_rainfall',
         heavy_rain_day_outlook: { value: cb == null ? null : cb, kind: 'MODEL_SCORE_UNCALIBRATED', status: cb == null ? 'UNAVAILABLE' : 'AVAILABLE', event_definition: '>=64.5 mm/24 h daily rainfall proxy; not a cloudburst' },
-        short_duration_extreme_rainfall: { status: 'UNAVAILABLE' }, cloudburst: { status: 'UNAVAILABLE' }, model_guidance: null };
+        short_duration_extreme_rainfall: S.shortDuration(cid), cloudburst: { status: 'UNAVAILABLE' }, model_guidance: null };
       if (!fl) return h;
       var p3 = fl.precip_3h.series, cum = fl.apcp_cum.series, nb = S.neighbours(cid, 2), P3 = S.fields.fields.precip_3h, cols = [];
       nb.forEach(function (n) { if (S.fcol[n] != null) cols.push(S.fcol[n]); });

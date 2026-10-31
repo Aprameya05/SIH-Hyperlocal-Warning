@@ -1,0 +1,173 @@
+# DRIFT national data report
+
+Generated 2026-10-31 11:27Z from the committed artifacts by `scripts/generate_national_report.py`. GFS cycle **2026-10-31T00:00:00Z**; 4643 India land cells at 0.25 deg; forecast hours [3, 6, 9, 12, 15, 18, 21, 24].
+
+## 1. Source-to-output trace
+
+Every value in a location panel comes from one of the rows below. **Where**: the selected 0.25 deg cell (cell centre = one GFS grid point, exact extraction, no interpolation). **Times** (per forecast hour, in the artifact and the panel): model init, valid time, S3 publication time of the NWP file (observed), acquisition time. Statuses (CURRENT / PAST_VALID_TIME / STALE) are recomputed from these times and the clock, never read from the producer.
+
+| Variable | Unit | Kind | Definition / source message | Resolution | Safe as current? |
+|---|---|---|---|---|---|
+| `cape` | J/kg | RAW_MODEL_OUTPUT | GFS CAPE, surface-based parcel | 0.25 deg GFS point | only while status = CURRENT |
+| `cin` | J/kg | RAW_MODEL_OUTPUT | GFS CIN, surface-based parcel (negative = inhibition) | 0.25 deg GFS point | only while status = CURRENT |
+| `lftx` | K | RAW_MODEL_OUTPUT | GFS surface lifted index (negative = unstable) | 0.25 deg GFS point | only while status = CURRENT |
+| `pwat` | mm | RAW_MODEL_OUTPUT | GFS precipitable water, entire atmosphere | 0.25 deg GFS point | only while status = CURRENT |
+| `t2m_c` | degC | RAW_MODEL_OUTPUT | GFS 2 m temperature | 0.25 deg GFS point | only while status = CURRENT |
+| `d2m_c` | degC | RAW_MODEL_OUTPUT | GFS 2 m dew point | 0.25 deg GFS point | only while status = CURRENT |
+| `rh2m` | % | RAW_MODEL_OUTPUT | GFS 2 m relative humidity | 0.25 deg GFS point | only while status = CURRENT |
+| `ws10` | m/s | DERIVED_PHYSICAL | sqrt(u10^2+v10^2) of GFS 10 m wind | 0.25 deg GFS point | only while status = CURRENT |
+| `wd10` | deg | DERIVED_PHYSICAL | meteorological direction the 10 m wind blows FROM | 0.25 deg GFS point | only while status = CURRENT |
+| `mslp_hpa` | hPa | RAW_MODEL_OUTPUT | GFS mean sea-level pressure (reduced; not station pressure) | 0.25 deg GFS point | only while status = CURRENT |
+| `k_index` | degC | DERIVED_PHYSICAL | George K-index from GFS T and RH at 850/700/500 hPa | 0.25 deg GFS point | only while status = CURRENT |
+| `total_totals` | degC | DERIVED_PHYSICAL | Total Totals from GFS T and RH at 850/500 hPa | 0.25 deg GFS point | only while status = CURRENT |
+| `lapse_850_500` | K/km | DERIVED_PHYSICAL | (T850-T500)/3.5 km; approximate layer depth | 0.25 deg GFS point | only while status = CURRENT |
+| `shear_850_500` | m/s | DERIVED_PHYSICAL | |V500-V850| bulk wind difference. NOT 0-6 km shear | 0.25 deg GFS point | only while status = CURRENT |
+| `w850` | Pa/s | RAW_MODEL_OUTPUT | GFS vertical velocity 850 hPa (negative = ascent) | 0.25 deg GFS point | only while status = CURRENT |
+| `w700` | Pa/s | RAW_MODEL_OUTPUT | GFS vertical velocity 700 hPa (negative = ascent) | 0.25 deg GFS point | only while status = CURRENT |
+| `w500` | Pa/s | RAW_MODEL_OUTPUT | GFS vertical velocity 500 hPa (negative = ascent) | 0.25 deg GFS point | only while status = CURRENT |
+| `rh850` | % | RAW_MODEL_OUTPUT | GFS RH 850 hPa | 0.25 deg GFS point | only while status = CURRENT |
+| `rh700` | % | RAW_MODEL_OUTPUT | GFS RH 700 hPa | 0.25 deg GFS point | only while status = CURRENT |
+| `rh500` | % | RAW_MODEL_OUTPUT | GFS RH 500 hPa | 0.25 deg GFS point | only while status = CURRENT |
+| `soilw0_10` | m3/m3 | MODEL_DIAGNOSTIC | GFS volumetric soil moisture 0-10 cm (land-surface model state, not observed) | 0.25 deg GFS point | only while status = CURRENT |
+| `apcp_cum` | mm | RAW_MODEL_OUTPUT | GFS accumulated precipitation from init to valid time (window verified from GRIB: start step 0) | 0.25 deg GFS point | only while status = CURRENT |
+| `precip_3h` | mm | DERIVED_PHYSICAL | apcp_cum(f) - apcp_cum(f-3); the first hour equals apcp_cum | 0.25 deg GFS point | only while status = CURRENT |
+
+Static layers (not forecasts): elevation / relief / slope (AWS Terrain Tiles, SRTM-derived, ~1.2 km pixels, cell statistics); nearest INDOFLOODS gauge, its distance and recorded flood events (106 gauges, historical, nulled beyond 100 km). Daily heavy-rain-day outlook: `panindia_cb_v1`, **1 deg** cells, uncalibrated score. Model outputs: see section 4. None of the values is an observation; none except the model outputs is a probability; no heuristic is presented as one.
+
+**Provenance of each artifact**
+
+| Time | Per forecast hour |
+|---|---|
+| f3 valid 2026-10-31T03:00:00Z | published (S3 Last-Modified) 2026-10-31T03:34:59Z · acquired 2026-10-31T10:58:10Z · APCP windows [[0, 3]] |
+| f6 valid 2026-10-31T06:00:00Z | published (S3 Last-Modified) 2026-10-31T03:36:12Z · acquired 2026-10-31T10:58:19Z · APCP windows [[0, 6]] |
+| f9 valid 2026-10-31T09:00:00Z | published (S3 Last-Modified) 2026-10-31T03:37:03Z · acquired 2026-10-31T10:58:30Z · APCP windows [[6, 9], [0, 9]] |
+| f12 valid 2026-10-31T12:00:00Z | published (S3 Last-Modified) 2026-10-31T03:37:03Z · acquired 2026-10-31T10:58:39Z · APCP windows [[6, 12], [0, 12]] |
+| f15 valid 2026-10-31T15:00:00Z | published (S3 Last-Modified) 2026-10-31T03:38:05Z · acquired 2026-10-31T10:58:51Z · APCP windows [[12, 15], [0, 15]] |
+| f18 valid 2026-10-31T18:00:00Z | published (S3 Last-Modified) 2026-10-31T03:39:14Z · acquired 2026-10-31T10:59:01Z · APCP windows [[12, 18], [0, 18]] |
+| f21 valid 2026-10-31T21:00:00Z | published (S3 Last-Modified) 2026-10-31T03:39:13Z · acquired 2026-10-31T10:59:10Z · APCP windows [[18, 21], [0, 21]] |
+| f24 valid 2026-11-01T00:00:00Z | published (S3 Last-Modified) 2026-10-31T03:41:08Z · acquired 2026-10-31T10:59:20Z · APCP windows [[18, 24], [0, 24]] |
+
+Operational lead time: **unavailable** - DRIFT records no time at which a forecast was made available to a user; the S3 time is the availability of the model input only.
+
+## 2. Coverage matrix
+
+| State / UT | cells | GFS fields | soil moisture (model) | terrain | gauge < 100 km | heavy-rain-day (1 deg) | TS model | short-duration rain model |
+|---|---|---|---|---|---|---|---|---|
+| Andaman & Nicobar Island | 8 | 8 | 3 | 8 | 0 | 8 | 8 | 8 |
+| Andhra Pradesh | 220 | 220 | 217 | 220 | 116 | 220 | 220 | 220 |
+| Arunanchal Pradesh | 120 | 120 | 120 | 120 | 0 | 120 | 120 | 120 |
+| Assam | 116 | 116 | 116 | 116 | 17 | 116 | 116 | 116 |
+| Bihar | 134 | 134 | 134 | 134 | 99 | 134 | 134 | 134 |
+| Chandigarh | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1 |
+| Chhattisgarh | 189 | 189 | 189 | 189 | 34 | 189 | 189 | 189 |
+| Dadara & Nagar Havelli | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1 |
+| Goa | 5 | 5 | 5 | 5 | 3 | 5 | 5 | 5 |
+| Gujarat | 264 | 264 | 231 | 264 | 85 | 264 | 264 | 264 |
+| Haryana | 65 | 65 | 65 | 65 | 42 | 65 | 65 | 65 |
+| Himachal Pradesh | 84 | 84 | 83 | 84 | 13 | 84 | 84 | 84 |
+| Jammu & Kashmir | 352 | 352 | 352 | 352 | 0 | 352 | 352 | 352 |
+| Jharkhand | 115 | 115 | 115 | 115 | 35 | 115 | 115 | 115 |
+| Karnataka | 253 | 253 | 253 | 253 | 232 | 253 | 253 | 253 |
+| Kerala | 49 | 49 | 49 | 49 | 49 | 49 | 49 | 49 |
+| Madhya Pradesh | 438 | 438 | 438 | 438 | 329 | 438 | 438 | 438 |
+| Maharashtra | 421 | 421 | 420 | 421 | 338 | 421 | 421 | 421 |
+| Manipur | 32 | 32 | 32 | 32 | 0 | 32 | 32 | 32 |
+| Meghalaya | 33 | 33 | 33 | 33 | 4 | 33 | 33 | 33 |
+| Mizoram | 28 | 28 | 28 | 28 | 2 | 28 | 28 | 28 |
+| NCT of Delhi | 3 | 3 | 3 | 3 | 3 | 3 | 3 | 3 |
+| Nagaland | 23 | 23 | 23 | 23 | 0 | 23 | 23 | 23 |
+| Odisha | 214 | 214 | 212 | 214 | 156 | 214 | 214 | 214 |
+| Puducherry | 2 | 2 | 2 | 2 | 0 | 2 | 2 | 2 |
+| Punjab | 76 | 76 | 76 | 76 | 2 | 76 | 76 | 76 |
+| Rajasthan | 499 | 499 | 499 | 499 | 159 | 499 | 499 | 499 |
+| Sikkim | 11 | 11 | 11 | 11 | 3 | 11 | 11 | 11 |
+| Tamil Nadu | 174 | 174 | 169 | 174 | 140 | 174 | 174 | 174 |
+| Telangana | 157 | 157 | 157 | 157 | 130 | 157 | 157 | 157 |
+| Tripura | 15 | 15 | 15 | 15 | 15 | 15 | 15 | 15 |
+| Uttar Pradesh | 341 | 341 | 341 | 341 | 248 | 341 | 341 | 341 |
+| Uttarakhand | 79 | 79 | 79 | 79 | 71 | 79 | 79 | 79 |
+| West Bengal | 121 | 121 | 118 | 121 | 110 | 121 | 121 | 121 |
+
+| Hazard | Inputs | Model / prediction status | Lead-specific | Validated for alerting |
+|---|---|---|---|---|
+| Thunderstorm | GFS CAPE/CIN/LI/K/TT/PWAT/shear/omega at 0.25 deg | pan-India METAR-trained model, leads [6, 12, 18, 24] h (evaluated: temporal + leave-region-out) | True | no |
+| Extreme rainfall | GFS precipitation (verified accumulation windows), 3 h amounts, neighbourhood extent | heavy-rain-day: panindia_cb_v1 daily outlook (1 deg, uncalibrated); short-duration heavy: CMORPH-labelled 3 h model, targets ['20mm_f9'] (evaluated); extreme short-duration: UNAVAILABLE; cloudburst: UNAVAILABLE | True | no |
+| Flash flood | GFS precipitation + GFS soil-moisture model state + SRTM slope/relief + 106 gauges (historical events) | prediction UNAVAILABLE; heuristic screening index (unvalidated) | no | no |
+
+Cells with no gauge within 100 km have no hydrological context; soil moisture is a GFS land-surface model state (missing over water pixels); wind shear is the 850-500 hPa bulk difference, not 0-6 km shear.
+
+## 3. Location acceptance table (different locations -> different underlying data)
+
+Selected forecast hour f12 (valid 2026-10-31T12:00:00Z), clock 11:27Z.
+
+| Region | Location | Cell | State / district | Elev m | CAPE | CIN | PWAT mm | T2m C | RH % | K-index | Shear m/s | Rain 3h mm | Soil m3/m3 | TS p (+6h) | FF screen |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| North | Delhi | `IN025_2875_07725` | NCT of Delhi / North East | 214 | 0 | 0 | 23.9 | 28.4 | 38 | 15.9 | 4.9 | 0.0 | 0.263 | 0.000 | 0.0 |
+| North | Srinagar | `IN025_3400_07475` | Jammu & Kashmir / Srinagar | 1715 | 0 | 0 | 11.7 | 16.2 | 25 | 18.2 | 5.2 | 0.0 | 0.087 | 0.000 | 0.0 |
+| North | Chandigarh | `IN025_3075_07675` | Chandigarh / Chandigarh | 352 | 0 | 0 | 21.5 | 25.5 | 35 | 22.3 | 3.4 | 0.0 | 0.076 | 0.000 | 0.0 |
+| South | Bengaluru | `IN025_1300_07750` | Karnataka / Bangalore | 871 | 51 | -9 | 29.0 | 26.8 | 51 | 37.0 | 3.8 | 0.0 | 0.248 | 0.000 | 0.001 |
+| South | Chennai | `IN025_1300_08025` | Tamil Nadu / Chennai | 1 | 333 | -38 | 47.6 | 28.4 | 69 | 30.8 | 6.4 | 0.0 | n/a | 0.000 | 0.001 |
+| South | Thiruvananthapuram | `IN025_0850_07700` | Kerala / Thiruvananthapuram | 52 | 526 | -41 | 44.6 | 27.7 | 72 | 27.4 | 0.8 | 0.1 | 0.253 | 0.000 | 0.002 |
+| East | Kolkata | `IN025_2250_08825` | West Bengal / South Twenty Four Parganas | 7 | 540 | -14 | 55.9 | 28.5 | 68 | 32.0 | 5.9 | 0.4 | 0.297 | 0.009 | 0.014 |
+| East | Bhubaneswar | `IN025_2025_08575` | Odisha / Khordha | 47 | 726 | -13 | 55.2 | 26.2 | 83 | 33.8 | 4.5 | 0.6 | 0.290 | 0.022 | 0.06 |
+| East | Patna | `IN025_2550_08525` | Bihar / Patna | 52 | 515 | -6 | 45.3 | 25.7 | 80 | 30.7 | 9.9 | 0.5 | 0.302 | 0.065 | 0.036 |
+| West | Mumbai | `IN025_1900_07300` | Maharashtra / Thane | 23 | 1175 | -40 | 45.3 | 28.9 | 69 | 35.8 | 18.2 | 0.0 | 0.132 | 0.009 | 0.001 |
+| West | Ahmedabad | `IN025_2300_07250` | Gujarat / Ahmadabad | 43 | 249 | -9 | 34.6 | 32.1 | 38 | 31.3 | 13.4 | 0.0 | 0.192 | 0.002 | 0.0 |
+| West | Jaisalmer | `IN025_2700_07100` | Rajasthan / Jaisalmer | 203 | 0 | 0 | 16.0 | 31.8 | 16 | 15.3 | 7.5 | 0.0 | 0.099 | 0.000 | 0.0 |
+| Central | Bhopal | `IN025_2325_07750` | Madhya Pradesh / Bhopal | 482 | 5 | -5 | 28.4 | 24.8 | 58 | 21.3 | 15.8 | 0.0 | 0.131 | 0.000 | 0.0 |
+| Central | Nagpur | `IN025_2125_07900` | Maharashtra / Nagpur | 320 | 75 | -165 | 37.1 | 25.9 | 64 | 23.4 | 10.5 | 0.0 | 0.153 | 0.000 | 0.0 |
+| Central | Raipur | `IN025_2125_08175` | Chhattisgarh / Raipur | 290 | 356 | -8 | 37.8 | 25.8 | 72 | 25.4 | 8.0 | 0.0 | 0.263 | 0.000 | 0.0 |
+| Northeast | Guwahati | `IN025_2625_09175` | Assam / Kamrup | 67 | 0 | 0 | 46.1 | 24.7 | 68 | 31.6 | 12.1 | 0.0 | 0.150 | 0.022 | 0.001 |
+| Northeast | Imphal | `IN025_2475_09400` | Manipur / Kangpokpi | 825 | 26 | -71 | 36.6 | 21.1 | 76 | 34.0 | 5.9 | 0.0 | 0.264 | 0.009 | 0.001 |
+| Northeast | Shillong | `IN025_2550_09200` | Meghalaya / East Khasi Hills | 1358 | 37 | -26 | 30.0 | 16.9 | 94 | 33.3 | 12.6 | 1.9 | 0.283 | 0.237 | 0.077 |
+| rural | Rajasthan desert | `IN025_2600_07400` | Rajasthan / Pali | 364 | 3 | -1 | 22.7 | 28.0 | 37 | -1.0 | 7.8 | 0.0 | 0.091 | 0.000 | 0.0 |
+| rural | Western Ghats | `IN025_1100_07650` | Kerala / Palakkad | 446 | 707 | -32 | 38.3 | 25.8 | 74 | 34.6 | 2.3 | 0.2 | 0.264 | 0.000 | 0.005 |
+| rural | Himalaya | `IN025_3050_07900` | Uttarakhand / Rudraprayag | 2031 | 465 | -16 | 15.3 | 11.1 | 89 | 37.3 | 4.1 | 1.0 | 0.274 | 0.022 | 0.019 |
+| rural | Chhattisgarh forest | `IN025_2050_08200` | Chhattisgarh / Dhamtari | 406 | 445 | -20 | 36.6 | 24.2 | 81 | 26.4 | 4.4 | 0.1 | 0.268 | 0.000 | 0.001 |
+| rural | Sundarbans edge | `IN025_2200_08900` | West Bengal / South Twenty Four Parganas | 4 | 348 | -50 | 50.2 | 26.7 | 78 | 27.8 | 3.3 | 0.1 | 0.330 | 0.022 | 0.017 |
+| rural | Deccan plateau | `IN025_1650_07700` | Karnataka / Raichur | 378 | 52 | -1 | 36.2 | 33.3 | 34 | 37.9 | 4.4 | 0.0 | 0.130 | 0.000 | 0.001 |
+
+## 4. Model evaluation (reproducible: `scripts/build_ts_panindia_dataset.py` -> `train_eval_ts_panindia.py`; `build_rain_panindia_dataset.py` -> `train_eval_rain_panindia.py`)
+
+### Thunderstorm (pan-India, lead-specific)
+
+Data: {"source_labels": "IEM METAR present weather (TS or VCTS within +-1.5 h of valid time; windows with <2 reports are unlabelled)", "source_predictors": "GFS 0.25 deg, NOAA AWS archive, nearest grid point to the station", "cycles": "00Z and 12Z", "n_rows": 19994, "n_stations": 113, "n_init_dates": 43, "years": [2024, 2025], "stations_by_region": {"CENTRAL": 10, "EAST": 12, "NORTH": 27, "NORTHEAST": 12, "SOUTH": 34, "WEST": 18}, "event_rate": 0.0654}
+
+Validation: {"A": "train 2024 -> test 2025, all regions", "B": "leave-one-region-out within 2024 training -> test the held-out region in 2025", "leakage_controls": ["test year and test region never enter fitting", "calibration and threshold from date-grouped out-of-fold TRAIN predictions", "fixed hyperparameters, no tuning on test", "one model per lead"]}
+
+| Target | n | events | AUROC | PR-AUC (no skill) | Brier | Brier skill vs clim. | POD | FAR | CSI | HSS | leave-region-out AUROC / BSS | gate |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 6 | 2290 | 127 | 0.8173 | 0.1797 (0.0555) | 0.0479 | 0.0905 | 0.4961 | 0.7934 | 0.1707 | 0.2315 | 0.8052 / 0.0905 | PUBLISHED |
+| 12 | 2435 | 241 | 0.7412 | 0.231 (0.099) | 0.0833 | 0.0724 | 0.444 | 0.7397 | 0.1963 | 0.2324 | 0.7381 / 0.0645 | PUBLISHED |
+| 18 | 2360 | 124 | 0.8429 | 0.1807 (0.0525) | 0.0455 | 0.0926 | 0.5726 | 0.7874 | 0.1835 | 0.2528 | 0.8343 / 0.0773 | PUBLISHED |
+| 24 | 2438 | 231 | 0.7424 | 0.2101 (0.0947) | 0.0801 | 0.07 | 0.4069 | 0.7596 | 0.178 | 0.2079 | 0.7054 / 0.0451 | PUBLISHED |
+
+Limits: labels are airport METAR reports: urban/plain-biased, not point-in-cell truth for rural or mountain cells; pilot sample (every 12th-3rd day of Apr-Jun, two seasons): wide uncertainty; pre-monsoon season only; lead and time-of-day are confounded because only 00Z/12Z cycles are used; probabilities are calibrated to station reports, not to a generic 0.25 deg cell
+
+Reliability (first published target, 2025 holdout; mean forecast vs observed frequency): [{"mean_forecast": 0.0, "observed_frequency": 0.0, "n": 349}, {"mean_forecast": 0.0042, "observed_frequency": 0.0103, "n": 387}, {"mean_forecast": 0.0083, "observed_frequency": 0.014, "n": 285}, {"mean_forecast": 0.0178, "observed_frequency": 0.0315, "n": 381}, {"mean_forecast": 0.0379, "observed_frequency": 0.0608, "n": 263}, {"mean_forecast": 0.1001, "observed_frequency": 0.0862, "n": 325}, {"mean_forecast": 0.18, "observed_frequency": 0.21, "n": 300}]
+
+### Short-duration heavy rainfall (3 h, CMORPH-labelled)
+
+Data: {"labels": "NOAA CDR CMORPH V1.0 hourly 0.25 deg, 3 h accumulation ending at the valid time (satellite estimate, gauge-adjusted over land)", "predictors": "GFS 0.25 deg init 00Z, leads 9/15/21 h, cell centre = GFS grid point", "n_rows": 445728, "n_init_dates": 32, "years": [2024, 2025], "season": "monsoon, 15 Jun - 15 Sep, every 6th day"}
+
+Validation: "3 h CMORPH rainfall at the 0.25 deg cell >= threshold (short-duration heavy rainfall; NOT cloudburst)"
+
+| Target | n | events | AUROC | PR-AUC (no skill) | Brier | Brier skill vs clim. | POD | FAR | CSI | HSS | leave-region-out AUROC / BSS | gate |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 20mm_f9 | 74288 | 650 | 0.8936 | 0.0944 (0.0087) | 0.0082 | 0.0519 | 0.22 | 0.8333 | 0.1048 | 0.1815 | 0.8663 / 0.0272 | PUBLISHED |
+| 20mm_f15 | 74288 | 256 | 0.8116 | 0.017 (0.0034) | 0.0034 | 0.0051 | 0.0312 | 0.9279 | 0.0223 | 0.0416 | 0.793 / 0.0023 | WITHHELD |
+| 20mm_f21 | 74288 | 888 | 0.819 | 0.051 (0.012) | 0.0115 | 0.0237 | 0.0957 | 0.9124 | 0.0479 | 0.08 | 0.8019 / 0.0088 | WITHHELD |
+| 40mm_f9 | - | - | insufficient events | | | | | | | | | withheld |
+| 40mm_f15 | - | - | insufficient events | | | | | | | | | withheld |
+| 40mm_f21 | 74288 | 156 | 0.8122 | 0.0091 (0.0021) | 0.0021 | 0.0032 | 0.0705 | 0.965 | 0.024 | 0.0441 | 0.7759 / -0.0033 | WITHHELD |
+
+Limits: CMORPH is a satellite estimate; heavy convective rainfall in mountains is under-estimated; monsoon only, two seasons, every 6th day: wide uncertainty; leads 9/15/21 h from 00Z only; 0.25 deg / 3 h cannot represent cloudbursts (>= 100 mm/h over ~10 km)
+
+Reliability (first published target, 2025 holdout; mean forecast vs observed frequency): [{"mean_forecast": 0.0, "observed_frequency": 0.0, "n": 10619}, {"mean_forecast": 0.0001, "observed_frequency": 0.0005, "n": 16838}, {"mean_forecast": 0.0002, "observed_frequency": 0.0013, "n": 4632}, {"mean_forecast": 0.001, "observed_frequency": 0.0017, "n": 13803}, {"mean_forecast": 0.0055, "observed_frequency": 0.0047, "n": 7583}, {"mean_forecast": 0.0069, "observed_frequency": 0.0089, "n": 7524}, {"mean_forecast": 0.0266, "observed_frequency": 0.0383, "n": 13289}]
+
+## 5. What is not available (and what it needs)
+
+- **Cloudburst / sub-hourly extreme rainfall**: needs observed >=100 mm/h events and sub-hourly rainfall at ~10 km (e.g. dense AWS/ARG gauge or radar archives). CMORPH 0.25 deg / 3 h cannot verify them.
+- **Flash-flood prediction**: needs time-stamped observed flash-flood events (location, onset), observed soil moisture and live river levels, drainage/catchment hydrology beyond 106 gauges, then a validated model.
+- **Operational 2-6 h warnings**: needs a recorded publication time for DRIFT's own forecasts and an approved alert policy (registries are empty by decision).
+- **0-6 km wind shear, observed radar/satellite grid fields, per-cell observations**: not integrated.

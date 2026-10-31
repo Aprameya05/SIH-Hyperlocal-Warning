@@ -55,6 +55,8 @@ def test_python_and_javascript_records_agree():
             elif hz == "extreme_rainfall":
                 close(pyh["heavy_rain_day_outlook"]["value"], jh["heavy_rain_day_outlook"]["value"], path=f"{spec}.cb")
                 close(pyh["model_guidance"], jh["model_guidance"], path=f"{spec}.rain")
+                close(pyh["short_duration_extreme_rainfall"], jh["short_duration_extreme_rainfall"], path=f"{spec}.short")
+                assert jh["cloudburst"]["status"] == "UNAVAILABLE" == pyh["cloudburst"]["status"]
             else:
                 close(pyh["screening_index"], jh["screening_index"], path=f"{spec}.ff")
     assert [r["cell_id"] for r in js["search"] if "cell_id" in r] == [r["cell_id"] for r in s.search("mumbai", 5) if "cell_id" in r]

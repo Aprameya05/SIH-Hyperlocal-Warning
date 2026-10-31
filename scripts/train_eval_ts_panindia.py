@@ -39,7 +39,7 @@ ROOT = Path(__file__).resolve().parent.parent
 FEATS = ["cape", "cin", "lftx", "pwat", "rh2m", "rh850", "rh700", "rh500", "w850", "w700", "w500", "soilw0_10", "k_index", "total_totals",
          "lapse_850_500", "ws10", "shear_850_500", "t2m_c", "dewpoint_depression", "mslp_hpa", "apcp_6h", "apcp_total", "valid_hour_sin", "valid_hour_cos"]
 LOGIT_FEATS = ["cape", "cin", "pwat", "k_index", "shear_850_500", "rh700"]
-GATE_AUROC, SEED = 0.65, 7
+GATE_AUROC, GATE_BSS, SEED = 0.65, 0.01, 7
 XGB = dict(n_estimators=140, max_depth=3, learning_rate=0.05, subsample=0.8, colsample_bytree=0.8, min_child_weight=5, reg_lambda=2.0,
            eval_metric="logloss", random_state=SEED, n_jobs=2, tree_method="hist")
 
@@ -150,7 +150,7 @@ def main():
               "validation": {"A": "train 2024 -> test 2025, all regions", "B": "leave-one-region-out within 2024 training -> test the held-out region in 2025",
                              "leakage_controls": ["test year and test region never enter fitting", "calibration and threshold from date-grouped out-of-fold TRAIN predictions",
                                                   "fixed hyperparameters, no tuning on test", "one model per lead"]},
-              "gate": {"rule": f"calibrated model: Brier skill > 0 vs climatology AND AUROC >= {GATE_AUROC} in BOTH validation A and pooled B", "per_lead": {}},
+              "gate": {"rule": f"calibrated model: Brier skill >= {GATE_BSS} vs climatology AND AUROC >= {GATE_AUROC} in BOTH validation A and pooled B", "per_lead": {}},
               "leads": {}, "limits": ["labels are airport METAR reports: urban/plain-biased, not point-in-cell truth for rural or mountain cells",
                                       "pilot sample (every 12th-3rd day of Apr-Jun, two seasons): wide uncertainty; pre-monsoon season only",
                                       "lead and time-of-day are confounded because only 00Z/12Z cycles are used",
@@ -171,8 +171,8 @@ def main():
                                                                                   "climatology_brier": r["climatology"]["brier"]}
             pooled_y += list(teR["y"]); pooled_p += list(p)
         pooled = metrics(np.array(pooled_y), np.array(pooled_p), best_csi_threshold(np.array(pooled_y), np.array(pooled_p)), tr["y"].mean()) if pooled_y else {}
-        a_ok = A["xgboost_calibrated"].get("bss_vs_climatology", -1) > 0 and A["xgboost_calibrated"].get("auroc", 0) >= GATE_AUROC
-        b_ok = pooled.get("bss_vs_climatology", -1) > 0 and pooled.get("auroc", 0) >= GATE_AUROC
+        a_ok = A["xgboost_calibrated"].get("bss_vs_climatology", -1) >= GATE_BSS and A["xgboost_calibrated"].get("auroc", 0) >= GATE_AUROC
+        b_ok = pooled.get("bss_vs_climatology", -1) >= GATE_BSS and pooled.get("auroc", 0) >= GATE_AUROC
         report["leads"][str(L)] = {"A_temporal_holdout": A, "B_by_region_spatial_temporal": B_by, "B_pooled": pooled, "passes_gate": bool(a_ok and b_ok)}
         report["gate"]["per_lead"][str(L)] = bool(a_ok and b_ok)
         # production model for this lead: trained on ALL 2024+2025 rows (more data), calibration from grouped OOF
@@ -180,6 +180,8 @@ def main():
         models[int(L)] = (model, iso, thr)
         print(f"lead {L}: A auroc={A['xgboost_calibrated'].get('auroc')} bss={A['xgboost_calibrated'].get('bss_vs_climatology')}  B pooled auroc={pooled.get('auroc')} bss={pooled.get('bss_vs_climatology')}  gate={a_ok and b_ok}")
     out_dir = ROOT / "models" / "ts_panindia"; out_dir.mkdir(parents=True, exist_ok=True)
+    for old in out_dir.glob("*.json"):
+        old.unlink()          # never leave a model from an earlier run that did not pass this run's gate
     meta = {"features": FEATS, "gate_passed_leads": [int(k) for k, v in report["gate"]["per_lead"].items() if v], "trained_on": "2024+2025 pilot sample", "xgb_params": XGB}
     for L, (m, iso, thr) in models.items():
         m.save_model(str(out_dir / f"ts_lead{L:02d}.json"))

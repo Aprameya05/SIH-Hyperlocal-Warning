@@ -1,0 +1,872 @@
+{
+ "generated_at_utc": "2026-10-31T11:26:10Z",
+ "data": {
+  "labels": "NOAA CDR CMORPH V1.0 hourly 0.25 deg, 3 h accumulation ending at the valid time (satellite estimate, gauge-adjusted over land)",
+  "predictors": "GFS 0.25 deg init 00Z, leads 9/15/21 h, cell centre = GFS grid point",
+  "n_rows": 445728,
+  "n_init_dates": 32,
+  "years": [
+   2024,
+   2025
+  ],
+  "season": "monsoon, 15 Jun - 15 Sep, every 6th day"
+ },
+ "target": "3 h CMORPH rainfall at the 0.25 deg cell >= threshold (short-duration heavy rainfall; NOT cloudburst)",
+ "gate": {
+  "rule": "calibrated model: Brier skill >= 0.01, AUROC >= 0.65 in temporal AND pooled leave-region-out holdout, and AUROC >= raw GFS rainfall rule",
+  "per_target": {
+   "20mm_f9": true,
+   "20mm_f15": false,
+   "20mm_f21": false,
+   "40mm_f9": false,
+   "40mm_f15": false,
+   "40mm_f21": false
+  }
+ },
+ "targets": {
+  "20mm_f9": {
+   "threshold_mm_per_3h": 20.0,
+   "lead_h": 9,
+   "A_temporal_holdout": {
+    "xgboost_calibrated": {
+     "n": 74288,
+     "n_events": 650,
+     "event_rate": 0.0087,
+     "auroc": 0.8936,
+     "pr_auc": 0.0944,
+     "pr_auc_no_skill": 0.0087,
+     "brier": 0.0082,
+     "brier_climatology": 0.0087,
+     "bss_vs_climatology": 0.0519,
+     "threshold": 0.1017,
+     "pod": 0.22,
+     "far": 0.8333,
+     "csi": 0.1048,
+     "hss": 0.1815
+    },
+    "logistic": {
+     "n": 74288,
+     "n_events": 650,
+     "event_rate": 0.0087,
+     "auroc": 0.835,
+     "pr_auc": 0.0932,
+     "pr_auc_no_skill": 0.0087,
+     "brier": 0.0083,
+     "brier_climatology": 0.0087,
+     "bss_vs_climatology": 0.0373,
+     "threshold": 0.0627,
+     "pod": 0.1538,
+     "far": 0.8106,
+     "csi": 0.0928,
+     "hss": 0.1632
+    },
+    "raw_gfs_rainfall_rule": {
+     "n": 74288,
+     "n_events": 650,
+     "event_rate": 0.0087,
+     "auroc": 0.8589,
+     "pr_auc": 0.1158,
+     "pr_auc_no_skill": 0.0087,
+     "brier_climatology": 0.0087,
+     "threshold": 0.0525,
+     "pod": 0.1769,
+     "far": 0.7913,
+     "csi": 0.1059,
+     "hss": 0.185,
+     "threshold_mm": 10.5
+    },
+    "climatology": {
+     "n": 74288,
+     "base_rate_from_training": 0.0085
+    },
+    "reliability_xgboost": [
+     {
+      "mean_forecast": 0.0,
+      "observed_frequency": 0.0,
+      "n": 10619
+     },
+     {
+      "mean_forecast": 0.0001,
+      "observed_frequency": 0.0005,
+      "n": 16838
+     },
+     {
+      "mean_forecast": 0.0002,
+      "observed_frequency": 0.0013,
+      "n": 4632
+     },
+     {
+      "mean_forecast": 0.001,
+      "observed_frequency": 0.0017,
+      "n": 13803
+     },
+     {
+      "mean_forecast": 0.0055,
+      "observed_frequency": 0.0047,
+      "n": 7583
+     },
+     {
+      "mean_forecast": 0.0069,
+      "observed_frequency": 0.0089,
+      "n": 7524
+     },
+     {
+      "mean_forecast": 0.0266,
+      "observed_frequency": 0.0383,
+      "n": 13289
+     }
+    ]
+   },
+   "raw_gfs_rainfall_auroc_2025": 0.8589,
+   "B_by_region_spatial_temporal": {
+    "CENTRAL": {
+     "n": 14912,
+     "n_events": 154,
+     "event_rate": 0.0103,
+     "auroc": 0.8682,
+     "pr_auc": 0.0549,
+     "pr_auc_no_skill": 0.0103,
+     "brier": 0.01,
+     "brier_climatology": 0.0102,
+     "bss_vs_climatology": 0.0222,
+     "threshold": 0.0599,
+     "pod": 0.1623,
+     "far": 0.9113,
+     "csi": 0.0608,
+     "hss": 0.1027,
+     "raw_gfs_rule_csi": 0.1055
+    },
+    "EAST": {
+     "n": 10416,
+     "n_events": 43,
+     "event_rate": 0.0041,
+     "auroc": 0.8563,
+     "pr_auc": 0.0707,
+     "pr_auc_no_skill": 0.0041,
+     "brier": 0.0039,
+     "brier_climatology": 0.0041,
+     "bss_vs_climatology": 0.0453,
+     "threshold": 0.1202,
+     "pod": 0.186,
+     "far": 0.871,
+     "csi": 0.0825,
+     "hss": 0.1482,
+     "raw_gfs_rule_csi": 0.04
+    },
+    "NORTH": {
+     "n": 21776,
+     "n_events": 216,
+     "event_rate": 0.0099,
+     "auroc": 0.8835,
+     "pr_auc": 0.0691,
+     "pr_auc_no_skill": 0.0099,
+     "brier": 0.0097,
+     "brier_climatology": 0.0098,
+     "bss_vs_climatology": 0.0151,
+     "threshold": 0.0952,
+     "pod": 0.0139,
+     "far": 0.9778,
+     "csi": 0.0086,
+     "hss": 0.0095,
+     "raw_gfs_rule_csi": 0.1357
+    },
+    "NORTHEAST": {
+     "n": 5856,
+     "n_events": 60,
+     "event_rate": 0.0102,
+     "auroc": 0.647,
+     "pr_auc": 0.0178,
+     "pr_auc_no_skill": 0.0102,
+     "brier": 0.0102,
+     "brier_climatology": 0.0101,
+     "bss_vs_climatology": -0.0068,
+     "threshold": 0.1027,
+     "pod": 0.0333,
+     "far": 0.9333,
+     "csi": 0.0227,
+     "hss": 0.0379,
+     "raw_gfs_rule_csi": 0.0
+    },
+    "SOUTH": {
+     "n": 12000,
+     "n_events": 52,
+     "event_rate": 0.0043,
+     "auroc": 0.8854,
+     "pr_auc": 0.0859,
+     "pr_auc_no_skill": 0.0043,
+     "brier": 0.0041,
+     "brier_climatology": 0.0043,
+     "bss_vs_climatology": 0.0516,
+     "threshold": 0.0942,
+     "pod": 0.3846,
+     "far": 0.8788,
+     "csi": 0.1015,
+     "hss": 0.1789,
+     "raw_gfs_rule_csi": 0.1458
+    },
+    "WEST": {
+     "n": 9328,
+     "n_events": 125,
+     "event_rate": 0.0134,
+     "auroc": 0.9262,
+     "pr_auc": 0.1189,
+     "pr_auc_no_skill": 0.0134,
+     "brier": 0.0125,
+     "brier_climatology": 0.0132,
+     "bss_vs_climatology": 0.0556,
+     "threshold": 0.1592,
+     "pod": 0.168,
+     "far": 0.8743,
+     "csi": 0.0775,
+     "hss": 0.1305,
+     "raw_gfs_rule_csi": 0.1269
+    }
+   },
+   "B_pooled": {
+    "n": 74288,
+    "n_events": 650,
+    "event_rate": 0.0087,
+    "auroc": 0.8663,
+    "pr_auc": 0.0636,
+    "pr_auc_no_skill": 0.0087,
+    "brier": 0.0084,
+    "brier_climatology": 0.0087,
+    "bss_vs_climatology": 0.0272,
+    "threshold": 0.0595,
+    "pod": 0.2462,
+    "far": 0.8844,
+    "csi": 0.0854,
+    "hss": 0.1472
+   },
+   "passes_gate": true
+  },
+  "20mm_f15": {
+   "threshold_mm_per_3h": 20.0,
+   "lead_h": 15,
+   "A_temporal_holdout": {
+    "xgboost_calibrated": {
+     "n": 74288,
+     "n_events": 256,
+     "event_rate": 0.0034,
+     "auroc": 0.8116,
+     "pr_auc": 0.017,
+     "pr_auc_no_skill": 0.0034,
+     "brier": 0.0034,
+     "brier_climatology": 0.0034,
+     "bss_vs_climatology": 0.0051,
+     "threshold": 0.0419,
+     "pod": 0.0312,
+     "far": 0.9279,
+     "csi": 0.0223,
+     "hss": 0.0416
+    },
+    "logistic": {
+     "n": 74288,
+     "n_events": 256,
+     "event_rate": 0.0034,
+     "auroc": 0.7109,
+     "pr_auc": 0.0197,
+     "pr_auc_no_skill": 0.0034,
+     "brier": 0.0034,
+     "brier_climatology": 0.0034,
+     "bss_vs_climatology": 0.0063,
+     "threshold": 0.0317,
+     "pod": 0.0508,
+     "far": 0.866,
+     "csi": 0.0382,
+     "hss": 0.0719
+    },
+    "raw_gfs_rainfall_rule": {
+     "n": 74288,
+     "n_events": 256,
+     "event_rate": 0.0034,
+     "auroc": 0.7278,
+     "pr_auc": 0.0227,
+     "pr_auc_no_skill": 0.0034,
+     "brier_climatology": 0.0034,
+     "threshold": 0.0631,
+     "pod": 0.0742,
+     "far": 0.9472,
+     "csi": 0.0318,
+     "hss": 0.0579,
+     "threshold_mm": 12.62
+    },
+    "climatology": {
+     "n": 74288,
+     "base_rate_from_training": 0.0046
+    },
+    "reliability_xgboost": [
+     {
+      "mean_forecast": 0.0,
+      "observed_frequency": 0.0,
+      "n": 5981
+     },
+     {
+      "mean_forecast": 0.0002,
+      "observed_frequency": 0.0002,
+      "n": 21489
+     },
+     {
+      "mean_forecast": 0.0016,
+      "observed_frequency": 0.0011,
+      "n": 6469
+     },
+     {
+      "mean_forecast": 0.003,
+      "observed_frequency": 0.002,
+      "n": 11334
+     },
+     {
+      "mean_forecast": 0.0055,
+      "observed_frequency": 0.0031,
+      "n": 3192
+     },
+     {
+      "mean_forecast": 0.0065,
+      "observed_frequency": 0.0047,
+      "n": 13150
+     },
+     {
+      "mean_forecast": 0.0098,
+      "observed_frequency": 0.0118,
+      "n": 12673
+     }
+    ]
+   },
+   "raw_gfs_rainfall_auroc_2025": 0.7278,
+   "B_by_region_spatial_temporal": {
+    "CENTRAL": {
+     "n": 14912,
+     "n_events": 125,
+     "event_rate": 0.0084,
+     "auroc": 0.7894,
+     "pr_auc": 0.024,
+     "pr_auc_no_skill": 0.0084,
+     "brier": 0.0083,
+     "brier_climatology": 0.0083,
+     "bss_vs_climatology": 0.0008,
+     "threshold": 0.0795,
+     "pod": 0.0,
+     "far": 1.0,
+     "csi": 0.0,
+     "hss": -0.0037,
+     "raw_gfs_rule_csi": 0.01
+    },
+    "EAST": {
+     "status": "TOO_FEW_EVENTS",
+     "n": 10416,
+     "n_events": 14
+    },
+    "NORTH": {
+     "n": 21776,
+     "n_events": 39,
+     "event_rate": 0.0018,
+     "auroc": 0.752,
+     "pr_auc": 0.0054,
+     "pr_auc_no_skill": 0.0018,
+     "brier": 0.0018,
+     "brier_climatology": 0.0018,
+     "bss_vs_climatology": 0.0076,
+     "threshold": 0.0399,
+     "pod": 0.0,
+     "far": 1.0,
+     "csi": 0.0,
+     "hss": -0.0003,
+     "raw_gfs_rule_csi": 0.0
+    },
+    "NORTHEAST": {
+     "n": 5856,
+     "n_events": 45,
+     "event_rate": 0.0077,
+     "auroc": 0.5716,
+     "pr_auc": 0.0091,
+     "pr_auc_no_skill": 0.0077,
+     "brier": 0.0076,
+     "brier_climatology": 0.0076,
+     "bss_vs_climatology": -0.0009,
+     "threshold": 0.0407,
+     "pod": 0.0,
+     "far": 1.0,
+     "csi": 0.0,
+     "hss": -0.0007,
+     "raw_gfs_rule_csi": 0.0
+    },
+    "SOUTH": {
+     "status": "TOO_FEW_EVENTS",
+     "n": 12000,
+     "n_events": 6
+    },
+    "WEST": {
+     "n": 9328,
+     "n_events": 27,
+     "event_rate": 0.0029,
+     "auroc": 0.8947,
+     "pr_auc": 0.0185,
+     "pr_auc_no_skill": 0.0029,
+     "brier": 0.0029,
+     "brier_climatology": 0.0029,
+     "bss_vs_climatology": 0.0092,
+     "threshold": 0.0277,
+     "pod": 0.1481,
+     "far": 0.957,
+     "csi": 0.0345,
+     "hss": 0.0625,
+     "raw_gfs_rule_csi": 0.2121
+    }
+   },
+   "B_pooled": {
+    "n": 51872,
+    "n_events": 236,
+    "event_rate": 0.0045,
+    "auroc": 0.793,
+    "pr_auc": 0.0144,
+    "pr_auc_no_skill": 0.0045,
+    "brier": 0.0045,
+    "brier_climatology": 0.0045,
+    "bss_vs_climatology": 0.0023,
+    "threshold": 0.0129,
+    "pod": 0.1525,
+    "far": 0.9771,
+    "csi": 0.0203,
+    "hss": 0.0322
+   },
+   "passes_gate": false
+  },
+  "20mm_f21": {
+   "threshold_mm_per_3h": 20.0,
+   "lead_h": 21,
+   "A_temporal_holdout": {
+    "xgboost_calibrated": {
+     "n": 74288,
+     "n_events": 888,
+     "event_rate": 0.012,
+     "auroc": 0.819,
+     "pr_auc": 0.051,
+     "pr_auc_no_skill": 0.012,
+     "brier": 0.0115,
+     "brier_climatology": 0.0118,
+     "bss_vs_climatology": 0.0237,
+     "threshold": 0.0649,
+     "pod": 0.0957,
+     "far": 0.9124,
+     "csi": 0.0479,
+     "hss": 0.08
+    },
+    "logistic": {
+     "n": 74288,
+     "n_events": 888,
+     "event_rate": 0.012,
+     "auroc": 0.7812,
+     "pr_auc": 0.0521,
+     "pr_auc_no_skill": 0.012,
+     "brier": 0.0116,
+     "brier_climatology": 0.0118,
+     "bss_vs_climatology": 0.0159,
+     "threshold": 0.0511,
+     "pod": 0.1036,
+     "far": 0.9008,
+     "csi": 0.0534,
+     "hss": 0.0903
+    },
+    "raw_gfs_rainfall_rule": {
+     "n": 74288,
+     "n_events": 888,
+     "event_rate": 0.012,
+     "auroc": 0.7969,
+     "pr_auc": 0.0486,
+     "pr_auc_no_skill": 0.012,
+     "brier_climatology": 0.0118,
+     "threshold": 0.0484,
+     "pod": 0.0777,
+     "far": 0.9071,
+     "csi": 0.0442,
+     "hss": 0.0745,
+     "threshold_mm": 9.69
+    },
+    "climatology": {
+     "n": 74288,
+     "base_rate_from_training": 0.0149
+    },
+    "reliability_xgboost": [
+     {
+      "mean_forecast": 0.0004,
+      "observed_frequency": 0.0003,
+      "n": 17991
+     },
+     {
+      "mean_forecast": 0.004,
+      "observed_frequency": 0.0037,
+      "n": 8366
+     },
+     {
+      "mean_forecast": 0.0063,
+      "observed_frequency": 0.0025,
+      "n": 10487
+     },
+     {
+      "mean_forecast": 0.007,
+      "observed_frequency": 0.0072,
+      "n": 8984
+     },
+     {
+      "mean_forecast": 0.0116,
+      "observed_frequency": 0.0093,
+      "n": 6901
+     },
+     {
+      "mean_forecast": 0.0187,
+      "observed_frequency": 0.0191,
+      "n": 10707
+     },
+     {
+      "mean_forecast": 0.0508,
+      "observed_frequency": 0.0453,
+      "n": 10852
+     }
+    ]
+   },
+   "raw_gfs_rainfall_auroc_2025": 0.7969,
+   "B_by_region_spatial_temporal": {
+    "CENTRAL": {
+     "n": 14912,
+     "n_events": 217,
+     "event_rate": 0.0146,
+     "auroc": 0.7675,
+     "pr_auc": 0.0369,
+     "pr_auc_no_skill": 0.0146,
+     "brier": 0.0142,
+     "brier_climatology": 0.0143,
+     "bss_vs_climatology": 0.0104,
+     "threshold": 0.0722,
+     "pod": 0.0092,
+     "far": 0.9535,
+     "csi": 0.0078,
+     "hss": 0.0106,
+     "raw_gfs_rule_csi": 0.0202
+    },
+    "EAST": {
+     "n": 10416,
+     "n_events": 165,
+     "event_rate": 0.0158,
+     "auroc": 0.7491,
+     "pr_auc": 0.036,
+     "pr_auc_no_skill": 0.0158,
+     "brier": 0.0155,
+     "brier_climatology": 0.0156,
+     "bss_vs_climatology": 0.0091,
+     "threshold": 0.0563,
+     "pod": 0.0121,
+     "far": 0.975,
+     "csi": 0.0082,
+     "hss": 0.006,
+     "raw_gfs_rule_csi": 0.0098
+    },
+    "NORTH": {
+     "n": 21776,
+     "n_events": 162,
+     "event_rate": 0.0074,
+     "auroc": 0.7946,
+     "pr_auc": 0.0583,
+     "pr_auc_no_skill": 0.0074,
+     "brier": 0.0073,
+     "brier_climatology": 0.0075,
+     "bss_vs_climatology": 0.0291,
+     "threshold": 0.0643,
+     "pod": 0.142,
+     "far": 0.9286,
+     "csi": 0.0499,
+     "hss": 0.086,
+     "raw_gfs_rule_csi": 0.0431
+    },
+    "NORTHEAST": {
+     "n": 5856,
+     "n_events": 173,
+     "event_rate": 0.0295,
+     "auroc": 0.6235,
+     "pr_auc": 0.0398,
+     "pr_auc_no_skill": 0.0295,
+     "brier": 0.0302,
+     "brier_climatology": 0.0289,
+     "bss_vs_climatology": -0.0446,
+     "threshold": 0.0758,
+     "pod": 0.0751,
+     "far": 0.9734,
+     "csi": 0.02,
+     "hss": -0.0046,
+     "raw_gfs_rule_csi": 0.0233
+    },
+    "SOUTH": {
+     "n": 12000,
+     "n_events": 56,
+     "event_rate": 0.0047,
+     "auroc": 0.9,
+     "pr_auc": 0.0936,
+     "pr_auc_no_skill": 0.0047,
+     "brier": 0.0045,
+     "brier_climatology": 0.0048,
+     "bss_vs_climatology": 0.0663,
+     "threshold": 0.0674,
+     "pod": 0.1786,
+     "far": 0.8925,
+     "csi": 0.0719,
+     "hss": 0.1292,
+     "raw_gfs_rule_csi": 0.0927
+    },
+    "WEST": {
+     "n": 9328,
+     "n_events": 115,
+     "event_rate": 0.0123,
+     "auroc": 0.8724,
+     "pr_auc": 0.0831,
+     "pr_auc_no_skill": 0.0123,
+     "brier": 0.0117,
+     "brier_climatology": 0.0122,
+     "bss_vs_climatology": 0.0397,
+     "threshold": 0.0596,
+     "pod": 0.1913,
+     "far": 0.89,
+     "csi": 0.0751,
+     "hss": 0.126,
+     "raw_gfs_rule_csi": 0.1056
+    }
+   },
+   "B_pooled": {
+    "n": 74288,
+    "n_events": 888,
+    "event_rate": 0.012,
+    "auroc": 0.8019,
+    "pr_auc": 0.0428,
+    "pr_auc_no_skill": 0.012,
+    "brier": 0.0117,
+    "brier_climatology": 0.0118,
+    "bss_vs_climatology": 0.0088,
+    "threshold": 0.0494,
+    "pod": 0.2804,
+    "far": 0.9472,
+    "csi": 0.0465,
+    "hss": 0.0702
+   },
+   "passes_gate": false
+  },
+  "40mm_f9": {
+   "status": "INSUFFICIENT_EVENTS",
+   "train_events": 115,
+   "test_events": 94
+  },
+  "40mm_f15": {
+   "status": "INSUFFICIENT_EVENTS",
+   "train_events": 15,
+   "test_events": 25
+  },
+  "40mm_f21": {
+   "threshold_mm_per_3h": 40.0,
+   "lead_h": 21,
+   "A_temporal_holdout": {
+    "xgboost_calibrated": {
+     "n": 74288,
+     "n_events": 156,
+     "event_rate": 0.0021,
+     "auroc": 0.8122,
+     "pr_auc": 0.0091,
+     "pr_auc_no_skill": 0.0021,
+     "brier": 0.0021,
+     "brier_climatology": 0.0021,
+     "bss_vs_climatology": 0.0032,
+     "threshold": 0.0452,
+     "pod": 0.0705,
+     "far": 0.965,
+     "csi": 0.024,
+     "hss": 0.0441
+    },
+    "logistic": {
+     "n": 74288,
+     "n_events": 156,
+     "event_rate": 0.0021,
+     "auroc": 0.7936,
+     "pr_auc": 0.0151,
+     "pr_auc_no_skill": 0.0021,
+     "brier": 0.0021,
+     "brier_climatology": 0.0021,
+     "bss_vs_climatology": 0.0047,
+     "threshold": 0.0186,
+     "pod": 0.1026,
+     "far": 0.9535,
+     "csi": 0.0331,
+     "hss": 0.0613
+    },
+    "raw_gfs_rainfall_rule": {
+     "n": 74288,
+     "n_events": 156,
+     "event_rate": 0.0021,
+     "auroc": 0.8447,
+     "pr_auc": 0.0131,
+     "pr_auc_no_skill": 0.0021,
+     "brier_climatology": 0.0021,
+     "threshold": 0.0484,
+     "pod": 0.1154,
+     "far": 0.9758,
+     "csi": 0.0204,
+     "hss": 0.0367,
+     "threshold_mm": 9.69
+    },
+    "climatology": {
+     "n": 74288,
+     "base_rate_from_training": 0.0036
+    },
+    "reliability_xgboost": [
+     {
+      "mean_forecast": 0.0,
+      "observed_frequency": 0.0,
+      "n": 4744
+     },
+     {
+      "mean_forecast": 0.0001,
+      "observed_frequency": 0.0001,
+      "n": 21879
+     },
+     {
+      "mean_forecast": 0.0009,
+      "observed_frequency": 0.0003,
+      "n": 7554
+     },
+     {
+      "mean_forecast": 0.0019,
+      "observed_frequency": 0.0014,
+      "n": 7001
+     },
+     {
+      "mean_forecast": 0.0033,
+      "observed_frequency": 0.002,
+      "n": 12109
+     },
+     {
+      "mean_forecast": 0.0058,
+      "observed_frequency": 0.0023,
+      "n": 4702
+     },
+     {
+      "mean_forecast": 0.0101,
+      "observed_frequency": 0.0066,
+      "n": 16299
+     }
+    ]
+   },
+   "raw_gfs_rainfall_auroc_2025": 0.8447,
+   "B_by_region_spatial_temporal": {
+    "CENTRAL": {
+     "n": 14912,
+     "n_events": 46,
+     "event_rate": 0.0031,
+     "auroc": 0.7386,
+     "pr_auc": 0.006,
+     "pr_auc_no_skill": 0.0031,
+     "brier": 0.0031,
+     "brier_climatology": 0.0031,
+     "bss_vs_climatology": -0.0032,
+     "threshold": 0.0178,
+     "pod": 0.0217,
+     "far": 0.9953,
+     "csi": 0.0039,
+     "hss": 0.0027,
+     "raw_gfs_rule_csi": 0.0071
+    },
+    "EAST": {
+     "n": 10416,
+     "n_events": 27,
+     "event_rate": 0.0026,
+     "auroc": 0.8038,
+     "pr_auc": 0.0085,
+     "pr_auc_no_skill": 0.0026,
+     "brier": 0.0026,
+     "brier_climatology": 0.0026,
+     "bss_vs_climatology": 0.0029,
+     "threshold": 0.012,
+     "pod": 0.0,
+     "far": 1.0,
+     "csi": 0.0,
+     "hss": -0.0005,
+     "raw_gfs_rule_csi": 0.0
+    },
+    "NORTH": {
+     "n": 21776,
+     "n_events": 25,
+     "event_rate": 0.0011,
+     "auroc": 0.7475,
+     "pr_auc": 0.0143,
+     "pr_auc_no_skill": 0.0011,
+     "brier": 0.0012,
+     "brier_climatology": 0.0012,
+     "bss_vs_climatology": 0.001,
+     "threshold": 0.0204,
+     "pod": 0.16,
+     "far": 0.9579,
+     "csi": 0.0345,
+     "hss": 0.065,
+     "raw_gfs_rule_csi": 0.0403
+    },
+    "NORTHEAST": {
+     "n": 5856,
+     "n_events": 35,
+     "event_rate": 0.006,
+     "auroc": 0.6956,
+     "pr_auc": 0.0103,
+     "pr_auc_no_skill": 0.006,
+     "brier": 0.0061,
+     "brier_climatology": 0.0059,
+     "bss_vs_climatology": -0.019,
+     "threshold": 0.05,
+     "pod": 0.0286,
+     "far": 0.9956,
+     "csi": 0.0039,
+     "hss": -0.0027,
+     "raw_gfs_rule_csi": 0.024
+    },
+    "SOUTH": {
+     "status": "TOO_FEW_EVENTS",
+     "n": 12000,
+     "n_events": 1
+    },
+    "WEST": {
+     "n": 9328,
+     "n_events": 22,
+     "event_rate": 0.0024,
+     "auroc": 0.9583,
+     "pr_auc": 0.0369,
+     "pr_auc_no_skill": 0.0024,
+     "brier": 0.0023,
+     "brier_climatology": 0.0024,
+     "bss_vs_climatology": 0.0126,
+     "threshold": 0.0139,
+     "pod": 0.1364,
+     "far": 0.9143,
+     "csi": 0.0556,
+     "hss": 0.1027,
+     "raw_gfs_rule_csi": 0.0327
+    }
+   },
+   "B_pooled": {
+    "n": 62288,
+    "n_events": 155,
+    "event_rate": 0.0025,
+    "auroc": 0.7759,
+    "pr_auc": 0.0078,
+    "pr_auc_no_skill": 0.0025,
+    "brier": 0.0025,
+    "brier_climatology": 0.0025,
+    "bss_vs_climatology": -0.0033,
+    "threshold": 0.0198,
+    "pod": 0.1161,
+    "far": 0.9837,
+    "csi": 0.0145,
+    "hss": 0.0243
+   },
+   "passes_gate": false
+  }
+ },
+ "limits": [
+  "CMORPH is a satellite estimate; heavy convective rainfall in mountains is under-estimated",
+  "monsoon only, two seasons, every 6th day: wide uncertainty",
+  "leads 9/15/21 h from 00Z only",
+  "0.25 deg / 3 h cannot represent cloudbursts (>= 100 mm/h over ~10 km)"
+ ]
+}

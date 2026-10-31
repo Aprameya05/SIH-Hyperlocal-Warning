@@ -57,7 +57,8 @@ class Store:
     """Loads artifacts, verifies them independently, indexes them. Reloads when a file's mtime changes."""
 
     FILES = {"grid": "india_grid_025.json", "places": "india_places.json", "fields": "india_fields_latest.json",
-             "static": "india_static_025.json", "live": "drift_live.json", "tsmodel": "india_ts_model_latest.json"}
+             "static": "india_static_025.json", "live": "drift_live.json", "tsmodel": "india_ts_model_latest.json",
+             "rainmodel": "india_rain_model_latest.json"}
 
     def __init__(self, data_dir: Path = DATA):
         self.dir = data_dir
@@ -79,6 +80,7 @@ class Store:
             load = lambda k: json.load(open(self.dir / self.FILES[k])) if st[k] else None
             self.grid_doc, self.places_doc = load("grid"), load("places")
             self.fields_doc, self.static_doc, self.live_doc, self.ts_doc = load("fields"), load("static"), load("live"), load("tsmodel")
+            self.rain_doc = load("rainmodel")
             g = self.grid_doc
             self.cells = g["cells"] if g else []
             self.idx = {c[0]: i for i, c in enumerate(self.cells)}
@@ -95,6 +97,8 @@ class Store:
                     v = r[cols["cb_daily_outlook"]]
                     if v is not None:
                         self.cb[(float(r[0]), float(r[1]))] = v
+            self.rain_ok = bool(self.rain_doc and self.rain_doc.get("meta", {}).get("model_evaluated"))
+            self.rain_idx = {c: i for i, c in enumerate(self.rain_doc["cells"])} if self.rain_doc else {}
             self.ts_ok = False
             if self.ts_doc:
                 self.ts_idx = {c: i for i, c in enumerate(self.ts_doc["cells"])}
@@ -263,7 +267,7 @@ class Store:
                             "cloudburst": "UNAVAILABLE: requires observed >=100 mm/h events; DRIFT has none"},
              "heavy_rain_day_outlook": {"value": cb, "kind": "MODEL_SCORE_UNCALIBRATED", "resolution": "1 deg cell (%s,%s)" % key,
                                         "status": "AVAILABLE" if cb is not None else "UNAVAILABLE", "event_definition": ">=64.5 mm/24 h daily rainfall proxy; not a cloudburst"},
-             "short_duration_extreme_rainfall": {"status": "UNAVAILABLE"}, "cloudburst": {"status": "UNAVAILABLE"}, "model_guidance": None}
+             "short_duration_extreme_rainfall": self.short_duration(cid), "cloudburst": {"status": "UNAVAILABLE"}, "model_guidance": None}
         if fl is None:
             return h
         p3 = fl["precip_3h"]["series"]; cum = fl["apcp_cum"]["series"]
@@ -284,6 +288,23 @@ class Store:
             "imd_category_note": "IMD daily-rainfall classes applied to MODEL rainfall over the available window; not an observation",
             "spatial_extent_within_half_degree": extent, "neighbourhood": "5x5 cells (+-0.5 deg), land cells only"}
         return h
+
+    def short_duration(self, cid):
+        d = self.rain_doc
+        out = {"status": "UNAVAILABLE", "target": "3 h CMORPH rainfall at the 0.25 deg cell >= threshold (short-duration heavy rainfall; NOT cloudburst)",
+               "reason": (d or {}).get("meta", {}).get("reason", "no evaluated short-duration rainfall model artifact")}
+        if not (self.rain_ok and cid in self.rain_idx):
+            return out
+        m, i = d["meta"], self.rain_idx[cid]
+        feats = m["features"]
+        tg = {}
+        for k in m["targets"]:
+            a = d["explanations"][k][i]
+            tg[k] = {"value": d["targets"][k][i], "threshold_mm_per_3h": m["target_info"][k]["threshold_mm_per_3h"], "lead_h": m["target_info"][k]["lead_h"],
+                     "valid_time_utc": m["target_info"][k]["valid_time_utc"], "evaluation": m["target_info"][k],
+                     "explanation_top3_treeshap": [{"feature": feats[a[j]], "contribution": a[j + 1]} for j in (0, 2, 4)]}
+        return {"status": "AVAILABLE_EVALUATED", "target": out["target"], "model_version": m["model_version"], "model_init_utc": m["cycle_init_utc"], "value_type": m["value_type"],
+                "calibrated": m["calibrated"], "not_cloudburst": True, "evaluation_ref": m["evaluation_ref"], "limits": m["limits"], "targets": tg}
 
     def ff_hazard(self, cid, fl, hours, hour, st):
         h = {"pathway": "flash_flood", "status": "SCREENING_ONLY_UNVALIDATED",

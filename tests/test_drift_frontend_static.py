@@ -34,5 +34,10 @@ def test_live_mode_never_reads_heuristic_grid_scores():
 
 
 def test_stale_or_unavailable_sources_withhold_values():
-    assert "values are withheld, not shown as current" in APP and "STALE_H = 12" in APP
-    assert "UNAVAILABLE" in APP and "unavailable" in APP
+    """M4: staleness is computed by the location module from timestamps and the clock, and the app withholds on it."""
+    loc = (ROOT / "assets/drift_location.js").read_text()
+    assert "MODEL_MAX_AGE_H = 18" in loc and "'STALE'" in loc and "'INVALID_PROVENANCE'" in loc and "'PAST_VALID_TIME'" in loc
+    assert "verifyFields" in loc and "valid time != init + fhour" in loc               # the browser re-verifies provenance itself
+    assert "values are withheld, not shown as current" in APP
+    assert "status === 'STALE' || status === 'INVALID_PROVENANCE' || status === 'UNAVAILABLE'" in APP
+    assert "unavailable" in APP and "DL.hourStatus" in APP

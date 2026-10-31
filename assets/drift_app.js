@@ -111,10 +111,10 @@
     var opts = { cache: 'no-store' };
     var j = function (u) { return fetch(u, opts).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }).catch(function () { return null; }); };
     return Promise.all([j('data/india_grid_025.json'), j('data/india_places.json'), j('data/india_fields_latest.json'), j('data/india_static_025.json'), j('data/drift_live.json'),
-                        j('data/hazard_evaluation.json'), j('assets/india_outline.geojson'), j('data/india_ts_model_latest.json')]).then(function (a) {
-      st.live = a[4]; st.ev = a[5]; st.outline = a[6]; st.tsm = a[7];
+                        j('data/hazard_evaluation.json'), j('assets/india_outline.geojson'), j('data/india_ts_model_latest.json'), j('data/india_rain_model_latest.json')]).then(function (a) {
+      st.live = a[4]; st.ev = a[5]; st.outline = a[6]; st.tsm = a[7]; st.rainm = a[8];
       if (a[0]) {
-        st.store = DL.create({ grid: a[0], places: a[1], fields: a[2], statics: a[3], live: a[4], tsmodel: a[7] });
+        st.store = DL.create({ grid: a[0], places: a[1], fields: a[2], statics: a[3], live: a[4], tsmodel: a[7], rainmodel: a[8] });
         st.store.staticsDoc = a[3];
         if (st.store.fieldsOk) st.hour = st.store.defaultHour(Date.now());
       }
@@ -412,7 +412,7 @@
       '<div class="small">CAPE by forecast hour</div>' + spark(ind.cape_series, st.hour, 'var(--accent)', 'J/kg') +
       '<p class="small mute">CAPE: energy available to a rising parcel. CIN: the cap that must be overcome. Storms need CAPE, a weak or eroded cap, moisture and a trigger; shear organises them. These are inputs, not an outcome forecast.</p>';
     if (ts.model.status === 'AVAILABLE_EVALUATED') {
-      var m = ts.model; tsBody += '<h2>Pan-India model (' + esc(m.model_version) + ')</h2>' + kv(Object.keys(m.leads).map(function (L) { return ['+' + L + ' h (valid ' + esc(m.leads[L].valid_time_utc.slice(5, 16).replace('T', ' ')) + 'Z)', m.leads[L].value == null ? '<span class="na">unavailable</span>' : (+m.leads[L].value).toFixed(3) + ' <span class="mute small">' + esc(m.value_type) + '</span>']; })) +
+      var m = ts.model; tsBody += '<h2>Pan-India model (' + esc(m.model_version) + ')</h2>' + kv(Object.keys(m.leads).map(function (L) { return ['+' + L + ' h (valid ' + esc(m.leads[L].valid_time_utc.slice(5, 16).replace('T', ' ')) + 'Z)', m.leads[L].value == null ? '<span class="na">unavailable</span>' : (+m.leads[L].value).toFixed(3) + ' <span class="mute small">' + esc(String(m.value_type).replace(/_/g, ' ').toLowerCase()) + '</span>']; })) +
         '<div class="small mute">' + esc(m.calibrated ? 'Calibrated on the training data.' : 'Not calibrated.') + ' Evaluation: ' + esc(m.evaluation_ref) + '. Automated alerts stay disabled.</div>' + (function () { var best = Object.keys(m.leads).sort(function (a, b) { return (m.leads[b].value || 0) - (m.leads[a].value || 0); })[0], ex = m.explanation_top3_treeshap && m.explanation_top3_treeshap[best]; return ex ? '<div class="small"><b>Why (+' + best + ' h, top inputs, TreeSHAP):</b> ' + ex.map(function (x) { return esc(x.feature) + ' <span class="mute">(' + (x.contribution > 0 ? 'raises' : 'lowers') + ' ' + Math.abs(x.contribution).toFixed(2) + ')</span>'; }).join(', ') + '</div>' : ''; })();
     } else tsBody += '<h2>Pan-India model</h2><p class="small">' + chip('UNAVAILABLE', 'UNAVAILABLE') + ' ' + esc(ts.model.reason) + '</p>';
     var station = (st.live && st.live.hazards && st.live.hazards.thunderstorm && st.live.hazards.thunderstorm.station_evidence);
@@ -421,8 +421,14 @@
       tsBody += '<h2>Station evidence · VOBL</h2><div class="small">METAR ' + esc(station.metar.raw || '') + '<br><span class="mute">observed ' + esc(station.metar.obs_time || '') + ' · ' + agoText(station.metar.obs_time) + '</span></div>';
     var mg = rn.model_guidance, rnBody = kv([
       ['Heavy-rain-day outlook <span class="mute small">(1° cell, daily, uncalibrated)</span>', rn.heavy_rain_day_outlook.value == null ? '<span class="na">unavailable</span>' : (+rn.heavy_rain_day_outlook.value).toFixed(3) + ' ' + chip('STALE', 'score, not a probability')],
-      ['Short-duration extreme rainfall', chip('UNAVAILABLE', 'UNAVAILABLE')], ['Cloudburst prediction', chip('UNAVAILABLE', 'UNAVAILABLE')]]) +
+      ['Short-duration heavy rainfall (3 h)', rn.short_duration_extreme_rainfall.status === 'AVAILABLE_EVALUATED' ? chip('AVAILABLE_EVALUATED', 'AVAILABLE · EVALUATED') : chip('UNAVAILABLE', 'UNAVAILABLE')], ['Cloudburst prediction', chip('UNAVAILABLE', 'UNAVAILABLE')]]) +
       '<div class="small mute">A heavy-rain day (≥ 64.5 mm/24 h) is a daily total. A cloudburst is a very intense, localised burst (commonly ≥ 100 mm/h). DRIFT has no hourly/sub-hourly rainfall labels or inputs, so it does not predict either short-duration extremes or cloudbursts.</div>';
+    var sd = rn.short_duration_extreme_rainfall;
+    if (sd.status === 'AVAILABLE_EVALUATED') {
+      rnBody += '<h2>Short-duration heavy rainfall model (' + esc(sd.model_version) + ')</h2><div class="small mute">Target: ' + esc(sd.target) + '. Not a cloudburst forecast.</div>' + kv(Object.keys(sd.targets).map(function (k) { var t = sd.targets[k], e = t.evaluation; return ['≥ ' + t.threshold_mm_per_3h + ' mm / 3 h, +' + t.lead_h + ' h <span class="mute small">(valid ' + esc(t.valid_time_utc.slice(5, 16).replace('T', ' ')) + 'Z)</span>', (t.value == null ? '<span class="na">unavailable</span>' : (100 * t.value).toFixed(2) + ' %') + ' <span class="mute small">calibrated; AUROC ' + e.temporal_holdout.auroc + ', Brier skill ' + e.temporal_holdout.brier_skill + ' (2025 holdout), raw GFS AUROC ' + e.raw_gfs_rainfall_auroc + '</span>']; })) +
+        (function () { var k = Object.keys(sd.targets).sort(function (a, b) { return (sd.targets[b].value || 0) - (sd.targets[a].value || 0); })[0], ex = k && sd.targets[k].explanation_top3_treeshap; return ex ? '<div class="small"><b>Why (' + esc(k) + ', TreeSHAP):</b> ' + ex.map(function (x) { return esc(x.feature) + ' <span class="mute">(' + (x.contribution > 0 ? 'raises' : 'lowers') + ' ' + Math.abs(x.contribution).toFixed(2) + ')</span>'; }).join(', ') + '</div>' : ''; })() +
+        '<div class="small mute">' + sd.limits.map(esc).join(' · ') + '</div>';
+    } else rnBody += '<h2>Short-duration heavy rainfall model</h2><p class="small">' + chip('UNAVAILABLE', 'UNAVAILABLE') + ' ' + esc(sd.reason) + '</p>';
     if (mg) rnBody += '<h2>GFS rainfall guidance (model, not observed)</h2>' + kv([['Max 3 h amount', fmt(mg.max_3h_mm, 1, 'mm') + (mg.max_3h_fhour != null ? ' <span class="mute small">ending f' + mg.max_3h_fhour + '</span>' : '')], ['Accumulated by last hour', fmt(mg.accumulated_24h_mm, 1, 'mm')], ['IMD-class of that total <span class="mute small">(applied to model rain)</span>', esc(mg.imd_24h_category || 'unavailable')],
       ['Spatial extent (5×5 cells ≈ ±0.5°)', mg.spatial_extent_within_half_degree[st.hour].cells_ge_10mm_3h + ' of ' + mg.spatial_extent_within_half_degree[st.hour].n_cells + ' cells ≥ 10 mm/3 h · ' + mg.spatial_extent_within_half_degree[st.hour].cells_ge_25mm_3h + ' ≥ 25 mm/3 h']]) +
       '<div class="small">3 h amounts by forecast hour</div>' + spark(mg.precip_3h_series_mm, st.hour, '#6ec3c9', 'mm');
