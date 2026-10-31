@@ -350,6 +350,14 @@ jobs:
         # fallback / defaulted / climatology slots must never drive alert_active or peak_probability
         run: python3 scripts/ci_validate_vobl_forecast.py forecast.json
 
+      - name: Build DRIFT command-centre feed (from this run's artifacts) and validate it (fail closed)
+        # Runs AFTER the unified-artifact, grid and VOBL gates so it only ever summarises verified, current inputs.
+        # The validator rejects a feed that was not regenerated in this run (max age 30 min).
+        run: |
+          python3 scripts/eval_hazard_baselines.py
+          python3 scripts/build_drift_live.py
+          python3 scripts/ci_validate_drift_live.py data/drift_live.json --max-age-minutes 30
+
       - name: Send WhatsApp alerts
         env:
           WORKER_URL: ${{ secrets.WORKER_URL }}
@@ -413,9 +421,6 @@ jobs:
         run: |
           git config --global user.name  "SIH Forecast Bot"
           git config --global user.email "bot@sih-hyperlocal.in"
-          # DRIFT command-centre feed: re-verified from the artifacts above; a source that fails integrity is emitted UNAVAILABLE
-          python3 scripts/eval_hazard_baselines.py || echo "WARN: evaluation not rebuilt"
-          python3 scripts/build_drift_live.py || echo "WARN: drift_live.json not rebuilt"
           GENERATED_FILES="forecast.json data/gfs_realtime_43295.csv data/upperair_realtime_43295.csv data/gfs_multiday_43295.json data/himawari_realtime.json data/himawari_history.json data/himawari_b08_features.json data/realtime_shap.json data/verification_today.json data/pipeline_health.json data/skill_scores.json data/forecast_log.csv data/alert_history.json data/blr_terrain.json data/drift_live.json data/hazard_evaluation.json"
           if [ "$UNIFIED_ARTIFACT_OUTCOME" = "true" ]; then
             GENERATED_FILES="$GENERATED_FILES data/unified_forecast.json"
@@ -512,6 +517,9 @@ jobs:
       - name: Validate pan-India grid before deploy (fail closed)
         if: steps.unified_artifact_check.outputs.ok == 'true'
         run: python3 scripts/ci_validate_pan_india_grid.py pages_dist/data/pan_india_grid.json
+      - name: Validate DRIFT live feed in the publish bundle (fail closed)
+        run: python3 scripts/ci_validate_drift_live.py pages_dist/data/drift_live.json --max-age-minutes 180
+
       - name: Deploy to Cloudflare Pages
         if: steps.unified_artifact_check.outputs.ok == 'true'
         env:

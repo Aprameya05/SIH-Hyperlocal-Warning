@@ -85,6 +85,12 @@ jobs:
         # build, no alert dispatch and no commit happen; the last-known-good grid on main is untouched.
         run: python3 scripts/ci_validate_pan_india_grid.py data/pan_india_grid.json
 
+      - name: Rebuild DRIFT command-centre feed from the fresh grid (fail closed)
+        run: |
+          python3 scripts/eval_hazard_baselines.py
+          python3 scripts/build_drift_live.py
+          python3 scripts/ci_validate_drift_live.py data/drift_live.json --max-age-minutes 30 --require-cells
+
       - name: Build canonical forecast
         # 2026-10-10: this step has failed on every run for several days
         # straight with only a generic "Process completed with exit code
@@ -113,6 +119,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/pan_india_grid.json data/ctt_grid.json data/canonical_forecast.json
+          git add data/pan_india_grid.json data/ctt_grid.json data/canonical_forecast.json data/drift_live.json data/hazard_evaluation.json
           git diff --staged --quiet || git commit -m "Auto: GFS grid update $(date -u +%Y%m%dT%H%MZ)"
           git push

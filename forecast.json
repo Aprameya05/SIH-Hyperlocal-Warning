@@ -1,6 +1,6 @@
 {
   "date": "2026-10-31",
-  "generated_at": "2026-10-31 03:15 IST",
+  "generated_at": "2026-10-31 15:30 IST",
   "alert_active": false,
   "peak_slot": 0,
   "peak_probability": 0.0,
@@ -19,22 +19,26 @@
       "model_version": "v6_temporal",
       "fallback": false,
       "fallback_reason": null,
-      "raw_probability": 0.0001,
+      "raw_probability": 0.0004,
       "cape": 0.0,
       "k_index": 24.6,
       "lifted_index": 6.5,
       "totals_totals": 37.0,
       "regime_adjustment": 1.0,
       "lead_time": {
-        "available": true,
-        "hours": 0.0,
+        "available": false,
+        "hours": null,
         "valid_from": "2026-10-30T18:30:00+00:00",
         "valid_to": "2026-10-31T00:29:59+00:00",
-        "reference_time": "2026-10-30T21:42:00+00:00",
-        "source_cycle": "2026-10-30 12Z f012",
-        "source_fhour": 12,
-        "reason": "reference_time falls inside or after the slot window (late/current-slot run) -- lead time clipped to 0, not reported negative",
-        "clipped": true
+        "reference_time": null,
+        "source_cycle": null,
+        "source_fhour": null,
+        "reason": "reference_time unavailable (no valid GFS fetched_at_utc for this run)",
+        "clipped": false,
+        "acquisition_lead_hours": null,
+        "hours_semantics": "LEGACY_ACQUISITION_LEAD_NOT_OPERATIONAL",
+        "operational_lead_hours": null,
+        "operational_lead_status": "UNAVAILABLE_NO_AVAILABILITY_TIME"
       },
       "cb_probability": 0.0,
       "ff_probability": 0.0,
@@ -56,22 +60,26 @@
       "model_version": "v6_temporal",
       "fallback": false,
       "fallback_reason": null,
-      "raw_probability": 0.0003,
+      "raw_probability": 0.0008,
       "cape": 0.0,
       "k_index": 11.3,
       "lifted_index": 6.54,
       "totals_totals": 37.3,
       "regime_adjustment": 1.0,
       "lead_time": {
-        "available": true,
-        "hours": 2.8,
+        "available": false,
+        "hours": null,
         "valid_from": "2026-10-31T00:30:00+00:00",
         "valid_to": "2026-10-31T06:29:59+00:00",
-        "reference_time": "2026-10-30T21:42:00+00:00",
-        "source_cycle": "2026-10-30 12Z f012",
-        "source_fhour": 12,
-        "reason": "lead_time = valid_from - reference_time (GFS fetch time)",
-        "clipped": false
+        "reference_time": null,
+        "source_cycle": null,
+        "source_fhour": null,
+        "reason": "reference_time unavailable (no valid GFS fetched_at_utc for this run)",
+        "clipped": false,
+        "acquisition_lead_hours": null,
+        "hours_semantics": "LEGACY_ACQUISITION_LEAD_NOT_OPERATIONAL",
+        "operational_lead_hours": null,
+        "operational_lead_status": "UNAVAILABLE_NO_AVAILABILITY_TIME"
       },
       "cb_probability": 0.0476,
       "ff_probability": 0.0,
@@ -88,27 +96,31 @@
       "ts_predicted": false,
       "threshold": 0.1,
       "primary": true,
-      "source": "gfs",
+      "source": "model_defaults",
       "model_used": "nowcast_slot2_xgb_v6_temporal.pkl",
       "model_version": "v6_temporal",
-      "fallback": false,
-      "fallback_reason": null,
-      "raw_probability": 0.0011,
+      "fallback": true,
+      "fallback_reason": "no valid GFS row: inputs are hard-coded climatological defaults",
+      "raw_probability": 0.0009,
       "cape": 0.0,
-      "k_index": 11.3,
-      "lifted_index": 6.54,
-      "totals_totals": 37.3,
+      "k_index": 30.0,
+      "lifted_index": -2.0,
+      "totals_totals": 44.0,
       "regime_adjustment": 1.0,
       "lead_time": {
-        "available": true,
-        "hours": 8.8,
+        "available": false,
+        "hours": null,
         "valid_from": "2026-10-31T06:30:00+00:00",
         "valid_to": "2026-10-31T12:29:59+00:00",
-        "reference_time": "2026-10-30T21:42:00+00:00",
-        "source_cycle": "2026-10-30 12Z f012",
-        "source_fhour": 12,
-        "reason": "lead_time = valid_from - reference_time (GFS fetch time)",
-        "clipped": false
+        "reference_time": null,
+        "source_cycle": null,
+        "source_fhour": null,
+        "reason": "reference_time unavailable (no valid GFS fetched_at_utc for this run)",
+        "clipped": false,
+        "acquisition_lead_hours": null,
+        "hours_semantics": "LEGACY_ACQUISITION_LEAD_NOT_OPERATIONAL",
+        "operational_lead_hours": null,
+        "operational_lead_status": "UNAVAILABLE_NO_AVAILABILITY_TIME"
       },
       "cb_probability": 0.0,
       "ff_probability": 0.0,
@@ -121,46 +133,50 @@
       "slot": 3,
       "label": "Evening",
       "time": "1801-2400 IST",
-      "ts_probability": 0.0,
+      "ts_probability": 0.0016,
       "ts_predicted": false,
       "threshold": 0.39,
       "primary": false,
-      "source": "gfs",
+      "source": "model_defaults",
       "model_used": "nowcast_slot3_xgb_v6_temporal.pkl",
       "model_version": "v6_temporal",
-      "fallback": false,
-      "fallback_reason": null,
-      "raw_probability": 0.0014,
+      "fallback": true,
+      "fallback_reason": "no valid GFS row: inputs are hard-coded climatological defaults",
+      "raw_probability": 0.0021,
       "cape": 0.0,
-      "k_index": 11.3,
-      "lifted_index": 6.54,
-      "totals_totals": 37.3,
+      "k_index": 30.0,
+      "lifted_index": -2.0,
+      "totals_totals": 44.0,
       "regime_adjustment": 1.0,
       "lead_time": {
-        "available": true,
-        "hours": 14.8,
+        "available": false,
+        "hours": null,
         "valid_from": "2026-10-31T12:30:00+00:00",
         "valid_to": "2026-10-31T18:29:59+00:00",
-        "reference_time": "2026-10-30T21:42:00+00:00",
-        "source_cycle": "2026-10-30 12Z f012",
-        "source_fhour": 12,
-        "reason": "lead_time = valid_from - reference_time (GFS fetch time)",
-        "clipped": false
+        "reference_time": null,
+        "source_cycle": null,
+        "source_fhour": null,
+        "reason": "reference_time unavailable (no valid GFS fetched_at_utc for this run)",
+        "clipped": false,
+        "acquisition_lead_hours": null,
+        "hours_semantics": "LEGACY_ACQUISITION_LEAD_NOT_OPERATIONAL",
+        "operational_lead_hours": null,
+        "operational_lead_status": "UNAVAILABLE_NO_AVAILABILITY_TIME"
       },
       "cb_probability": 0.0,
       "ff_probability": 0.0,
       "prob_delta": 0.0,
       "trend": "stable",
-      "trend_diff": 0,
-      "prev_probability": 0
+      "trend_diff": 0.0,
+      "prev_probability": 0.002
     }
   ],
   "met_parameters": {
     "ua_cape_jkg": 0.0,
     "ua_cape_raw": 0.0,
-    "ua_k_index": 11.3,
-    "ua_lifted_index": 6.54,
-    "ua_totals_totals": 37.3,
+    "ua_k_index": 30.0,
+    "ua_lifted_index": -2.0,
+    "ua_totals_totals": 44.0,
     "ERA5_u_500hPa": -3.5345358276367187,
     "ERA5_v_500hPa": 1.5448681640625,
     "ERA5_u_850hPa": -0.0738037109375,
@@ -270,30 +286,30 @@
       }
     ]
   },
-  "gfs_tmax_c": 28.3,
-  "gfs_tmin_c": 19.4,
+  "gfs_tmax_c": 33.9,
+  "gfs_tmin_c": 21.9,
   "gfs_rainfall_mm": 0.0,
   "gfs_valid_date": "31 Oct 2026",
-  "gfs_cycle": "2026-10-30 12Z f012",
+  "gfs_cycle": "N/A",
   "convective_initiation": {
     "instability_score": 0.0,
-    "initiation_status": "PRE-CONVECTIVE",
-    "initiation_message": "Peak convective window in 9.8h (1300\u20131800 IST)",
+    "initiation_status": "CONVECTIVE WINDOW ACTIVE",
+    "initiation_message": "Currently in peak thunderstorm window (1300\u20131800 IST)",
     "initiation_risk": "MINIMAL",
-    "hours_to_peak": 9.8,
+    "hours_to_peak": 0,
     "cape_now": 0.0,
     "ki_now": 11.28,
     "li_now": 6.54,
     "tt_now": 37.31,
-    "srh_0_3km": -1.83,
-    "ehi": 0.0,
-    "brn": 0.0,
+    "srh_0_3km": null,
+    "ehi": null,
+    "brn": null,
     "cape_tendency_jkgh": 0.0,
     "cape_trend": "STEADY",
     "monsoon_regime": "NEUTRAL",
     "regime_thresh_factor": 1.0,
     "peak_window_ist": "1300\u20131800 IST",
-    "computed_at": "2026-10-31 03:15 IST"
+    "computed_at": "2026-10-31 15:30 IST"
   },
   "multiday_outlook": [
     {
@@ -403,7 +419,7 @@
       }
     ],
     "data_file": "data/blr_terrain.json",
-    "computed_at": "2026-10-31 03:15 IST"
+    "computed_at": "2026-10-31 15:30 IST"
   },
   "hazard_summary": {
     "cloudburst": {
@@ -478,7 +494,7 @@
     "query_cape": 0.0,
     "query_ki": 11.28,
     "query_li": 6.54,
-    "computed_at": "2026-10-31 03:15 IST"
+    "computed_at": "2026-10-31 15:30 IST"
   },
   "airport_impact": {
     "total_departures_today": 143,
@@ -514,13 +530,13 @@
       {
         "slot": 3,
         "label": "Evening",
-        "ts_probability": 0,
+        "ts_probability": 0.0016,
         "departures": 38,
         "disrupted_est": 0,
-        "impact_pct": 0.0
+        "impact_pct": 0.1
       }
     ],
-    "computed_at": "2026-10-31 03:15 IST"
+    "computed_at": "2026-10-31 15:30 IST"
   },
   "synoptic_regime": {
     "regime_id": "R1",
@@ -531,9 +547,9 @@
     "color": "green",
     "cape_used": 0.0,
     "ki_used": 11.28,
-    "t2m_c": 19.4,
+    "t2m_c": 28.0,
     "month": 10,
-    "computed_at": "2026-10-31 03:15 IST"
+    "computed_at": "2026-10-31 15:30 IST"
   },
   "verification": {
     "pod": 0.0,
@@ -656,7 +672,7 @@
           "direction": "decreases_risk"
         }
       ],
-      "computed_at": "2026-10-31 02:19 IST"
+      "computed_at": "2026-10-31 03:15 IST"
     },
     "1": {
       "slot": 1,
@@ -739,7 +755,7 @@
           "direction": "decreases_risk"
         }
       ],
-      "computed_at": "2026-10-31 02:19 IST"
+      "computed_at": "2026-10-31 03:15 IST"
     },
     "2": {
       "slot": 2,
@@ -822,7 +838,7 @@
           "direction": "decreases_risk"
         }
       ],
-      "computed_at": "2026-10-31 02:19 IST"
+      "computed_at": "2026-10-31 03:15 IST"
     },
     "3": {
       "slot": 3,
@@ -905,7 +921,7 @@
           "direction": "decreases_risk"
         }
       ],
-      "computed_at": "2026-10-31 02:19 IST"
+      "computed_at": "2026-10-31 03:15 IST"
     }
   },
   "metar": {
@@ -934,15 +950,15 @@
   },
   "sigmet_bulletin": null,
   "pipeline_health": {
-    "generated_at_utc": "2026-10-30T21:45:40Z",
-    "generated_at_ist": "2026-10-31 03:15 IST",
+    "generated_at_utc": "2026-10-31T10:00:49Z",
+    "generated_at_ist": "2026-10-31 15:30 IST",
     "components": {
       "gfs": {
-        "status": "OK",
-        "cycle": "2026-10-30 12Z f012",
-        "fetched_utc": "2026-10-30 21:42",
-        "staleness": "FRESH",
-        "rows": 1
+        "status": "MISSING",
+        "cycle": "N/A",
+        "fetched_utc": "",
+        "staleness": "UNKNOWN",
+        "rows": 0
       },
       "himawari9": {
         "status": "OK",
@@ -963,18 +979,5 @@
         "status": "OK"
       }
     }
-  },
-  "verification_daily": {
-    "date_verified": "2026-10-29",
-    "slots_verified": 0,
-    "thunderstorm_observed": null,
-    "slot_results": [],
-    "rolling_30d": {
-      "POD": 0.0,
-      "FAR": 0.0,
-      "HSS": 0.0,
-      "Brier": 0.0
-    },
-    "note": "IMD observation file not found"
   }
 }

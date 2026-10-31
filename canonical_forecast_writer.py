@@ -333,7 +333,7 @@ def overlay_vobl_ml_cell(cells: list, fc: dict, himawari_dq, terrain_dq):
                 method_note = (f"NOT a trained-model prediction -- {slot_source} lookup for slot {slot_idx} "
                                 f"({slot_label}, {slot_window} IST): {slot_fallback_reason or 'no model artifact available'}")
             elif slot_source == "model_defaults":
-                hz_status = "AVAILABLE"
+                hz_status = "PROXY"        # M2: climatological-default inputs are not today's atmosphere
                 model_for_hazard = model_used
                 method_note = (f"trained XGBoost, {model_version} -- ran on CLIMATOLOGICAL DEFAULT input "
                                 f"features (no live GFS/upper-air row was available for today), NOT today's "
@@ -375,6 +375,24 @@ def overlay_vobl_ml_cell(cells: list, fc: dict, himawari_dq, terrain_dq):
 
             lead_fc["data_quality"]["himawari"] = himawari_dq
             lead_fc["data_quality"]["terrain"] = terrain_dq
+
+        # M2: the "+2h/+4h/+6h" entries are look-ups of the IST slot window containing that clock time. They are NOT
+        # lead-specific model runs, and the lead is measured from the forecast's GENERATION moment, not from when it
+        # became available to anyone. Say so on every entry (additive fields; existing fields unchanged).
+        for lead_fc in cell["forecasts"]:
+            lead_fc["lead_semantics"] = {
+                "kind": "SLOT_WINDOW_LOOKUP_NOT_LEAD_SPECIFIC",
+                "requested_offset_hours_from_generation": lead_fc.get("lead_hours"),
+                "operational_lead_hours": None,
+                "operational_lead_status": "UNAVAILABLE_NO_AVAILABILITY_TIME",
+                "note": ("Entries that land in the same slot window share that slot's single model output. The offset "
+                         "is from generation time; no forecast availability time is recorded, so no operational lead "
+                         "time is claimed."),
+            }
+            for blk in (lead_fc.get("hazards") or {}).values():
+                if isinstance(blk, dict):
+                    blk["lead_specific"] = False
+                    blk["resolution"] = "STATION_SLOT_WINDOW"
 
 
 def build_canonical_forecast(gfs_freshly_fetched: bool = False, himawari_freshly_fetched: bool = False) -> dict:

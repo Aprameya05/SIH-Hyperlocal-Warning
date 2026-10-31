@@ -1049,9 +1049,22 @@
     }
 
   </style>
+  <style>
+    .drift-entry{display:flex;align-items:center;gap:14px;flex-wrap:wrap;justify-content:center;padding:10px 16px;text-decoration:none;color:#eaf6ff;
+      background:linear-gradient(90deg,#0b3a63,#0e5a8a 45%,#0b3a63);border-bottom:1px solid #38bdf8;font:600 14px/1.3 system-ui,sans-serif}
+    .drift-entry:hover{filter:brightness(1.12)}
+    .drift-entry b{letter-spacing:.06em}
+    .drift-entry .cta{background:#38bdf8;color:#04121f;border-radius:999px;padding:6px 16px;font-weight:800;white-space:nowrap}
+    .drift-entry small{font-weight:400;opacity:.85}
+  </style>
 </head>
 <body class="bg-[#040711] text-[#e8eaf6] antialiased min-h-screen font-sans relative overflow-x-hidden selection:bg-sky-400 selection:text-black">
 
+  <a class="drift-entry" id="drift-entry" href="drift.html" aria-label="Open the DRIFT pan-India command centre">
+    <b>DRIFT PAN-INDIA COMMAND CENTRE</b>
+    <small>Thunderstorms · extreme rainfall · flash floods — live NWP guidance, honest provenance, and an interactive scenario simulation</small>
+    <span class="cta">Open command centre &rarr;</span>
+  </a>
   <div id="root"></div>
 
   <!-- Restore saved theme preference immediately -->
@@ -4324,8 +4337,8 @@ function injectDrainageOverlay(map, liveData) {
                 name: activeLocation.displayName || 'VOBL / Bengaluru Airport',
                 cellLat: activeLocation.latitude, cellLon: activeLocation.longitude,
                 ts: liveData?.peak_probability ?? null,
-                cb: slots.length > 0 ? Math.max(...slots.map(s => s.cb_probability || 0)) : null,
-                ff: slots.length > 0 ? Math.max(...slots.map(s => s.ff_probability || 0)) : null,
+                cb: (() => { const v = slots.map(s => s.cb_probability).filter(x => typeof x === 'number'); return v.length ? Math.max(...v) : null; })(),
+                ff: (() => { const v = slots.map(s => s.ff_probability).filter(x => typeof x === 'number'); return v.length ? Math.max(...v) : null; })(),
                 modelType: 'physics_baseline',
                 validAt: gridMeta?.forecast_valid_at_utc || null,
                 operationalLeadH: gridMeta?.operational_lead_hours ?? null,
@@ -10202,9 +10215,9 @@ function injectDrainageOverlay(map, liveData) {
                 label: s.label.toUpperCase(),
                 time: (s.time || '').replace(/ IST$/, ''),
                 ts_probability: s.ts_probability ?? 0,
-                cb_probability: s.cb_probability ?? 0,
-                ff_probability: s.ff_probability ?? 0,
-                probability: s[hCfg.probKey] ?? s.probability ?? 0,
+                cb_probability: s.cb_probability ?? null,   // unscored stays null; never shown as 0%
+                ff_probability: s.ff_probability ?? null,
+                probability: (hCfg.key === 'ts' ? (s[hCfg.probKey] ?? s.probability ?? 0) : (s[hCfg.probKey] ?? null)),
                 ts_predicted: s.ts_predicted,
                 threshold: s.threshold,
                 icon: s.slot === 0 ? "🌙" : s.slot === 1 ? "☀️" : s.slot === 2 ? "⛅" : "🌆"

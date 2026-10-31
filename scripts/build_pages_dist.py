@@ -48,7 +48,7 @@ def _write_slim_unified(src: Path, dst: Path) -> None:
         for hz in ("TS", "CB", "FF"):
             b = r.get(hz)
             if isinstance(b, dict):
-                for k in ("research_reference", "historical_reference", "xai"):
+                for k in ("research_reference", "historical_reference", "xai", "extra"):
                     b.pop(k, None)
     art["published_variant"] = "SLIM_NO_RESEARCH_REFERENCES"
     dst.write_text(json.dumps(art, separators=(",", ":")))
