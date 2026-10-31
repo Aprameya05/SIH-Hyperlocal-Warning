@@ -40,12 +40,14 @@ UA = {"User-Agent": "SIH-Hyperlocal-DRIFT/2.0"}
 
 
 def dates():
+    """Every 3rd day of Apr-Jun. Ordered so 2024 and 2025 INTERLEAVE and the season is visited coarse-to-fine (stride 12,
+    then 6, then 3 days): stopping the build at any point leaves a balanced, season-spanning sample in both years."""
+    base = [datetime(2024, 4, 1, tzinfo=timezone.utc) + timedelta(days=3 * k) for k in range(31)]
+    order = sorted(range(31), key=lambda k: (0 if k % 4 == 0 else 1 if k % 2 == 0 else 2, k))
     out = []
-    for yr in (2024, 2025):
-        d = datetime(yr, 4, 1, tzinfo=timezone.utc)
-        while d < datetime(yr, 7, 1, tzinfo=timezone.utc):
-            out.append(d)
-            d += timedelta(days=3)
+    for k in order:
+        for yr in (2024, 2025):
+            out.append(base[k].replace(year=yr))
     return out
 
 

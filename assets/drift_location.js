@@ -148,10 +148,10 @@
         vertical_velocity_700_pa_s: fl.w700.value, cape_series: fl.cape.series,
         cap_strength: cin == null ? null : (cin <= -100 ? 'STRONG_CAP' : cin <= -25 ? 'MODERATE_CAP' : 'WEAK_CAP') };
       if (S.tsOk && S.tsIdx[cid] != null) {
-        var m = S.ts, leads = {};
-        m.meta.leads.forEach(function (L) { leads[String(L)] = { value: m.leads[String(L)][S.tsIdx[cid]], valid_time_utc: m.meta.valid_times[String(L)] }; });
+        var m = S.ts, leads = {}, exp = {}, feats = m.meta.features, ix = S.tsIdx[cid];
+        m.meta.leads.forEach(function (L) { leads[String(L)] = { value: m.leads[String(L)][ix], valid_time_utc: m.meta.valid_times[String(L)] }; var a = m.explanations[String(L)][ix]; exp[String(L)] = [0, 2, 4].map(function (k) { return { feature: feats[a[k]], contribution: a[k + 1] }; }); });
         h.model = { status: 'AVAILABLE_EVALUATED', model_version: m.meta.model_version, model_init_utc: m.meta.cycle_init_utc, value_type: m.meta.value_type, calibrated: m.meta.calibrated,
-                    leads: leads, evaluation_ref: m.meta.evaluation_ref, explanation: (m.explanations || {})[cid] || null, alert_eligible: false,
+                    leads: leads, evaluation_ref: m.meta.evaluation_ref, explanation_top3_treeshap: exp, alert_eligible: false,
                     alert_note: 'automated alerts stay disabled: no recorded DRIFT publication time' };
       }
       return h;

@@ -244,9 +244,12 @@ class Store:
         if self.ts_ok and cid in self.ts_idx:
             m = self.ts_doc
             row = m["leads"]
+            feats = m["meta"]["features"]
+            exp = {str(L): [{"feature": feats[m["explanations"][str(L)][self.ts_idx[cid]][k]], "contribution": m["explanations"][str(L)][self.ts_idx[cid]][k + 1]} for k in (0, 2, 4)]
+                   for L in m["meta"]["leads"]}
             h["model"] = {"status": "AVAILABLE_EVALUATED", "model_version": m["meta"]["model_version"], "model_init_utc": m["meta"]["cycle_init_utc"],
                           "value_type": m["meta"]["value_type"], "calibrated": m["meta"]["calibrated"], "leads": {str(L): {"value": row[str(L)][self.ts_idx[cid]], "valid_time_utc": m["meta"]["valid_times"][str(L)]} for L in m["meta"]["leads"]},
-                          "evaluation_ref": m["meta"]["evaluation_ref"], "explanation": m.get("explanations", {}).get(cid),
+                          "evaluation_ref": m["meta"]["evaluation_ref"], "explanation_top3_treeshap": exp,
                           "alert_eligible": False, "alert_note": "automated alerts stay disabled: no recorded DRIFT publication time"}
         return h
 

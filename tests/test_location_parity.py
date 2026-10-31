@@ -51,6 +51,7 @@ def test_python_and_javascript_records_agree():
             pyh, jh = py["hazards"][hz], j["hazards"][hz]
             if hz == "thunderstorm":
                 close(pyh["indicators"], jh["indicators"], path=f"{spec}.{hz}")
+                close(pyh["model"], jh["model"], path=f"{spec}.{hz}.model")
             elif hz == "extreme_rainfall":
                 close(pyh["heavy_rain_day_outlook"]["value"], jh["heavy_rain_day_outlook"]["value"], path=f"{spec}.cb")
                 close(pyh["model_guidance"], jh["model_guidance"], path=f"{spec}.rain")

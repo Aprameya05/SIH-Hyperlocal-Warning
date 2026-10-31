@@ -517,6 +517,9 @@ jobs:
       - name: Validate pan-India grid before deploy (fail closed)
         if: steps.unified_artifact_check.outputs.ok == 'true'
         run: python3 scripts/ci_validate_pan_india_grid.py pages_dist/data/pan_india_grid.json
+      - name: Validate national location artifacts in the publish bundle (fail closed)
+        run: python3 scripts/ci_validate_india_fields.py pages_dist/data --max-age-hours 48
+
       - name: Validate DRIFT live feed in the publish bundle (fail closed)
         run: python3 scripts/ci_validate_drift_live.py pages_dist/data/drift_live.json --max-age-minutes 180
 
