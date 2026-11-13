@@ -1,28 +1,29 @@
 {
-  "generated_at_utc": "2026-11-12T22:58:21Z",
-  "generated_at_ist": "2026-11-13 04:28 IST",
+  "generated_at_utc": "2026-11-13T03:41:20Z",
+  "generated_at_ist": "2026-11-13 09:11 IST",
   "components": {
     "gfs": {
       "status": "OK",
-      "cycle": "2026-11-12 12Z f012",
-      "fetched_utc": "2026-11-12 22:54",
+      "cycle": "2026-11-12 18Z f012",
+      "fetched_utc": "2026-11-13 03:37",
       "staleness": "FRESH",
       "rows": 1
     },
     "himawari9": {
       "status": "OK",
-      "timestamp_utc": "2026-11-12T22:50:00",
-      "storm_detected": true,
-      "min_bt_50km": -53.35,
+      "timestamp_utc": "2026-11-13T03:30:00",
+      "storm_detected": false,
+      "min_bt_50km": -20.07,
       "staleness": "UNKNOWN"
     },
     "upper_air": {
       "status": "OK",
       "slots_available": [
         0,
-        1
+        1,
+        2
       ],
-      "n_slots": 2
+      "n_slots": 3
     },
     "metar": {
       "status": "OK"
