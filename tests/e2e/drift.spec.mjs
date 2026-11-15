@@ -268,11 +268,11 @@ test('legacy station dashboard: no typed metrics or unsupported pages are reacha
   const disabled = await page.$$eval('button[disabled]', b => b.map(x => x.innerText.trim()));
   assert.ok(disabled.filter(t => /CB/.test(t)).length >= 1 && disabled.filter(t => /FF/.test(t)).length >= 1, 'CB and FF buttons are disabled: ' + disabled);
   for (const hash of ['#models', '#scores', '#regimes', '#satellite', '#explainability', '#api', '#alerts', '#contacts', '#whatif', '#climatology', '#multiday', '#atc']) {
-    await page.goto(`${S.base}/index.html${hash}`); await page.reload(); await page.waitForTimeout(2500);
+    await page.goto(`${S.base}/${hash}`); await page.reload(); await page.waitForTimeout(2500);
     const t = await page.evaluate(() => document.body.innerText);
     assert.ok(!/0\.871|0\.8484|0\.997|AUROC 1\.0|Doppler|Blitzortung|ALL CLEAR|Dispatch to|Dispatched to|SIGMET\/AIRMET DRAFT|S-BAND|XGBoost v6/i.test(t), `${hash} shows a removed claim`);
   }
-  await page.goto(`${S.base}/index.html#models`); await page.reload(); await page.waitForTimeout(3000);
+  await page.goto(`${S.base}/#models`); await page.reload(); await page.waitForTimeout(3000);
   const m = await page.evaluate(() => document.body.innerText);
   assert.ok(/data\/hazard_evaluation\.json/.test(m) && /Brier skill/.test(m) && /STATION-ONLY/.test(m), 'models page is data-backed and station-scoped');
   await ctx.close();
