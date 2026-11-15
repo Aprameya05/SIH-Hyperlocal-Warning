@@ -5,11 +5,11 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "scripts"))
-import build_pages_dist as bpd  # noqa: E402
+from pipelines.publishing import build_pages_bundle as bpd  # noqa: E402
 
-HTML = (ROOT / "drift.html").read_text()
-APP = (ROOT / "assets/drift_app.js").read_text()
-SIM = (ROOT / "assets/drift_sim.js").read_text()
+HTML = (ROOT / "frontend" / "drift.html").read_text()
+APP = (ROOT / "frontend/assets/drift_app.js").read_text()
+SIM = (ROOT / "frontend/assets/drift_sim.js").read_text()
 
 
 def test_page_and_every_fetched_file_are_published():
@@ -35,7 +35,7 @@ def test_live_mode_never_reads_heuristic_grid_scores():
 
 def test_stale_or_unavailable_sources_withhold_values():
     """M4: staleness is computed by the location module from timestamps and the clock, and the app withholds on it."""
-    loc = (ROOT / "assets/drift_location.js").read_text()
+    loc = (ROOT / "frontend/assets/drift_location.js").read_text()
     assert "MODEL_MAX_AGE_H = 18" in loc and "'STALE'" in loc and "'INVALID_PROVENANCE'" in loc and "'PAST_VALID_TIME'" in loc
     assert "verifyFields" in loc and "valid time != init + fhour" in loc               # the browser re-verifies provenance itself
     assert "values are withheld, not shown as current" in APP

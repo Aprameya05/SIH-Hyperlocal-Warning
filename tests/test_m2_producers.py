@@ -75,7 +75,7 @@ def test_weekly_digest_wording_is_not_misleading():
 
 def test_publish_bundle_has_size_headroom(tmp_path):
     sys.path.insert(0, str(ROOT / "scripts"))
-    import build_pages_dist as b
+    from pipelines.publishing import build_pages_bundle as b
     b.build(tmp_path / "d")
     biggest = max(f.stat().st_size for f in (tmp_path / "d").rglob("*") if f.is_file())
     assert biggest <= 0.85 * b.MAX_FILE_BYTES, f"largest published file {biggest/2**20:.1f} MiB leaves <15% headroom"

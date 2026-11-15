@@ -14,7 +14,7 @@ const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'applica
 export function buildDist() {
   const out = fs.mkdtempSync(path.join(os.tmpdir(), 'drift-dist-'));
   const dist = path.join(out, 'pages_dist');
-  execFileSync(process.env.PYTHON || 'python3', [path.join(ROOT, 'scripts/build_pages_dist.py'), dist], { stdio: 'pipe' });
+  execFileSync(process.env.PYTHON || 'python3', [path.join(ROOT, 'pipelines/publishing/build_pages_bundle.py'), dist], { stdio: 'pipe' });
   return dist;
 }
 export function serve(dist) {

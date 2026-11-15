@@ -6,8 +6,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "scripts"))
 sys.path.insert(0, str(ROOT))
-import build_drift_live as b  # noqa: E402
-import eval_hazard_baselines as ev  # noqa: E402
+from pipelines.publishing import build_live_feed as b  # noqa: E402
+from models.evaluation import summarise_baseline_evaluations as ev  # noqa: E402
 
 
 def test_live_feed_has_three_hazards_and_no_heuristic_probability():

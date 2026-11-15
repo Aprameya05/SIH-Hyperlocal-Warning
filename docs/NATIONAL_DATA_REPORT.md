@@ -1,6 +1,6 @@
 # DRIFT national data report
 
-Generated 2026-10-31 11:27Z from the committed artifacts by `scripts/generate_national_report.py`. GFS cycle **2026-10-31T00:00:00Z**; 4643 India land cells at 0.25 deg; forecast hours [3, 6, 9, 12, 15, 18, 21, 24].
+Generated 2026-10-31 11:27Z from the committed artifacts by `scripts/utilities/generate_national_report.py`. GFS cycle **2026-10-31T00:00:00Z**; 4643 India land cells at 0.25 deg; forecast hours [3, 6, 9, 12, 15, 18, 21, 24].
 
 ## 1. Source-to-output trace
 
@@ -127,7 +127,7 @@ Selected forecast hour f12 (valid 2026-10-31T12:00:00Z), clock 11:27Z.
 | rural | Sundarbans edge | `IN025_2200_08900` | West Bengal / South Twenty Four Parganas | 4 | 348 | -50 | 50.2 | 26.7 | 78 | 27.8 | 3.3 | 0.1 | 0.330 | 0.022 | 0.017 |
 | rural | Deccan plateau | `IN025_1650_07700` | Karnataka / Raichur | 378 | 52 | -1 | 36.2 | 33.3 | 34 | 37.9 | 4.4 | 0.0 | 0.130 | 0.000 | 0.001 |
 
-## 4. Model evaluation (reproducible: `scripts/build_ts_panindia_dataset.py` -> `train_eval_ts_panindia.py`; `build_rain_panindia_dataset.py` -> `train_eval_rain_panindia.py`)
+## 4. Model evaluation (reproducible: `pipelines/feature_engineering/build_thunderstorm_training_dataset.py` -> `models/thunderstorm/train_and_evaluate_thunderstorm_model.py`; `pipelines/feature_engineering/build_rainfall_training_dataset.py` -> `models/extreme_rainfall/train_and_evaluate_extreme_rainfall_model.py`)
 
 ### Thunderstorm (pan-India, lead-specific)
 

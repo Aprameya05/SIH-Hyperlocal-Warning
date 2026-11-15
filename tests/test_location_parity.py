@@ -68,7 +68,7 @@ def test_browser_twin_rejects_a_forged_artifact(tmp_path):
     doc = json.load(open(src / "india_fields_latest.json"))
     doc["meta"]["files"][1]["valid_time_utc"] = "2020-01-01T00:00:00Z"
     script = (
-        "const L=require('./assets/drift_location.js'),fs=require('fs');const j=f=>JSON.parse(fs.readFileSync('data/'+f));"
+        "const L=require('./frontend/assets/drift_location.js'),fs=require('fs');const j=f=>JSON.parse(fs.readFileSync('data/'+f));"
         f"const f=JSON.parse(fs.readFileSync({json.dumps(str(tmp_path / 'f.json'))}));"
         "const S=L.create({grid:j('india_grid_025.json'),places:j('india_places.json'),fields:f,statics:j('india_static_025.json')});"
         "console.log(JSON.stringify({ok:S.fieldsOk,p:S.problems,fields:S.record('IN025_1300_07750',2,Date.now()).fields}))")

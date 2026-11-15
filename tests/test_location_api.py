@@ -37,10 +37,18 @@ def test_ten_cities_resolve_to_distinct_cells_with_distinct_underlying_data(clie
         recs[c] = r.json()
     cells = {c: r["location"]["cell_id"] for c, r in recs.items()}
     assert len(set(cells.values())) == len(CITIES)
-    for var in ("cape", "pwat", "t2m_c", "rh2m", "k_index", "shear_850_500"):
+    for var in ("pwat", "t2m_c", "rh2m", "k_index", "shear_850_500"):
         vals = [r["fields"][var]["value"] for r in recs.values() if r["fields"][var]["value"] is not None]
         assert len(set(vals)) >= 7, f"{var} barely varies across India: {sorted(set(vals))}"
     elev = {c: r["static"]["elev_mean_m"] for c, r in recs.items()}
+    # CAPE is season/cycle dependent (near zero almost everywhere in a winter cycle): require variation across ALL forecast hours instead
+    capes = set()
+    for c in CITIES:
+        for k in range(8):
+            v = client.get("/v1/location", params={"cell_id": _cell(client, c), "hour": k}).json()["fields"]["cape"]["value"]
+            if v is not None:
+                capes.add(v)
+    assert len(capes) >= 3, f"CAPE across 10 cities x 8 hours: {sorted(capes)}"
     assert elev["Srinagar"] > 1000 and elev["Chennai"] < 50 and elev["Leh" if "Leh" in elev else "Srinagar"] > 1000   # real terrain, not a copy
     assert recs["Delhi"]["location"]["state"] == "NCT of Delhi" and recs["Hyderabad"]["location"]["state"] == "Telangana"
     assert recs["Mumbai"]["fields"]["cape"]["value"] != recs["Delhi"]["fields"]["cape"]["value"]
@@ -49,7 +57,7 @@ def test_ten_cities_resolve_to_distinct_cells_with_distinct_underlying_data(clie
 def test_changing_the_location_changes_every_hazard_panel_not_just_the_highlight(client):
     a = client.get("/v1/location", params={"cell_id": _cell(client, "Mumbai"), "hour": 3}).json()
     b = client.get("/v1/location", params={"cell_id": _cell(client, "Srinagar"), "hour": 3}).json()
-    assert a["hazards"]["thunderstorm"]["indicators"]["cape"] != b["hazards"]["thunderstorm"]["indicators"]["cape"]
+    assert a["hazards"]["thunderstorm"]["indicators"]["pwat_mm"] != b["hazards"]["thunderstorm"]["indicators"]["pwat_mm"]
     assert a["hazards"]["flash_flood"]["context"]["static"]["elev_mean_m"] != b["hazards"]["flash_flood"]["context"]["static"]["elev_mean_m"]
     assert a["hazards"]["extreme_rainfall"]["model_guidance"]["precip_3h_series_mm"] != b["hazards"]["extreme_rainfall"]["model_guidance"]["precip_3h_series_mm"] or \
         a["location"]["cell_id"] != b["location"]["cell_id"]
@@ -58,8 +66,8 @@ def test_changing_the_location_changes_every_hazard_panel_not_just_the_highlight
 
 def test_forecast_hour_changes_the_values(client):
     cid = _cell(client, "Mumbai")
-    h = [client.get("/v1/location", params={"cell_id": cid, "hour": k}).json()["fields"]["cape"]["value"] for k in range(8)]
-    assert len(set(h)) >= 4, h
+    h = [client.get("/v1/location", params={"cell_id": cid, "hour": k}).json()["fields"]["t2m_c"]["value"] for k in range(8)]
+    assert len(set(h)) >= 5, h                 # 2 m temperature follows the diurnal cycle in every season
 
 
 def test_every_value_is_traceable(client):

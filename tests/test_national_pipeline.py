@@ -11,7 +11,7 @@ import pytest
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "scripts"))
-import india_gfs as g  # noqa: E402
+from pipelines.ingestion import gfs_reader as g  # noqa: E402
 
 GRID = json.load(open(ROOT / "data/india_grid_025.json"))
 CELLS = GRID["cells"]
@@ -101,7 +101,7 @@ def test_a_grib_message_that_disagrees_with_the_request_is_rejected(tmp_path):
 
 # ------------------------------------------------------------------ atomic, all-or-nothing ingestion
 def test_ingestion_is_all_or_nothing(tmp_path, monkeypatch):
-    import ingest_india_fields as ing
+    from pipelines.ingestion import ingest_gfs_forecast as ing
     out = tmp_path / "fields.json"; out.write_text('{"previous": "good artifact"}')
     calls = {"n": 0}
     def boom(init, fh, path, workers=6):
@@ -116,13 +116,13 @@ def test_ingestion_is_all_or_nothing(tmp_path, monkeypatch):
 
 def test_committed_fields_artifact_passes_the_independent_gate():
     import subprocess
-    r = subprocess.run([sys.executable, "scripts/ci_validate_india_fields.py"], cwd=ROOT, capture_output=True, text=True)
+    r = subprocess.run([sys.executable, "pipelines/validation/validate_national_fields.py"], cwd=ROOT, capture_output=True, text=True)
     assert r.returncode == 0, r.stdout + r.stderr
 
 
 # ------------------------------------------------------------------ models: gating and evaluation integrity
 def test_metrics_helpers_match_definitions():
-    import train_eval_ts_panindia as T
+    from models.thunderstorm import train_and_evaluate_thunderstorm_model as T
     y = np.array([0, 0, 0, 1, 1, 0, 1, 0, 0, 0]); base = y.mean()
     assert T.metrics(y, np.full(10, base), 0.5, base)["bss_vs_climatology"] == 0.0           # climatology has zero skill by definition
     perfect = T.metrics(y, y.astype(float), 0.5, base)
@@ -166,7 +166,7 @@ def test_published_model_artifacts_only_contain_gated_targets(art, evname, metak
 
 
 def test_unavailable_model_artifact_degrades_the_app_safely(tmp_path, monkeypatch):
-    import predict_ts_panindia as P
+    from models.thunderstorm import predict_thunderstorm as P
     from backend.location_service import Store
     import shutil
     d = tmp_path / "data"; d.mkdir()

@@ -10,7 +10,7 @@ import pytest
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "scripts"))
 sys.path.insert(0, str(ROOT))
-import build_pages_dist as bpd  # noqa: E402
+from pipelines.publishing import build_pages_bundle as bpd  # noqa: E402
 from backend import forecast_integrity as fi  # noqa: E402
 
 
@@ -56,7 +56,7 @@ def test_validators_pass_on_the_bundle_at_its_own_generation_time(dist):
     rep = fi.verify_artifact_report(art, now=gen + timedelta(minutes=5))
     assert rep["ok"], rep["counts_by_code"]
     assert fi.verify_grid_report(json.load(open(dist / "data/pan_india_grid.json")))["ok"]
-    import ci_validate_drift_live as v
+    from pipelines.validation import validate_live_feed as v
     live = json.load(open(dist / "data/drift_live.json"))
     assert v.check(dist / "data/drift_live.json", max_age_min=1e9, require_cells=True) == []
     assert (dist / "data/hazard_evaluation.json").exists() and live["alerts"]["automated_dispatch"] == "DISABLED"
@@ -72,7 +72,7 @@ def test_bundle_leaks_nothing_and_has_headroom(dist):
 
 
 def test_service_worker_never_serves_stale_data_or_drift_pages():
-    sw = (ROOT / "sw.js").read_text()
+    sw = (ROOT / "frontend" / "sw.js").read_text()
     assert "networkFirst" in sw and "/data/" in sw and "drift" in sw
 
 

@@ -8,8 +8,8 @@ import { fileURLToPath } from 'node:url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dirname, '..');
 const require = createRequire(import.meta.url);
-const F = require(path.join(ROOT, 'assets', 'forecast_integrity.js'));
-const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+const F = require(path.join(ROOT, 'frontend', 'assets', 'forecast_integrity.js'));
+const html = fs.readFileSync(path.join(ROOT, 'frontend', 'index.html'), 'utf8');
 
 const failures = [];
 function check(name, cond, detail) {

@@ -337,9 +337,9 @@ jobs:
         # trusting the validation dict's own booleans, which are
         # computed by the same process.
         run: |
-          # Independent, fail-closed verification (scripts/ci_validate_unified_artifact.py): re-derives every rule
+          # Independent, fail-closed verification (pipelines/validation/validate_unified_artifact.py): re-derives every rule
           # from the data; the artifact's own `validation` block is ignored. Marker/mtime/age checks are retained.
-          python3 scripts/ci_validate_unified_artifact.py data/unified_forecast.json \
+          python3 pipelines/validation/validate_unified_artifact.py data/unified_forecast.json \
             --marker /tmp/pre_unified_artifact_marker.txt --max-age-minutes 30 \
             --ok-file /tmp/unified_artifact_check_ok.txt || true
           [ -f /tmp/unified_artifact_check_ok.txt ] || echo false > /tmp/unified_artifact_check_ok.txt
@@ -348,15 +348,15 @@ jobs:
 
       - name: Verify VOBL forecast contract (fail closed)
         # fallback / defaulted / climatology slots must never drive alert_active or peak_probability
-        run: python3 scripts/ci_validate_vobl_forecast.py forecast.json
+        run: python3 pipelines/validation/validate_station_forecast.py forecast.json
 
       - name: Build DRIFT command-centre feed (from this run's artifacts) and validate it (fail closed)
         # Runs AFTER the unified-artifact, grid and VOBL gates so it only ever summarises verified, current inputs.
         # The validator rejects a feed that was not regenerated in this run (max age 30 min).
         run: |
-          python3 scripts/eval_hazard_baselines.py
-          python3 scripts/build_drift_live.py
-          python3 scripts/ci_validate_drift_live.py data/drift_live.json --max-age-minutes 30
+          python3 models/evaluation/summarise_baseline_evaluations.py
+          python3 pipelines/publishing/build_live_feed.py
+          python3 pipelines/validation/validate_live_feed.py data/drift_live.json --max-age-minutes 30
 
       - name: Send WhatsApp alerts
         env:
@@ -369,12 +369,12 @@ jobs:
         # Previously this POSTed "VOBL TS ALERT ... % probability" (plus raw SIGMET text) to a public ntfy topic
         # straight from forecast.json with no freshness/fallback/eligibility check. Now it evaluates the alert
         # policy and records why nothing is sent. Nothing is published to ntfy from here.
-        run: python3 scripts/automated_alert_guard.py forecast.json
+        run: python3 pipelines/validation/guard_automated_alerts.py forecast.json
 
       - name: Inject Worker URL into dashboard
         run: |
-          sed -i "s|WORKER_URL_PLACEHOLDER|${{ secrets.WORKER_URL }}|g" index.html
-          echo "Worker URL injected into index.html"
+          sed -i "s|WORKER_URL_PLACEHOLDER|${{ secrets.WORKER_URL }}|g" frontend/index.html
+          echo "Worker URL injected into frontend/index.html"
 
       - name: Commit and push forecast outputs
         # 2026-10-08 fix: a real production bug, found and root-caused by
@@ -492,7 +492,7 @@ jobs:
           # ALLOW-LIST publish (was a deny-list rsync that also shipped data/subscribers.json, research
           # CSVs and stale internal state). Only files the frontend/service worker fetch are copied;
           # the script fails the build if anything forbidden (subscribers, secrets, CSV, pkl...) is present.
-          python3 scripts/build_pages_dist.py pages_dist
+          python3 pipelines/publishing/build_pages_bundle.py pages_dist
           echo "Oversized files remaining in pages_dist (must be empty):"
           find pages_dist -type f -size +25M
           if [ -n "$(find pages_dist -type f -size +25M)" ]; then
@@ -511,17 +511,17 @@ jobs:
         # in the artifact itself -- this is a second, independent gate
         # right before deploy, not a re-implementation of that logic.
         if: steps.unified_artifact_check.outputs.ok == 'true'
-        run: python3 scripts/ci_validate_unified_artifact.py pages_dist/data/unified_forecast.json
+        run: python3 pipelines/validation/validate_unified_artifact.py pages_dist/data/unified_forecast.json
 
 
       - name: Validate pan-India grid before deploy (fail closed)
         if: steps.unified_artifact_check.outputs.ok == 'true'
-        run: python3 scripts/ci_validate_pan_india_grid.py pages_dist/data/pan_india_grid.json
+        run: python3 pipelines/validation/validate_pan_india_grid.py pages_dist/data/pan_india_grid.json
       - name: Validate national location artifacts in the publish bundle (fail closed)
-        run: python3 scripts/ci_validate_india_fields.py pages_dist/data --max-age-hours 48
+        run: python3 pipelines/validation/validate_national_fields.py pages_dist/data --max-age-hours 48
 
       - name: Validate DRIFT live feed in the publish bundle (fail closed)
-        run: python3 scripts/ci_validate_drift_live.py pages_dist/data/drift_live.json --max-age-minutes 180
+        run: python3 pipelines/validation/validate_live_feed.py pages_dist/data/drift_live.json --max-age-minutes 180
 
       - name: Deploy to Cloudflare Pages
         if: steps.unified_artifact_check.outputs.ok == 'true'

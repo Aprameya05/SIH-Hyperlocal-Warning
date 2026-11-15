@@ -27,7 +27,7 @@ def test_production_policy_is_empty_so_nothing_is_eligible():
 def test_automated_guard_withholds_and_says_why(tmp_path):
     f = tmp_path / "forecast.json"
     f.write_text(json.dumps(_forecast()))
-    out = subprocess.run([sys.executable, str(ROOT / "scripts/automated_alert_guard.py"), str(f)],
+    out = subprocess.run([sys.executable, str(ROOT / "pipelines/validation/guard_automated_alerts.py"), str(f)],
                          capture_output=True, text=True, check=True).stdout
     assert "WITHHELD" in out and "no recorded forecast availability time" in out
 
@@ -43,18 +43,18 @@ def test_dispatch_alerts_never_sends():
 
 
 def test_index_html_has_no_imd_branded_automatic_alert():
-    html = (ROOT / "index.html").read_text()
+    html = (ROOT / "frontend" / "index.html").read_text()
     assert "IMD Alert" not in html and "autoBrowserAlertsEnabled = false" in html
 
 
 def test_workflows_use_fail_closed_gates():
     fu = (ROOT / ".github/workflows/forecast_update.yml").read_text()
     ug = (ROOT / ".github/workflows/update_grid.yml").read_text()
-    assert "ci_validate_vobl_forecast.py" in fu and "ci_validate_pan_india_grid.py" in fu
-    assert "automated_alert_guard.py" in fu and "ci_validate_pan_india_grid.py" in ug
+    assert "pipelines/validation/validate_station_forecast.py" in fu and "pipelines/validation/validate_pan_india_grid.py" in fu
+    assert "pipelines/validation/guard_automated_alerts.py" in fu and "pipelines/validation/validate_pan_india_grid.py" in ug
 
 
-@pytest.mark.parametrize("script,arg", [("ci_validate_pan_india_grid.py", "grid"), ("ci_validate_vobl_forecast.py", "fc")])
+@pytest.mark.parametrize("script,arg", [("pipelines/validation/validate_pan_india_grid.py", "grid"), ("pipelines/validation/validate_station_forecast.py", "fc")])
 def test_gates_reject_an_invalid_file(tmp_path, script, arg):
     f = tmp_path / "x.json"
     f.write_text(json.dumps({"forged": True}))

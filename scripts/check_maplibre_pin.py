@@ -28,7 +28,7 @@ FLOATING = re.compile(r"maplibre-gl@(?!\d+\.\d+\.\d+/)[^/\"']*")
 
 
 def main():
-    path = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("index.html")
+    path = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("frontend/index.html")
     if not path.exists():
         print(f"ERROR: {path} not found")
         return 1

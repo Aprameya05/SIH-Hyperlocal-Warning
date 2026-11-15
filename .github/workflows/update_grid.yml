@@ -64,7 +64,7 @@ jobs:
 
       - name: Sync real panindia_cb_v1 CB probabilities into the grid
         # 2026-10-10: the DEPLOYED frontend's location search
-        # (assets/location_engine.js) reads cloudburst_probability from
+        # (frontend/assets/location_engine.js) reads cloudburst_probability from
         # this file, populated above by backend/pipeline.py's
         # deterministic physics-baseline formula -- confirmed by
         # directly inspecting the live site's real network traffic that
@@ -83,13 +83,13 @@ jobs:
       - name: Verify pan-India grid integrity (fail closed)
         # Independent gate: re-derives the grid contract from the data. A violation fails the job, so no canonical
         # build, no alert dispatch and no commit happen; the last-known-good grid on main is untouched.
-        run: python3 scripts/ci_validate_pan_india_grid.py data/pan_india_grid.json
+        run: python3 pipelines/validation/validate_pan_india_grid.py data/pan_india_grid.json
 
       - name: Rebuild DRIFT command-centre feed from the fresh grid (fail closed)
         run: |
-          python3 scripts/eval_hazard_baselines.py
-          python3 scripts/build_drift_live.py
-          python3 scripts/ci_validate_drift_live.py data/drift_live.json --max-age-minutes 30 --require-cells
+          python3 models/evaluation/summarise_baseline_evaluations.py
+          python3 pipelines/publishing/build_live_feed.py
+          python3 pipelines/validation/validate_live_feed.py data/drift_live.json --max-age-minutes 30 --require-cells
 
       - name: Build canonical forecast
         # 2026-10-10: this step has failed on every run for several days

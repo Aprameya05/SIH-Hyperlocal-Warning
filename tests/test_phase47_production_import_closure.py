@@ -9,7 +9,7 @@ scheduled GitHub Actions run (clean checkout) failed with:
 at scripts/ff_feature_adapter.py:205, inside
 scripts/phase34_build_unified_forecast.py's [3/7] FF-loading step --
 even though the file existed and worked locally. Root cause:
-scripts/imd_rainfall_adapter.py (and scripts/ci_validate_unified_artifact.py,
+scripts/imd_rainfall_adapter.py (and pipelines/validation/validate_unified_artifact.py,
 scripts/ci_smoke_test_deployed_site.py, both directly invoked by
 .github/workflows/forecast_update.yml) had never actually been
 committed to git -- they existed only in local working trees from
@@ -73,12 +73,12 @@ def test_imd_rainfall_adapter_is_committed_and_importable(clean_checkout):
 
 
 def test_ci_scripts_referenced_by_the_workflow_are_actually_committed(clean_checkout):
-    """scripts/ci_validate_unified_artifact.py and
+    """pipelines/validation/validate_unified_artifact.py and
     scripts/ci_smoke_test_deployed_site.py are invoked directly by
     .github/workflows/forecast_update.yml -- both were found missing
     from git during the same outage ('No such file or directory' on
     the runner)."""
-    for rel_path in ("scripts/ci_validate_unified_artifact.py", "scripts/ci_smoke_test_deployed_site.py"):
+    for rel_path in ("pipelines/validation/validate_unified_artifact.py", "scripts/ci_smoke_test_deployed_site.py"):
         assert (clean_checkout / rel_path).exists(), (
             f"{rel_path} is referenced by forecast_update.yml but is not committed to git"
         )

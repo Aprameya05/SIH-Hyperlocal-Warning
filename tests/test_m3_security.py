@@ -9,7 +9,7 @@ import pytest
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "scripts"))
-import build_pages_dist as bpd  # noqa: E402
+from pipelines.publishing import build_pages_bundle as bpd  # noqa: E402
 
 EMAIL = re.compile(r"[\w.+-]+@[\w-]+\.[a-z]{2,}", re.I)
 PHONE = re.compile(r"(?<![\d.])\+?91[\s-]?\d{10}(?!\d)|\+\d{11,13}")
@@ -73,18 +73,18 @@ def test_every_automated_alert_path_is_fail_closed_by_construction():
     assert ap.PRODUCTION_POLICY.supported_alert_horizons == {} and ap.PRODUCTION_POLICY.alertable_semantics == {}
     ok, why = ap.evaluate({"probability": 0.99, "temporal_status": "CURRENT", "valid_time_utc": "2099-01-01T00:00:00Z"}, hazard="TS")
     assert ok is False and "NO_AVAILABILITY_TIME" in why
-    for rel in ("send_alerts.py", "backend/dispatch_alerts.py", "backend/alerts.py", "scripts/automated_alert_guard.py"):
+    for rel in ("send_alerts.py", "backend/dispatch_alerts.py", "backend/alerts.py", "pipelines/validation/guard_automated_alerts.py"):
         src = (ROOT / rel).read_text()
         assert "alert_policy" in src or "WITHHELD" in src, rel
 
 
 def test_simulation_code_has_no_send_or_network_capability():
-    for rel in ("assets/drift_sim.js", "assets/drift_app.js"):
+    for rel in ("frontend/assets/drift_sim.js", "frontend/assets/drift_app.js"):
         src = (ROOT / rel).read_text()
         for bad in ("XMLHttpRequest", "sendBeacon", "WebSocket", "method: 'POST'", "twilio", "ntfy", "navigator.share", "new Notification"):
             assert bad.lower() not in src.lower(), (rel, bad)
     # the only fetches in the command centre are GETs of published JSON
-    assert re.findall(r"fetch\(([^,)]+)", (ROOT / "assets/drift_app.js").read_text()) == ["u"]
+    assert re.findall(r"fetch\(([^,)]+)", (ROOT / "frontend/assets/drift_app.js").read_text()) == ["u"]
 
 
 def test_bundle_headroom_is_at_least_15_percent(dist):

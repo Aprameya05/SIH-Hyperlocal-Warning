@@ -1,5 +1,5 @@
 """Two real GFS cycles through the same service: values follow the forecast cycle, and each cycle carries its own provenance.
-Needs cache/alt/india_fields_latest.json (python scripts/ingest_india_fields.py --cycle <YYYYMMDDHH> --out cache/alt/india_fields_latest.json); skipped otherwise."""
+Needs cache/alt/india_fields_latest.json (python pipelines/ingestion/ingest_gfs_forecast.py --cycle <YYYYMMDDHH> --out cache/alt/india_fields_latest.json); skipped otherwise."""
 import json
 import shutil
 from pathlib import Path

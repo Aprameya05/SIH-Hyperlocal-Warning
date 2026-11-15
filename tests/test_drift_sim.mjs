@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 import fs from 'node:fs';
-const S = createRequire(import.meta.url)('../assets/drift_sim.js');
+const S = createRequire(import.meta.url)('../frontend/assets/drift_sim.js');
 
 test('992-cell grid matches the live pan-India grid', () => assert.equal(S.CELLS.length, 992));
 test('three hazards, each with its own thresholds, unit and actions', () => {
@@ -43,7 +43,7 @@ test('notification lifecycle is entirely simulated and nothing is sent', () => {
   assert.ok(lc.every(e => e.simulated === true && e.sent === false));
 });
 test('engine contains no network or storage calls', () => {
-  const src = fs.readFileSync(new URL('../assets/drift_sim.js', import.meta.url), 'utf8');
+  const src = fs.readFileSync(new URL('../frontend/assets/drift_sim.js', import.meta.url), 'utf8');
   for (const bad of ['fetch(', 'XMLHttpRequest', 'sendBeacon', 'WebSocket', 'localStorage', 'twilio', 'ntfy']) assert.ok(!src.includes(bad), bad);
 });
 

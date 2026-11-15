@@ -28,14 +28,14 @@ jobs:
         run: pip install numpy pandas eccodes shapely pillow fastapi httpx xgboost
       - name: Ingest the latest complete cycle (all-or-nothing, atomic)
         # exits non-zero and leaves the previous artifact untouched if any hour fails download or verification
-        run: python scripts/ingest_india_fields.py
+        run: python pipelines/ingestion/ingest_gfs_forecast.py
       - name: Independent verification (fail closed)
-        run: python scripts/ci_validate_india_fields.py --max-age-hours 20
+        run: python pipelines/validation/validate_national_fields.py --max-age-hours 20
       - name: Apply the evaluated pan-India models to the new cycle
         # always writes an artifact; model_evaluated=false (with a reason) when no lead passed its gate or the cycle is unsupported
         run: |
-          python scripts/predict_ts_panindia.py
-          python scripts/predict_rain_panindia.py
+          python models/thunderstorm/predict_thunderstorm.py
+          python models/extreme_rainfall/predict_extreme_rainfall.py
       - name: Commit artifacts (only reached if every step above succeeded)
 
         run: |

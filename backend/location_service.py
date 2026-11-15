@@ -8,13 +8,13 @@ initialisation time, acquisition time, publication time of the NWP input, units,
 Statuses are RECOMPUTED here from timestamps; the status/label fields written by producers are never trusted.
 
 Artifacts (all produced by scripts/):
-  data/india_grid_025.json       build_india_grid.py     land cells, ids, state/district, gazetteer in india_places.json
-  data/india_fields_latest.json  ingest_india_fields.py  GFS fields per cell per forecast hour (+ provenance per file)
-  data/india_static_025.json     build_india_static.py   terrain and gauge context per cell
-  data/drift_live.json           build_drift_live.py     (only the 1 deg heavy-rain-day outlook column is used)
-  data/india_ts_model_latest.json predict_ts_panindia.py optional pan-India thunderstorm model output per cell and lead
+  data/india_grid_025.json       pipelines/grid/build_india_grid.py     land cells, ids, state/district, gazetteer in india_places.json
+  data/india_fields_latest.json  pipelines/ingestion/ingest_gfs_forecast.py  GFS fields per cell per forecast hour (+ provenance per file)
+  data/india_static_025.json     pipelines/grid/build_terrain_and_gauge_layers.py   terrain and gauge context per cell
+  data/drift_live.json           pipelines/publishing/build_live_feed.py     (only the 1 deg heavy-rain-day outlook column is used)
+  data/india_ts_model_latest.json models/thunderstorm/predict_thunderstorm.py optional pan-India thunderstorm model output per cell and lead
 
-The JavaScript twin (assets/drift_location.js) implements the same record logic for the static site;
+The JavaScript twin (frontend/assets/drift_location.js) implements the same record logic for the static site;
 tests/test_location_parity.py asserts the two agree.
 """
 from __future__ import annotations

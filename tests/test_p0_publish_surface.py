@@ -11,7 +11,7 @@ import pytest
 
 REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO / "scripts"))
-import build_pages_dist as bpd  # noqa: E402
+from pipelines.publishing import build_pages_bundle as bpd  # noqa: E402
 
 
 @pytest.fixture(scope="module")
@@ -49,8 +49,8 @@ def test_only_allow_listed_paths_exist(bundle):
 def test_every_json_the_frontend_fetches_is_allow_listed():
     """The allow-list must not silently break the site: every ./data/*.json or root json the page or service
     worker fetches by literal path has to be published."""
-    texts = (REPO / "index.html").read_text() + (REPO / "sw.js").read_text() + (REPO / "drift.html").read_text() \
-        if (REPO / "drift.html").exists() else (REPO / "index.html").read_text() + (REPO / "sw.js").read_text()
+    texts = (REPO / "frontend" / "index.html").read_text() + (REPO / "frontend" / "sw.js").read_text() + (REPO / "frontend" / "drift.html").read_text() \
+        if (REPO / "frontend" / "drift.html").exists() else (REPO / "frontend" / "index.html").read_text() + (REPO / "frontend" / "sw.js").read_text()
     wanted = set()
     for m in re.finditer(r"""['"`]\.?/?((?:data/)?[A-Za-z0-9_]+\.json)""", texts):
         wanted.add(m.group(1))
@@ -68,7 +68,7 @@ def test_every_json_the_frontend_fetches_is_allow_listed():
 
 def test_workflow_uses_the_allow_list_builder_not_a_deny_list_rsync():
     wf = (REPO / ".github" / "workflows" / "forecast_update.yml").read_text()
-    assert "python3 scripts/build_pages_dist.py pages_dist" in wf
+    assert "python3 pipelines/publishing/build_pages_bundle.py pages_dist" in wf
     assert "rsync -a" not in wf
 
 

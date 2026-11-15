@@ -12,7 +12,7 @@ import { fileURLToPath } from 'node:url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dirname, '..');
 
-const src = fs.readFileSync(path.join(ROOT, 'assets', 'location_engine.js'), 'utf8');
+const src = fs.readFileSync(path.join(ROOT, 'frontend', 'assets', 'location_engine.js'), 'utf8');
 const sandbox = { window: {} };
 new Function('window', src)(sandbox.window);
 const E = sandbox.window.DriftLocationEngine;
