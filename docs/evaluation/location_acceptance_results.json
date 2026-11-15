@@ -1,0 +1,4382 @@
+{
+ "generated_at_utc": "2026-11-15T14:56:57Z",
+ "cycle": "2026-11-15T00:00:00Z",
+ "forecast_hour": 12,
+ "locations": [
+  {
+   "location": "Bengaluru",
+   "kind": "gazetteer",
+   "requested": {
+    "lat": 12.9719,
+    "lon": 77.5937
+   },
+   "resolved": {
+    "covered": true,
+    "cell_id": "IN025_1300_07750",
+    "query": {
+     "lat": 12.9719,
+     "lon": 77.5937
+    },
+    "cell_centre": {
+     "lat": 13.0,
+     "lon": 77.5
+    }
+   },
+   "cell": {
+    "cell_id": "IN025_1300_07750",
+    "lat": 13.0,
+    "lon": 77.5,
+    "land_fraction": 1.0,
+    "state": "Karnataka",
+    "district": "Bangalore",
+    "admin_method": "contains",
+    "resolution_deg": 0.25,
+    "cell_definition": "0.25 x 0.25 deg box centred on a GFS 0.25 deg grid point; one source point per cell",
+    "admin_note": "state/district describe the cell CENTRE point"
+   },
+   "forecast": {
+    "model_init_utc": "2026-11-15T00:00:00Z",
+    "forecast_hour": 12,
+    "valid_time_utc": "2026-11-15T12:00:00Z",
+    "published_at_utc": "2026-11-15T03:34:30Z",
+    "acquired_at_utc": "2026-11-15T14:26:53Z",
+    "status": "PAST_VALID_TIME"
+   },
+   "returned_variables": {
+    "cape": 0,
+    "cin": 0,
+    "lftx": 3.3,
+    "pwat": 20.3,
+    "t2m_c": 22.7,
+    "d2m_c": 14.4,
+    "rh2m": 60,
+    "ws10": 1.4,
+    "wd10": 321,
+    "mslp_hpa": 1012.4,
+    "k_index": 13.6,
+    "total_totals": 37.8,
+    "lapse_850_500": 6.6,
+    "shear_850_500": 6.1,
+    "w850": -0.93,
+    "w700": -0.1,
+    "w500": 0.15,
+    "rh850": 58,
+    "rh700": 24,
+    "rh500": 16,
+    "soilw0_10": 0.238,
+    "apcp_cum": 0.0,
+    "conv850": 5.15,
+    "conv10": 9.66,
+    "pwat_grad": 8.59,
+    "q850": 9.33,
+    "q700": 2.96,
+    "precip_3h": 0.0
+   },
+   "missing_variables": [],
+   "hazards": {
+    "thunderstorm_model": "AVAILABLE_EVALUATED",
+    "thunderstorm_indicators_cape": 0,
+    "extreme_rainfall_short_duration": "AVAILABLE_EVALUATED",
+    "cloudburst": "UNAVAILABLE",
+    "flash_flood_prediction": "UNAVAILABLE",
+    "flash_flood_screening_index": 0.0
+   },
+   "static": {
+    "elev_mean_m": 871,
+    "slope_p90_deg": 1.1,
+    "nearest_gauge_km": 54.1
+   },
+   "independent_grib_check": {
+    "cape": {
+     "raw_value_eccodes_nearest": 0.0,
+     "artifact_value": 0,
+     "raw_source_point": {
+      "lat": 13.0,
+      "lon": 77.5,
+      "distance_km": 10.62
+     },
+     "cell_centre": {
+      "lat": 13.0,
+      "lon": 77.5
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "cin": {
+     "raw_value_eccodes_nearest": 0.044,
+     "artifact_value": 0,
+     "raw_source_point": {
+      "lat": 13.0,
+      "lon": 77.5,
+      "distance_km": 10.62
+     },
+     "cell_centre": {
+      "lat": 13.0,
+      "lon": 77.5
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "pwat": {
+     "raw_value_eccodes_nearest": 20.256,
+     "artifact_value": 20.3,
+     "raw_source_point": {
+      "lat": 13.0,
+      "lon": 77.5,
+      "distance_km": 10.62
+     },
+     "cell_centre": {
+      "lat": 13.0,
+      "lon": 77.5
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "t2m_c": {
+     "raw_value_eccodes_nearest": 22.716,
+     "artifact_value": 22.7,
+     "raw_source_point": {
+      "lat": 13.0,
+      "lon": 77.5,
+      "distance_km": 10.62
+     },
+     "cell_centre": {
+      "lat": 13.0,
+      "lon": 77.5
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "rh2m": {
+     "raw_value_eccodes_nearest": 59.5,
+     "artifact_value": 60,
+     "raw_source_point": {
+      "lat": 13.0,
+      "lon": 77.5,
+      "distance_km": 10.62
+     },
+     "cell_centre": {
+      "lat": 13.0,
+      "lon": 77.5
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    }
+   }
+  },
+  {
+   "location": "Mumbai",
+   "kind": "gazetteer",
+   "requested": {
+    "lat": 19.0728,
+    "lon": 72.8826
+   },
+   "resolved": {
+    "covered": true,
+    "cell_id": "IN025_1900_07300",
+    "query": {
+     "lat": 19.0728,
+     "lon": 72.8826
+    },
+    "cell_centre": {
+     "lat": 19.0,
+     "lon": 73.0
+    }
+   },
+   "cell": {
+    "cell_id": "IN025_1900_07300",
+    "lat": 19.0,
+    "lon": 73.0,
+    "land_fraction": 0.741,
+    "state": "Maharashtra",
+    "district": "Thane",
+    "admin_method": "nearest",
+    "resolution_deg": 0.25,
+    "cell_definition": "0.25 x 0.25 deg box centred on a GFS 0.25 deg grid point; one source point per cell",
+    "admin_note": "state/district describe the cell CENTRE point"
+   },
+   "forecast": {
+    "model_init_utc": "2026-11-15T00:00:00Z",
+    "forecast_hour": 12,
+    "valid_time_utc": "2026-11-15T12:00:00Z",
+    "published_at_utc": "2026-11-15T03:34:30Z",
+    "acquired_at_utc": "2026-11-15T14:26:53Z",
+    "status": "PAST_VALID_TIME"
+   },
+   "returned_variables": {
+    "cape": 0,
+    "cin": 0,
+    "lftx": 3.4,
+    "pwat": 18.7,
+    "t2m_c": 28.2,
+    "d2m_c": 18.1,
+    "rh2m": 54,
+    "ws10": 4.3,
+    "wd10": 299,
+    "mslp_hpa": 1011.0,
+    "k_index": -13.1,
+    "total_totals": 32.1,
+    "lapse_850_500": 6.59,
+    "shear_850_500": 11.2,
+    "w850": 0.22,
+    "w700": -0.01,
+    "w500": -0.09,
+    "rh850": 40,
+    "rh700": 4,
+    "rh500": 4,
+    "soilw0_10": 0.078,
+    "apcp_cum": 0.0,
+    "conv850": -0.54,
+    "conv10": 5.67,
+    "pwat_grad": 2.23,
+    "q850": 6.33,
+    "q700": 0.46,
+    "precip_3h": 0.0
+   },
+   "missing_variables": [],
+   "hazards": {
+    "thunderstorm_model": "AVAILABLE_EVALUATED",
+    "thunderstorm_indicators_cape": 0,
+    "extreme_rainfall_short_duration": "AVAILABLE_EVALUATED",
+    "cloudburst": "UNAVAILABLE",
+    "flash_flood_prediction": "UNAVAILABLE",
+    "flash_flood_screening_index": 0.0
+   },
+   "static": {
+    "elev_mean_m": 23,
+    "slope_p90_deg": 3.6,
+    "nearest_gauge_km": 31.5
+   },
+   "independent_grib_check": {
+    "cape": {
+     "raw_value_eccodes_nearest": 0.0,
+     "artifact_value": 0,
+     "raw_source_point": {
+      "lat": 19.0,
+      "lon": 73.0,
+      "distance_km": 14.76
+     },
+     "cell_centre": {
+      "lat": 19.0,
+      "lon": 73.0
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "cin": {
+     "raw_value_eccodes_nearest": 0.044,
+     "artifact_value": 0,
+     "raw_source_point": {
+      "lat": 19.0,
+      "lon": 73.0,
+      "distance_km": 14.76
+     },
+     "cell_centre": {
+      "lat": 19.0,
+      "lon": 73.0
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "pwat": {
+     "raw_value_eccodes_nearest": 18.73,
+     "artifact_value": 18.7,
+     "raw_source_point": {
+      "lat": 19.0,
+      "lon": 73.0,
+      "distance_km": 14.76
+     },
+     "cell_centre": {
+      "lat": 19.0,
+      "lon": 73.0
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "t2m_c": {
+     "raw_value_eccodes_nearest": 28.176,
+     "artifact_value": 28.2,
+     "raw_source_point": {
+      "lat": 19.0,
+      "lon": 73.0,
+      "distance_km": 14.76
+     },
+     "cell_centre": {
+      "lat": 19.0,
+      "lon": 73.0
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "rh2m": {
+     "raw_value_eccodes_nearest": 54.2,
+     "artifact_value": 54,
+     "raw_source_point": {
+      "lat": 19.0,
+      "lon": 73.0,
+      "distance_km": 14.76
+     },
+     "cell_centre": {
+      "lat": 19.0,
+      "lon": 73.0
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    }
+   }
+  },
+  {
+   "location": "Delhi",
+   "kind": "gazetteer",
+   "requested": {
+    "lat": 28.6519,
+    "lon": 77.2315
+   },
+   "resolved": {
+    "covered": true,
+    "cell_id": "IN025_2875_07725",
+    "query": {
+     "lat": 28.6519,
+     "lon": 77.2315
+    },
+    "cell_centre": {
+     "lat": 28.75,
+     "lon": 77.25
+    }
+   },
+   "cell": {
+    "cell_id": "IN025_2875_07725",
+    "lat": 28.75,
+    "lon": 77.25,
+    "land_fraction": 1.0,
+    "state": "NCT of Delhi",
+    "district": "North East",
+    "admin_method": "contains",
+    "resolution_deg": 0.25,
+    "cell_definition": "0.25 x 0.25 deg box centred on a GFS 0.25 deg grid point; one source point per cell",
+    "admin_note": "state/district describe the cell CENTRE point"
+   },
+   "forecast": {
+    "model_init_utc": "2026-11-15T00:00:00Z",
+    "forecast_hour": 12,
+    "valid_time_utc": "2026-11-15T12:00:00Z",
+    "published_at_utc": "2026-11-15T03:34:30Z",
+    "acquired_at_utc": "2026-11-15T14:26:53Z",
+    "status": "PAST_VALID_TIME"
+   },
+   "returned_variables": {
+    "cape": 0,
+    "cin": 0,
+    "lftx": 3.9,
+    "pwat": 17.7,
+    "t2m_c": 28.9,
+    "d2m_c": 5.4,
+    "rh2m": 22,
+    "ws10": 2.5,
+    "wd10": 336,
+    "mslp_hpa": 1011.1,
+    "k_index": 27.6,
+    "total_totals": 43.1,
+    "lapse_850_500": 8.25,
+    "shear_850_500": 18.8,
+    "w850": -0.18,
+    "w700": 0.2,
+    "w500": -0.26,
+    "rh850": 37,
+    "rh700": 77,
+    "rh500": 2,
+    "soilw0_10": 0.239,
+    "apcp_cum": 0.1,
+    "conv850": -1.02,
+    "conv10": 3.69,
+    "pwat_grad": 1.34,
+    "q850": 5.35,
+    "q700": 4.69,
+    "precip_3h": 0.0
+   },
+   "missing_variables": [],
+   "hazards": {
+    "thunderstorm_model": "AVAILABLE_EVALUATED",
+    "thunderstorm_indicators_cape": 0,
+    "extreme_rainfall_short_duration": "AVAILABLE_EVALUATED",
+    "cloudburst": "UNAVAILABLE",
+    "flash_flood_prediction": "UNAVAILABLE",
+    "flash_flood_screening_index": 0.001
+   },
+   "static": {
+    "elev_mean_m": 214,
+    "slope_p90_deg": 0.3,
+    "nearest_gauge_km": 9.7
+   },
+   "independent_grib_check": {
+    "cape": {
+     "raw_value_eccodes_nearest": 0.0,
+     "artifact_value": 0,
+     "raw_source_point": {
+      "lat": 28.75,
+      "lon": 77.25,
+      "distance_km": 11.06
+     },
+     "cell_centre": {
+      "lat": 28.75,
+      "lon": 77.25
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "cin": {
+     "raw_value_eccodes_nearest": 0.044,
+     "artifact_value": 0,
+     "raw_source_point": {
+      "lat": 28.75,
+      "lon": 77.25,
+      "distance_km": 11.06
+     },
+     "cell_centre": {
+      "lat": 28.75,
+      "lon": 77.25
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "pwat": {
+     "raw_value_eccodes_nearest": 17.66,
+     "artifact_value": 17.7,
+     "raw_source_point": {
+      "lat": 28.75,
+      "lon": 77.25,
+      "distance_km": 11.06
+     },
+     "cell_centre": {
+      "lat": 28.75,
+      "lon": 77.25
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "t2m_c": {
+     "raw_value_eccodes_nearest": 28.906,
+     "artifact_value": 28.9,
+     "raw_source_point": {
+      "lat": 28.75,
+      "lon": 77.25,
+      "distance_km": 11.06
+     },
+     "cell_centre": {
+      "lat": 28.75,
+      "lon": 77.25
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "rh2m": {
+     "raw_value_eccodes_nearest": 22.4,
+     "artifact_value": 22,
+     "raw_source_point": {
+      "lat": 28.75,
+      "lon": 77.25,
+      "distance_km": 11.06
+     },
+     "cell_centre": {
+      "lat": 28.75,
+      "lon": 77.25
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    }
+   }
+  },
+  {
+   "location": "Chennai",
+   "kind": "gazetteer",
+   "requested": {
+    "lat": 13.0878,
+    "lon": 80.2785
+   },
+   "resolved": {
+    "covered": true,
+    "cell_id": "IN025_1300_08025",
+    "query": {
+     "lat": 13.0878,
+     "lon": 80.2785
+    },
+    "cell_centre": {
+     "lat": 13.0,
+     "lon": 80.25
+    }
+   },
+   "cell": {
+    "cell_id": "IN025_1300_08025",
+    "lat": 13.0,
+    "lon": 80.25,
+    "land_fraction": 0.622,
+    "state": "Tamil Nadu",
+    "district": "Chennai",
+    "admin_method": "contains",
+    "resolution_deg": 0.25,
+    "cell_definition": "0.25 x 0.25 deg box centred on a GFS 0.25 deg grid point; one source point per cell",
+    "admin_note": "state/district describe the cell CENTRE point"
+   },
+   "forecast": {
+    "model_init_utc": "2026-11-15T00:00:00Z",
+    "forecast_hour": 12,
+    "valid_time_utc": "2026-11-15T12:00:00Z",
+    "published_at_utc": "2026-11-15T03:34:30Z",
+    "acquired_at_utc": "2026-11-15T14:26:53Z",
+    "status": "PAST_VALID_TIME"
+   },
+   "returned_variables": {
+    "cape": 141,
+    "cin": -46,
+    "lftx": -1.7,
+    "pwat": 56.3,
+    "t2m_c": 26.9,
+    "d2m_c": 21.7,
+    "rh2m": 73,
+    "ws10": 5.7,
+    "wd10": 6,
+    "mslp_hpa": 1011.0,
+    "k_index": 34.0,
+    "total_totals": 41.1,
+    "lapse_850_500": 6.35,
+    "shear_850_500": 6.5,
+    "w850": -0.29,
+    "w700": 0.2,
+    "w500": 0.25,
+    "rh850": 80,
+    "rh700": 89,
+    "rh500": 60,
+    "apcp_cum": 0.1,
+    "conv850": 4.74,
+    "conv10": -1.21,
+    "pwat_grad": 16.07,
+    "q850": 11.38,
+    "q700": 9.98,
+    "precip_3h": 0.1
+   },
+   "missing_variables": [
+    "soilw0_10"
+   ],
+   "hazards": {
+    "thunderstorm_model": "AVAILABLE_EVALUATED",
+    "thunderstorm_indicators_cape": 141,
+    "extreme_rainfall_short_duration": "AVAILABLE_EVALUATED",
+    "cloudburst": "UNAVAILABLE",
+    "flash_flood_prediction": "UNAVAILABLE",
+    "flash_flood_screening_index": 0.002
+   },
+   "static": {
+    "elev_mean_m": 1,
+    "slope_p90_deg": 0.3,
+    "nearest_gauge_km": null
+   },
+   "independent_grib_check": {
+    "cape": {
+     "raw_value_eccodes_nearest": 141.0,
+     "artifact_value": 141,
+     "raw_source_point": {
+      "lat": 13.0,
+      "lon": 80.25,
+      "distance_km": 10.24
+     },
+     "cell_centre": {
+      "lat": 13.0,
+      "lon": 80.25
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "cin": {
+     "raw_value_eccodes_nearest": -46.456,
+     "artifact_value": -46,
+     "raw_source_point": {
+      "lat": 13.0,
+      "lon": 80.25,
+      "distance_km": 10.24
+     },
+     "cell_centre": {
+      "lat": 13.0,
+      "lon": 80.25
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "pwat": {
+     "raw_value_eccodes_nearest": 56.341,
+     "artifact_value": 56.3,
+     "raw_source_point": {
+      "lat": 13.0,
+      "lon": 80.25,
+      "distance_km": 10.24
+     },
+     "cell_centre": {
+      "lat": 13.0,
+      "lon": 80.25
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "t2m_c": {
+     "raw_value_eccodes_nearest": 26.896,
+     "artifact_value": 26.9,
+     "raw_source_point": {
+      "lat": 13.0,
+      "lon": 80.25,
+      "distance_km": 10.24
+     },
+     "cell_centre": {
+      "lat": 13.0,
+      "lon": 80.25
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "rh2m": {
+     "raw_value_eccodes_nearest": 73.3,
+     "artifact_value": 73,
+     "raw_source_point": {
+      "lat": 13.0,
+      "lon": 80.25,
+      "distance_km": 10.24
+     },
+     "cell_centre": {
+      "lat": 13.0,
+      "lon": 80.25
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    }
+   }
+  },
+  {
+   "location": "Kolkata",
+   "kind": "gazetteer",
+   "requested": {
+    "lat": 22.5626,
+    "lon": 88.363
+   },
+   "resolved": {
+    "covered": true,
+    "cell_id": "IN025_2250_08825",
+    "query": {
+     "lat": 22.5626,
+     "lon": 88.363
+    },
+    "cell_centre": {
+     "lat": 22.5,
+     "lon": 88.25
+    }
+   },
+   "cell": {
+    "cell_id": "IN025_2250_08825",
+    "lat": 22.5,
+    "lon": 88.25,
+    "land_fraction": 1.0,
+    "state": "West Bengal",
+    "district": "South Twenty Four Parganas",
+    "admin_method": "contains",
+    "resolution_deg": 0.25,
+    "cell_definition": "0.25 x 0.25 deg box centred on a GFS 0.25 deg grid point; one source point per cell",
+    "admin_note": "state/district describe the cell CENTRE point"
+   },
+   "forecast": {
+    "model_init_utc": "2026-11-15T00:00:00Z",
+    "forecast_hour": 12,
+    "valid_time_utc": "2026-11-15T12:00:00Z",
+    "published_at_utc": "2026-11-15T03:34:30Z",
+    "acquired_at_utc": "2026-11-15T14:26:53Z",
+    "status": "PAST_VALID_TIME"
+   },
+   "returned_variables": {
+    "cape": 0,
+    "cin": 0,
+    "lftx": 6.6,
+    "pwat": 24.0,
+    "t2m_c": 27.7,
+    "d2m_c": 14.1,
+    "rh2m": 43,
+    "ws10": 2.8,
+    "wd10": 321,
+    "mslp_hpa": 1011.3,
+    "k_index": 4.3,
+    "total_totals": 33.8,
+    "lapse_850_500": 5.56,
+    "shear_850_500": 17.9,
+    "w850": 0.34,
+    "w700": 0.31,
+    "w500": 0.05,
+    "rh850": 71,
+    "rh700": 15,
+    "rh500": 5,
+    "soilw0_10": 0.24,
+    "apcp_cum": 0.0,
+    "conv850": 1.93,
+    "conv10": -0.08,
+    "pwat_grad": 1.79,
+    "q850": 9.12,
+    "q700": 1.55,
+    "precip_3h": 0.0
+   },
+   "missing_variables": [],
+   "hazards": {
+    "thunderstorm_model": "AVAILABLE_EVALUATED",
+    "thunderstorm_indicators_cape": 0,
+    "extreme_rainfall_short_duration": "AVAILABLE_EVALUATED",
+    "cloudburst": "UNAVAILABLE",
+    "flash_flood_prediction": "UNAVAILABLE",
+    "flash_flood_screening_index": 0.0
+   },
+   "static": {
+    "elev_mean_m": 7,
+    "slope_p90_deg": 0.2,
+    "nearest_gauge_km": 51.8
+   },
+   "independent_grib_check": {
+    "cape": {
+     "raw_value_eccodes_nearest": 0.0,
+     "artifact_value": 0,
+     "raw_source_point": {
+      "lat": 22.5,
+      "lon": 88.25,
+      "distance_km": 13.53
+     },
+     "cell_centre": {
+      "lat": 22.5,
+      "lon": 88.25
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "cin": {
+     "raw_value_eccodes_nearest": 0.044,
+     "artifact_value": 0,
+     "raw_source_point": {
+      "lat": 22.5,
+      "lon": 88.25,
+      "distance_km": 13.53
+     },
+     "cell_centre": {
+      "lat": 22.5,
+      "lon": 88.25
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "pwat": {
+     "raw_value_eccodes_nearest": 23.973,
+     "artifact_value": 24.0,
+     "raw_source_point": {
+      "lat": 22.5,
+      "lon": 88.25,
+      "distance_km": 13.53
+     },
+     "cell_centre": {
+      "lat": 22.5,
+      "lon": 88.25
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "t2m_c": {
+     "raw_value_eccodes_nearest": 27.726,
+     "artifact_value": 27.7,
+     "raw_source_point": {
+      "lat": 22.5,
+      "lon": 88.25,
+      "distance_km": 13.53
+     },
+     "cell_centre": {
+      "lat": 22.5,
+      "lon": 88.25
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "rh2m": {
+     "raw_value_eccodes_nearest": 42.9,
+     "artifact_value": 43,
+     "raw_source_point": {
+      "lat": 22.5,
+      "lon": 88.25,
+      "distance_km": 13.53
+     },
+     "cell_centre": {
+      "lat": 22.5,
+      "lon": 88.25
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    }
+   }
+  },
+  {
+   "location": "Hyderabad",
+   "kind": "gazetteer",
+   "requested": {
+    "lat": 17.384,
+    "lon": 78.4564
+   },
+   "resolved": {
+    "covered": true,
+    "cell_id": "IN025_1750_07850",
+    "query": {
+     "lat": 17.384,
+     "lon": 78.4564
+    },
+    "cell_centre": {
+     "lat": 17.5,
+     "lon": 78.5
+    }
+   },
+   "cell": {
+    "cell_id": "IN025_1750_07850",
+    "lat": 17.5,
+    "lon": 78.5,
+    "land_fraction": 1.0,
+    "state": "Telangana",
+    "district": "Hydrabad",
+    "admin_method": "contains",
+    "resolution_deg": 0.25,
+    "cell_definition": "0.25 x 0.25 deg box centred on a GFS 0.25 deg grid point; one source point per cell",
+    "admin_note": "state/district describe the cell CENTRE point"
+   },
+   "forecast": {
+    "model_init_utc": "2026-11-15T00:00:00Z",
+    "forecast_hour": 12,
+    "valid_time_utc": "2026-11-15T12:00:00Z",
+    "published_at_utc": "2026-11-15T03:34:30Z",
+    "acquired_at_utc": "2026-11-15T14:26:53Z",
+    "status": "PAST_VALID_TIME"
+   },
+   "returned_variables": {
+    "cape": 0,
+    "cin": 0,
+    "lftx": 7.3,
+    "pwat": 14.4,
+    "t2m_c": 24.8,
+    "d2m_c": 10.6,
+    "rh2m": 41,
+    "ws10": 3.9,
+    "wd10": 52,
+    "mslp_hpa": 1012.1,
+    "k_index": -16.1,
+    "total_totals": 33.7,
+    "lapse_850_500": 6.28,
+    "shear_850_500": 6.3,
+    "w850": 0.18,
+    "w700": -0.13,
+    "w500": -0.17,
+    "rh850": 51,
+    "rh700": 3,
+    "rh500": 9,
+    "soilw0_10": 0.122,
+    "apcp_cum": 0.0,
+    "conv850": -3.92,
+    "conv10": -0.21,
+    "pwat_grad": 2.26,
+    "q850": 7.59,
+    "q700": 0.36,
+    "precip_3h": 0.0
+   },
+   "missing_variables": [],
+   "hazards": {
+    "thunderstorm_model": "AVAILABLE_EVALUATED",
+    "thunderstorm_indicators_cape": 0,
+    "extreme_rainfall_short_duration": "AVAILABLE_EVALUATED",
+    "cloudburst": "UNAVAILABLE",
+    "flash_flood_prediction": "UNAVAILABLE",
+    "flash_flood_screening_index": 0.0
+   },
+   "static": {
+    "elev_mean_m": 560,
+    "slope_p90_deg": 0.8,
+    "nearest_gauge_km": 66.7
+   },
+   "independent_grib_check": {
+    "cape": {
+     "raw_value_eccodes_nearest": 0.0,
+     "artifact_value": 0,
+     "raw_source_point": {
+      "lat": 17.5,
+      "lon": 78.5,
+      "distance_km": 13.7
+     },
+     "cell_centre": {
+      "lat": 17.5,
+      "lon": 78.5
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "cin": {
+     "raw_value_eccodes_nearest": 0.044,
+     "artifact_value": 0,
+     "raw_source_point": {
+      "lat": 17.5,
+      "lon": 78.5,
+      "distance_km": 13.7
+     },
+     "cell_centre": {
+      "lat": 17.5,
+      "lon": 78.5
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "pwat": {
+     "raw_value_eccodes_nearest": 14.402,
+     "artifact_value": 14.4,
+     "raw_source_point": {
+      "lat": 17.5,
+      "lon": 78.5,
+      "distance_km": 13.7
+     },
+     "cell_centre": {
+      "lat": 17.5,
+      "lon": 78.5
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "t2m_c": {
+     "raw_value_eccodes_nearest": 24.826,
+     "artifact_value": 24.8,
+     "raw_source_point": {
+      "lat": 17.5,
+      "lon": 78.5,
+      "distance_km": 13.7
+     },
+     "cell_centre": {
+      "lat": 17.5,
+      "lon": 78.5
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "rh2m": {
+     "raw_value_eccodes_nearest": 40.6,
+     "artifact_value": 41,
+     "raw_source_point": {
+      "lat": 17.5,
+      "lon": 78.5,
+      "distance_km": 13.7
+     },
+     "cell_centre": {
+      "lat": 17.5,
+      "lon": 78.5
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    }
+   }
+  },
+  {
+   "location": "Pune",
+   "kind": "gazetteer",
+   "requested": {
+    "lat": 18.5196,
+    "lon": 73.8554
+   },
+   "resolved": {
+    "covered": true,
+    "cell_id": "IN025_1850_07375",
+    "query": {
+     "lat": 18.5196,
+     "lon": 73.8554
+    },
+    "cell_centre": {
+     "lat": 18.5,
+     "lon": 73.75
+    }
+   },
+   "cell": {
+    "cell_id": "IN025_1850_07375",
+    "lat": 18.5,
+    "lon": 73.75,
+    "land_fraction": 1.0,
+    "state": "Maharashtra",
+    "district": "Pune",
+    "admin_method": "contains",
+    "resolution_deg": 0.25,
+    "cell_definition": "0.25 x 0.25 deg box centred on a GFS 0.25 deg grid point; one source point per cell",
+    "admin_note": "state/district describe the cell CENTRE point"
+   },
+   "forecast": {
+    "model_init_utc": "2026-11-15T00:00:00Z",
+    "forecast_hour": 12,
+    "valid_time_utc": "2026-11-15T12:00:00Z",
+    "published_at_utc": "2026-11-15T03:34:30Z",
+    "acquired_at_utc": "2026-11-15T14:26:53Z",
+    "status": "PAST_VALID_TIME"
+   },
+   "returned_variables": {
+    "cape": 0,
+    "cin": 0,
+    "lftx": 9.1,
+    "pwat": 12.3,
+    "t2m_c": 25.6,
+    "d2m_c": 7.2,
+    "rh2m": 31,
+    "ws10": 0.8,
+    "wd10": 99,
+    "mslp_hpa": 1012.3,
+    "k_index": -11.4,
+    "total_totals": 30.9,
+    "lapse_850_500": 6.93,
+    "shear_850_500": 9.7,
+    "w850": 0.55,
+    "w700": 0.23,
+    "w500": -0.09,
+    "rh850": 31,
+    "rh700": 5,
+    "rh500": 4,
+    "soilw0_10": 0.177,
+    "apcp_cum": 0.0,
+    "conv850": -2.82,
+    "conv10": -1.19,
+    "pwat_grad": 1.88,
+    "q850": 5.32,
+    "q700": 0.62,
+    "precip_3h": 0.0
+   },
+   "missing_variables": [],
+   "hazards": {
+    "thunderstorm_model": "AVAILABLE_EVALUATED",
+    "thunderstorm_indicators_cape": 0,
+    "extreme_rainfall_short_duration": "AVAILABLE_EVALUATED",
+    "cloudburst": "UNAVAILABLE",
+    "flash_flood_prediction": "UNAVAILABLE",
+    "flash_flood_screening_index": 0.0
+   },
+   "static": {
+    "elev_mean_m": 660,
+    "slope_p90_deg": 5.6,
+    "nearest_gauge_km": 54.7
+   },
+   "independent_grib_check": {
+    "cape": {
+     "raw_value_eccodes_nearest": 0.0,
+     "artifact_value": 0,
+     "raw_source_point": {
+      "lat": 18.5,
+      "lon": 73.75,
+      "distance_km": 11.33
+     },
+     "cell_centre": {
+      "lat": 18.5,
+      "lon": 73.75
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "cin": {
+     "raw_value_eccodes_nearest": 0.044,
+     "artifact_value": 0,
+     "raw_source_point": {
+      "lat": 18.5,
+      "lon": 73.75,
+      "distance_km": 11.33
+     },
+     "cell_centre": {
+      "lat": 18.5,
+      "lon": 73.75
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "pwat": {
+     "raw_value_eccodes_nearest": 12.311,
+     "artifact_value": 12.3,
+     "raw_source_point": {
+      "lat": 18.5,
+      "lon": 73.75,
+      "distance_km": 11.33
+     },
+     "cell_centre": {
+      "lat": 18.5,
+      "lon": 73.75
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "t2m_c": {
+     "raw_value_eccodes_nearest": 25.606,
+     "artifact_value": 25.6,
+     "raw_source_point": {
+      "lat": 18.5,
+      "lon": 73.75,
+      "distance_km": 11.33
+     },
+     "cell_centre": {
+      "lat": 18.5,
+      "lon": 73.75
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "rh2m": {
+     "raw_value_eccodes_nearest": 31.1,
+     "artifact_value": 31,
+     "raw_source_point": {
+      "lat": 18.5,
+      "lon": 73.75,
+      "distance_km": 11.33
+     },
+     "cell_centre": {
+      "lat": 18.5,
+      "lon": 73.75
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    }
+   }
+  },
+  {
+   "location": "Jaipur",
+   "kind": "gazetteer",
+   "requested": {
+    "lat": 26.9196,
+    "lon": 75.7878
+   },
+   "resolved": {
+    "covered": true,
+    "cell_id": "IN025_2700_07575",
+    "query": {
+     "lat": 26.9196,
+     "lon": 75.7878
+    },
+    "cell_centre": {
+     "lat": 27.0,
+     "lon": 75.75
+    }
+   },
+   "cell": {
+    "cell_id": "IN025_2700_07575",
+    "lat": 27.0,
+    "lon": 75.75,
+    "land_fraction": 1.0,
+    "state": "Rajasthan",
+    "district": "Jaipur",
+    "admin_method": "contains",
+    "resolution_deg": 0.25,
+    "cell_definition": "0.25 x 0.25 deg box centred on a GFS 0.25 deg grid point; one source point per cell",
+    "admin_note": "state/district describe the cell CENTRE point"
+   },
+   "forecast": {
+    "model_init_utc": "2026-11-15T00:00:00Z",
+    "forecast_hour": 12,
+    "valid_time_utc": "2026-11-15T12:00:00Z",
+    "published_at_utc": "2026-11-15T03:34:30Z",
+    "acquired_at_utc": "2026-11-15T14:26:53Z",
+    "status": "PAST_VALID_TIME"
+   },
+   "returned_variables": {
+    "cape": 16,
+    "cin": -2,
+    "lftx": 4.0,
+    "pwat": 19.9,
+    "t2m_c": 26.7,
+    "d2m_c": 7.3,
+    "rh2m": 29,
+    "ws10": 3.6,
+    "wd10": 311,
+    "mslp_hpa": 1011.5,
+    "k_index": 29.7,
+    "total_totals": 42.5,
+    "lapse_850_500": 8.11,
+    "shear_850_500": 16.8,
+    "w850": 0.02,
+    "w700": 0.49,
+    "w500": 0.12,
+    "rh850": 39,
+    "rh700": 81,
+    "rh500": 2,
+    "soilw0_10": 0.102,
+    "apcp_cum": 0.0,
+    "conv850": -0.42,
+    "conv10": 0.95,
+    "pwat_grad": 3.27,
+    "q850": 6.09,
+    "q700": 5.45,
+    "precip_3h": 0.0
+   },
+   "missing_variables": [],
+   "hazards": {
+    "thunderstorm_model": "AVAILABLE_EVALUATED",
+    "thunderstorm_indicators_cape": 16,
+    "extreme_rainfall_short_duration": "AVAILABLE_EVALUATED",
+    "cloudburst": "UNAVAILABLE",
+    "flash_flood_prediction": "UNAVAILABLE",
+    "flash_flood_screening_index": 0.0
+   },
+   "static": {
+    "elev_mean_m": 450,
+    "slope_p90_deg": 2.0,
+    "nearest_gauge_km": null
+   },
+   "independent_grib_check": {
+    "cape": {
+     "raw_value_eccodes_nearest": 16.0,
+     "artifact_value": 16,
+     "raw_source_point": {
+      "lat": 27.0,
+      "lon": 75.75,
+      "distance_km": 9.69
+     },
+     "cell_centre": {
+      "lat": 27.0,
+      "lon": 75.75
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "cin": {
+     "raw_value_eccodes_nearest": -2.456,
+     "artifact_value": -2,
+     "raw_source_point": {
+      "lat": 27.0,
+      "lon": 75.75,
+      "distance_km": 9.69
+     },
+     "cell_centre": {
+      "lat": 27.0,
+      "lon": 75.75
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "pwat": {
+     "raw_value_eccodes_nearest": 19.86,
+     "artifact_value": 19.9,
+     "raw_source_point": {
+      "lat": 27.0,
+      "lon": 75.75,
+      "distance_km": 9.69
+     },
+     "cell_centre": {
+      "lat": 27.0,
+      "lon": 75.75
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "t2m_c": {
+     "raw_value_eccodes_nearest": 26.676,
+     "artifact_value": 26.7,
+     "raw_source_point": {
+      "lat": 27.0,
+      "lon": 75.75,
+      "distance_km": 9.69
+     },
+     "cell_centre": {
+      "lat": 27.0,
+      "lon": 75.75
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "rh2m": {
+     "raw_value_eccodes_nearest": 28.9,
+     "artifact_value": 29,
+     "raw_source_point": {
+      "lat": 27.0,
+      "lon": 75.75,
+      "distance_km": 9.69
+     },
+     "cell_centre": {
+      "lat": 27.0,
+      "lon": 75.75
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    }
+   }
+  },
+  {
+   "location": "Ahmedabad",
+   "kind": "gazetteer",
+   "requested": {
+    "lat": 23.0258,
+    "lon": 72.5873
+   },
+   "resolved": {
+    "covered": true,
+    "cell_id": "IN025_2300_07250",
+    "query": {
+     "lat": 23.0258,
+     "lon": 72.5873
+    },
+    "cell_centre": {
+     "lat": 23.0,
+     "lon": 72.5
+    }
+   },
+   "cell": {
+    "cell_id": "IN025_2300_07250",
+    "lat": 23.0,
+    "lon": 72.5,
+    "land_fraction": 1.0,
+    "state": "Gujarat",
+    "district": "Ahmadabad",
+    "admin_method": "contains",
+    "resolution_deg": 0.25,
+    "cell_definition": "0.25 x 0.25 deg box centred on a GFS 0.25 deg grid point; one source point per cell",
+    "admin_note": "state/district describe the cell CENTRE point"
+   },
+   "forecast": {
+    "model_init_utc": "2026-11-15T00:00:00Z",
+    "forecast_hour": 12,
+    "valid_time_utc": "2026-11-15T12:00:00Z",
+    "published_at_utc": "2026-11-15T03:34:30Z",
+    "acquired_at_utc": "2026-11-15T14:26:53Z",
+    "status": "PAST_VALID_TIME"
+   },
+   "returned_variables": {
+    "cape": 0,
+    "cin": 0,
+    "lftx": 5.8,
+    "pwat": 26.3,
+    "t2m_c": 31.5,
+    "d2m_c": 10.1,
+    "rh2m": 26,
+    "ws10": 0.9,
+    "wd10": 63,
+    "mslp_hpa": 1011.0,
+    "k_index": 15.4,
+    "total_totals": 37.9,
+    "lapse_850_500": 6.89,
+    "shear_850_500": 19.5,
+    "w850": 0.35,
+    "w700": -0.03,
+    "w500": 0.04,
+    "rh850": 51,
+    "rh700": 31,
+    "rh500": 32,
+    "soilw0_10": 0.178,
+    "apcp_cum": 0.0,
+    "conv850": 0.5,
+    "conv10": -1.56,
+    "pwat_grad": 15.33,
+    "q850": 7.64,
+    "q700": 2.94,
+    "precip_3h": 0.0
+   },
+   "missing_variables": [],
+   "hazards": {
+    "thunderstorm_model": "AVAILABLE_EVALUATED",
+    "thunderstorm_indicators_cape": 0,
+    "extreme_rainfall_short_duration": "AVAILABLE_EVALUATED",
+    "cloudburst": "UNAVAILABLE",
+    "flash_flood_prediction": "UNAVAILABLE",
+    "flash_flood_screening_index": 0.0
+   },
+   "static": {
+    "elev_mean_m": 43,
+    "slope_p90_deg": 0.2,
+    "nearest_gauge_km": null
+   },
+   "independent_grib_check": {
+    "cape": {
+     "raw_value_eccodes_nearest": 0.0,
+     "artifact_value": 0,
+     "raw_source_point": {
+      "lat": 23.0,
+      "lon": 72.5,
+      "distance_km": 9.38
+     },
+     "cell_centre": {
+      "lat": 23.0,
+      "lon": 72.5
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "cin": {
+     "raw_value_eccodes_nearest": 0.044,
+     "artifact_value": 0,
+     "raw_source_point": {
+      "lat": 23.0,
+      "lon": 72.5,
+      "distance_km": 9.38
+     },
+     "cell_centre": {
+      "lat": 23.0,
+      "lon": 72.5
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "pwat": {
+     "raw_value_eccodes_nearest": 26.279,
+     "artifact_value": 26.3,
+     "raw_source_point": {
+      "lat": 23.0,
+      "lon": 72.5,
+      "distance_km": 9.38
+     },
+     "cell_centre": {
+      "lat": 23.0,
+      "lon": 72.5
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "t2m_c": {
+     "raw_value_eccodes_nearest": 31.516,
+     "artifact_value": 31.5,
+     "raw_source_point": {
+      "lat": 23.0,
+      "lon": 72.5,
+      "distance_km": 9.38
+     },
+     "cell_centre": {
+      "lat": 23.0,
+      "lon": 72.5
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "rh2m": {
+     "raw_value_eccodes_nearest": 26.5,
+     "artifact_value": 26,
+     "raw_source_point": {
+      "lat": 23.0,
+      "lon": 72.5,
+      "distance_km": 9.38
+     },
+     "cell_centre": {
+      "lat": 23.0,
+      "lon": 72.5
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    }
+   }
+  },
+  {
+   "location": "Guwahati",
+   "kind": "gazetteer",
+   "requested": {
+    "lat": 26.1844,
+    "lon": 91.7458
+   },
+   "resolved": {
+    "covered": true,
+    "cell_id": "IN025_2625_09175",
+    "query": {
+     "lat": 26.1844,
+     "lon": 91.7458
+    },
+    "cell_centre": {
+     "lat": 26.25,
+     "lon": 91.75
+    }
+   },
+   "cell": {
+    "cell_id": "IN025_2625_09175",
+    "lat": 26.25,
+    "lon": 91.75,
+    "land_fraction": 1.0,
+    "state": "Assam",
+    "district": "Kamrup",
+    "admin_method": "contains",
+    "resolution_deg": 0.25,
+    "cell_definition": "0.25 x 0.25 deg box centred on a GFS 0.25 deg grid point; one source point per cell",
+    "admin_note": "state/district describe the cell CENTRE point"
+   },
+   "forecast": {
+    "model_init_utc": "2026-11-15T00:00:00Z",
+    "forecast_hour": 12,
+    "valid_time_utc": "2026-11-15T12:00:00Z",
+    "published_at_utc": "2026-11-15T03:34:30Z",
+    "acquired_at_utc": "2026-11-15T14:26:53Z",
+    "status": "PAST_VALID_TIME"
+   },
+   "returned_variables": {
+    "cape": 50,
+    "cin": -12,
+    "lftx": 4.7,
+    "pwat": 32.5,
+    "t2m_c": 22.6,
+    "d2m_c": 15.6,
+    "rh2m": 64,
+    "ws10": 1.1,
+    "wd10": 136,
+    "mslp_hpa": 1011.2,
+    "k_index": 23.9,
+    "total_totals": 37.1,
+    "lapse_850_500": 5.67,
+    "shear_850_500": 28.1,
+    "w850": -0.08,
+    "w700": -0.39,
+    "w500": 0.21,
+    "rh850": 84,
+    "rh700": 60,
+    "rh500": 10,
+    "soilw0_10": 0.135,
+    "apcp_cum": 1.4,
+    "conv850": 0.66,
+    "conv10": -0.14,
+    "pwat_grad": 2.38,
+    "q850": 9.73,
+    "q700": 4.46,
+    "precip_3h": 0.0
+   },
+   "missing_variables": [],
+   "hazards": {
+    "thunderstorm_model": "AVAILABLE_EVALUATED",
+    "thunderstorm_indicators_cape": 50,
+    "extreme_rainfall_short_duration": "AVAILABLE_EVALUATED",
+    "cloudburst": "UNAVAILABLE",
+    "flash_flood_prediction": "UNAVAILABLE",
+    "flash_flood_screening_index": 0.012
+   },
+   "static": {
+    "elev_mean_m": 67,
+    "slope_p90_deg": 3.0,
+    "nearest_gauge_km": null
+   },
+   "independent_grib_check": {
+    "cape": {
+     "raw_value_eccodes_nearest": 50.0,
+     "artifact_value": 50,
+     "raw_source_point": {
+      "lat": 26.25,
+      "lon": 91.75,
+      "distance_km": 7.31
+     },
+     "cell_centre": {
+      "lat": 26.25,
+      "lon": 91.75
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "cin": {
+     "raw_value_eccodes_nearest": -12.356,
+     "artifact_value": -12,
+     "raw_source_point": {
+      "lat": 26.25,
+      "lon": 91.75,
+      "distance_km": 7.31
+     },
+     "cell_centre": {
+      "lat": 26.25,
+      "lon": 91.75
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "pwat": {
+     "raw_value_eccodes_nearest": 32.476,
+     "artifact_value": 32.5,
+     "raw_source_point": {
+      "lat": 26.25,
+      "lon": 91.75,
+      "distance_km": 7.31
+     },
+     "cell_centre": {
+      "lat": 26.25,
+      "lon": 91.75
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "t2m_c": {
+     "raw_value_eccodes_nearest": 22.606,
+     "artifact_value": 22.6,
+     "raw_source_point": {
+      "lat": 26.25,
+      "lon": 91.75,
+      "distance_km": 7.31
+     },
+     "cell_centre": {
+      "lat": 26.25,
+      "lon": 91.75
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "rh2m": {
+     "raw_value_eccodes_nearest": 64.4,
+     "artifact_value": 64,
+     "raw_source_point": {
+      "lat": 26.25,
+      "lon": 91.75,
+      "distance_km": 7.31
+     },
+     "cell_centre": {
+      "lat": 26.25,
+      "lon": 91.75
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    }
+   }
+  },
+  {
+   "location": "Shillong",
+   "kind": "gazetteer",
+   "requested": {
+    "lat": 25.5689,
+    "lon": 91.8831
+   },
+   "resolved": {
+    "covered": true,
+    "cell_id": "IN025_2550_09200",
+    "query": {
+     "lat": 25.5689,
+     "lon": 91.8831
+    },
+    "cell_centre": {
+     "lat": 25.5,
+     "lon": 92.0
+    }
+   },
+   "cell": {
+    "cell_id": "IN025_2550_09200",
+    "lat": 25.5,
+    "lon": 92.0,
+    "land_fraction": 1.0,
+    "state": "Meghalaya",
+    "district": "East Khasi Hills",
+    "admin_method": "contains",
+    "resolution_deg": 0.25,
+    "cell_definition": "0.25 x 0.25 deg box centred on a GFS 0.25 deg grid point; one source point per cell",
+    "admin_note": "state/district describe the cell CENTRE point"
+   },
+   "forecast": {
+    "model_init_utc": "2026-11-15T00:00:00Z",
+    "forecast_hour": 12,
+    "valid_time_utc": "2026-11-15T12:00:00Z",
+    "published_at_utc": "2026-11-15T03:34:30Z",
+    "acquired_at_utc": "2026-11-15T14:26:53Z",
+    "status": "PAST_VALID_TIME"
+   },
+   "returned_variables": {
+    "cape": 7,
+    "cin": -2,
+    "lftx": 4.4,
+    "pwat": 18.4,
+    "t2m_c": 13.6,
+    "d2m_c": 12.9,
+    "rh2m": 96,
+    "ws10": 0.6,
+    "wd10": 208,
+    "mslp_hpa": 1014.5,
+    "k_index": 22.6,
+    "total_totals": 37.4,
+    "lapse_850_500": 5.55,
+    "shear_850_500": 28.3,
+    "w850": -0.05,
+    "w700": 0.02,
+    "w500": 0.2,
+    "rh850": 91,
+    "rh700": 52,
+    "rh500": 7,
+    "soilw0_10": 0.228,
+    "apcp_cum": 0.6,
+    "conv850": 1.59,
+    "conv10": -3.5,
+    "pwat_grad": 8.74,
+    "q850": 10.55,
+    "q700": 4.38,
+    "precip_3h": 0.4
+   },
+   "missing_variables": [],
+   "hazards": {
+    "thunderstorm_model": "AVAILABLE_EVALUATED",
+    "thunderstorm_indicators_cape": 7,
+    "extreme_rainfall_short_duration": "AVAILABLE_EVALUATED",
+    "cloudburst": "UNAVAILABLE",
+    "flash_flood_prediction": "UNAVAILABLE",
+    "flash_flood_screening_index": 0.01
+   },
+   "static": {
+    "elev_mean_m": 1358,
+    "slope_p90_deg": 13.2,
+    "nearest_gauge_km": null
+   },
+   "independent_grib_check": {
+    "cape": {
+     "raw_value_eccodes_nearest": 7.0,
+     "artifact_value": 7,
+     "raw_source_point": {
+      "lat": 25.5,
+      "lon": 92.0,
+      "distance_km": 14.01
+     },
+     "cell_centre": {
+      "lat": 25.5,
+      "lon": 92.0
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "cin": {
+     "raw_value_eccodes_nearest": -2.056,
+     "artifact_value": -2,
+     "raw_source_point": {
+      "lat": 25.5,
+      "lon": 92.0,
+      "distance_km": 14.01
+     },
+     "cell_centre": {
+      "lat": 25.5,
+      "lon": 92.0
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "pwat": {
+     "raw_value_eccodes_nearest": 18.354,
+     "artifact_value": 18.4,
+     "raw_source_point": {
+      "lat": 25.5,
+      "lon": 92.0,
+      "distance_km": 14.01
+     },
+     "cell_centre": {
+      "lat": 25.5,
+      "lon": 92.0
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "t2m_c": {
+     "raw_value_eccodes_nearest": 13.586,
+     "artifact_value": 13.6,
+     "raw_source_point": {
+      "lat": 25.5,
+      "lon": 92.0,
+      "distance_km": 14.01
+     },
+     "cell_centre": {
+      "lat": 25.5,
+      "lon": 92.0
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "rh2m": {
+     "raw_value_eccodes_nearest": 96.0,
+     "artifact_value": 96,
+     "raw_source_point": {
+      "lat": 25.5,
+      "lon": 92.0,
+      "distance_km": 14.01
+     },
+     "cell_centre": {
+      "lat": 25.5,
+      "lon": 92.0
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    }
+   }
+  },
+  {
+   "location": "Srinagar",
+   "kind": "gazetteer",
+   "requested": {
+    "lat": 34.0857,
+    "lon": 74.8055
+   },
+   "resolved": {
+    "covered": true,
+    "cell_id": "IN025_3400_07475",
+    "query": {
+     "lat": 34.0857,
+     "lon": 74.8055
+    },
+    "cell_centre": {
+     "lat": 34.0,
+     "lon": 74.75
+    }
+   },
+   "cell": {
+    "cell_id": "IN025_3400_07475",
+    "lat": 34.0,
+    "lon": 74.75,
+    "land_fraction": 1.0,
+    "state": "Jammu & Kashmir",
+    "district": "Srinagar",
+    "admin_method": "contains",
+    "resolution_deg": 0.25,
+    "cell_definition": "0.25 x 0.25 deg box centred on a GFS 0.25 deg grid point; one source point per cell",
+    "admin_note": "state/district describe the cell CENTRE point"
+   },
+   "forecast": {
+    "model_init_utc": "2026-11-15T00:00:00Z",
+    "forecast_hour": 12,
+    "valid_time_utc": "2026-11-15T12:00:00Z",
+    "published_at_utc": "2026-11-15T03:34:30Z",
+    "acquired_at_utc": "2026-11-15T14:26:53Z",
+    "status": "PAST_VALID_TIME"
+   },
+   "returned_variables": {
+    "cape": 0,
+    "cin": 0,
+    "lftx": 0.7,
+    "pwat": 8.1,
+    "t2m_c": 10.1,
+    "d2m_c": -1.5,
+    "rh2m": 44,
+    "ws10": 0.8,
+    "wd10": 342,
+    "mslp_hpa": 1017.4,
+    "k_index": 20.6,
+    "total_totals": 51.4,
+    "lapse_850_500": 9.34,
+    "shear_850_500": 3.6,
+    "w850": -0.0,
+    "w700": 0.01,
+    "w500": 0.17,
+    "rh850": 38,
+    "rh700": 42,
+    "rh500": 41,
+    "soilw0_10": 0.194,
+    "apcp_cum": 0.4,
+    "conv850": 0.2,
+    "conv10": 0.68,
+    "pwat_grad": 2.31,
+    "q850": 4.31,
+    "q700": 2.53,
+    "precip_3h": 0.1
+   },
+   "missing_variables": [],
+   "hazards": {
+    "thunderstorm_model": "AVAILABLE_EVALUATED",
+    "thunderstorm_indicators_cape": 0,
+    "extreme_rainfall_short_duration": "AVAILABLE_EVALUATED",
+    "cloudburst": "UNAVAILABLE",
+    "flash_flood_prediction": "UNAVAILABLE",
+    "flash_flood_screening_index": 0.004
+   },
+   "static": {
+    "elev_mean_m": 1715,
+    "slope_p90_deg": 3.9,
+    "nearest_gauge_km": null
+   },
+   "independent_grib_check": {
+    "cape": {
+     "raw_value_eccodes_nearest": 0.0,
+     "artifact_value": 0,
+     "raw_source_point": {
+      "lat": 34.0,
+      "lon": 74.75,
+      "distance_km": 10.82
+     },
+     "cell_centre": {
+      "lat": 34.0,
+      "lon": 74.75
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "cin": {
+     "raw_value_eccodes_nearest": 0.044,
+     "artifact_value": 0,
+     "raw_source_point": {
+      "lat": 34.0,
+      "lon": 74.75,
+      "distance_km": 10.82
+     },
+     "cell_centre": {
+      "lat": 34.0,
+      "lon": 74.75
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "pwat": {
+     "raw_value_eccodes_nearest": 8.064,
+     "artifact_value": 8.1,
+     "raw_source_point": {
+      "lat": 34.0,
+      "lon": 74.75,
+      "distance_km": 10.82
+     },
+     "cell_centre": {
+      "lat": 34.0,
+      "lon": 74.75
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "t2m_c": {
+     "raw_value_eccodes_nearest": 10.146,
+     "artifact_value": 10.1,
+     "raw_source_point": {
+      "lat": 34.0,
+      "lon": 74.75,
+      "distance_km": 10.82
+     },
+     "cell_centre": {
+      "lat": 34.0,
+      "lon": 74.75
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "rh2m": {
+     "raw_value_eccodes_nearest": 44.3,
+     "artifact_value": 44,
+     "raw_source_point": {
+      "lat": 34.0,
+      "lon": 74.75,
+      "distance_km": 10.82
+     },
+     "cell_centre": {
+      "lat": 34.0,
+      "lon": 74.75
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    }
+   }
+  },
+  {
+   "location": "Leh",
+   "kind": "gazetteer",
+   "requested": {
+    "lat": 34.165,
+    "lon": 77.584
+   },
+   "resolved": {
+    "covered": true,
+    "cell_id": "IN025_3425_07750",
+    "query": {
+     "lat": 34.165,
+     "lon": 77.584
+    },
+    "cell_centre": {
+     "lat": 34.25,
+     "lon": 77.5
+    }
+   },
+   "cell": {
+    "cell_id": "IN025_3425_07750",
+    "lat": 34.25,
+    "lon": 77.5,
+    "land_fraction": 1.0,
+    "state": "Jammu & Kashmir",
+    "district": "Leh(Ladakh)",
+    "admin_method": "contains",
+    "resolution_deg": 0.25,
+    "cell_definition": "0.25 x 0.25 deg box centred on a GFS 0.25 deg grid point; one source point per cell",
+    "admin_note": "state/district describe the cell CENTRE point"
+   },
+   "forecast": {
+    "model_init_utc": "2026-11-15T00:00:00Z",
+    "forecast_hour": 12,
+    "valid_time_utc": "2026-11-15T12:00:00Z",
+    "published_at_utc": "2026-11-15T03:34:30Z",
+    "acquired_at_utc": "2026-11-15T14:26:53Z",
+    "status": "PAST_VALID_TIME"
+   },
+   "returned_variables": {
+    "cape": 3,
+    "cin": -3,
+    "lftx": -0.1,
+    "pwat": 1.6,
+    "t2m_c": -7.8,
+    "d2m_c": -21.9,
+    "rh2m": 33,
+    "ws10": 2.7,
+    "wd10": 297,
+    "mslp_hpa": 1019.6,
+    "k_index": 11.0,
+    "total_totals": 45.4,
+    "lapse_850_500": 8.85,
+    "shear_850_500": 2.9,
+    "w850": 0.22,
+    "w700": 0.22,
+    "w500": 0.45,
+    "rh850": 31,
+    "rh700": 31,
+    "rh500": 70,
+    "soilw0_10": 0.196,
+    "apcp_cum": 0.2,
+    "conv850": -8.9,
+    "conv10": -10.38,
+    "pwat_grad": 1.62,
+    "q850": 3.17,
+    "q700": 1.9,
+    "precip_3h": 0.0
+   },
+   "missing_variables": [],
+   "hazards": {
+    "thunderstorm_model": "AVAILABLE_EVALUATED",
+    "thunderstorm_indicators_cape": 3,
+    "extreme_rainfall_short_duration": "AVAILABLE_EVALUATED",
+    "cloudburst": "UNAVAILABLE",
+    "flash_flood_prediction": "UNAVAILABLE",
+    "flash_flood_screening_index": 0.005
+   },
+   "static": {
+    "elev_mean_m": 4465,
+    "slope_p90_deg": 18.0,
+    "nearest_gauge_km": null
+   },
+   "independent_grib_check": {
+    "cape": {
+     "raw_value_eccodes_nearest": 3.0,
+     "artifact_value": 3,
+     "raw_source_point": {
+      "lat": 34.25,
+      "lon": 77.5,
+      "distance_km": 12.21
+     },
+     "cell_centre": {
+      "lat": 34.25,
+      "lon": 77.5
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "cin": {
+     "raw_value_eccodes_nearest": -3.456,
+     "artifact_value": -3,
+     "raw_source_point": {
+      "lat": 34.25,
+      "lon": 77.5,
+      "distance_km": 12.21
+     },
+     "cell_centre": {
+      "lat": 34.25,
+      "lon": 77.5
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "pwat": {
+     "raw_value_eccodes_nearest": 1.618,
+     "artifact_value": 1.6,
+     "raw_source_point": {
+      "lat": 34.25,
+      "lon": 77.5,
+      "distance_km": 12.21
+     },
+     "cell_centre": {
+      "lat": 34.25,
+      "lon": 77.5
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "t2m_c": {
+     "raw_value_eccodes_nearest": -7.834,
+     "artifact_value": -7.8,
+     "raw_source_point": {
+      "lat": 34.25,
+      "lon": 77.5,
+      "distance_km": 12.21
+     },
+     "cell_centre": {
+      "lat": 34.25,
+      "lon": 77.5
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "rh2m": {
+     "raw_value_eccodes_nearest": 32.7,
+     "artifact_value": 33,
+     "raw_source_point": {
+      "lat": 34.25,
+      "lon": 77.5,
+      "distance_km": 12.21
+     },
+     "cell_centre": {
+      "lat": 34.25,
+      "lon": 77.5
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    }
+   }
+  },
+  {
+   "location": "Dehradun",
+   "kind": "gazetteer",
+   "requested": {
+    "lat": 30.3244,
+    "lon": 78.0339
+   },
+   "resolved": {
+    "covered": true,
+    "cell_id": "IN025_3025_07800",
+    "query": {
+     "lat": 30.3244,
+     "lon": 78.0339
+    },
+    "cell_centre": {
+     "lat": 30.25,
+     "lon": 78.0
+    }
+   },
+   "cell": {
+    "cell_id": "IN025_3025_07800",
+    "lat": 30.25,
+    "lon": 78.0,
+    "land_fraction": 1.0,
+    "state": "Uttarakhand",
+    "district": "Dehradun",
+    "admin_method": "contains",
+    "resolution_deg": 0.25,
+    "cell_definition": "0.25 x 0.25 deg box centred on a GFS 0.25 deg grid point; one source point per cell",
+    "admin_note": "state/district describe the cell CENTRE point"
+   },
+   "forecast": {
+    "model_init_utc": "2026-11-15T00:00:00Z",
+    "forecast_hour": 12,
+    "valid_time_utc": "2026-11-15T12:00:00Z",
+    "published_at_utc": "2026-11-15T03:34:30Z",
+    "acquired_at_utc": "2026-11-15T14:26:53Z",
+    "status": "PAST_VALID_TIME"
+   },
+   "returned_variables": {
+    "cape": 148,
+    "cin": -40,
+    "lftx": -1.5,
+    "pwat": 16.4,
+    "t2m_c": 19.0,
+    "d2m_c": 8.2,
+    "rh2m": 49,
+    "ws10": 1.9,
+    "wd10": 50,
+    "mslp_hpa": 1012.5,
+    "k_index": 31.1,
+    "total_totals": 53.4,
+    "lapse_850_500": 9.69,
+    "shear_850_500": 9.5,
+    "w850": -0.45,
+    "w700": -0.17,
+    "w500": 0.68,
+    "rh850": 38,
+    "rh700": 70,
+    "rh500": 6,
+    "soilw0_10": 0.196,
+    "apcp_cum": 0.0,
+    "conv850": 8.17,
+    "conv10": -2.23,
+    "pwat_grad": 6.77,
+    "q850": 5.2,
+    "q700": 4.38,
+    "precip_3h": 0.0
+   },
+   "missing_variables": [],
+   "hazards": {
+    "thunderstorm_model": "AVAILABLE_EVALUATED",
+    "thunderstorm_indicators_cape": 148,
+    "extreme_rainfall_short_duration": "AVAILABLE_EVALUATED",
+    "cloudburst": "UNAVAILABLE",
+    "flash_flood_prediction": "UNAVAILABLE",
+    "flash_flood_screening_index": 0.0
+   },
+   "static": {
+    "elev_mean_m": 621,
+    "slope_p90_deg": 4.5,
+    "nearest_gauge_km": 33.6
+   },
+   "independent_grib_check": {
+    "cape": {
+     "raw_value_eccodes_nearest": 148.0,
+     "artifact_value": 148,
+     "raw_source_point": {
+      "lat": 30.25,
+      "lon": 78.0,
+      "distance_km": 8.89
+     },
+     "cell_centre": {
+      "lat": 30.25,
+      "lon": 78.0
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "cin": {
+     "raw_value_eccodes_nearest": -40.056,
+     "artifact_value": -40,
+     "raw_source_point": {
+      "lat": 30.25,
+      "lon": 78.0,
+      "distance_km": 8.89
+     },
+     "cell_centre": {
+      "lat": 30.25,
+      "lon": 78.0
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "pwat": {
+     "raw_value_eccodes_nearest": 16.437,
+     "artifact_value": 16.4,
+     "raw_source_point": {
+      "lat": 30.25,
+      "lon": 78.0,
+      "distance_km": 8.89
+     },
+     "cell_centre": {
+      "lat": 30.25,
+      "lon": 78.0
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "t2m_c": {
+     "raw_value_eccodes_nearest": 19.006,
+     "artifact_value": 19.0,
+     "raw_source_point": {
+      "lat": 30.25,
+      "lon": 78.0,
+      "distance_km": 8.89
+     },
+     "cell_centre": {
+      "lat": 30.25,
+      "lon": 78.0
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "rh2m": {
+     "raw_value_eccodes_nearest": 49.4,
+     "artifact_value": 49,
+     "raw_source_point": {
+      "lat": 30.25,
+      "lon": 78.0,
+      "distance_km": 8.89
+     },
+     "cell_centre": {
+      "lat": 30.25,
+      "lon": 78.0
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    }
+   }
+  },
+  {
+   "location": "Kochi",
+   "kind": "gazetteer",
+   "requested": {
+    "lat": 9.9399,
+    "lon": 76.2602
+   },
+   "resolved": {
+    "covered": false,
+    "query": {
+     "lat": 9.9399,
+     "lon": 76.2602
+    },
+    "cell_centre": {
+     "lat": 10.0,
+     "lon": 76.25
+    },
+    "reason": "the point lies in a 0.25 deg cell that is less than 50% Indian land (sea or another country)",
+    "nearest_covered_cell": {
+     "cell_id": "IN025_1000_07650",
+     "lat": 10.0,
+     "lon": 76.5,
+     "distance_deg": 0.247
+    }
+   },
+   "status": "NOT_COVERED"
+  },
+  {
+   "location": "Visakhapatnam",
+   "kind": "gazetteer",
+   "requested": {
+    "lat": 17.6801,
+    "lon": 83.2016
+   },
+   "resolved": {
+    "covered": true,
+    "cell_id": "IN025_1775_08325",
+    "query": {
+     "lat": 17.6801,
+     "lon": 83.2016
+    },
+    "cell_centre": {
+     "lat": 17.75,
+     "lon": 83.25
+    }
+   },
+   "cell": {
+    "cell_id": "IN025_1775_08325",
+    "lat": 17.75,
+    "lon": 83.25,
+    "land_fraction": 0.843,
+    "state": "Andhra Pradesh",
+    "district": "Visakhapatnam",
+    "admin_method": "contains",
+    "resolution_deg": 0.25,
+    "cell_definition": "0.25 x 0.25 deg box centred on a GFS 0.25 deg grid point; one source point per cell",
+    "admin_note": "state/district describe the cell CENTRE point"
+   },
+   "forecast": {
+    "model_init_utc": "2026-11-15T00:00:00Z",
+    "forecast_hour": 12,
+    "valid_time_utc": "2026-11-15T12:00:00Z",
+    "published_at_utc": "2026-11-15T03:34:30Z",
+    "acquired_at_utc": "2026-11-15T14:26:53Z",
+    "status": "PAST_VALID_TIME"
+   },
+   "returned_variables": {
+    "cape": 0,
+    "cin": 0,
+    "lftx": 2.8,
+    "pwat": 23.9,
+    "t2m_c": 25.8,
+    "d2m_c": 19.2,
+    "rh2m": 67,
+    "ws10": 3.3,
+    "wd10": 80,
+    "mslp_hpa": 1011.8,
+    "k_index": -8.8,
+    "total_totals": 30.6,
+    "lapse_850_500": 6.19,
+    "shear_850_500": 2.9,
+    "w850": 0.54,
+    "w700": 0.05,
+    "w500": -0.05,
+    "rh850": 43,
+    "rh700": 6,
+    "rh500": 6,
+    "soilw0_10": 0.242,
+    "apcp_cum": 0.0,
+    "conv850": 6.59,
+    "conv10": 1.39,
+    "pwat_grad": 4.61,
+    "q850": 6.58,
+    "q700": 0.78,
+    "precip_3h": 0.0
+   },
+   "missing_variables": [],
+   "hazards": {
+    "thunderstorm_model": "AVAILABLE_EVALUATED",
+    "thunderstorm_indicators_cape": 0,
+    "extreme_rainfall_short_duration": "AVAILABLE_EVALUATED",
+    "cloudburst": "UNAVAILABLE",
+    "flash_flood_prediction": "UNAVAILABLE",
+    "flash_flood_screening_index": 0.0
+   },
+   "static": {
+    "elev_mean_m": 65,
+    "slope_p90_deg": 5.4,
+    "nearest_gauge_km": 80.8
+   },
+   "independent_grib_check": {
+    "cape": {
+     "raw_value_eccodes_nearest": 0.0,
+     "artifact_value": 0,
+     "raw_source_point": {
+      "lat": 17.75,
+      "lon": 83.25,
+      "distance_km": 9.31
+     },
+     "cell_centre": {
+      "lat": 17.75,
+      "lon": 83.25
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "cin": {
+     "raw_value_eccodes_nearest": 0.044,
+     "artifact_value": 0,
+     "raw_source_point": {
+      "lat": 17.75,
+      "lon": 83.25,
+      "distance_km": 9.31
+     },
+     "cell_centre": {
+      "lat": 17.75,
+      "lon": 83.25
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "pwat": {
+     "raw_value_eccodes_nearest": 23.925,
+     "artifact_value": 23.9,
+     "raw_source_point": {
+      "lat": 17.75,
+      "lon": 83.25,
+      "distance_km": 9.31
+     },
+     "cell_centre": {
+      "lat": 17.75,
+      "lon": 83.25
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "t2m_c": {
+     "raw_value_eccodes_nearest": 25.766,
+     "artifact_value": 25.8,
+     "raw_source_point": {
+      "lat": 17.75,
+      "lon": 83.25,
+      "distance_km": 9.31
+     },
+     "cell_centre": {
+      "lat": 17.75,
+      "lon": 83.25
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "rh2m": {
+     "raw_value_eccodes_nearest": 67.0,
+     "artifact_value": 67,
+     "raw_source_point": {
+      "lat": 17.75,
+      "lon": 83.25,
+      "distance_km": 9.31
+     },
+     "cell_centre": {
+      "lat": 17.75,
+      "lon": 83.25
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    }
+   }
+  },
+  {
+   "location": "Bhopal",
+   "kind": "gazetteer",
+   "requested": {
+    "lat": 23.2547,
+    "lon": 77.4029
+   },
+   "resolved": {
+    "covered": true,
+    "cell_id": "IN025_2325_07750",
+    "query": {
+     "lat": 23.2547,
+     "lon": 77.4029
+    },
+    "cell_centre": {
+     "lat": 23.25,
+     "lon": 77.5
+    }
+   },
+   "cell": {
+    "cell_id": "IN025_2325_07750",
+    "lat": 23.25,
+    "lon": 77.5,
+    "land_fraction": 1.0,
+    "state": "Madhya Pradesh",
+    "district": "Bhopal",
+    "admin_method": "contains",
+    "resolution_deg": 0.25,
+    "cell_definition": "0.25 x 0.25 deg box centred on a GFS 0.25 deg grid point; one source point per cell",
+    "admin_note": "state/district describe the cell CENTRE point"
+   },
+   "forecast": {
+    "model_init_utc": "2026-11-15T00:00:00Z",
+    "forecast_hour": 12,
+    "valid_time_utc": "2026-11-15T12:00:00Z",
+    "published_at_utc": "2026-11-15T03:34:30Z",
+    "acquired_at_utc": "2026-11-15T14:26:53Z",
+    "status": "PAST_VALID_TIME"
+   },
+   "returned_variables": {
+    "cape": 0,
+    "cin": 0,
+    "lftx": 7.5,
+    "pwat": 20.6,
+    "t2m_c": 25.3,
+    "d2m_c": 8.0,
+    "rh2m": 33,
+    "ws10": 0.2,
+    "wd10": 299,
+    "mslp_hpa": 1012.1,
+    "k_index": 23.0,
+    "total_totals": 34.5,
+    "lapse_850_500": 7.07,
+    "shear_850_500": 21.1,
+    "w850": -1.42,
+    "w700": -0.27,
+    "w500": 0.52,
+    "rh850": 37,
+    "rh700": 66,
+    "rh500": 20,
+    "soilw0_10": 0.12,
+    "apcp_cum": 0.0,
+    "conv850": 1.08,
+    "conv10": 9.16,
+    "pwat_grad": 2.05,
+    "q850": 6.04,
+    "q700": 4.9,
+    "precip_3h": 0.0
+   },
+   "missing_variables": [],
+   "hazards": {
+    "thunderstorm_model": "AVAILABLE_EVALUATED",
+    "thunderstorm_indicators_cape": 0,
+    "extreme_rainfall_short_duration": "AVAILABLE_EVALUATED",
+    "cloudburst": "UNAVAILABLE",
+    "flash_flood_prediction": "UNAVAILABLE",
+    "flash_flood_screening_index": 0.0
+   },
+   "static": {
+    "elev_mean_m": 482,
+    "slope_p90_deg": 1.4,
+    "nearest_gauge_km": 59.9
+   },
+   "independent_grib_check": {
+    "cape": {
+     "raw_value_eccodes_nearest": 0.0,
+     "artifact_value": 0,
+     "raw_source_point": {
+      "lat": 23.25,
+      "lon": 77.5,
+      "distance_km": 9.93
+     },
+     "cell_centre": {
+      "lat": 23.25,
+      "lon": 77.5
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "cin": {
+     "raw_value_eccodes_nearest": 0.044,
+     "artifact_value": 0,
+     "raw_source_point": {
+      "lat": 23.25,
+      "lon": 77.5,
+      "distance_km": 9.93
+     },
+     "cell_centre": {
+      "lat": 23.25,
+      "lon": 77.5
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "pwat": {
+     "raw_value_eccodes_nearest": 20.565,
+     "artifact_value": 20.6,
+     "raw_source_point": {
+      "lat": 23.25,
+      "lon": 77.5,
+      "distance_km": 9.93
+     },
+     "cell_centre": {
+      "lat": 23.25,
+      "lon": 77.5
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "t2m_c": {
+     "raw_value_eccodes_nearest": 25.296,
+     "artifact_value": 25.3,
+     "raw_source_point": {
+      "lat": 23.25,
+      "lon": 77.5,
+      "distance_km": 9.93
+     },
+     "cell_centre": {
+      "lat": 23.25,
+      "lon": 77.5
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "rh2m": {
+     "raw_value_eccodes_nearest": 33.0,
+     "artifact_value": 33,
+     "raw_source_point": {
+      "lat": 23.25,
+      "lon": 77.5,
+      "distance_km": 9.93
+     },
+     "cell_centre": {
+      "lat": 23.25,
+      "lon": 77.5
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    }
+   }
+  },
+  {
+   "location": "Lucknow",
+   "kind": "gazetteer",
+   "requested": {
+    "lat": 26.8393,
+    "lon": 80.9231
+   },
+   "resolved": {
+    "covered": true,
+    "cell_id": "IN025_2675_08100",
+    "query": {
+     "lat": 26.8393,
+     "lon": 80.9231
+    },
+    "cell_centre": {
+     "lat": 26.75,
+     "lon": 81.0
+    }
+   },
+   "cell": {
+    "cell_id": "IN025_2675_08100",
+    "lat": 26.75,
+    "lon": 81.0,
+    "land_fraction": 1.0,
+    "state": "Uttar Pradesh",
+    "district": "Lucknow",
+    "admin_method": "contains",
+    "resolution_deg": 0.25,
+    "cell_definition": "0.25 x 0.25 deg box centred on a GFS 0.25 deg grid point; one source point per cell",
+    "admin_note": "state/district describe the cell CENTRE point"
+   },
+   "forecast": {
+    "model_init_utc": "2026-11-15T00:00:00Z",
+    "forecast_hour": 12,
+    "valid_time_utc": "2026-11-15T12:00:00Z",
+    "published_at_utc": "2026-11-15T03:34:30Z",
+    "acquired_at_utc": "2026-11-15T14:26:53Z",
+    "status": "PAST_VALID_TIME"
+   },
+   "returned_variables": {
+    "cape": 0,
+    "cin": 0,
+    "lftx": 5.0,
+    "pwat": 26.0,
+    "t2m_c": 26.7,
+    "d2m_c": 11.5,
+    "rh2m": 39,
+    "ws10": 2.1,
+    "wd10": 359,
+    "mslp_hpa": 1011.2,
+    "k_index": 25.3,
+    "total_totals": 38.9,
+    "lapse_850_500": 6.79,
+    "shear_850_500": 25.2,
+    "w850": 0.13,
+    "w700": 0.02,
+    "w500": 0.11,
+    "rh850": 57,
+    "rh700": 65,
+    "rh500": 2,
+    "soilw0_10": 0.185,
+    "apcp_cum": 0.0,
+    "conv850": -0.71,
+    "conv10": 1.61,
+    "pwat_grad": 2.19,
+    "q850": 7.62,
+    "q700": 4.71,
+    "precip_3h": 0.0
+   },
+   "missing_variables": [],
+   "hazards": {
+    "thunderstorm_model": "AVAILABLE_EVALUATED",
+    "thunderstorm_indicators_cape": 0,
+    "extreme_rainfall_short_duration": "AVAILABLE_EVALUATED",
+    "cloudburst": "UNAVAILABLE",
+    "flash_flood_prediction": "UNAVAILABLE",
+    "flash_flood_screening_index": 0.0
+   },
+   "static": {
+    "elev_mean_m": 120,
+    "slope_p90_deg": 0.2,
+    "nearest_gauge_km": 13.5
+   },
+   "independent_grib_check": {
+    "cape": {
+     "raw_value_eccodes_nearest": 0.0,
+     "artifact_value": 0,
+     "raw_source_point": {
+      "lat": 26.75,
+      "lon": 81.0,
+      "distance_km": 12.52
+     },
+     "cell_centre": {
+      "lat": 26.75,
+      "lon": 81.0
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "cin": {
+     "raw_value_eccodes_nearest": 0.044,
+     "artifact_value": 0,
+     "raw_source_point": {
+      "lat": 26.75,
+      "lon": 81.0,
+      "distance_km": 12.52
+     },
+     "cell_centre": {
+      "lat": 26.75,
+      "lon": 81.0
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "pwat": {
+     "raw_value_eccodes_nearest": 26.024,
+     "artifact_value": 26.0,
+     "raw_source_point": {
+      "lat": 26.75,
+      "lon": 81.0,
+      "distance_km": 12.52
+     },
+     "cell_centre": {
+      "lat": 26.75,
+      "lon": 81.0
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "t2m_c": {
+     "raw_value_eccodes_nearest": 26.686,
+     "artifact_value": 26.7,
+     "raw_source_point": {
+      "lat": 26.75,
+      "lon": 81.0,
+      "distance_km": 12.52
+     },
+     "cell_centre": {
+      "lat": 26.75,
+      "lon": 81.0
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "rh2m": {
+     "raw_value_eccodes_nearest": 38.6,
+     "artifact_value": 39,
+     "raw_source_point": {
+      "lat": 26.75,
+      "lon": 81.0,
+      "distance_km": 12.52
+     },
+     "cell_centre": {
+      "lat": 26.75,
+      "lon": 81.0
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    }
+   }
+  },
+  {
+   "location": "Bhubaneswar",
+   "kind": "gazetteer",
+   "requested": {
+    "lat": 20.2724,
+    "lon": 85.8338
+   },
+   "resolved": {
+    "covered": true,
+    "cell_id": "IN025_2025_08575",
+    "query": {
+     "lat": 20.2724,
+     "lon": 85.8338
+    },
+    "cell_centre": {
+     "lat": 20.25,
+     "lon": 85.75
+    }
+   },
+   "cell": {
+    "cell_id": "IN025_2025_08575",
+    "lat": 20.25,
+    "lon": 85.75,
+    "land_fraction": 1.0,
+    "state": "Odisha",
+    "district": "Khordha",
+    "admin_method": "contains",
+    "resolution_deg": 0.25,
+    "cell_definition": "0.25 x 0.25 deg box centred on a GFS 0.25 deg grid point; one source point per cell",
+    "admin_note": "state/district describe the cell CENTRE point"
+   },
+   "forecast": {
+    "model_init_utc": "2026-11-15T00:00:00Z",
+    "forecast_hour": 12,
+    "valid_time_utc": "2026-11-15T12:00:00Z",
+    "published_at_utc": "2026-11-15T03:34:30Z",
+    "acquired_at_utc": "2026-11-15T14:26:53Z",
+    "status": "PAST_VALID_TIME"
+   },
+   "returned_variables": {
+    "cape": 0,
+    "cin": 0,
+    "lftx": 6.3,
+    "pwat": 21.2,
+    "t2m_c": 25.0,
+    "d2m_c": 15.4,
+    "rh2m": 55,
+    "ws10": 1.0,
+    "wd10": 319,
+    "mslp_hpa": 1011.8,
+    "k_index": -10.9,
+    "total_totals": 32.4,
+    "lapse_850_500": 5.62,
+    "shear_850_500": 11.7,
+    "w850": 0.06,
+    "w700": 0.18,
+    "w500": 0.11,
+    "rh850": 64,
+    "rh700": 4,
+    "rh500": 7,
+    "soilw0_10": 0.198,
+    "apcp_cum": 0.0,
+    "conv850": 0.58,
+    "conv10": 4.6,
+    "pwat_grad": 4.86,
+    "q850": 8.47,
+    "q700": 0.55,
+    "precip_3h": 0.0
+   },
+   "missing_variables": [],
+   "hazards": {
+    "thunderstorm_model": "AVAILABLE_EVALUATED",
+    "thunderstorm_indicators_cape": 0,
+    "extreme_rainfall_short_duration": "AVAILABLE_EVALUATED",
+    "cloudburst": "UNAVAILABLE",
+    "flash_flood_prediction": "UNAVAILABLE",
+    "flash_flood_screening_index": 0.0
+   },
+   "static": {
+    "elev_mean_m": 47,
+    "slope_p90_deg": 1.1,
+    "nearest_gauge_km": 25.2
+   },
+   "independent_grib_check": {
+    "cape": {
+     "raw_value_eccodes_nearest": 0.0,
+     "artifact_value": 0,
+     "raw_source_point": {
+      "lat": 20.25,
+      "lon": 85.75,
+      "distance_km": 9.09
+     },
+     "cell_centre": {
+      "lat": 20.25,
+      "lon": 85.75
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "cin": {
+     "raw_value_eccodes_nearest": 0.044,
+     "artifact_value": 0,
+     "raw_source_point": {
+      "lat": 20.25,
+      "lon": 85.75,
+      "distance_km": 9.09
+     },
+     "cell_centre": {
+      "lat": 20.25,
+      "lon": 85.75
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "pwat": {
+     "raw_value_eccodes_nearest": 21.212,
+     "artifact_value": 21.2,
+     "raw_source_point": {
+      "lat": 20.25,
+      "lon": 85.75,
+      "distance_km": 9.09
+     },
+     "cell_centre": {
+      "lat": 20.25,
+      "lon": 85.75
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "t2m_c": {
+     "raw_value_eccodes_nearest": 24.976,
+     "artifact_value": 25.0,
+     "raw_source_point": {
+      "lat": 20.25,
+      "lon": 85.75,
+      "distance_km": 9.09
+     },
+     "cell_centre": {
+      "lat": 20.25,
+      "lon": 85.75
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "rh2m": {
+     "raw_value_eccodes_nearest": 54.9,
+     "artifact_value": 55,
+     "raw_source_point": {
+      "lat": 20.25,
+      "lon": 85.75,
+      "distance_km": 9.09
+     },
+     "cell_centre": {
+      "lat": 20.25,
+      "lon": 85.75
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    }
+   }
+  },
+  {
+   "location": "Port Blair",
+   "kind": "gazetteer",
+   "requested": {
+    "lat": 11.6661,
+    "lon": 92.7464
+   },
+   "resolved": {
+    "covered": true,
+    "cell_id": "IN025_1175_09275",
+    "query": {
+     "lat": 11.6661,
+     "lon": 92.7464
+    },
+    "cell_centre": {
+     "lat": 11.75,
+     "lon": 92.75
+    }
+   },
+   "cell": {
+    "cell_id": "IN025_1175_09275",
+    "lat": 11.75,
+    "lon": 92.75,
+    "land_fraction": 0.548,
+    "state": "Andaman & Nicobar Island",
+    "district": "South Andaman",
+    "admin_method": "contains",
+    "resolution_deg": 0.25,
+    "cell_definition": "0.25 x 0.25 deg box centred on a GFS 0.25 deg grid point; one source point per cell",
+    "admin_note": "state/district describe the cell CENTRE point"
+   },
+   "forecast": {
+    "model_init_utc": "2026-11-15T00:00:00Z",
+    "forecast_hour": 12,
+    "valid_time_utc": "2026-11-15T12:00:00Z",
+    "published_at_utc": "2026-11-15T03:34:30Z",
+    "acquired_at_utc": "2026-11-15T14:26:53Z",
+    "status": "PAST_VALID_TIME"
+   },
+   "returned_variables": {
+    "cape": 794,
+    "cin": -3,
+    "lftx": -3.8,
+    "pwat": 63.7,
+    "t2m_c": 26.9,
+    "d2m_c": 23.8,
+    "rh2m": 84,
+    "ws10": 2.9,
+    "wd10": 176,
+    "mslp_hpa": 1009.8,
+    "k_index": 34.8,
+    "total_totals": 43.4,
+    "lapse_850_500": 6.59,
+    "shear_850_500": 2.2,
+    "w850": 0.1,
+    "w700": 0.1,
+    "w500": 0.23,
+    "rh850": 84,
+    "rh700": 76,
+    "rh500": 95,
+    "soilw0_10": 0.32,
+    "apcp_cum": 7.8,
+    "conv850": -0.47,
+    "conv10": 2.34,
+    "pwat_grad": 0.66,
+    "q850": 13.33,
+    "q700": 9.12,
+    "precip_3h": 0.0
+   },
+   "missing_variables": [],
+   "hazards": {
+    "thunderstorm_model": "AVAILABLE_EVALUATED",
+    "thunderstorm_indicators_cape": 794,
+    "extreme_rainfall_short_duration": "AVAILABLE_EVALUATED",
+    "cloudburst": "UNAVAILABLE",
+    "flash_flood_prediction": "UNAVAILABLE",
+    "flash_flood_screening_index": 0.103
+   },
+   "static": {
+    "elev_mean_m": -16,
+    "slope_p90_deg": 4.3,
+    "nearest_gauge_km": null
+   },
+   "independent_grib_check": {
+    "cape": {
+     "raw_value_eccodes_nearest": 794.0,
+     "artifact_value": 794,
+     "raw_source_point": {
+      "lat": 11.75,
+      "lon": 92.75,
+      "distance_km": 9.34
+     },
+     "cell_centre": {
+      "lat": 11.75,
+      "lon": 92.75
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "cin": {
+     "raw_value_eccodes_nearest": -3.156,
+     "artifact_value": -3,
+     "raw_source_point": {
+      "lat": 11.75,
+      "lon": 92.75,
+      "distance_km": 9.34
+     },
+     "cell_centre": {
+      "lat": 11.75,
+      "lon": 92.75
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "pwat": {
+     "raw_value_eccodes_nearest": 63.664,
+     "artifact_value": 63.7,
+     "raw_source_point": {
+      "lat": 11.75,
+      "lon": 92.75,
+      "distance_km": 9.34
+     },
+     "cell_centre": {
+      "lat": 11.75,
+      "lon": 92.75
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "t2m_c": {
+     "raw_value_eccodes_nearest": 26.886,
+     "artifact_value": 26.9,
+     "raw_source_point": {
+      "lat": 11.75,
+      "lon": 92.75,
+      "distance_km": 9.34
+     },
+     "cell_centre": {
+      "lat": 11.75,
+      "lon": 92.75
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "rh2m": {
+     "raw_value_eccodes_nearest": 83.6,
+     "artifact_value": 84,
+     "raw_source_point": {
+      "lat": 11.75,
+      "lon": 92.75,
+      "distance_km": 9.34
+     },
+     "cell_centre": {
+      "lat": 11.75,
+      "lon": 92.75
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    }
+   }
+  },
+  {
+   "location": "rural Rajasthan (Thar)",
+   "kind": "map coordinate",
+   "requested": {
+    "lat": 26.1,
+    "lon": 74.1
+   },
+   "resolved": {
+    "covered": true,
+    "cell_id": "IN025_2600_07400",
+    "query": {
+     "lat": 26.1,
+     "lon": 74.1
+    },
+    "cell_centre": {
+     "lat": 26.0,
+     "lon": 74.0
+    }
+   },
+   "cell": {
+    "cell_id": "IN025_2600_07400",
+    "lat": 26.0,
+    "lon": 74.0,
+    "land_fraction": 1.0,
+    "state": "Rajasthan",
+    "district": "Pali",
+    "admin_method": "contains",
+    "resolution_deg": 0.25,
+    "cell_definition": "0.25 x 0.25 deg box centred on a GFS 0.25 deg grid point; one source point per cell",
+    "admin_note": "state/district describe the cell CENTRE point"
+   },
+   "forecast": {
+    "model_init_utc": "2026-11-15T00:00:00Z",
+    "forecast_hour": 12,
+    "valid_time_utc": "2026-11-15T12:00:00Z",
+    "published_at_utc": "2026-11-15T03:34:30Z",
+    "acquired_at_utc": "2026-11-15T14:26:53Z",
+    "status": "PAST_VALID_TIME"
+   },
+   "returned_variables": {
+    "cape": 0,
+    "cin": 0,
+    "lftx": 3.9,
+    "pwat": 19.5,
+    "t2m_c": 27.3,
+    "d2m_c": 8.0,
+    "rh2m": 29,
+    "ws10": 2.8,
+    "wd10": 297,
+    "mslp_hpa": 1011.7,
+    "k_index": 28.8,
+    "total_totals": 42.1,
+    "lapse_850_500": 7.92,
+    "shear_850_500": 13.5,
+    "w850": -0.14,
+    "w700": 0.19,
+    "w500": -0.13,
+    "rh850": 41,
+    "rh700": 75,
+    "rh500": 4,
+    "soilw0_10": 0.081,
+    "apcp_cum": 0.0,
+    "conv850": -2.89,
+    "conv10": -1.7,
+    "pwat_grad": 2.24,
+    "q850": 6.45,
+    "q700": 5.11,
+    "precip_3h": 0.0
+   },
+   "missing_variables": [],
+   "hazards": {
+    "thunderstorm_model": "AVAILABLE_EVALUATED",
+    "thunderstorm_indicators_cape": 0,
+    "extreme_rainfall_short_duration": "AVAILABLE_EVALUATED",
+    "cloudburst": "UNAVAILABLE",
+    "flash_flood_prediction": "UNAVAILABLE",
+    "flash_flood_screening_index": 0.0
+   },
+   "static": {
+    "elev_mean_m": 364,
+    "slope_p90_deg": 1.5,
+    "nearest_gauge_km": null
+   },
+   "independent_grib_check": {
+    "cape": {
+     "raw_value_eccodes_nearest": 0.0,
+     "artifact_value": 0,
+     "raw_source_point": {
+      "lat": 26.0,
+      "lon": 74.0,
+      "distance_km": 14.95
+     },
+     "cell_centre": {
+      "lat": 26.0,
+      "lon": 74.0
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "cin": {
+     "raw_value_eccodes_nearest": 0.044,
+     "artifact_value": 0,
+     "raw_source_point": {
+      "lat": 26.0,
+      "lon": 74.0,
+      "distance_km": 14.95
+     },
+     "cell_centre": {
+      "lat": 26.0,
+      "lon": 74.0
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "pwat": {
+     "raw_value_eccodes_nearest": 19.543,
+     "artifact_value": 19.5,
+     "raw_source_point": {
+      "lat": 26.0,
+      "lon": 74.0,
+      "distance_km": 14.95
+     },
+     "cell_centre": {
+      "lat": 26.0,
+      "lon": 74.0
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "t2m_c": {
+     "raw_value_eccodes_nearest": 27.346,
+     "artifact_value": 27.3,
+     "raw_source_point": {
+      "lat": 26.0,
+      "lon": 74.0,
+      "distance_km": 14.95
+     },
+     "cell_centre": {
+      "lat": 26.0,
+      "lon": 74.0
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "rh2m": {
+     "raw_value_eccodes_nearest": 29.3,
+     "artifact_value": 29,
+     "raw_source_point": {
+      "lat": 26.0,
+      "lon": 74.0,
+      "distance_km": 14.95
+     },
+     "cell_centre": {
+      "lat": 26.0,
+      "lon": 74.0
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    }
+   }
+  },
+  {
+   "location": "rural Chhattisgarh forest",
+   "kind": "map coordinate",
+   "requested": {
+    "lat": 20.5,
+    "lon": 82.0
+   },
+   "resolved": {
+    "covered": true,
+    "cell_id": "IN025_2050_08200",
+    "query": {
+     "lat": 20.5,
+     "lon": 82.0
+    },
+    "cell_centre": {
+     "lat": 20.5,
+     "lon": 82.0
+    }
+   },
+   "cell": {
+    "cell_id": "IN025_2050_08200",
+    "lat": 20.5,
+    "lon": 82.0,
+    "land_fraction": 1.0,
+    "state": "Chhattisgarh",
+    "district": "Dhamtari",
+    "admin_method": "contains",
+    "resolution_deg": 0.25,
+    "cell_definition": "0.25 x 0.25 deg box centred on a GFS 0.25 deg grid point; one source point per cell",
+    "admin_note": "state/district describe the cell CENTRE point"
+   },
+   "forecast": {
+    "model_init_utc": "2026-11-15T00:00:00Z",
+    "forecast_hour": 12,
+    "valid_time_utc": "2026-11-15T12:00:00Z",
+    "published_at_utc": "2026-11-15T03:34:30Z",
+    "acquired_at_utc": "2026-11-15T14:26:53Z",
+    "status": "PAST_VALID_TIME"
+   },
+   "returned_variables": {
+    "cape": 0,
+    "cin": 0,
+    "lftx": 6.8,
+    "pwat": 16.7,
+    "t2m_c": 21.0,
+    "d2m_c": 14.3,
+    "rh2m": 65,
+    "ws10": 1.1,
+    "wd10": 23,
+    "mslp_hpa": 1012.9,
+    "k_index": -11.6,
+    "total_totals": 32.7,
+    "lapse_850_500": 5.86,
+    "shear_850_500": 15.7,
+    "w850": 0.12,
+    "w700": -0.08,
+    "w500": 0.08,
+    "rh850": 58,
+    "rh700": 4,
+    "rh500": 5,
+    "soilw0_10": 0.21,
+    "apcp_cum": 0.0,
+    "conv850": 0.48,
+    "conv10": -0.24,
+    "pwat_grad": 3.0,
+    "q850": 8.04,
+    "q700": 0.51,
+    "precip_3h": 0.0
+   },
+   "missing_variables": [],
+   "hazards": {
+    "thunderstorm_model": "AVAILABLE_EVALUATED",
+    "thunderstorm_indicators_cape": 0,
+    "extreme_rainfall_short_duration": "AVAILABLE_EVALUATED",
+    "cloudburst": "UNAVAILABLE",
+    "flash_flood_prediction": "UNAVAILABLE",
+    "flash_flood_screening_index": 0.0
+   },
+   "static": {
+    "elev_mean_m": 406,
+    "slope_p90_deg": 0.9,
+    "nearest_gauge_km": null
+   },
+   "independent_grib_check": {
+    "cape": {
+     "raw_value_eccodes_nearest": 0.0,
+     "artifact_value": 0,
+     "raw_source_point": {
+      "lat": 20.5,
+      "lon": 82.0,
+      "distance_km": 0.0
+     },
+     "cell_centre": {
+      "lat": 20.5,
+      "lon": 82.0
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "cin": {
+     "raw_value_eccodes_nearest": 0.044,
+     "artifact_value": 0,
+     "raw_source_point": {
+      "lat": 20.5,
+      "lon": 82.0,
+      "distance_km": 0.0
+     },
+     "cell_centre": {
+      "lat": 20.5,
+      "lon": 82.0
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "pwat": {
+     "raw_value_eccodes_nearest": 16.692,
+     "artifact_value": 16.7,
+     "raw_source_point": {
+      "lat": 20.5,
+      "lon": 82.0,
+      "distance_km": 0.0
+     },
+     "cell_centre": {
+      "lat": 20.5,
+      "lon": 82.0
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "t2m_c": {
+     "raw_value_eccodes_nearest": 21.006,
+     "artifact_value": 21.0,
+     "raw_source_point": {
+      "lat": 20.5,
+      "lon": 82.0,
+      "distance_km": 0.0
+     },
+     "cell_centre": {
+      "lat": 20.5,
+      "lon": 82.0
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "rh2m": {
+     "raw_value_eccodes_nearest": 65.3,
+     "artifact_value": 65,
+     "raw_source_point": {
+      "lat": 20.5,
+      "lon": 82.0,
+      "distance_km": 0.0
+     },
+     "cell_centre": {
+      "lat": 20.5,
+      "lon": 82.0
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    }
+   }
+  },
+  {
+   "location": "rural Deccan plateau",
+   "kind": "map coordinate",
+   "requested": {
+    "lat": 16.5,
+    "lon": 77.0
+   },
+   "resolved": {
+    "covered": true,
+    "cell_id": "IN025_1650_07700",
+    "query": {
+     "lat": 16.5,
+     "lon": 77.0
+    },
+    "cell_centre": {
+     "lat": 16.5,
+     "lon": 77.0
+    }
+   },
+   "cell": {
+    "cell_id": "IN025_1650_07700",
+    "lat": 16.5,
+    "lon": 77.0,
+    "land_fraction": 1.0,
+    "state": "Karnataka",
+    "district": "Raichur",
+    "admin_method": "contains",
+    "resolution_deg": 0.25,
+    "cell_definition": "0.25 x 0.25 deg box centred on a GFS 0.25 deg grid point; one source point per cell",
+    "admin_note": "state/district describe the cell CENTRE point"
+   },
+   "forecast": {
+    "model_init_utc": "2026-11-15T00:00:00Z",
+    "forecast_hour": 12,
+    "valid_time_utc": "2026-11-15T12:00:00Z",
+    "published_at_utc": "2026-11-15T03:34:30Z",
+    "acquired_at_utc": "2026-11-15T14:26:53Z",
+    "status": "PAST_VALID_TIME"
+   },
+   "returned_variables": {
+    "cape": 0,
+    "cin": 0,
+    "lftx": 8.5,
+    "pwat": 14.3,
+    "t2m_c": 28.2,
+    "d2m_c": 8.2,
+    "rh2m": 28,
+    "ws10": 2.6,
+    "wd10": 346,
+    "mslp_hpa": 1010.8,
+    "k_index": -19.3,
+    "total_totals": 32.0,
+    "lapse_850_500": 6.75,
+    "shear_850_500": 4.1,
+    "w850": -0.2,
+    "w700": -0.36,
+    "w500": -0.07,
+    "rh850": 36,
+    "rh700": 2,
+    "rh500": 10,
+    "soilw0_10": 0.129,
+    "apcp_cum": 0.0,
+    "conv850": 1.71,
+    "conv10": 0.66,
+    "pwat_grad": 2.29,
+    "q850": 6.04,
+    "q700": 0.3,
+    "precip_3h": 0.0
+   },
+   "missing_variables": [],
+   "hazards": {
+    "thunderstorm_model": "AVAILABLE_EVALUATED",
+    "thunderstorm_indicators_cape": 0,
+    "extreme_rainfall_short_duration": "AVAILABLE_EVALUATED",
+    "cloudburst": "UNAVAILABLE",
+    "flash_flood_prediction": "UNAVAILABLE",
+    "flash_flood_screening_index": 0.0
+   },
+   "static": {
+    "elev_mean_m": 378,
+    "slope_p90_deg": 0.6,
+    "nearest_gauge_km": 8.3
+   },
+   "independent_grib_check": {
+    "cape": {
+     "raw_value_eccodes_nearest": 0.0,
+     "artifact_value": 0,
+     "raw_source_point": {
+      "lat": 16.5,
+      "lon": 77.0,
+      "distance_km": 0.0
+     },
+     "cell_centre": {
+      "lat": 16.5,
+      "lon": 77.0
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "cin": {
+     "raw_value_eccodes_nearest": 0.044,
+     "artifact_value": 0,
+     "raw_source_point": {
+      "lat": 16.5,
+      "lon": 77.0,
+      "distance_km": 0.0
+     },
+     "cell_centre": {
+      "lat": 16.5,
+      "lon": 77.0
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "pwat": {
+     "raw_value_eccodes_nearest": 14.346,
+     "artifact_value": 14.3,
+     "raw_source_point": {
+      "lat": 16.5,
+      "lon": 77.0,
+      "distance_km": 0.0
+     },
+     "cell_centre": {
+      "lat": 16.5,
+      "lon": 77.0
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "t2m_c": {
+     "raw_value_eccodes_nearest": 28.236,
+     "artifact_value": 28.2,
+     "raw_source_point": {
+      "lat": 16.5,
+      "lon": 77.0,
+      "distance_km": 0.0
+     },
+     "cell_centre": {
+      "lat": 16.5,
+      "lon": 77.0
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "rh2m": {
+     "raw_value_eccodes_nearest": 28.2,
+     "artifact_value": 28,
+     "raw_source_point": {
+      "lat": 16.5,
+      "lon": 77.0,
+      "distance_km": 0.0
+     },
+     "cell_centre": {
+      "lat": 16.5,
+      "lon": 77.0
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    }
+   }
+  },
+  {
+   "location": "coastal Sundarbans edge",
+   "kind": "map coordinate",
+   "requested": {
+    "lat": 22.0,
+    "lon": 89.0
+   },
+   "resolved": {
+    "covered": true,
+    "cell_id": "IN025_2200_08900",
+    "query": {
+     "lat": 22.0,
+     "lon": 89.0
+    },
+    "cell_centre": {
+     "lat": 22.0,
+     "lon": 89.0
+    }
+   },
+   "cell": {
+    "cell_id": "IN025_2200_08900",
+    "lat": 22.0,
+    "lon": 89.0,
+    "land_fraction": 0.622,
+    "state": "West Bengal",
+    "district": "South Twenty Four Parganas",
+    "admin_method": "contains",
+    "resolution_deg": 0.25,
+    "cell_definition": "0.25 x 0.25 deg box centred on a GFS 0.25 deg grid point; one source point per cell",
+    "admin_note": "state/district describe the cell CENTRE point"
+   },
+   "forecast": {
+    "model_init_utc": "2026-11-15T00:00:00Z",
+    "forecast_hour": 12,
+    "valid_time_utc": "2026-11-15T12:00:00Z",
+    "published_at_utc": "2026-11-15T03:34:30Z",
+    "acquired_at_utc": "2026-11-15T14:26:53Z",
+    "status": "PAST_VALID_TIME"
+   },
+   "returned_variables": {
+    "cape": 0,
+    "cin": 0,
+    "lftx": 5.6,
+    "pwat": 24.5,
+    "t2m_c": 25.0,
+    "d2m_c": 16.1,
+    "rh2m": 58,
+    "ws10": 2.7,
+    "wd10": 203,
+    "mslp_hpa": 1011.4,
+    "k_index": -5.0,
+    "total_totals": 33.8,
+    "lapse_850_500": 5.45,
+    "shear_850_500": 16.0,
+    "w850": 0.3,
+    "w700": 0.15,
+    "w500": -0.05,
+    "rh850": 75,
+    "rh700": 7,
+    "rh500": 6,
+    "soilw0_10": 0.198,
+    "apcp_cum": 0.0,
+    "conv850": -2.11,
+    "conv10": 2.89,
+    "pwat_grad": 1.19,
+    "q850": 9.54,
+    "q700": 0.78,
+    "precip_3h": 0.0
+   },
+   "missing_variables": [],
+   "hazards": {
+    "thunderstorm_model": "AVAILABLE_EVALUATED",
+    "thunderstorm_indicators_cape": 0,
+    "extreme_rainfall_short_duration": "AVAILABLE_EVALUATED",
+    "cloudburst": "UNAVAILABLE",
+    "flash_flood_prediction": "UNAVAILABLE",
+    "flash_flood_screening_index": 0.0
+   },
+   "static": {
+    "elev_mean_m": 4,
+    "slope_p90_deg": 0.2,
+    "nearest_gauge_km": null
+   },
+   "independent_grib_check": {
+    "cape": {
+     "raw_value_eccodes_nearest": 0.0,
+     "artifact_value": 0,
+     "raw_source_point": {
+      "lat": 22.0,
+      "lon": 89.0,
+      "distance_km": 0.0
+     },
+     "cell_centre": {
+      "lat": 22.0,
+      "lon": 89.0
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "cin": {
+     "raw_value_eccodes_nearest": 0.044,
+     "artifact_value": 0,
+     "raw_source_point": {
+      "lat": 22.0,
+      "lon": 89.0,
+      "distance_km": 0.0
+     },
+     "cell_centre": {
+      "lat": 22.0,
+      "lon": 89.0
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "pwat": {
+     "raw_value_eccodes_nearest": 24.474,
+     "artifact_value": 24.5,
+     "raw_source_point": {
+      "lat": 22.0,
+      "lon": 89.0,
+      "distance_km": 0.0
+     },
+     "cell_centre": {
+      "lat": 22.0,
+      "lon": 89.0
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "t2m_c": {
+     "raw_value_eccodes_nearest": 25.046,
+     "artifact_value": 25.0,
+     "raw_source_point": {
+      "lat": 22.0,
+      "lon": 89.0,
+      "distance_km": 0.0
+     },
+     "cell_centre": {
+      "lat": 22.0,
+      "lon": 89.0
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "rh2m": {
+     "raw_value_eccodes_nearest": 57.6,
+     "artifact_value": 58,
+     "raw_source_point": {
+      "lat": 22.0,
+      "lon": 89.0,
+      "distance_km": 0.0
+     },
+     "cell_centre": {
+      "lat": 22.0,
+      "lon": 89.0
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    }
+   }
+  },
+  {
+   "location": "coastal Konkan",
+   "kind": "map coordinate",
+   "requested": {
+    "lat": 17.0,
+    "lon": 73.4
+   },
+   "resolved": {
+    "covered": true,
+    "cell_id": "IN025_1700_07350",
+    "query": {
+     "lat": 17.0,
+     "lon": 73.4
+    },
+    "cell_centre": {
+     "lat": 17.0,
+     "lon": 73.5
+    }
+   },
+   "cell": {
+    "cell_id": "IN025_1700_07350",
+    "lat": 17.0,
+    "lon": 73.5,
+    "land_fraction": 1.0,
+    "state": "Maharashtra",
+    "district": "Ratnagiri",
+    "admin_method": "contains",
+    "resolution_deg": 0.25,
+    "cell_definition": "0.25 x 0.25 deg box centred on a GFS 0.25 deg grid point; one source point per cell",
+    "admin_note": "state/district describe the cell CENTRE point"
+   },
+   "forecast": {
+    "model_init_utc": "2026-11-15T00:00:00Z",
+    "forecast_hour": 12,
+    "valid_time_utc": "2026-11-15T12:00:00Z",
+    "published_at_utc": "2026-11-15T03:34:30Z",
+    "acquired_at_utc": "2026-11-15T14:26:53Z",
+    "status": "PAST_VALID_TIME"
+   },
+   "returned_variables": {
+    "cape": 0,
+    "cin": 0,
+    "lftx": 7.9,
+    "pwat": 17.8,
+    "t2m_c": 26.0,
+    "d2m_c": 12.7,
+    "rh2m": 44,
+    "ws10": 2.4,
+    "wd10": 296,
+    "mslp_hpa": 1010.9,
+    "k_index": -20.9,
+    "total_totals": 33.1,
+    "lapse_850_500": 6.89,
+    "shear_850_500": 9.8,
+    "w850": -0.12,
+    "w700": -0.28,
+    "w500": 0.25,
+    "rh850": 37,
+    "rh700": 2,
+    "rh500": 7,
+    "soilw0_10": 0.102,
+    "apcp_cum": 0.0,
+    "conv850": -2.89,
+    "conv10": -0.01,
+    "pwat_grad": 2.87,
+    "q850": 6.29,
+    "q700": 0.25,
+    "precip_3h": 0.0
+   },
+   "missing_variables": [],
+   "hazards": {
+    "thunderstorm_model": "AVAILABLE_EVALUATED",
+    "thunderstorm_indicators_cape": 0,
+    "extreme_rainfall_short_duration": "AVAILABLE_EVALUATED",
+    "cloudburst": "UNAVAILABLE",
+    "flash_flood_prediction": "UNAVAILABLE",
+    "flash_flood_screening_index": 0.0
+   },
+   "static": {
+    "elev_mean_m": 154,
+    "slope_p90_deg": 4.0,
+    "nearest_gauge_km": 9.4
+   },
+   "independent_grib_check": {
+    "cape": {
+     "raw_value_eccodes_nearest": 0.0,
+     "artifact_value": 0,
+     "raw_source_point": {
+      "lat": 17.0,
+      "lon": 73.5,
+      "distance_km": 10.63
+     },
+     "cell_centre": {
+      "lat": 17.0,
+      "lon": 73.5
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "cin": {
+     "raw_value_eccodes_nearest": 0.044,
+     "artifact_value": 0,
+     "raw_source_point": {
+      "lat": 17.0,
+      "lon": 73.5,
+      "distance_km": 10.63
+     },
+     "cell_centre": {
+      "lat": 17.0,
+      "lon": 73.5
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "pwat": {
+     "raw_value_eccodes_nearest": 17.786,
+     "artifact_value": 17.8,
+     "raw_source_point": {
+      "lat": 17.0,
+      "lon": 73.5,
+      "distance_km": 10.63
+     },
+     "cell_centre": {
+      "lat": 17.0,
+      "lon": 73.5
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "t2m_c": {
+     "raw_value_eccodes_nearest": 25.966,
+     "artifact_value": 26.0,
+     "raw_source_point": {
+      "lat": 17.0,
+      "lon": 73.5,
+      "distance_km": 10.63
+     },
+     "cell_centre": {
+      "lat": 17.0,
+      "lon": 73.5
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "rh2m": {
+     "raw_value_eccodes_nearest": 43.5,
+     "artifact_value": 44,
+     "raw_source_point": {
+      "lat": 17.0,
+      "lon": 73.5,
+      "distance_km": 10.63
+     },
+     "cell_centre": {
+      "lat": 17.0,
+      "lon": 73.5
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    }
+   }
+  },
+  {
+   "location": "mountain Himalaya (Uttarakhand)",
+   "kind": "map coordinate",
+   "requested": {
+    "lat": 30.5,
+    "lon": 79.0
+   },
+   "resolved": {
+    "covered": true,
+    "cell_id": "IN025_3050_07900",
+    "query": {
+     "lat": 30.5,
+     "lon": 79.0
+    },
+    "cell_centre": {
+     "lat": 30.5,
+     "lon": 79.0
+    }
+   },
+   "cell": {
+    "cell_id": "IN025_3050_07900",
+    "lat": 30.5,
+    "lon": 79.0,
+    "land_fraction": 1.0,
+    "state": "Uttarakhand",
+    "district": "Rudraprayag",
+    "admin_method": "contains",
+    "resolution_deg": 0.25,
+    "cell_definition": "0.25 x 0.25 deg box centred on a GFS 0.25 deg grid point; one source point per cell",
+    "admin_note": "state/district describe the cell CENTRE point"
+   },
+   "forecast": {
+    "model_init_utc": "2026-11-15T00:00:00Z",
+    "forecast_hour": 12,
+    "valid_time_utc": "2026-11-15T12:00:00Z",
+    "published_at_utc": "2026-11-15T03:34:30Z",
+    "acquired_at_utc": "2026-11-15T14:26:53Z",
+    "status": "PAST_VALID_TIME"
+   },
+   "returned_variables": {
+    "cape": 3,
+    "cin": -8,
+    "lftx": 0.3,
+    "pwat": 12.1,
+    "t2m_c": 6.3,
+    "d2m_c": 3.6,
+    "rh2m": 84,
+    "ws10": 4.2,
+    "wd10": 357,
+    "mslp_hpa": 1018.1,
+    "k_index": 32.3,
+    "total_totals": 51.9,
+    "lapse_850_500": 7.86,
+    "shear_850_500": 6.2,
+    "w850": 1.62,
+    "w700": 0.05,
+    "w500": -0.51,
+    "rh850": 81,
+    "rh700": 83,
+    "rh500": 84,
+    "soilw0_10": 0.206,
+    "apcp_cum": 3.6,
+    "conv850": 2.72,
+    "conv10": 3.58,
+    "pwat_grad": 16.6,
+    "q850": 7.56,
+    "q700": 4.92,
+    "precip_3h": 1.8
+   },
+   "missing_variables": [],
+   "hazards": {
+    "thunderstorm_model": "AVAILABLE_EVALUATED",
+    "thunderstorm_indicators_cape": 3,
+    "extreme_rainfall_short_duration": "AVAILABLE_EVALUATED",
+    "cloudburst": "UNAVAILABLE",
+    "flash_flood_prediction": "UNAVAILABLE",
+    "flash_flood_screening_index": 0.048
+   },
+   "static": {
+    "elev_mean_m": 2031,
+    "slope_p90_deg": 21.8,
+    "nearest_gauge_km": 34.5
+   },
+   "independent_grib_check": {
+    "cape": {
+     "raw_value_eccodes_nearest": 3.0,
+     "artifact_value": 3,
+     "raw_source_point": {
+      "lat": 30.5,
+      "lon": 79.0,
+      "distance_km": 0.0
+     },
+     "cell_centre": {
+      "lat": 30.5,
+      "lon": 79.0
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "cin": {
+     "raw_value_eccodes_nearest": -8.356,
+     "artifact_value": -8,
+     "raw_source_point": {
+      "lat": 30.5,
+      "lon": 79.0,
+      "distance_km": 0.0
+     },
+     "cell_centre": {
+      "lat": 30.5,
+      "lon": 79.0
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "pwat": {
+     "raw_value_eccodes_nearest": 12.076,
+     "artifact_value": 12.1,
+     "raw_source_point": {
+      "lat": 30.5,
+      "lon": 79.0,
+      "distance_km": 0.0
+     },
+     "cell_centre": {
+      "lat": 30.5,
+      "lon": 79.0
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "t2m_c": {
+     "raw_value_eccodes_nearest": 6.286,
+     "artifact_value": 6.3,
+     "raw_source_point": {
+      "lat": 30.5,
+      "lon": 79.0,
+      "distance_km": 0.0
+     },
+     "cell_centre": {
+      "lat": 30.5,
+      "lon": 79.0
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "rh2m": {
+     "raw_value_eccodes_nearest": 83.5,
+     "artifact_value": 84,
+     "raw_source_point": {
+      "lat": 30.5,
+      "lon": 79.0,
+      "distance_km": 0.0
+     },
+     "cell_centre": {
+      "lat": 30.5,
+      "lon": 79.0
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    }
+   }
+  },
+  {
+   "location": "mountain Western Ghats",
+   "kind": "map coordinate",
+   "requested": {
+    "lat": 11.0,
+    "lon": 76.5
+   },
+   "resolved": {
+    "covered": true,
+    "cell_id": "IN025_1100_07650",
+    "query": {
+     "lat": 11.0,
+     "lon": 76.5
+    },
+    "cell_centre": {
+     "lat": 11.0,
+     "lon": 76.5
+    }
+   },
+   "cell": {
+    "cell_id": "IN025_1100_07650",
+    "lat": 11.0,
+    "lon": 76.5,
+    "land_fraction": 1.0,
+    "state": "Kerala",
+    "district": "Palakkad",
+    "admin_method": "contains",
+    "resolution_deg": 0.25,
+    "cell_definition": "0.25 x 0.25 deg box centred on a GFS 0.25 deg grid point; one source point per cell",
+    "admin_note": "state/district describe the cell CENTRE point"
+   },
+   "forecast": {
+    "model_init_utc": "2026-11-15T00:00:00Z",
+    "forecast_hour": 12,
+    "valid_time_utc": "2026-11-15T12:00:00Z",
+    "published_at_utc": "2026-11-15T03:34:30Z",
+    "acquired_at_utc": "2026-11-15T14:26:53Z",
+    "status": "PAST_VALID_TIME"
+   },
+   "returned_variables": {
+    "cape": 106,
+    "cin": -25,
+    "lftx": -0.9,
+    "pwat": 40.9,
+    "t2m_c": 23.1,
+    "d2m_c": 20.8,
+    "rh2m": 87,
+    "ws10": 1.1,
+    "wd10": 264,
+    "mslp_hpa": 1012.2,
+    "k_index": 24.2,
+    "total_totals": 41.6,
+    "lapse_850_500": 6.11,
+    "shear_850_500": 8.4,
+    "w850": 0.16,
+    "w700": 0.38,
+    "w500": -0.13,
+    "rh850": 93,
+    "rh700": 39,
+    "rh500": 25,
+    "soilw0_10": 0.256,
+    "apcp_cum": 0.4,
+    "conv850": 0.39,
+    "conv10": 0.66,
+    "pwat_grad": 17.88,
+    "q850": 13.59,
+    "q700": 4.61,
+    "precip_3h": 0.3
+   },
+   "missing_variables": [],
+   "hazards": {
+    "thunderstorm_model": "AVAILABLE_EVALUATED",
+    "thunderstorm_indicators_cape": 106,
+    "extreme_rainfall_short_duration": "AVAILABLE_EVALUATED",
+    "cloudburst": "UNAVAILABLE",
+    "flash_flood_prediction": "UNAVAILABLE",
+    "flash_flood_screening_index": 0.007
+   },
+   "static": {
+    "elev_mean_m": 446,
+    "slope_p90_deg": 14.8,
+    "nearest_gauge_km": 24.4
+   },
+   "independent_grib_check": {
+    "cape": {
+     "raw_value_eccodes_nearest": 106.0,
+     "artifact_value": 106,
+     "raw_source_point": {
+      "lat": 11.0,
+      "lon": 76.5,
+      "distance_km": 0.0
+     },
+     "cell_centre": {
+      "lat": 11.0,
+      "lon": 76.5
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "cin": {
+     "raw_value_eccodes_nearest": -24.656,
+     "artifact_value": -25,
+     "raw_source_point": {
+      "lat": 11.0,
+      "lon": 76.5,
+      "distance_km": 0.0
+     },
+     "cell_centre": {
+      "lat": 11.0,
+      "lon": 76.5
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "pwat": {
+     "raw_value_eccodes_nearest": 40.909,
+     "artifact_value": 40.9,
+     "raw_source_point": {
+      "lat": 11.0,
+      "lon": 76.5,
+      "distance_km": 0.0
+     },
+     "cell_centre": {
+      "lat": 11.0,
+      "lon": 76.5
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "t2m_c": {
+     "raw_value_eccodes_nearest": 23.066,
+     "artifact_value": 23.1,
+     "raw_source_point": {
+      "lat": 11.0,
+      "lon": 76.5,
+      "distance_km": 0.0
+     },
+     "cell_centre": {
+      "lat": 11.0,
+      "lon": 76.5
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "rh2m": {
+     "raw_value_eccodes_nearest": 86.9,
+     "artifact_value": 87,
+     "raw_source_point": {
+      "lat": 11.0,
+      "lon": 76.5,
+      "distance_km": 0.0
+     },
+     "cell_centre": {
+      "lat": 11.0,
+      "lon": 76.5
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    }
+   }
+  },
+  {
+   "location": "northeast hills (Arunachal)",
+   "kind": "map coordinate",
+   "requested": {
+    "lat": 28.0,
+    "lon": 94.5
+   },
+   "resolved": {
+    "covered": true,
+    "cell_id": "IN025_2800_09450",
+    "query": {
+     "lat": 28.0,
+     "lon": 94.5
+    },
+    "cell_centre": {
+     "lat": 28.0,
+     "lon": 94.5
+    }
+   },
+   "cell": {
+    "cell_id": "IN025_2800_09450",
+    "lat": 28.0,
+    "lon": 94.5,
+    "land_fraction": 1.0,
+    "state": "Arunanchal Pradesh",
+    "district": "Leparada",
+    "admin_method": "contains",
+    "resolution_deg": 0.25,
+    "cell_definition": "0.25 x 0.25 deg box centred on a GFS 0.25 deg grid point; one source point per cell",
+    "admin_note": "state/district describe the cell CENTRE point"
+   },
+   "forecast": {
+    "model_init_utc": "2026-11-15T00:00:00Z",
+    "forecast_hour": 12,
+    "valid_time_utc": "2026-11-15T12:00:00Z",
+    "published_at_utc": "2026-11-15T03:34:30Z",
+    "acquired_at_utc": "2026-11-15T14:26:53Z",
+    "status": "PAST_VALID_TIME"
+   },
+   "returned_variables": {
+    "cape": 1,
+    "cin": -27,
+    "lftx": 5.6,
+    "pwat": 25.4,
+    "t2m_c": 14.0,
+    "d2m_c": 10.5,
+    "rh2m": 80,
+    "ws10": 1.7,
+    "wd10": 307,
+    "mslp_hpa": 1015.1,
+    "k_index": 30.1,
+    "total_totals": 40.2,
+    "lapse_850_500": 6.64,
+    "shear_850_500": 17.4,
+    "w850": 0.3,
+    "w700": -0.71,
+    "w500": 0.08,
+    "rh850": 66,
+    "rh700": 100,
+    "rh500": 64,
+    "soilw0_10": 0.238,
+    "apcp_cum": 0.2,
+    "conv850": 1.92,
+    "conv10": 0.17,
+    "pwat_grad": 15.61,
+    "q850": 7.28,
+    "q700": 6.08,
+    "precip_3h": 0.2
+   },
+   "missing_variables": [],
+   "hazards": {
+    "thunderstorm_model": "AVAILABLE_EVALUATED",
+    "thunderstorm_indicators_cape": 1,
+    "extreme_rainfall_short_duration": "AVAILABLE_EVALUATED",
+    "cloudburst": "UNAVAILABLE",
+    "flash_flood_prediction": "UNAVAILABLE",
+    "flash_flood_screening_index": 0.042
+   },
+   "static": {
+    "elev_mean_m": 922,
+    "slope_p90_deg": 16.5,
+    "nearest_gauge_km": null
+   },
+   "independent_grib_check": {
+    "cape": {
+     "raw_value_eccodes_nearest": 1.0,
+     "artifact_value": 1,
+     "raw_source_point": {
+      "lat": 28.0,
+      "lon": 94.5,
+      "distance_km": 0.0
+     },
+     "cell_centre": {
+      "lat": 28.0,
+      "lon": 94.5
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "cin": {
+     "raw_value_eccodes_nearest": -26.656,
+     "artifact_value": -27,
+     "raw_source_point": {
+      "lat": 28.0,
+      "lon": 94.5,
+      "distance_km": 0.0
+     },
+     "cell_centre": {
+      "lat": 28.0,
+      "lon": 94.5
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "pwat": {
+     "raw_value_eccodes_nearest": 25.416,
+     "artifact_value": 25.4,
+     "raw_source_point": {
+      "lat": 28.0,
+      "lon": 94.5,
+      "distance_km": 0.0
+     },
+     "cell_centre": {
+      "lat": 28.0,
+      "lon": 94.5
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "t2m_c": {
+     "raw_value_eccodes_nearest": 14.046,
+     "artifact_value": 14.0,
+     "raw_source_point": {
+      "lat": 28.0,
+      "lon": 94.5,
+      "distance_km": 0.0
+     },
+     "cell_centre": {
+      "lat": 28.0,
+      "lon": 94.5
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    },
+    "rh2m": {
+     "raw_value_eccodes_nearest": 79.5,
+     "artifact_value": 80,
+     "raw_source_point": {
+      "lat": 28.0,
+      "lon": 94.5,
+      "distance_km": 0.0
+     },
+     "cell_centre": {
+      "lat": 28.0,
+      "lon": 94.5
+     },
+     "source_point_is_cell_centre": true,
+     "equal": true
+    }
+   }
+  }
+ ]
+}
