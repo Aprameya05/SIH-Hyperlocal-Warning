@@ -1,5 +1,5 @@
 {
- "generated_at_utc": "2026-10-31T11:26:10Z",
+ "generated_at_utc": "2026-11-15T14:50:27Z",
  "data": {
   "labels": "NOAA CDR CMORPH V1.0 hourly 0.25 deg, 3 h accumulation ending at the valid time (satellite estimate, gauge-adjusted over land)",
   "predictors": "GFS 0.25 deg init 00Z, leads 9/15/21 h, cell centre = GFS grid point",
@@ -42,7 +42,24 @@
      "pod": 0.22,
      "far": 0.8333,
      "csi": 0.1048,
-     "hss": 0.1815
+     "hss": 0.1815,
+     "ece": 0.0027,
+     "false_alarms_per_100_forecasts": 0.962,
+     "misses": 507,
+     "hits": 143,
+     "false_alarms": 715,
+     "uncertainty": {
+      "auroc_95ci": [
+       0.8605,
+       0.919
+      ],
+      "bss_95ci": [
+       0.0228,
+       0.0755
+      ],
+      "n_boot": 200,
+      "block": "forecast date"
+     }
     },
     "logistic": {
      "n": 74288,
@@ -58,7 +75,12 @@
      "pod": 0.1538,
      "far": 0.8106,
      "csi": 0.0928,
-     "hss": 0.1632
+     "hss": 0.1632,
+     "ece": 0.002,
+     "false_alarms_per_100_forecasts": 0.576,
+     "misses": 550,
+     "hits": 100,
+     "false_alarms": 428
     },
     "raw_gfs_rainfall_rule": {
      "n": 74288,
@@ -73,6 +95,11 @@
      "far": 0.7913,
      "csi": 0.1059,
      "hss": 0.185,
+     "ece": 0.003,
+     "false_alarms_per_100_forecasts": 0.587,
+     "misses": 535,
+     "hits": 115,
+     "false_alarms": 436,
      "threshold_mm": 10.5
     },
     "climatology": {
@@ -134,6 +161,23 @@
      "far": 0.9113,
      "csi": 0.0608,
      "hss": 0.1027,
+     "ece": 0.0049,
+     "false_alarms_per_100_forecasts": 1.723,
+     "misses": 129,
+     "hits": 25,
+     "false_alarms": 257,
+     "uncertainty": {
+      "auroc_95ci": [
+       0.7838,
+       0.9169
+      ],
+      "bss_95ci": [
+       -0.0032,
+       0.0345
+      ],
+      "n_boot": 200,
+      "block": "forecast date"
+     },
      "raw_gfs_rule_csi": 0.1055
     },
     "EAST": {
@@ -151,6 +195,23 @@
      "far": 0.871,
      "csi": 0.0825,
      "hss": 0.1482,
+     "ece": 0.0024,
+     "false_alarms_per_100_forecasts": 0.518,
+     "misses": 35,
+     "hits": 8,
+     "false_alarms": 54,
+     "uncertainty": {
+      "auroc_95ci": [
+       0.4848,
+       0.99
+      ],
+      "bss_95ci": [
+       -0.0109,
+       0.146
+      ],
+      "n_boot": 198,
+      "block": "forecast date"
+     },
      "raw_gfs_rule_csi": 0.04
     },
     "NORTH": {
@@ -168,6 +229,23 @@
      "far": 0.9778,
      "csi": 0.0086,
      "hss": 0.0095,
+     "ece": 0.0051,
+     "false_alarms_per_100_forecasts": 0.606,
+     "misses": 213,
+     "hits": 3,
+     "false_alarms": 132,
+     "uncertainty": {
+      "auroc_95ci": [
+       0.8332,
+       0.9222
+      ],
+      "bss_95ci": [
+       0.0102,
+       0.0238
+      ],
+      "n_boot": 200,
+      "block": "forecast date"
+     },
      "raw_gfs_rule_csi": 0.1357
     },
     "NORTHEAST": {
@@ -185,6 +263,23 @@
      "far": 0.9333,
      "csi": 0.0227,
      "hss": 0.0379,
+     "ece": 0.0055,
+     "false_alarms_per_100_forecasts": 0.478,
+     "misses": 58,
+     "hits": 2,
+     "false_alarms": 28,
+     "uncertainty": {
+      "auroc_95ci": [
+       0.5836,
+       0.7124
+      ],
+      "bss_95ci": [
+       -0.0999,
+       0.0103
+      ],
+      "n_boot": 199,
+      "block": "forecast date"
+     },
      "raw_gfs_rule_csi": 0.0
     },
     "SOUTH": {
@@ -202,6 +297,23 @@
      "far": 0.8788,
      "csi": 0.1015,
      "hss": 0.1789,
+     "ece": 0.0026,
+     "false_alarms_per_100_forecasts": 1.208,
+     "misses": 32,
+     "hits": 20,
+     "false_alarms": 145,
+     "uncertainty": {
+      "auroc_95ci": [
+       0.7577,
+       0.9897
+      ],
+      "bss_95ci": [
+       -0.4102,
+       0.1347
+      ],
+      "n_boot": 199,
+      "block": "forecast date"
+     },
      "raw_gfs_rule_csi": 0.1458
     },
     "WEST": {
@@ -219,6 +331,23 @@
      "far": 0.8743,
      "csi": 0.0775,
      "hss": 0.1305,
+     "ece": 0.0045,
+     "false_alarms_per_100_forecasts": 1.565,
+     "misses": 104,
+     "hits": 21,
+     "false_alarms": 146,
+     "uncertainty": {
+      "auroc_95ci": [
+       0.8429,
+       0.9672
+      ],
+      "bss_95ci": [
+       -0.2894,
+       0.1129
+      ],
+      "n_boot": 200,
+      "block": "forecast date"
+     },
      "raw_gfs_rule_csi": 0.1269
     }
    },
@@ -236,7 +365,24 @@
     "pod": 0.2462,
     "far": 0.8844,
     "csi": 0.0854,
-    "hss": 0.1472
+    "hss": 0.1472,
+    "ece": 0.0023,
+    "false_alarms_per_100_forecasts": 1.648,
+    "misses": 490,
+    "hits": 160,
+    "false_alarms": 1224,
+    "uncertainty": {
+     "auroc_95ci": [
+      0.8333,
+      0.8913
+     ],
+     "bss_95ci": [
+      -0.0079,
+      0.051
+     ],
+     "n_boot": 200,
+     "block": "forecast date"
+    }
    },
    "passes_gate": true
   },
@@ -258,7 +404,24 @@
      "pod": 0.0312,
      "far": 0.9279,
      "csi": 0.0223,
-     "hss": 0.0416
+     "hss": 0.0416,
+     "ece": 0.001,
+     "false_alarms_per_100_forecasts": 0.139,
+     "misses": 248,
+     "hits": 8,
+     "false_alarms": 103,
+     "uncertainty": {
+      "auroc_95ci": [
+       0.7433,
+       0.8727
+      ],
+      "bss_95ci": [
+       -0.0063,
+       0.0159
+      ],
+      "n_boot": 200,
+      "block": "forecast date"
+     }
     },
     "logistic": {
      "n": 74288,
@@ -274,7 +437,12 @@
      "pod": 0.0508,
      "far": 0.866,
      "csi": 0.0382,
-     "hss": 0.0719
+     "hss": 0.0719,
+     "ece": 0.0009,
+     "false_alarms_per_100_forecasts": 0.113,
+     "misses": 243,
+     "hits": 13,
+     "false_alarms": 84
     },
     "raw_gfs_rainfall_rule": {
      "n": 74288,
@@ -289,6 +457,11 @@
      "far": 0.9472,
      "csi": 0.0318,
      "hss": 0.0579,
+     "ece": 0.0031,
+     "false_alarms_per_100_forecasts": 0.459,
+     "misses": 237,
+     "hits": 19,
+     "false_alarms": 341,
      "threshold_mm": 12.62
     },
     "climatology": {
@@ -350,6 +523,23 @@
      "far": 1.0,
      "csi": 0.0,
      "hss": -0.0037,
+     "ece": 0.0036,
+     "false_alarms_per_100_forecasts": 0.235,
+     "misses": 125,
+     "hits": 0,
+     "false_alarms": 35,
+     "uncertainty": {
+      "auroc_95ci": [
+       0.6689,
+       0.8605
+      ],
+      "bss_95ci": [
+       -0.0225,
+       0.0072
+      ],
+      "n_boot": 200,
+      "block": "forecast date"
+     },
      "raw_gfs_rule_csi": 0.01
     },
     "EAST": {
@@ -372,6 +562,23 @@
      "far": 1.0,
      "csi": 0.0,
      "hss": -0.0003,
+     "ece": 0.001,
+     "false_alarms_per_100_forecasts": 0.018,
+     "misses": 39,
+     "hits": 0,
+     "false_alarms": 4,
+     "uncertainty": {
+      "auroc_95ci": [
+       0.4535,
+       0.9035
+      ],
+      "bss_95ci": [
+       0.002,
+       0.0684
+      ],
+      "n_boot": 199,
+      "block": "forecast date"
+     },
      "raw_gfs_rule_csi": 0.0
     },
     "NORTHEAST": {
@@ -389,6 +596,23 @@
      "far": 1.0,
      "csi": 0.0,
      "hss": -0.0007,
+     "ece": 0.0018,
+     "false_alarms_per_100_forecasts": 0.034,
+     "misses": 45,
+     "hits": 0,
+     "false_alarms": 2,
+     "uncertainty": {
+      "auroc_95ci": [
+       0.483,
+       0.7365
+      ],
+      "bss_95ci": [
+       -0.0214,
+       0.0034
+      ],
+      "n_boot": 173,
+      "block": "forecast date"
+     },
      "raw_gfs_rule_csi": 0.0
     },
     "SOUTH": {
@@ -411,6 +635,23 @@
      "far": 0.957,
      "csi": 0.0345,
      "hss": 0.0625,
+     "ece": 0.0021,
+     "false_alarms_per_100_forecasts": 0.954,
+     "misses": 23,
+     "hits": 4,
+     "false_alarms": 89,
+     "uncertainty": {
+      "auroc_95ci": [
+       0.7512,
+       0.9364
+      ],
+      "bss_95ci": [
+       -0.0704,
+       0.0164
+      ],
+      "n_boot": 196,
+      "block": "forecast date"
+     },
      "raw_gfs_rule_csi": 0.2121
     }
    },
@@ -428,7 +669,24 @@
     "pod": 0.1525,
     "far": 0.9771,
     "csi": 0.0203,
-    "hss": 0.0322
+    "hss": 0.0322,
+    "ece": 0.0014,
+    "false_alarms_per_100_forecasts": 2.959,
+    "misses": 200,
+    "hits": 36,
+    "false_alarms": 1535,
+    "uncertainty": {
+     "auroc_95ci": [
+      0.7336,
+      0.8362
+     ],
+     "bss_95ci": [
+      -0.0062,
+      0.0065
+     ],
+     "n_boot": 200,
+     "block": "forecast date"
+    }
    },
    "passes_gate": false
   },
@@ -450,7 +708,24 @@
      "pod": 0.0957,
      "far": 0.9124,
      "csi": 0.0479,
-     "hss": 0.08
+     "hss": 0.08,
+     "ece": 0.0016,
+     "false_alarms_per_100_forecasts": 1.191,
+     "misses": 803,
+     "hits": 85,
+     "false_alarms": 885,
+     "uncertainty": {
+      "auroc_95ci": [
+       0.7769,
+       0.8568
+      ],
+      "bss_95ci": [
+       0.0064,
+       0.0367
+      ],
+      "n_boot": 200,
+      "block": "forecast date"
+     }
     },
     "logistic": {
      "n": 74288,
@@ -466,7 +741,12 @@
      "pod": 0.1036,
      "far": 0.9008,
      "csi": 0.0534,
-     "hss": 0.0903
+     "hss": 0.0903,
+     "ece": 0.0026,
+     "false_alarms_per_100_forecasts": 1.124,
+     "misses": 796,
+     "hits": 92,
+     "false_alarms": 835
     },
     "raw_gfs_rainfall_rule": {
      "n": 74288,
@@ -481,6 +761,11 @@
      "far": 0.9071,
      "csi": 0.0442,
      "hss": 0.0745,
+     "ece": 0.0077,
+     "false_alarms_per_100_forecasts": 0.907,
+     "misses": 819,
+     "hits": 69,
+     "false_alarms": 674,
      "threshold_mm": 9.69
     },
     "climatology": {
@@ -542,6 +827,23 @@
      "far": 0.9535,
      "csi": 0.0078,
      "hss": 0.0106,
+     "ece": 0.0041,
+     "false_alarms_per_100_forecasts": 0.275,
+     "misses": 215,
+     "hits": 2,
+     "false_alarms": 41,
+     "uncertainty": {
+      "auroc_95ci": [
+       0.6652,
+       0.8529
+      ],
+      "bss_95ci": [
+       -0.0277,
+       0.0288
+      ],
+      "n_boot": 200,
+      "block": "forecast date"
+     },
      "raw_gfs_rule_csi": 0.0202
     },
     "EAST": {
@@ -559,6 +861,23 @@
      "far": 0.975,
      "csi": 0.0082,
      "hss": 0.006,
+     "ece": 0.0036,
+     "false_alarms_per_100_forecasts": 0.749,
+     "misses": 163,
+     "hits": 2,
+     "false_alarms": 78,
+     "uncertainty": {
+      "auroc_95ci": [
+       0.6487,
+       0.847
+      ],
+      "bss_95ci": [
+       -0.0225,
+       0.0216
+      ],
+      "n_boot": 200,
+      "block": "forecast date"
+     },
      "raw_gfs_rule_csi": 0.0098
     },
     "NORTH": {
@@ -576,6 +895,23 @@
      "far": 0.9286,
      "csi": 0.0499,
      "hss": 0.086,
+     "ece": 0.0042,
+     "false_alarms_per_100_forecasts": 1.373,
+     "misses": 139,
+     "hits": 23,
+     "false_alarms": 299,
+     "uncertainty": {
+      "auroc_95ci": [
+       0.7098,
+       0.8685
+      ],
+      "bss_95ci": [
+       -0.0146,
+       0.0617
+      ],
+      "n_boot": 200,
+      "block": "forecast date"
+     },
      "raw_gfs_rule_csi": 0.0431
     },
     "NORTHEAST": {
@@ -593,6 +929,23 @@
      "far": 0.9734,
      "csi": 0.02,
      "hss": -0.0046,
+     "ece": 0.0177,
+     "false_alarms_per_100_forecasts": 8.128,
+     "misses": 160,
+     "hits": 13,
+     "false_alarms": 476,
+     "uncertainty": {
+      "auroc_95ci": [
+       0.5067,
+       0.7197
+      ],
+      "bss_95ci": [
+       -0.153,
+       0.0021
+      ],
+      "n_boot": 200,
+      "block": "forecast date"
+     },
      "raw_gfs_rule_csi": 0.0233
     },
     "SOUTH": {
@@ -610,6 +963,23 @@
      "far": 0.8925,
      "csi": 0.0719,
      "hss": 0.1292,
+     "ece": 0.0034,
+     "false_alarms_per_100_forecasts": 0.692,
+     "misses": 46,
+     "hits": 10,
+     "false_alarms": 83,
+     "uncertainty": {
+      "auroc_95ci": [
+       0.7862,
+       0.9836
+      ],
+      "bss_95ci": [
+       -0.0081,
+       0.193
+      ],
+      "n_boot": 200,
+      "block": "forecast date"
+     },
      "raw_gfs_rule_csi": 0.0927
     },
     "WEST": {
@@ -627,6 +997,23 @@
      "far": 0.89,
      "csi": 0.0751,
      "hss": 0.126,
+     "ece": 0.0033,
+     "false_alarms_per_100_forecasts": 1.908,
+     "misses": 93,
+     "hits": 22,
+     "false_alarms": 178,
+     "uncertainty": {
+      "auroc_95ci": [
+       0.8026,
+       0.9376
+      ],
+      "bss_95ci": [
+       0.0088,
+       0.0664
+      ],
+      "n_boot": 200,
+      "block": "forecast date"
+     },
      "raw_gfs_rule_csi": 0.1056
     }
    },
@@ -644,7 +1031,24 @@
     "pod": 0.2804,
     "far": 0.9472,
     "csi": 0.0465,
-    "hss": 0.0702
+    "hss": 0.0702,
+    "ece": 0.0029,
+    "false_alarms_per_100_forecasts": 6.009,
+    "misses": 639,
+    "hits": 249,
+    "false_alarms": 4464,
+    "uncertainty": {
+     "auroc_95ci": [
+      0.7602,
+      0.8415
+     ],
+     "bss_95ci": [
+      -0.01,
+      0.0191
+     ],
+     "n_boot": 200,
+     "block": "forecast date"
+    }
    },
    "passes_gate": false
   },
@@ -676,7 +1080,24 @@
      "pod": 0.0705,
      "far": 0.965,
      "csi": 0.024,
-     "hss": 0.0441
+     "hss": 0.0441,
+     "ece": 0.0013,
+     "false_alarms_per_100_forecasts": 0.408,
+     "misses": 145,
+     "hits": 11,
+     "false_alarms": 303,
+     "uncertainty": {
+      "auroc_95ci": [
+       0.7322,
+       0.8837
+      ],
+      "bss_95ci": [
+       -0.0067,
+       0.0116
+      ],
+      "n_boot": 200,
+      "block": "forecast date"
+     }
     },
     "logistic": {
      "n": 74288,
@@ -692,7 +1113,12 @@
      "pod": 0.1026,
      "far": 0.9535,
      "csi": 0.0331,
-     "hss": 0.0613
+     "hss": 0.0613,
+     "ece": 0.0013,
+     "false_alarms_per_100_forecasts": 0.442,
+     "misses": 140,
+     "hits": 16,
+     "false_alarms": 328
     },
     "raw_gfs_rainfall_rule": {
      "n": 74288,
@@ -707,6 +1133,11 @@
      "far": 0.9758,
      "csi": 0.0204,
      "hss": 0.0367,
+     "ece": 0.0025,
+     "false_alarms_per_100_forecasts": 0.976,
+     "misses": 138,
+     "hits": 18,
+     "false_alarms": 725,
      "threshold_mm": 9.69
     },
     "climatology": {
@@ -768,6 +1199,23 @@
      "far": 0.9953,
      "csi": 0.0039,
      "hss": 0.0027,
+     "ece": 0.0027,
+     "false_alarms_per_100_forecasts": 1.408,
+     "misses": 45,
+     "hits": 1,
+     "false_alarms": 210,
+     "uncertainty": {
+      "auroc_95ci": [
+       0.6275,
+       0.8434
+      ],
+      "bss_95ci": [
+       -0.0311,
+       0.0043
+      ],
+      "n_boot": 200,
+      "block": "forecast date"
+     },
      "raw_gfs_rule_csi": 0.0071
     },
     "EAST": {
@@ -785,6 +1233,23 @@
      "far": 1.0,
      "csi": 0.0,
      "hss": -0.0005,
+     "ece": 0.001,
+     "false_alarms_per_100_forecasts": 0.029,
+     "misses": 27,
+     "hits": 0,
+     "false_alarms": 3,
+     "uncertainty": {
+      "auroc_95ci": [
+       0.6078,
+       0.9168
+      ],
+      "bss_95ci": [
+       -0.0158,
+       0.0092
+      ],
+      "n_boot": 191,
+      "block": "forecast date"
+     },
      "raw_gfs_rule_csi": 0.0
     },
     "NORTH": {
@@ -802,6 +1267,23 @@
      "far": 0.9579,
      "csi": 0.0345,
      "hss": 0.065,
+     "ece": 0.0026,
+     "false_alarms_per_100_forecasts": 0.418,
+     "misses": 21,
+     "hits": 4,
+     "false_alarms": 91,
+     "uncertainty": {
+      "auroc_95ci": [
+       0.4299,
+       0.9054
+      ],
+      "bss_95ci": [
+       -0.0445,
+       0.0185
+      ],
+      "n_boot": 200,
+      "block": "forecast date"
+     },
      "raw_gfs_rule_csi": 0.0403
     },
     "NORTHEAST": {
@@ -819,6 +1301,23 @@
      "far": 0.9956,
      "csi": 0.0039,
      "hss": -0.0027,
+     "ece": 0.006,
+     "false_alarms_per_100_forecasts": 3.825,
+     "misses": 34,
+     "hits": 1,
+     "false_alarms": 224,
+     "uncertainty": {
+      "auroc_95ci": [
+       0.5465,
+       0.7974
+      ],
+      "bss_95ci": [
+       -0.1391,
+       0.0024
+      ],
+      "n_boot": 200,
+      "block": "forecast date"
+     },
      "raw_gfs_rule_csi": 0.024
     },
     "SOUTH": {
@@ -841,6 +1340,23 @@
      "far": 0.9143,
      "csi": 0.0556,
      "hss": 0.1027,
+     "ece": 0.0024,
+     "false_alarms_per_100_forecasts": 0.343,
+     "misses": 19,
+     "hits": 3,
+     "false_alarms": 32,
+     "uncertainty": {
+      "auroc_95ci": [
+       0.9367,
+       0.9805
+      ],
+      "bss_95ci": [
+       0.0046,
+       0.0211
+      ],
+      "n_boot": 196,
+      "block": "forecast date"
+     },
      "raw_gfs_rule_csi": 0.0327
     }
    },
@@ -858,7 +1374,24 @@
     "pod": 0.1161,
     "far": 0.9837,
     "csi": 0.0145,
-    "hss": 0.0243
+    "hss": 0.0243,
+    "ece": 0.0017,
+    "false_alarms_per_100_forecasts": 1.745,
+    "misses": 137,
+    "hits": 18,
+    "false_alarms": 1087,
+    "uncertainty": {
+     "auroc_95ci": [
+      0.6936,
+      0.8489
+     ],
+     "bss_95ci": [
+      -0.0143,
+      0.0028
+     ],
+     "n_boot": 200,
+     "block": "forecast date"
+    }
    },
    "passes_gate": false
   }

@@ -64,10 +64,62 @@ def load():
     d["date"] = pd.to_datetime(d["init"]).dt.strftime("%Y-%m-%d")
     d = d.dropna(subset=["ts_any"])
     d["y"] = d["ts_any"].astype(int)
+    d["persist"] = persistence_flag(d)
     return d
 
 
-def metrics(y, p, thr, base):
+def persistence_flag(d):
+    """Persistence baseline input: was a thunderstorm reported by the station in the 3 h BEFORE the forecast was issued (init time)?
+    Uses only observations available at issue time; NaN when the station has fewer than 2 reports in that window."""
+    cache = ROOT / "cache" / "ts_panindia"
+    frames = {}
+    for (st, yr), _ in d.groupby(["station", "year"]):
+        f = cache / f"metar_{st}_{yr}.csv"
+        if f.exists():
+            m = pd.read_csv(f, dtype=str); m["valid"] = pd.to_datetime(m["valid"], utc=True, errors="coerce")
+            m["ts"] = m["wxcodes"].fillna("M").str.contains(r"(^|\s)[-+]?(VC)?TS", regex=True)
+            frames[(st, yr)] = m.dropna(subset=["valid"]).sort_values("valid")
+    out = np.full(len(d), np.nan)
+    for i, (st, yr, init) in enumerate(zip(d["station"], d["year"], pd.to_datetime(d["init"], utc=True))):
+        m = frames.get((st, yr))
+        if m is None:
+            continue
+        w = m[(m["valid"] > init - pd.Timedelta(hours=3)) & (m["valid"] <= init)]
+        if len(w) >= 2:
+            out[i] = float(w["ts"].any())
+    return out
+
+
+def ece(y, p, bins=10):
+    """Expected calibration error over equal-frequency bins."""
+    y = np.asarray(y); p = np.asarray(p)
+    q = np.unique(np.quantile(p, np.linspace(0, 1, bins + 1))); q[-1] += 1e-9
+    tot = 0.0
+    for lo, hi in zip(q[:-1], q[1:]):
+        m = (p >= lo) & (p < hi)
+        if m.any():
+            tot += m.mean() * abs(p[m].mean() - y[m].mean())
+    return float(tot)
+
+
+def bootstrap_ci(y, p, groups, base, n_boot=200, seed=SEED):
+    """95% percentile CI for AUROC and Brier skill, resampling whole DATES (blocks) so that same-date samples stay together."""
+    y = np.asarray(y); p = np.asarray(p); g = np.asarray(groups)
+    ug = np.unique(g); idx_by = {u: np.where(g == u)[0] for u in ug}
+    rng = np.random.default_rng(seed); aucs, bss = [], []
+    ref = base * (1 - base)
+    for _ in range(n_boot):
+        pick = rng.choice(ug, len(ug), replace=True)
+        ii = np.concatenate([idx_by[u] for u in pick])
+        yy, pp = y[ii], p[ii]
+        if yy.sum() == 0 or yy.sum() == len(yy):
+            continue
+        aucs.append(roc_auc_score(yy, pp)); bss.append(1 - brier_score_loss(yy, pp) / max(brier_score_loss(yy, np.full(len(yy), base)), 1e-12))
+    f = lambda a: [round(float(np.percentile(a, 2.5)), 4), round(float(np.percentile(a, 97.5)), 4)] if len(a) >= 20 else None
+    return {"auroc_95ci": f(aucs), "bss_95ci": f(bss), "n_boot": len(aucs), "block": "forecast date"}
+
+
+def metrics(y, p, thr, base, groups=None):
     y = np.asarray(y); p = np.asarray(p)
     out = {"n": int(len(y)), "n_events": int(y.sum()), "event_rate": round(float(y.mean()), 4)}
     if y.sum() == 0 or y.sum() == len(y):
@@ -80,7 +132,10 @@ def metrics(y, p, thr, base):
                 "brier": round(float(b), 4), "brier_climatology": round(float(brier_score_loss(y, np.full(len(y), base))), 4),
                 "bss_vs_climatology": round(float(1 - b / brier_score_loss(y, np.full(len(y), base))), 4), "threshold": round(float(thr), 4),
                 "pod": round(tp / (tp + fn), 4) if tp + fn else None, "far": round(fp / (tp + fp), 4) if tp + fp else None,
-                "csi": round(tp / (tp + fp + fn), 4) if tp + fp + fn else None, "hss": round(2 * (tp * tn - fp * fn) / den, 4) if den else None})
+                "csi": round(tp / (tp + fp + fn), 4) if tp + fp + fn else None, "hss": round(2 * (tp * tn - fp * fn) / den, 4) if den else None,
+                "ece": round(ece(y, p), 4), "false_alarms_per_100_forecasts": round(100 * fp / len(y), 3), "misses": fn, "hits": tp, "false_alarms": fp})
+    if groups is not None:
+        out["uncertainty"] = bootstrap_ci(y, p, groups, base)
     return out
 
 
@@ -130,12 +185,23 @@ def evaluate(tr, te):
     thr_l = best_csi_threshold(tr["y"].values, lg(tr))
     cape_thr = best_csi_threshold(tr["y"].values, tr["cape"].fillna(0).values / 1e4)
     p_c = te["cape"].fillna(0).values / 1e4
-    res = {"xgboost_calibrated": metrics(te["y"], p_x, thr, base), "logistic": metrics(te["y"], p_l, thr_l, base),
+    gte = te["date"].values
+    res = {"xgboost_calibrated": metrics(te["y"], p_x, thr, base, gte), "logistic": metrics(te["y"], p_l, thr_l, base),
            "cape_threshold_rule": {k: v for k, v in metrics(te["y"], np.clip(p_c, 0, 1), cape_thr, base).items() if k not in ("brier", "bss_vs_climatology")},
            "climatology": {"n": int(len(te)), "base_rate_from_training": round(float(base), 4),
                            "brier": round(float(brier_score_loss(te["y"], np.full(len(te), base))), 4)}}
     res["cape_threshold_rule"]["threshold_j_per_kg"] = round(cape_thr * 1e4)
     res["reliability_xgboost"] = reliability(te["y"].values, p_x)
+    if "persist" in tr.columns:        # persistence: P(event | thunderstorm in the 3 h before issue), learned on TRAIN only, applied to TEST rows that have the observation
+        trp = tr.dropna(subset=["persist"]); tep = te.dropna(subset=["persist"])
+        if len(trp) > 100 and len(tep) > 50 and trp["persist"].nunique() == 2:
+            pr = trp.groupby("persist")["y"].mean().to_dict()
+            pp = tep["persist"].map(pr).values
+            res["persistence"] = metrics(tep["y"], pp, max(pr.values()) - 1e-9, trp["y"].mean()) | {"n_with_observation": int(len(tep)), "p_event_given_recent_ts": round(float(pr.get(1.0, float("nan"))), 4)}
+            res["xgboost_on_same_rows"] = metrics(tep["y"], p_x[te.index.get_indexer(tep.index)], thr, trp["y"].mean())
+    month = pd.to_datetime(te["valid"]).dt.month.values
+    res["by_month"] = {str(int(mm)): {k: v for k, v in metrics(te["y"].values[month == mm], p_x[month == mm], thr, base).items() if k in ("n", "n_events", "auroc", "brier", "bss_vs_climatology", "pod", "far")}
+                       for mm in sorted(set(month)) if (month == mm).sum() > 100}
     return res, (model, iso, thr), p_x
 
 
@@ -162,15 +228,15 @@ def main():
             report["leads"][str(L)] = {"status": "INSUFFICIENT_EVENTS", "train_events": int(tr.y.sum()), "test_events": int(te.y.sum())}
             report["gate"]["per_lead"][str(L)] = False; continue
         A, fitted, _ = evaluate(tr, te)
-        B_by, pooled_y, pooled_p = {}, [], []
+        B_by, pooled_y, pooled_p, pooled_g = {}, [], [], []
         for R in sorted(dl.region.unique()):
             trR, teR = tr[tr.region != R], te[te.region == R]
             if len(teR) < 40 or trR["y"].sum() < 30 or teR["y"].sum() < 5:
                 B_by[R] = {"status": "TOO_FEW_EVENTS", "n": int(len(teR)), "n_events": int(teR.y.sum())}; continue
             r, _, p = evaluate(trR, teR); B_by[R] = r["xgboost_calibrated"] | {"vs_logistic_auroc": r["logistic"].get("auroc"), "vs_cape_rule_csi": r["cape_threshold_rule"].get("csi"),
                                                                                   "climatology_brier": r["climatology"]["brier"]}
-            pooled_y += list(teR["y"]); pooled_p += list(p)
-        pooled = metrics(np.array(pooled_y), np.array(pooled_p), best_csi_threshold(np.array(pooled_y), np.array(pooled_p)), tr["y"].mean()) if pooled_y else {}
+            pooled_y += list(teR["y"]); pooled_p += list(p); pooled_g += list(teR["date"])
+        pooled = metrics(np.array(pooled_y), np.array(pooled_p), best_csi_threshold(np.array(pooled_y), np.array(pooled_p)), tr["y"].mean(), np.array(pooled_g)) if pooled_y else {}
         a_ok = A["xgboost_calibrated"].get("bss_vs_climatology", -1) >= GATE_BSS and A["xgboost_calibrated"].get("auroc", 0) >= GATE_AUROC
         b_ok = pooled.get("bss_vs_climatology", -1) >= GATE_BSS and pooled.get("auroc", 0) >= GATE_AUROC
         report["leads"][str(L)] = {"A_temporal_holdout": A, "B_by_region_spatial_temporal": B_by, "B_pooled": pooled, "passes_gate": bool(a_ok and b_ok)}

@@ -70,7 +70,9 @@ def main():
     lines = []
     for L in leads:
         r = ev["leads"][str(L)]; A, B = r["A_temporal_holdout"]["xgboost_calibrated"], r["B_pooled"]
-        lines.append(f"+{L} h: temporal holdout AUROC {A['auroc']}, Brier skill {A['bss_vs_climatology']}; leave-region-out AUROC {B['auroc']}, Brier skill {B['bss_vs_climatology']}")
+        pers = r["A_temporal_holdout"].get("persistence") or {}
+        lines.append(f"+{L} h: temporal holdout AUROC {A['auroc']} (95% CI {A['uncertainty']['auroc_95ci']}), Brier skill {A['bss_vs_climatology']} (CI {A['uncertainty']['bss_95ci']}), "
+                     f"ECE {A['ece']}; persistence AUROC {pers.get('auroc')}; leave-region-out AUROC {B['auroc']}, Brier skill {B['bss_vs_climatology']}")
     d = ev["data"]
     summary = (f"Pilot: {d['n_stations']} METAR stations, {d['n_init_dates']} init dates (Apr-Jun 2024/2025), event rate {d['event_rate']}. " + "; ".join(lines) +
                ". Calibrated to airport METAR reports; wide uncertainty; pre-monsoon season only.")

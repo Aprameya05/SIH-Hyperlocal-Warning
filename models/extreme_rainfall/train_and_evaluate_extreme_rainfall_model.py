@@ -48,7 +48,7 @@ def evaluate(tr, te):
     lg = T.fit_logit(tr); pl = lg(te); thr_l = T.best_csi_threshold(tr["y"].values, lg(tr))
     q = tr["gfs_p3h"].fillna(0).values; qthr = T.best_csi_threshold(tr["y"].values, q / 200.0)
     pq = np.clip(te["gfs_p3h"].fillna(0).values / 200.0, 0, 1)
-    res = {"xgboost_calibrated": T.metrics(te["y"], p, thr, base), "logistic": T.metrics(te["y"], pl, thr_l, base),
+    res = {"xgboost_calibrated": T.metrics(te["y"], p, thr, base, te["date"].values), "logistic": T.metrics(te["y"], pl, thr_l, base),
            "raw_gfs_rainfall_rule": {k: v for k, v in T.metrics(te["y"], pq, qthr, base).items() if k not in ("brier", "bss_vs_climatology")},
            "climatology": {"n": int(len(te)), "base_rate_from_training": round(float(base), 4)}}
     res["raw_gfs_rainfall_rule"]["threshold_mm"] = round(qthr * 200, 2)
@@ -78,14 +78,14 @@ def main():
             if tr["y"].sum() < 200 or te["y"].sum() < 80:
                 report["targets"][key] = {"status": "INSUFFICIENT_EVENTS", "train_events": int(tr.y.sum()), "test_events": int(te.y.sum())}; report["gate"]["per_target"][key] = False; continue
             A, _, _ = evaluate(tr, te)
-            pooled_y, pooled_p, B_by = [], [], {}
+            pooled_y, pooled_p, pooled_g, B_by = [], [], [], {}
             for R in sorted(dl.region.unique()):
                 trR, teR = tr[tr.region != R], te[te.region == R]
                 if teR["y"].sum() < 20 or trR["y"].sum() < 100:
                     B_by[R] = {"status": "TOO_FEW_EVENTS", "n": int(len(teR)), "n_events": int(teR.y.sum())}; continue
                 r, _, p = evaluate(trR, teR); B_by[R] = r["xgboost_calibrated"] | {"raw_gfs_rule_csi": r["raw_gfs_rainfall_rule"].get("csi")}
-                pooled_y += list(teR["y"]); pooled_p += list(p)
-            pooled = T.metrics(np.array(pooled_y), np.array(pooled_p), T.best_csi_threshold(np.array(pooled_y), np.array(pooled_p)), tr["y"].mean()) if pooled_y else {}
+                pooled_y += list(teR["y"]); pooled_p += list(p); pooled_g += list(teR["date"])
+            pooled = T.metrics(np.array(pooled_y), np.array(pooled_p), T.best_csi_threshold(np.array(pooled_y), np.array(pooled_p)), tr["y"].mean(), np.array(pooled_g)) if pooled_y else {}
             qa = A["raw_gfs_rainfall_rule"]; xa = A["xgboost_calibrated"]
             qauc = float(roc_auc_score(te["y"], te["gfs_p3h"].fillna(0))) if te["y"].nunique() > 1 else 0
             ok = (xa.get("bss_vs_climatology", -1) >= T.GATE_BSS and xa.get("auroc", 0) >= T.GATE_AUROC and pooled.get("bss_vs_climatology", -1) >= T.GATE_BSS and pooled.get("auroc", 0) >= T.GATE_AUROC
