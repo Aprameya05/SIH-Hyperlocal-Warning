@@ -68,7 +68,7 @@ def main():
               "targets": {}, "limits": ["CMORPH is a satellite estimate; heavy convective rainfall in mountains is under-estimated",
                                         "monsoon only, two seasons, every 6th day: wide uncertainty", "leads 9/15/21 h from 00Z only",
                                         "0.25 deg / 3 h cannot represent cloudbursts (>= 100 mm/h over ~10 km)"]}
-    out_dir = ROOT / "models" / "rain_panindia"; out_dir.mkdir(parents=True, exist_ok=True); models = {}
+    out_dir = ROOT / "models" / "extreme_rainfall" / "artifacts" / "panindia_v1"; out_dir.mkdir(parents=True, exist_ok=True); models = {}
     for old in out_dir.glob("*.json"):
         old.unlink()          # never leave a model from an earlier run that did not pass this run's gate
     for thr_mm in THRESHOLDS:

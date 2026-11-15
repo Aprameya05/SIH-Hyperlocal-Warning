@@ -25,6 +25,7 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 from backend.location_service import Store, parse_utc  # noqa: E402
+from backend.model_features import build_feature_matrix  # noqa: E402
 
 OUT = ROOT / "data" / "india_ts_model_latest.json"
 MODEL_VERSION = "ts_panindia_xgb_v1"
@@ -44,7 +45,7 @@ def main():
     s = Store()
     if not s.fields_ok:
         return unavailable("verified fields artifact missing: " + "; ".join(s.fields_problems[:2]))
-    ev_p, mdir = ROOT / "data" / "ts_panindia_evaluation.json", ROOT / "models" / "ts_panindia"
+    ev_p, mdir = ROOT / "data" / "ts_panindia_evaluation.json", ROOT / "models" / "thunderstorm" / "artifacts" / "panindia_v1"
     if not ev_p.exists() or not (mdir / "meta.json").exists():
         return unavailable("no trained/evaluated pan-India thunderstorm model", s.fields_doc["meta"]["cycle_init_utc"])
     ev, meta = json.load(open(ev_p)), json.load(open(mdir / "meta.json"))
@@ -56,13 +57,8 @@ def main():
         return unavailable("no lead passed the evaluation gate (Brier skill > 0 and AUROC >= 0.65 in temporal and spatial holdout)", m["cycle_init_utc"])
     feats = meta["features"]; probs, expl, vt = {}, {}, {}
     for L in leads:
-        v = init + timedelta(hours=L); hh = v.hour + v.minute / 60
-        cols = {k: arr(k, L) for k in ("cape", "cin", "lftx", "pwat", "rh2m", "rh850", "rh700", "rh500", "w850", "w700", "w500", "soilw0_10", "k_index", "total_totals", "lapse_850_500", "ws10", "shear_850_500", "t2m_c", "mslp_hpa")}
-        cols["dewpoint_depression"] = cols["t2m_c"] - arr("d2m_c", L)
-        cum = arr("apcp_cum", L); cols["apcp_total"] = cum
-        cols["apcp_6h"] = cum - arr("apcp_cum", L - 6) if (L - 6) in fh else cum
-        cols["valid_hour_sin"], cols["valid_hour_cos"] = np.full(n, np.sin(2 * np.pi * hh / 24)), np.full(n, np.cos(2 * np.pi * hh / 24))
-        X = np.column_stack([cols[k] for k in feats])
+        v = init + timedelta(hours=L)
+        X = build_feature_matrix(s.fields_doc, feats, L, "thunderstorm")
         bst = xgb.XGBClassifier(); bst.load_model(str(mdir / f"ts_lead{L:02d}.json"))
         iso = json.load(open(mdir / f"ts_lead{L:02d}_isotonic.json"))
         p = np.interp(bst.predict_proba(X)[:, 1], iso["x"], iso["y"])

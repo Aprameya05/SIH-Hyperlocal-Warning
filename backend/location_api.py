@@ -118,6 +118,54 @@ def compare(request: Request, response: Response, cells: str = Query(...), hour:
     return _reply(request, response, {"hour": hour, "locations": out})
 
 
+@router.get("/health")
+def health(request: Request, response: Response, probe: bool = False):
+    """Dependency-level health (server clock). `probe=true` also HEADs the upstream sources from this environment."""
+    h = store().health(probe=probe)
+    response.headers["Cache-Control"] = "no-store"
+    return h
+
+
+@router.get("/ready")
+def ready(response: Response):
+    """200 only when the grid, a verified and FRESH GFS cycle, and the static layer are all present; 503 otherwise."""
+    h = store().health()
+    response.headers["Cache-Control"] = "no-store"
+    if not h["ready"]:
+        raise HTTPException(503, detail={"error": "NOT_READY", "status": h["status"], "components": h["components"]})
+    return {"ready": True, "status": h["status"], "checked_at_utc": h["checked_at_utc"]}
+
+
+@router.get("/explain")
+def explain(request: Request, response: Response, hazard: str = Query(..., pattern="^(thunderstorm|extreme_rainfall|flash_flood)$"),
+            cell_id: Optional[str] = None, lat: Optional[float] = None, lon: Optional[float] = None, lead: Optional[int] = None):
+    s = store()
+    cid = _cell(s, cell_id, lat, lon)
+    return _reply(request, response, s.explain(cid, hazard, lead))
+
+
+@router.get("/alert-eligibility")
+def alert_eligibility(request: Request, response: Response, cell_id: Optional[str] = None, lat: Optional[float] = None, lon: Optional[float] = None):
+    s = store()
+    cid = _cell(s, cell_id, lat, lon)
+    response.headers["Cache-Control"] = "no-store"
+    return s.alert_eligibility(cid)
+
+
+@router.get("/forecast")
+def forecast(request: Request, response: Response, cell_id: Optional[str] = None, lat: Optional[float] = None, lon: Optional[float] = None):
+    """The full forecast timeline for a location: every forecast hour's values with its own valid time and status."""
+    s = store()
+    cid = _cell(s, cell_id, lat, lon)
+    rec = s.record(cid)
+    if not rec.get("cycle"):
+        raise HTTPException(503, detail={"error": "FIELDS_UNAVAILABLE", "problems": rec["availability"]["problems"]})
+    hours = rec["cycle"]["hours"]
+    series = {k: {"unit": f["unit"], "kind": f["kind"], "values": f["series"]} for k, f in rec["fields"].items()}
+    return _reply(request, response, {"location": rec["location"], "model_init_utc": rec["cycle"]["model_init_utc"], "hours": hours, "variables": series,
+                                      "operational_lead_hours": None, "operational_lead_status": rec["cycle"]["operational_lead_status"]})
+
+
 @router.get("/coverage")
 def coverage(request: Request, response: Response):
     from backend.coverage import coverage_matrix

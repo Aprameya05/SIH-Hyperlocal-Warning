@@ -179,7 +179,7 @@ def main():
         model, iso, thr = fit_xgb_calibrated(dl)
         models[int(L)] = (model, iso, thr)
         print(f"lead {L}: A auroc={A['xgboost_calibrated'].get('auroc')} bss={A['xgboost_calibrated'].get('bss_vs_climatology')}  B pooled auroc={pooled.get('auroc')} bss={pooled.get('bss_vs_climatology')}  gate={a_ok and b_ok}")
-    out_dir = ROOT / "models" / "ts_panindia"; out_dir.mkdir(parents=True, exist_ok=True)
+    out_dir = ROOT / "models" / "thunderstorm" / "artifacts" / "panindia_v1"; out_dir.mkdir(parents=True, exist_ok=True)
     for old in out_dir.glob("*.json"):
         old.unlink()          # never leave a model from an earlier run that did not pass this run's gate
     meta = {"features": FEATS, "gate_passed_leads": [int(k) for k, v in report["gate"]["per_lead"].items() if v], "trained_on": "2024+2025 pilot sample", "xgb_params": XGB}

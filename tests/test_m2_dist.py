@@ -80,3 +80,21 @@ def test_hero_background_images_referenced_by_the_homepage_are_published(dist):
     text = (dist / "index.html").read_text()
     for img in set(re.findall(r"\./([A-Za-z0-9_-]+\.png)", text)):
         assert (dist / img).is_file(), f"index.html references ./{img} but it is not published"
+
+
+def test_release_readiness_gate_passes_on_a_good_bundle_and_fails_closed_on_damage(dist, tmp_path):
+    import shutil
+    import subprocess
+    import sys as _sys
+    gate = [_sys.executable, str(ROOT / "pipelines/validation/check_release_readiness.py")]
+    ok = subprocess.run([*gate, str(dist), "--max-age-hours", "100000"], capture_output=True, text=True)
+    assert ok.returncode == 0 and "READY" in ok.stdout, ok.stdout
+    bad = tmp_path / "bad"; shutil.copytree(dist, bad)
+    (bad / "data/india_fields_latest.json").unlink()
+    r = subprocess.run([*gate, str(bad)], capture_output=True, text=True)
+    assert r.returncode == 1 and "NOT READY" in r.stdout
+    bad2 = tmp_path / "bad2"; shutil.copytree(dist, bad2)
+    (bad2 / "data" / "subscribers.json").write_text("[]")                         # a forbidden file in the bundle
+    assert subprocess.run([*gate, str(bad2), "--max-age-hours", "100000"], capture_output=True, text=True).returncode == 1
+    r = subprocess.run([*gate, str(dist), "--max-age-hours", "0.001"], capture_output=True, text=True)   # an old cycle is not ready
+    assert r.returncode == 1 and "FAIL" in r.stdout

@@ -20,6 +20,7 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 from backend.location_service import Store, parse_utc  # noqa: E402
+from backend.model_features import build_feature_matrix  # noqa: E402
 
 OUT = ROOT / "data" / "india_rain_model_latest.json"
 
@@ -39,7 +40,7 @@ def main():
     if not s.fields_ok:
         return unavailable("verified fields artifact missing: " + "; ".join(s.fields_problems[:2]))
     m = s.fields_doc["meta"]; init = parse_utc(m["cycle_init_utc"])
-    mdir, evp = ROOT / "models" / "rain_panindia", ROOT / "data" / "rain_panindia_evaluation.json"
+    mdir, evp = ROOT / "models" / "extreme_rainfall" / "artifacts" / "panindia_v1", ROOT / "data" / "rain_panindia_evaluation.json"
     if not (mdir / "meta.json").exists() or not evp.exists():
         return unavailable("no trained/evaluated short-duration rainfall model", m["cycle_init_utc"])
     meta, ev = json.load(open(mdir / "meta.json")), json.load(open(evp))
@@ -54,9 +55,7 @@ def main():
     targets, expl, vt, info = {}, {}, {}, {}
     for key in keys:
         L = int(key.split("_f")[1]); thr = int(key.split("mm")[0])
-        cols = {k: arr(k, L) for k in ("pwat", "cape", "cin", "lftx", "k_index", "total_totals", "lapse_850_500", "rh2m", "rh850", "rh700", "rh500", "w850", "w700", "w500", "ws10", "shear_850_500", "t2m_c", "mslp_hpa", "soilw0_10")}
-        cols["gfs_p3h"] = arr("precip_3h", L); cols["apcp_total"] = arr("apcp_cum", L); cols["dewpoint_depression"] = cols["t2m_c"] - arr("d2m_c", L)
-        X = np.column_stack([cols[k] for k in feats])
+        X = build_feature_matrix(s.fields_doc, feats, L, "rainfall")
         bst = xgb.XGBClassifier(); bst.load_model(str(mdir / f"rain_{key}.json")); iso = json.load(open(mdir / f"rain_{key}_isotonic.json"))
         p = np.interp(bst.predict_proba(X)[:, 1], iso["x"], iso["y"])
         targets[key] = [round(float(x), 5) for x in p]

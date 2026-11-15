@@ -152,3 +152,38 @@ def test_forged_fields_artifact_is_rejected(tmp_path):
     doc = json.load(open(ROOT / "data/india_fields_latest.json")); doc["fields"]["cape"][0][5] = 99999.0
     json.dump(doc, open(d / "india_fields_latest.json", "w"))
     assert Store(d).fields_ok is False
+
+
+def test_health_ready_forecast_explain_and_alert_eligibility(client):
+    h = client.get("/v1/health").json()
+    assert h["status"] in ("HEALTHY", "DEGRADED", "UNHEALTHY") and "server UTC" in h["clock"] and h["components"]["alert_policy"]["automated_dispatch"] == "DISABLED"
+    assert h["components"]["gfs_fields"]["cycle_init_utc"] and h["components"]["gfs_fields"]["last_published_by_source_utc"]
+    # the readiness gate must follow the server clock, not file existence: an old cycle is not ready
+    from datetime import datetime, timedelta, timezone
+    s = la.store(); init, _ = s._hour_meta()
+    old = s.health(now=init + timedelta(hours=40))
+    assert old["ready"] is False and old["components"]["gfs_fields"]["status"] == "STALE"
+    cid = _cell(client, "Mumbai")
+    f = client.get("/v1/forecast", params={"cell_id": cid}).json()
+    assert len(f["hours"]) == 8 and f["variables"]["cape"]["unit"] == "J/kg" and f["operational_lead_hours"] is None
+    e = client.get("/v1/explain", params={"cell_id": cid, "hazard": "thunderstorm", "lead": 12}).json()
+    if e["status"] == "AVAILABLE_EVALUATED":
+        assert len(e["top_contributions"]) == 3 and all(c["statement"] for c in e["top_contributions"]) and "causal" in e["caveat"]
+        from backend.model_features import LABEL
+        for c in e["top_contributions"]:               # the statement names the feature and, when known, the actual value the model saw
+            assert LABEL.get(c["feature"], c["feature"]) in c["statement"]
+            if c["value"] is None:
+                assert "unavailable" in c["statement"]
+            else:
+                assert ("%.0f" % c["value"] in c["statement"]) or ("%.2f" % c["value"]).rstrip("0").rstrip(".") in c["statement"]
+    ff = client.get("/v1/explain", params={"cell_id": cid, "hazard": "flash_flood"}).json()
+    assert ff["status"] == "UNAVAILABLE" and "heuristic" in ff["reason"]
+    assert client.get("/v1/explain", params={"cell_id": cid, "hazard": "cloudburst"}).status_code == 422
+    a = client.get("/v1/alert-eligibility", params={"cell_id": cid}).json()
+    assert a["any_eligible"] is False and a["automated_dispatch"] == "DISABLED" and a["evaluated"]
+    assert all("NO_AVAILABILITY_TIME" in r["reason_codes"] or r["output"] in ("cloudburst", "flash_flood screening index") for r in a["evaluated"])
+    assert client.get("/v1/location", params={"lat": 15, "lon": 65}).status_code == 404
+    assert client.get("/v1/location", params={"cell_id": "NOPE"}).status_code == 404
+    assert client.get("/v1/location").status_code == 422
+    assert client.get("/v1/location", params={"cell_id": cid, "hour": 99}).status_code == 422
+    assert client.get("/v1/search", params={"q": "a"}).status_code == 422

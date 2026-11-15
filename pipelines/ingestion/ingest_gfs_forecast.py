@@ -127,21 +127,49 @@ def ingest(init: datetime, fhours, workdir: Path, log=print):
     return grid, files, fields
 
 
+STATUS = ROOT / "data" / "ingest_status.json"
+
+
+def _write_status(path: Path, **kw):
+    """Observability: last attempt / last success / duration / coverage, written atomically. The previous last_success is kept on failure."""
+    prev = {}
+    try:
+        prev = json.load(open(path))
+    except Exception:  # noqa: BLE001
+        pass
+    doc = {**prev, "last_attempt_utc": kw.pop("attempt"), **kw}
+    tmp = path.with_suffix(".tmp"); tmp.write_text(json.dumps(doc, indent=1)); os.replace(tmp, path)
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--fhours", default=",".join(map(str, FHOURS)))
     ap.add_argument("--cycle", help="YYYYMMDDHH; default = newest 00Z/12Z cycle whose last requested hour is published")
     ap.add_argument("--out", default=str(DEFAULT_OUT))
+    ap.add_argument("--force", action="store_true", help="allow replacing a NEWER published cycle with this (older) one")
     a = ap.parse_args(argv)
+    attempt = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    status_path = Path(a.out).with_name("ingest_status.json")
     fh = [int(x) for x in a.fhours.split(",")]
     init = datetime.strptime(a.cycle, "%Y%m%d%H").replace(tzinfo=timezone.utc) if a.cycle else g.latest_cycle(need_fhour=max(fh))
     if init is None:
+        _write_status(status_path, attempt=attempt, last_result="NO_COMPLETE_CYCLE", last_error="no complete 00/12Z cycle found")
         print("ERROR: no complete cycle found; nothing published"); return 2
+    outp0 = Path(a.out)
+    if outp0.exists() and not a.force:
+        try:
+            cur = datetime.fromisoformat(json.load(open(outp0))["meta"]["cycle_init_utc"].replace("Z", "+00:00"))
+            if cur > init:      # a stale or out-of-order run must never overwrite a newer valid artifact
+                _write_status(status_path, attempt=attempt, last_result="REFUSED_OLDER_CYCLE", last_error=f"published cycle {cur.isoformat()} is newer than {init.isoformat()}")
+                print(f"REFUSED: the published artifact is cycle {cur.isoformat()}, newer than {init.isoformat()}; not overwriting (use --force)"); return 3
+        except Exception:  # noqa: BLE001
+            pass       # an unreadable previous artifact is replaced
     print("cycle", init.isoformat(), "fhours", fh)
     started = datetime.now(timezone.utc)
     try:
         grid, files, fields = ingest(init, fh, ROOT / "cache" / "fields" / f"{init:%Y%m%d%H}")
     except Exception as e:  # noqa: BLE001
+        _write_status(status_path, attempt=attempt, last_result="FAILED", last_error=f"{type(e).__name__}: {e}"[:300], cycle_attempted=init.strftime("%Y-%m-%dT%H:%M:%SZ"))
         print("ERROR: ingestion failed, previous artifact left untouched:", e); return 1
     ids = [c[0] for c in grid["cells"]]
     doc = {
@@ -164,6 +192,10 @@ def main(argv=None):
     if len(chk["cells"]) != len(ids) or any(len(v) != len(fh) or any(len(h) != len(ids) for h in v) for v in chk["fields"].values()):
         tmp.unlink(); print("ERROR: artifact shape invalid; not published"); return 1
     os.replace(tmp, outp)
+    nulls = {k: sum(1 for h in v for x in h if x is None) for k, v in fields.items()}
+    _write_status(status_path, attempt=attempt, last_result="SUCCESS", last_error=None, last_success_utc=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                  cycle=init.strftime("%Y-%m-%dT%H:%M:%SZ"), duration_s=round((datetime.now(timezone.utc) - started).total_seconds(), 1), n_cells=len(ids), fhours=fh,
+                  bytes_downloaded=sum(f["bytes"] for f in files), null_counts_by_variable={k: v for k, v in nulls.items() if v}, all_null_variables=[k for k, v in nulls.items() if v == len(ids) * len(fh)])
     print(f"wrote {outp}  {outp.stat().st_size/1e6:.1f} MB  cells={len(ids)} hours={len(fh)}")
     return 0
 

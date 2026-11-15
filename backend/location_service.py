@@ -338,6 +338,117 @@ class Store:
                                               "terrain uses slope/relief at ~1.2 km; hydrology beyond the nearest gauge is absent"]}
         return h
 
+    # ---------------------------------------------------------------- explanation, alert eligibility, health
+    def explain(self, cid: str, hazard: str, lead: Optional[int] = None) -> dict:
+        """Why this location scored what it did: the model's top TreeSHAP attributions bound to the ACTUAL feature values.
+        Attribution describes the model, not causal meteorology; a missing input is reported as missing, never narrated."""
+        from backend.model_features import build_feature_matrix, describe
+        if cid not in self.idx:
+            raise KeyError(cid)
+        out = {"cell_id": cid, "hazard": hazard, "method": "TreeSHAP (XGBoost pred_contribs), top 3 by |contribution|, log-odds scale",
+               "caveat": "model attribution, not a causal meteorological explanation", "status": "UNAVAILABLE", "reason": None}
+        if hazard == "thunderstorm":
+            doc, ok, idx, kind = self.ts_doc, self.ts_ok, getattr(self, "ts_idx", {}), "thunderstorm"
+            leads = {str(L): doc["leads"][str(L)] for L in doc["meta"]["leads"]} if ok else {}
+        elif hazard == "extreme_rainfall":
+            doc, ok, idx, kind = self.rain_doc, self.rain_ok, self.rain_idx, "rainfall"
+            leads = doc["targets"] if ok else {}
+        else:
+            out["reason"] = "flash_flood has no model: only a heuristic screening index exists (see the location record); nothing to attribute"
+            return out
+        if not ok or cid not in idx or not self.fields_ok:
+            out["reason"] = (doc or {}).get("meta", {}).get("reason") or "no evaluated model artifact for this hazard, or its inputs failed verification"
+            return out
+        keys = list(leads)
+        key = keys[0] if lead is None else next((k for k in keys if k == str(lead) or k.endswith(f"_f{lead}")), None)
+        if key is None:
+            out["reason"] = f"no evaluated model for lead {lead}; available: {keys}"
+            return out
+        feats = doc["meta"]["features"]
+        i = idx[cid]
+        exp = doc["explanations"][key][i]
+        Lh = int(key.split("_f")[1]) if kind == "rainfall" else int(key)
+        row = build_feature_matrix(self.fields_doc, feats, Lh, kind)[self.fcol[cid]]
+        contribs = [{"feature": feats[exp[j]], "value": None if row[exp[j]] != row[exp[j]] else float(row[exp[j]]), "contribution": exp[j + 1]} for j in (0, 2, 4)]
+        for c in contribs:
+            c["statement"] = describe(c["feature"], c["value"], c["contribution"])
+        out.update({"status": "AVAILABLE_EVALUATED", "target": key, "lead_h": Lh, "probability": leads[key][i], "model_version": doc["meta"]["model_version"],
+                    "model_init_utc": doc["meta"]["cycle_init_utc"], "calibrated": doc["meta"]["calibrated"], "top_contributions": contribs,
+                    "missing_inputs": [f for f, v in zip(feats, row) if v != v], "evaluation_ref": doc["meta"]["evaluation_ref"]})
+        return out
+
+    def alert_eligibility(self, cid: str, now: Optional[datetime] = None) -> dict:
+        """Runs every model output through the ONE alert policy. In production the policy registries are empty and DRIFT records no
+        forecast-availability time, so nothing is eligible; the reason codes say exactly why."""
+        from backend import alert_policy as ap
+        now = now or datetime.now(timezone.utc)
+        if cid not in self.idx:
+            raise KeyError(cid)
+        res = []
+        specs = []
+        if self.ts_ok and cid in getattr(self, "ts_idx", {}):
+            for L in self.ts_doc["meta"]["leads"]:
+                specs.append(("TS", f"thunderstorm +{L}h", self.ts_doc["leads"][str(L)][self.ts_idx[cid]], self.ts_doc["meta"]["valid_times"][str(L)], "TS_REPORT_AT_STATION"))
+        if self.rain_ok and cid in self.rain_idx:
+            for k, info in self.rain_doc["meta"]["target_info"].items():
+                specs.append(("CB", f"rainfall {k}", self.rain_doc["targets"][k][self.rain_idx[cid]], info["valid_time_utc"], "HEAVY_RAIN_3H_PROXY"))
+        for hz, name, p, valid, ev in specs:
+            cand = {"probability": p, "temporal_status": "CURRENT", "value_type": "CALIBRATED_PROBABILITY", "event_class": ev, "lead_specific": True,
+                    "valid_time_utc": valid, "generated_at_utc": None, "forecast_available_time_utc": None, "operational_lead_hours": None, "operational_lead_status": "UNAVAILABLE_NO_DRIFT_PUBLICATION_TIME"}
+            ok, why = ap.evaluate(cand, hazard=hz, now=now)
+            res.append({"output": name, "eligible": ok, "reason_codes": why, "reasons": ap.explain(why)})
+        res.append({"output": "flash_flood screening index", "eligible": False, "reason_codes": ["HAZARD_NEVER_ALERTABLE", "VALUE_TYPE_NOT_ALERTABLE"], "reasons": "heuristic, unvalidated screening index: never alertable"})
+        res.append({"output": "cloudburst", "eligible": False, "reason_codes": ["NO_MODEL"], "reasons": "cloudburst prediction is unavailable"})
+        return {"cell_id": cid, "any_eligible": any(r["eligible"] for r in res), "policy": "production (empty registries)", "evaluated": res,
+                "automated_dispatch": "DISABLED"}
+
+    def health(self, now: Optional[datetime] = None, probe: bool = False) -> dict:
+        """Dependency-level health computed on the SERVER from timestamps. `probe=True` additionally makes live HEAD requests to the
+        upstream sources, proving reachability from this execution environment."""
+        now = now or datetime.now(timezone.utc)
+        comp = {}
+        comp["grid"] = {"status": "OK" if self.cells and 4000 <= len(self.cells) <= 5500 else "FAILED", "n_cells": len(self.cells)}
+        comp["static_layer"] = {"status": "OK" if self.static_doc and len(self.static_doc["cells"]) == len(self.cells) else "FAILED"}
+        if self.fields_ok:
+            m = self.fields_doc["meta"]; init = parse_utc(m["cycle_init_utc"]); age = (now - init).total_seconds() / 3600
+            comp["gfs_fields"] = {"status": "OK" if age <= MODEL_MAX_AGE_H else "STALE", "cycle_init_utc": m["cycle_init_utc"], "age_hours": round(age, 2),
+                                  "fhours": m["fhours"], "built_at_utc": m["generated_at_utc"], "n_variables": len(self.fields_doc["registry"]),
+                                  "last_published_by_source_utc": max(f["published_at_utc"] for f in m["files"])}
+        else:
+            comp["gfs_fields"] = {"status": "FAILED", "problems": self.fields_problems[:5]}
+        for name, doc, ok in (("thunderstorm_model", self.ts_doc, self.ts_ok), ("rainfall_model", self.rain_doc, self.rain_ok)):
+            if doc is None:
+                comp[name] = {"status": "MISSING"}
+            else:
+                mm = doc["meta"]; same = self.fields_ok and mm.get("cycle_init_utc") == self.fields_doc["meta"]["cycle_init_utc"]
+                comp[name] = {"status": ("OK" if ok and same else "CYCLE_MISMATCH" if ok else "WITHHELD"), "model_evaluated": bool(ok), "cycle_init_utc": mm.get("cycle_init_utc"),
+                              "matches_fields_cycle": bool(same), "reason": mm.get("reason")}
+        try:
+            st = json.load(open(self.dir / "ingest_status.json"))
+            comp["ingestion"] = {"status": "OK" if st.get("last_result") == "SUCCESS" else "DEGRADED", "last_attempt_utc": st.get("last_attempt_utc"), "last_success_utc": st.get("last_success_utc"),
+                                 "last_result": st.get("last_result"), "last_error": st.get("last_error"), "duration_s": st.get("duration_s"), "n_cells": st.get("n_cells"),
+                                 "all_null_variables": st.get("all_null_variables")}
+        except Exception:  # noqa: BLE001
+            comp["ingestion"] = {"status": "UNKNOWN", "note": "no ingest_status.json"}
+        comp["alert_policy"] = {"status": "FAIL_CLOSED", "automated_dispatch": "DISABLED"}
+        comp["simulation"] = {"status": "ISOLATED", "note": "synthetic engine runs only in the browser and has no network or notification capability"}
+        if probe:
+            import urllib.request
+            from email.utils import parsedate_to_datetime  # noqa: F401
+            probes = {"aws_gfs": "https://noaa-gfs-bdp-pds.s3.amazonaws.com/", "aws_cmorph": "https://noaa-cdr-precip-cmorph-pds.s3.amazonaws.com/", "iem_metar": "https://mesonet.agron.iastate.edu/"}
+            comp["upstream_probe"] = {}
+            for k, u in probes.items():
+                try:
+                    r = urllib.request.urlopen(urllib.request.Request(u, method="HEAD", headers={"User-Agent": "DRIFT-health"}), timeout=8)
+                    comp["upstream_probe"][k] = {"status": "REACHABLE", "http": r.status}
+                except Exception as e:  # noqa: BLE001
+                    comp["upstream_probe"][k] = {"status": "UNREACHABLE", "error": type(e).__name__}
+        bad = [k for k, v in comp.items() if isinstance(v, dict) and v.get("status") in ("FAILED", "MISSING", "CYCLE_MISMATCH")]
+        stale = [k for k, v in comp.items() if isinstance(v, dict) and v.get("status") == "STALE"]
+        overall = "UNHEALTHY" if bad else ("DEGRADED" if stale or any(v.get("status") == "WITHHELD" for v in comp.values() if isinstance(v, dict)) else "HEALTHY")
+        return {"status": overall, "ready": overall != "UNHEALTHY" and not stale, "checked_at_utc": iso(now), "clock": "server UTC (never the browser clock)", "components": comp,
+                "artifact_version": self.version}
+
     # ---------------------------------------------------------------- regions
     def region(self, state: Optional[str] = None, district: Optional[str] = None, hour: Optional[int] = None, now: Optional[datetime] = None) -> dict:
         now = now or datetime.now(timezone.utc)

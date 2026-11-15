@@ -212,3 +212,33 @@ def test_grid_dynamics_are_physically_correct():
     assert np.allclose(dyn["conv850"][5:-5, 5:-5], 2.0, rtol=0.03)                       # inflow field -> +2e-5 s^-1 convergence
     assert np.all(dyn["conv10"][5:-5, 5:-5] < 0) and np.all(dyn["pwat_grad"] > 0)
     assert 7 < float(dyn["q850"][10, 10]) < 14 and float(dyn["q700"][10, 10]) < float(dyn["q850"][10, 10])   # g/kg, drier aloft
+
+
+@pytest.mark.parametrize("module,key", [("models.thunderstorm.predict_thunderstorm", "leads"), ("models.extreme_rainfall.predict_extreme_rainfall", "targets")])
+def test_prediction_scripts_find_their_models_and_reproduce_the_committed_artifact(module, key, tmp_path, monkeypatch):
+    """Guards the model-artifact paths (a moved directory once made the predictors silently write 'unavailable') and proves the
+    published predictions are reproducible bit-for-bit from the committed fields + models."""
+    import importlib
+    m = importlib.import_module(module)
+    out = tmp_path / "pred.json"
+    monkeypatch.setattr(m, "OUT", out)
+    m.main()
+    new = json.loads(out.read_text())
+    committed = json.loads((ROOT / "data" / ("india_ts_model_latest.json" if key == "leads" else "india_rain_model_latest.json")).read_text())
+    assert new["meta"]["model_evaluated"] is True, new["meta"].get("reason")
+    assert new[key] == committed[key] and new["explanations"] == committed["explanations"]
+
+
+def test_ingestion_never_overwrites_a_newer_cycle_and_records_its_status(tmp_path, monkeypatch):
+    from pipelines.ingestion import ingest_gfs_forecast as ing
+    out = tmp_path / "fields.json"
+    out.write_text(json.dumps({"meta": {"cycle_init_utc": "2026-11-15T12:00:00Z"}, "marker": "newer"}))
+    monkeypatch.setattr(g, "download_subset", lambda *a, **k: (_ for _ in ()).throw(AssertionError("must not download when refusing")))
+    rc = ing.main(["--cycle", "2026111500", "--out", str(out)])
+    assert rc == 3 and json.loads(out.read_text())["marker"] == "newer"
+    st = json.loads((tmp_path / "ingest_status.json").read_text())
+    assert st["last_result"] == "REFUSED_OLDER_CYCLE" and st["last_attempt_utc"]
+    monkeypatch.setattr(g, "download_subset", lambda *a, **k: (_ for _ in ()).throw(g.GfsError("boom")))
+    rc = ing.main(["--cycle", "2026111512", "--out", str(out)])            # same cycle again: allowed, fails, status shows the failure
+    st = json.loads((tmp_path / "ingest_status.json").read_text())
+    assert rc == 1 and st["last_result"] == "FAILED" and "boom" in st["last_error"] and json.loads(out.read_text())["marker"] == "newer"

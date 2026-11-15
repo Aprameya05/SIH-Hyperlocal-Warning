@@ -523,6 +523,9 @@ jobs:
       - name: Validate DRIFT live feed in the publish bundle (fail closed)
         run: python3 pipelines/validation/validate_live_feed.py pages_dist/data/drift_live.json --max-age-minutes 180
 
+      - name: Release-readiness gate (fail closed; every check must pass before any deployment)
+        run: python3 pipelines/validation/check_release_readiness.py pages_dist --max-age-hours 48
+
       - name: Deploy to Cloudflare Pages
         if: steps.unified_artifact_check.outputs.ok == 'true'
         env:

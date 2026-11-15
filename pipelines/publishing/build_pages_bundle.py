@@ -29,6 +29,7 @@ ALLOW_FILES = [
     "data/blr_terrain.json", "data/hazard_evaluation.json",
     "data/india_grid_025.json", "data/india_places.json", "data/india_fields_latest.json", "data/india_static_025.json",
     "data/india_ts_model_latest.json", "data/india_rain_model_latest.json",
+    "data/ingest_status.json",
 ]
 # Files published under a different name: index.html references ./night1.png etc. at the site root, but the sources
 # live in dev/. They were never published before (the hero backgrounds 404ed); publish them at the referenced path.
