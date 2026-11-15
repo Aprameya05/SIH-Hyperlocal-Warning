@@ -21,7 +21,7 @@ Audit + dataset-design phase. No deep-learning training, no fabricated/duplicate
 
 ## Correction to a prior self-report (important finding this phase)
 
-`SIH_PANINDIA_GRID_LABELS_20260930_143541Z/processed/labels/coverage_report.json` and `ff_labels_summary.json` state that an observed-flood-event FF label source is **"IMPOSSIBLE -- no coordinate source exists for any INDOFLOODS gauge in this repo."**
+`docs/archive/implementation_snapshots/SIH_PANINDIA_GRID_LABELS_20260930_143541Z/processed/labels/coverage_report.json` and `ff_labels_summary.json` state that an observed-flood-event FF label source is **"IMPOSSIBLE -- no coordinate source exists for any INDOFLOODS gauge in this repo."**
 
 This phase inspected the actual files directly (per the hard instruction not to rely on self-reported summaries) and found this claim is **false as currently worded**:
 

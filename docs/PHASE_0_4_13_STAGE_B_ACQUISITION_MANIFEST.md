@@ -7,7 +7,7 @@ should acquire next, selected entirely from the real, already-existing
 `docs/PHASE_0_4_12_HISTORICAL_GFS_TS_DATASET_CONTRACT.md`.
 
 Label source (real file, not regenerated):
-`SIH_PANINDIA_GRID_LABELS_20260930_143541Z/processed/labels/ts_labels.csv`,
+`docs/archive/implementation_snapshots/SIH_PANINDIA_GRID_LABELS_20260930_143541Z/processed/labels/ts_labels.csv`,
 filtered to `cell_id = IND_13.0_78.0`, `hazard = ts`,
 `label_status in {POSITIVE, NEGATIVE_CONFIRMED}` — 15,276 matching rows
 (584 POSITIVE, 14,692 NEGATIVE_CONFIRMED), spanning 2015-01-02 through

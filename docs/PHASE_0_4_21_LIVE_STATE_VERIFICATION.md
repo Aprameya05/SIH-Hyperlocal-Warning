@@ -107,7 +107,7 @@ No missing or invalid filenames to list.
 - **All predictors forecast-derived**: yes — `leakage_check: {"predictor_columns_checked": 17, "all_forecast_derived": true}`.
 - **Validation status from the manifest**: `"validation_status": "GREEN"`.
 - **Source raw-root recorded in the manifest**: `D:\SIH-Historical-GFS\raw`.
-- **Source-label archive recorded in the manifest**: `SIH_PANINDIA_GRID_LABELS_20260930_143541Z\processed\labels\ts_labels.csv` — i.e. the dated bundle identified and wired in during the Phase 0.4.20 labels-path fix, not a copy placed at the default `processed/labels/` location (confirming no file was duplicated to "fix" the earlier missing-labels bug — the override was used as designed).
+- **Source-label archive recorded in the manifest**: `docs/archive/implementation_snapshots/SIH_PANINDIA_GRID_LABELS_20260930_143541Z\processed\labels\ts_labels.csv` — i.e. the dated bundle identified and wired in during the Phase 0.4.20 labels-path fix, not a copy placed at the default `processed/labels/` location (confirming no file was duplicated to "fix" the earlier missing-labels bug — the override was used as designed).
 
 ## 8. Phase 0.4.20 HOLDOUT output
 

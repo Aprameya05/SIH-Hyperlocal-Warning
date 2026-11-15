@@ -2,7 +2,7 @@
 
 ## 1. Claim under review
 
-`MASTER_AUDIT_FINAL_REPORT.md`, point 4 (RED count) and point 7:
+`docs/archive/reports/MASTER_AUDIT_FINAL_REPORT.md`, point 4 (RED count) and point 7:
 
 > "missing drainage/catchment join file for FF"
 >
@@ -48,7 +48,7 @@ Also directly verified, all present and non-empty under `data/`:
 
 File timestamps confirm `data/catchment_characteristics_indofloods.csv`
 (2026-09-30 15:56) predates both `docs/MASTER_SIH_REQUIREMENT_MATRIX.md`
-(2026-10-01 02:25) and `MASTER_AUDIT_FINAL_REPORT.md` (2026-10-01 02:28) — the
+(2026-10-01 02:25) and `docs/archive/reports/MASTER_AUDIT_FINAL_REPORT.md` (2026-10-01 02:28) — the
 file already existed when the audit was written, so this is not a case of
 the file having been added after the audit ran.
 

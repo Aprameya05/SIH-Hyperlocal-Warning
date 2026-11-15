@@ -59,6 +59,11 @@ REGISTRY = {
     "rh500": ("%", "RAW_MODEL_OUTPUT", "GFS RH 500 hPa", 0),
     "soilw0_10": ("m3/m3", "MODEL_DIAGNOSTIC", "GFS volumetric soil moisture 0-10 cm (land-surface model state, not observed)", 3),
     "apcp_cum": ("mm", "RAW_MODEL_OUTPUT", "GFS accumulated precipitation from init to valid time (window verified from GRIB: start step 0)", 1),
+    "conv850": ("1e-5 1/s", "DERIVED_PHYSICAL", "850 hPa horizontal convergence = -div(V) from GFS winds by centred differences on the 0.25 deg grid (positive = convergence)", 2),
+    "conv10": ("1e-5 1/s", "DERIVED_PHYSICAL", "10 m horizontal convergence = -div(V10) by centred differences (positive = convergence)", 2),
+    "pwat_grad": ("mm/100 km", "DERIVED_PHYSICAL", "magnitude of the horizontal gradient of GFS precipitable water (moisture contrast)", 2),
+    "q850": ("g/kg", "DERIVED_PHYSICAL", "specific humidity at 850 hPa from GFS T and RH (Bolton saturation vapour pressure)", 2),
+    "q700": ("g/kg", "DERIVED_PHYSICAL", "specific humidity at 700 hPa from GFS T and RH", 2),
     "precip_3h": ("mm", "DERIVED_PHYSICAL", "apcp_cum(f) - apcp_cum(f-3); the first hour equals apcp_cum", 1),
 }
 
@@ -98,6 +103,9 @@ def ingest(init: datetime, fhours, workdir: Path, log=print):
             data = {k: ex(f[k]) for k in ("cape", "cin", "lftx", "pwat", "rh2m", "rh850", "rh700", "rh500", "w850", "w700", "w500", "soilw0_10")}
             for k in ("t2m_c", "d2m_c", "ws10", "wd10", "mslp_hpa", "k_index", "total_totals", "lapse_850_500", "shear_850_500"):
                 data[k] = ex(der[k])
+            dyn = g.derive_dynamics(dec)
+            for k in ("conv850", "conv10", "pwat_grad", "q850", "q700"):
+                data[k] = ex(dyn[k])
             wins = [(a["start"], a["end"]) for a in dec["apcp"]]
             cum = [a for a in dec["apcp"] if a["start"] == 0 and a["end"] == fh]
             if len(cum) != 1:

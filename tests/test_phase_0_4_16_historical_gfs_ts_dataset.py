@@ -23,7 +23,7 @@ sys.path.insert(0, str(REPO_ROOT / "scripts"))
 import build_phase_0_4_16_historical_gfs_ts_dataset as build_mod  # noqa: E402
 from historical_dataset_split import TRAIN, HOLDOUT  # noqa: E402
 
-LABELS_PATH = REPO_ROOT / "SIH_PANINDIA_GRID_LABELS_20260930_143541Z" / "processed" / "labels" / "ts_labels.csv"
+LABELS_PATH = REPO_ROOT / "docs/archive/implementation_snapshots/SIH_PANINDIA_GRID_LABELS_20260930_143541Z" / "processed" / "labels" / "ts_labels.csv"
 
 
 @pytest.fixture(scope="module")

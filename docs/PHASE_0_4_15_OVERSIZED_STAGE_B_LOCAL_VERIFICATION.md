@@ -182,7 +182,7 @@ Python environment and `eccodes` available) on your own machine:
 python scripts/verify_phase_0_4_15_oversized_stage_b.py \
   --raw-dir data/external/historical_gfs/raw \
   --manifest data/external/historical_gfs/manifest.json \
-  --labels SIH_PANINDIA_GRID_LABELS_20260930_143541Z/processed/labels/ts_labels.csv \
+  --labels docs/archive/implementation_snapshots/SIH_PANINDIA_GRID_LABELS_20260930_143541Z/processed/labels/ts_labels.csv \
   --json-out docs/PHASE_0_4_15_results.json
 ```
 

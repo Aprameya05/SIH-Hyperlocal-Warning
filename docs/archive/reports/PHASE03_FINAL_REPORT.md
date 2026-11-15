@@ -35,7 +35,7 @@ Full detail lives in `docs/PHASE_0_3_COMPLETION_REPORT.md` and its companion doc
 - `scripts/era5_synthetic_regrid_test.py` (new, read-only w.r.t. all production code)
 - `processed/era5_pilot/synthetic_era5_regrid_test.csv` (synthetic data only)
 - `processed/era5_pilot/synthetic_era5_regrid_summary.json` (synthetic data only)
-- `PHASE03_FINAL_REPORT.md` (this file)
+- `docs/archive/reports/PHASE03_FINAL_REPORT.md` (this file)
 
 No existing production file (`backend/pipeline.py`, `canonical_forecast_writer.py`,
 `forecast_action.py`, `index.html`, `regrid.py`) was modified. No existing data file in `data/` or

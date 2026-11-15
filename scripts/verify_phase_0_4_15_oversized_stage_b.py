@@ -29,7 +29,7 @@ Optional:
     python scripts/verify_phase_0_4_15_oversized_stage_b.py \
         --raw-dir data/external/historical_gfs/raw \
         --manifest data/external/historical_gfs/manifest.json \
-        --labels SIH_PANINDIA_GRID_LABELS_20260930_143541Z/processed/labels/ts_labels.csv \
+        --labels docs/archive/implementation_snapshots/SIH_PANINDIA_GRID_LABELS_20260930_143541Z/processed/labels/ts_labels.csv \
         --json-out /tmp/phase_0_4_15_results.json
 
 Exit code 0 if every file passes every check; 1 otherwise. Never asserts
@@ -333,7 +333,7 @@ def main():
     ap.add_argument("--raw-dir", default=str(REPO_ROOT / "data" / "external" / "historical_gfs" / "raw"))
     ap.add_argument("--manifest", default=str(REPO_ROOT / "data" / "external" / "historical_gfs" / "manifest.json"))
     ap.add_argument("--labels", default=str(
-        REPO_ROOT / "SIH_PANINDIA_GRID_LABELS_20260930_143541Z" / "processed" / "labels" / "ts_labels.csv"))
+        REPO_ROOT / "docs/archive/implementation_snapshots/SIH_PANINDIA_GRID_LABELS_20260930_143541Z" / "processed" / "labels" / "ts_labels.csv"))
     ap.add_argument("--json-out", default=None, help="optional path to dump full JSON results")
     ap.add_argument("--files", nargs="*", default=None,
                     help="optional subset of filenames to check (default: all 6 oversized Stage B files)")

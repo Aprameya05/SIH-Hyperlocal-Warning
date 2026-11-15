@@ -26,7 +26,7 @@ import verify_phase_0_4_15_oversized_stage_b as v  # noqa: E402
 RAW_DIR = REPO_ROOT / "data" / "external" / "historical_gfs" / "raw"
 MANIFEST_PATH = REPO_ROOT / "data" / "external" / "historical_gfs" / "manifest.json"
 LABELS_PATH = (
-    REPO_ROOT / "SIH_PANINDIA_GRID_LABELS_20260930_143541Z" / "processed" / "labels" / "ts_labels.csv"
+    REPO_ROOT / "docs/archive/implementation_snapshots/SIH_PANINDIA_GRID_LABELS_20260930_143541Z" / "processed" / "labels" / "ts_labels.csv"
 )
 
 KNOWN_GOOD_2016_F003 = RAW_DIR / "gfs.0p25.2016011500.f003.grib2"

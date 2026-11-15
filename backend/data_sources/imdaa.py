@@ -4,7 +4,7 @@ backend/data_sources/imdaa.py
 IMDAA (IMD-NCMRWF regional reanalysis) credential-aware adapter.
 
 Per docs/LIVE_OPERATIONAL_AUDIT.md and
-SIH_PAN_INDIA_PHASE0_2_20260930_140352Z/scripts/acquire_imdaa.py: this
+docs/archive/implementation_snapshots/SIH_PAN_INDIA_PHASE0_2_20260930_140352Z/scripts/acquire_imdaa.py: this
 source has never had working credentials or a verified endpoint anywhere
 in this repository. `raw/imdaa/` is confirmed empty. The production
 system substitutes GFS fields and labels that substitution honestly in

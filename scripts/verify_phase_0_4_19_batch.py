@@ -47,7 +47,7 @@ CELL_ID = "IND_13.0_78.0"
 CANDIDATE_MANIFEST_CSV = REPO_ROOT / "docs" / "PHASE_0_4_17_ACQUISITION_MANIFEST.csv"
 RAW_DIR = REPO_ROOT / "data" / "external" / "historical_gfs" / "raw"
 PROVENANCE_MANIFEST = REPO_ROOT / "data" / "external" / "historical_gfs" / "manifest.json"
-LABELS_PATH = REPO_ROOT / "SIH_PANINDIA_GRID_LABELS_20260930_143541Z" / "processed" / "labels" / "ts_labels.csv"
+LABELS_PATH = REPO_ROOT / "docs/archive/implementation_snapshots/SIH_PANINDIA_GRID_LABELS_20260930_143541Z" / "processed" / "labels" / "ts_labels.csv"
 
 EXPECTED_GRID = {
     "gridType": "regular_ll",

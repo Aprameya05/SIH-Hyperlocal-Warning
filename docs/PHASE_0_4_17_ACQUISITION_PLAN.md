@@ -44,7 +44,7 @@ rather than the same slot — a real, previously-documented archive finding
 
 ## 2. Audit of the full observed TS label space
 
-File used: `SIH_PANINDIA_GRID_LABELS_20260930_143541Z/processed/labels/ts_labels.csv`.
+File used: `docs/archive/implementation_snapshots/SIH_PANINDIA_GRID_LABELS_20260930_143541Z/processed/labels/ts_labels.csv`.
 Columns used: `timestamp` (parsed into `date` + `slot_label`), `cell_id`,
 `hazard`, `label_status`, `source`. Filtered to `cell_id=IND_13.0_78.0`,
 `hazard=ts`. No label was created, inferred, or altered.

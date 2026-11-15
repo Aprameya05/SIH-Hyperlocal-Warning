@@ -24,7 +24,7 @@ is no `processed/labels/` directory at all in the live checkout.** The real
 `scripts/build_panindia_ts_labels.py`, and
 `tests/test_panindia_labels.py`) exists only inside a timestamped delivery
 folder at the repo root,
-`SIH_PANINDIA_GRID_LABELS_20260930_143541Z/processed/labels/ts_labels.csv`,
+`docs/archive/implementation_snapshots/SIH_PANINDIA_GRID_LABELS_20260930_143541Z/processed/labels/ts_labels.csv`,
 which was evidently never copied into the main `processed/` tree after
 being delivered.
 
@@ -136,7 +136,7 @@ pilot files.
 python3 scripts/build_vobl_historical_gfs_ts_join.py \
   --cycle 2015030300 \
   --leads 003 009 \
-  --ts-labels SIH_PANINDIA_GRID_LABELS_20260930_143541Z/processed/labels/ts_labels.csv \
+  --ts-labels docs/archive/implementation_snapshots/SIH_PANINDIA_GRID_LABELS_20260930_143541Z/processed/labels/ts_labels.csv \
   --out-csv processed/historical_gfs_vobl/historical_gfs_vobl_positive_negative_pilot.csv \
   --out-manifest processed/historical_gfs_vobl/historical_gfs_vobl_positive_negative_pilot_manifest.json
 ```

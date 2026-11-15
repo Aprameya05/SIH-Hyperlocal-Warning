@@ -236,6 +236,40 @@ def dewpoint_c(t_k, rh_pct):
     return b * g / (a - g)
 
 
+R_EARTH = 6371000.0
+
+
+def _grid_gradients(field, lat, lon):
+    """Centred finite differences on the regular lat/lon grid with spherical metric: (d/dx, d/dy) per metre.
+    `lat` may be descending (GFS); np.gradient is given the signed coordinate so the sign is correct."""
+    phi = np.radians(lat)[:, None]
+    dy = R_EARTH * np.gradient(np.radians(lat))[:, None]                      # metres, signed (negative if lat descends)
+    dx = R_EARTH * np.cos(phi) * np.gradient(np.radians(lon))[None, :]
+    return np.gradient(field, axis=1) / dx, np.gradient(field, axis=0) / dy
+
+
+def divergence(u, v, lat, lon):
+    dudx, _ = _grid_gradients(u, lat, lon)
+    _, dvdy = _grid_gradients(v, lat, lon)
+    return dudx + dvdy                                                          # 1/s; convergence = -divergence
+
+
+def derive_dynamics(dec: dict) -> dict:
+    """Grid-based diagnostics that need neighbours (cannot be computed from a single cell value).
+    conv850/conv10: horizontal convergence in 1e-5 s^-1 (positive = convergence = lift forcing).
+    pwat_grad: magnitude of the horizontal PWAT gradient in mm per 100 km.  q850/q700: specific humidity g/kg."""
+    f, la, lo = dec["fields"], dec["lat"], dec["lon"]
+    out = {"conv850": -divergence(f["u850"], f["v850"], la, lo) * 1e5, "conv10": -divergence(f["u10"], f["v10"], la, lo) * 1e5}
+    gx, gy = _grid_gradients(f["pwat"], la, lo)
+    out["pwat_grad"] = np.hypot(gx, gy) * 1e5                                    # mm/m -> mm/100 km
+    for name, p_hpa, t, rh in (("q850", 850.0, f["t850"], f["rh850"]), ("q700", 700.0, f["t700"], f["rh700"])):
+        tc = t - 273.15
+        es = 6.112 * np.exp(17.67 * tc / (tc + 243.5))                           # hPa, Bolton (1980)
+        e = np.clip(rh, 0, 100) / 100.0 * es
+        out[name] = 1000.0 * 0.622 * e / (p_hpa - 0.378 * e)
+    return out
+
+
 def derive(dec: dict) -> dict:
     f = dec["fields"]
     out = {}

@@ -194,3 +194,21 @@ def test_no_location_record_is_alert_eligible():
                                    "valid_time_utc": "2099-01-01T00:00:00Z"}, hazard="TS")
             assert not ok and "NO_AVAILABILITY_TIME" in why and "HORIZON_NOT_REGISTERED" in why
         assert h["flash_flood"]["prediction"]["status"] == "UNAVAILABLE" and h["extreme_rainfall"]["cloudburst"]["status"] == "UNAVAILABLE"
+
+
+def test_grid_dynamics_are_physically_correct():
+    """Divergence/convergence on a synthetic wind field with a known analytic answer, with GFS-style descending latitude."""
+    lat = np.linspace(30, 20, 41); lon = np.linspace(75, 85, 41)
+    LA, LO = np.meshgrid(np.radians(lat), np.radians(lon), indexing="ij")
+    # solid-body-like expansion: u = a*(x - x0), v = a*(y - y0)  (metres from centre)  => div = 2a
+    a = 1e-5
+    x = g.R_EARTH * np.cos(LA) * (LO - np.radians(80)); y = g.R_EARTH * (LA - np.radians(25))
+    d = g.divergence(a * x, a * y, lat, lon)
+    inner = d[5:-5, 5:-5]
+    assert np.allclose(inner, 2 * a, rtol=0.02), (inner.min(), inner.max())            # divergence = +2a (so convergence is negative)
+    dec = {"fields": {"u850": -a * x, "v850": -a * y, "u10": a * x, "v10": a * y, "pwat": np.tile(np.linspace(10, 50, 41)[:, None], (1, 41)),
+                      "t850": np.full_like(x, 288.0), "t700": np.full_like(x, 278.0), "rh850": np.full_like(x, 80.0), "rh700": np.full_like(x, 50.0)}, "lat": lat, "lon": lon}
+    dyn = g.derive_dynamics(dec)
+    assert np.allclose(dyn["conv850"][5:-5, 5:-5], 2.0, rtol=0.03)                       # inflow field -> +2e-5 s^-1 convergence
+    assert np.all(dyn["conv10"][5:-5, 5:-5] < 0) and np.all(dyn["pwat_grad"] > 0)
+    assert 7 < float(dyn["q850"][10, 10]) < 14 and float(dyn["q700"][10, 10]) < float(dyn["q850"][10, 10])   # g/kg, drier aloft

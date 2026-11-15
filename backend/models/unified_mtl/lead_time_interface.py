@@ -96,7 +96,7 @@ REQUIRED_SUBDAILY_LABEL_SOURCES = {
                            "for training a meaningful subdaily model (7 positives is too few "
                            "for any legitimate held-out evaluation). Pan-India: none. "
                            "A separate, unintegrated patch module "
-                           "(SIH_IMPLEMENTATION_PATCH_20260930_130455Z/changed_files/"
+                           "(docs/archive/implementation_snapshots/SIH_IMPLEMENTATION_PATCH_20260930_130455Z/changed_files/"
                            "metar_ground_truth.py) designs a more rigorous live-METAR-window "
                            "aggregation for this same VOBL/6h-slot ground truth, but was never "
                            "wired into the live pipeline and has not accumulated any history.",

@@ -9,7 +9,7 @@
 - **8,342** — first appears in `docs/PHASE_0_2_EXTERNAL_DATA_CATALOG.md` line 164, attributed to
   "the paper, independently fetched this pass," stated as 5,525 regular + 2,817 severe flood
   events across 214 stations, 1959-2020. It was carried forward verbatim into
-  `docs/PHASE_0_2_RECOMMENDATIONS.md` and `PHASE02_FINAL_REPORT.md` without independent
+  `docs/PHASE_0_2_RECOMMENDATIONS.md` and `docs/archive/reports/PHASE02_FINAL_REPORT.md` without independent
   re-verification in those later docs.
 
 ## 2. Chain of custody for the repo's file

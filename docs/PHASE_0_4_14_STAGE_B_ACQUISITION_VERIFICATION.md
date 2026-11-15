@@ -144,7 +144,7 @@ IND_13.0_78.0|2022-08-15|3
 ### A5. Label cross-check
 
 Read directly from the real, un-modified
-`SIH_PANINDIA_GRID_LABELS_20260930_143541Z/processed/labels/ts_labels.csv`
+`docs/archive/implementation_snapshots/SIH_PANINDIA_GRID_LABELS_20260930_143541Z/processed/labels/ts_labels.csv`
 (not regenerated, not re-derived):
 
 | target date | slot (IST) | cell_id | hazard | label_status | source |

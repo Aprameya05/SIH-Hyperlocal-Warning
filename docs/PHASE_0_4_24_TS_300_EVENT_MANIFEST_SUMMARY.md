@@ -4,7 +4,7 @@ No GFS files were downloaded. No model was trained. No production code, frontend
 
 ## 1. Inputs and reproducibility
 
-- **Source label file**: `SIH_PANINDIA_GRID_LABELS_20260930_143541Z/processed/labels/ts_labels.csv` (16,267 rows: 584 POSITIVE, 14,692 NEGATIVE_CONFIRMED, 991 UNKNOWN, VOBL cell `IND_13.0_78.0` only).
+- **Source label file**: `docs/archive/implementation_snapshots/SIH_PANINDIA_GRID_LABELS_20260930_143541Z/processed/labels/ts_labels.csv` (16,267 rows: 584 POSITIVE, 14,692 NEGATIVE_CONFIRMED, 991 UNKNOWN, VOBL cell `IND_13.0_78.0` only).
 - **Selection algorithm/version**: `scripts/design_phase_0_4_24_ts_300_candidates.py`, this phase's first and only version.
 - **Random seed**: none used — the script contains no randomness anywhere; every ordering decision (year round-robin, season interleave, slot rotation, minimum-gap filtering) is a deterministic function of the label data and the fixed constants defined in the script. Re-running it against an unchanged `ts_labels.csv` produces a byte-identical manifest (verified by `tests/test_phase_0_4_24_ts_300_manifest.py::test_selection_is_deterministic`).
 - **Existing-acquisition exclusion set**: the exact 20 `event_group_key` values already built into `phase_0_4_20_train.csv`/`phase_0_4_20_holdout.csv` (verified directly from those files' own `event_group_key` column, not from the original Phase 0.4.17 design script's placeholder candidate list, which named different, never-actually-acquired keys).

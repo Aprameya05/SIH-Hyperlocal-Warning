@@ -26,7 +26,7 @@ Usage (from the repository root):
 Optional:
 
     python scripts/build_phase_0_4_16_historical_gfs_ts_dataset.py \
-        --ts-labels SIH_PANINDIA_GRID_LABELS_20260930_143541Z/processed/labels/ts_labels.csv \
+        --ts-labels docs/archive/implementation_snapshots/SIH_PANINDIA_GRID_LABELS_20260930_143541Z/processed/labels/ts_labels.csv \
         --out-dir data/processed/historical_gfs_ts
 """
 from __future__ import annotations
@@ -89,7 +89,7 @@ def build_one_cycle(cycle: str, leads: list[int], labels_path: Path, tmp_dir: Pa
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--ts-labels", default=str(
-        REPO_ROOT / "SIH_PANINDIA_GRID_LABELS_20260930_143541Z" / "processed" / "labels" / "ts_labels.csv"))
+        REPO_ROOT / "docs/archive/implementation_snapshots/SIH_PANINDIA_GRID_LABELS_20260930_143541Z" / "processed" / "labels" / "ts_labels.csv"))
     ap.add_argument("--out-dir", default=str(REPO_ROOT / "data" / "processed" / "historical_gfs_ts"))
     ap.add_argument("--tmp-dir", default=None, help="scratch dir for per-cycle intermediate files (default: <out-dir>/_per_cycle)")
     args = ap.parse_args()

@@ -42,7 +42,7 @@ from historical_dataset_split import assign_partition, TRAIN, HOLDOUT  # noqa: E
 from acquire_historical_gfs_pilot import build_direct_url  # noqa: E402
 
 CELL_ID = "IND_13.0_78.0"
-LABELS_PATH = REPO_ROOT / "SIH_PANINDIA_GRID_LABELS_20260930_143541Z" / "processed" / "labels" / "ts_labels.csv"
+LABELS_PATH = REPO_ROOT / "docs/archive/implementation_snapshots/SIH_PANINDIA_GRID_LABELS_20260930_143541Z" / "processed" / "labels" / "ts_labels.csv"
 
 SLOT_LABELS = {0: "0001-0600", 1: "0601-1200", 2: "1201-1800", 3: "1801-2400"}
 SLOT_LABEL_TO_ID = {v: k for k, v in SLOT_LABELS.items()}
