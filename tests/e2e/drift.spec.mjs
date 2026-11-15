@@ -249,8 +249,9 @@ test('twenty locations: what the panel shows equals the published JSON at that c
   await ctx.close();
 });
 
-test('mobile: the map legend never overlaps the basemap attribution; unknown paths are a real 404, never HTML with 200', async () => {
-  const { ctx, page } = await open({ width: 390, height: 844 });
+for (const [label, vp] of [['desktop', { width: 1360, height: 860 }], ['laptop', { width: 1100, height: 700 }], ['mobile', { width: 390, height: 844 }]])
+test(`${label}: the map legend never overlaps the basemap attribution; unknown paths are a real 404, never HTML with 200`, async () => {
+  const { ctx, page } = await open(vp);
   await page.waitForSelector('#legend'); await page.waitForTimeout(1500);
   const o = await page.evaluate(() => { const l = document.querySelector('#legend').getBoundingClientRect(), a = [...document.querySelectorAll('.maplibregl-ctrl-attrib')].map(e => e.getBoundingClientRect()).filter(r => r.width > 0);
     return a.map(r => !(l.right <= r.left || l.left >= r.right || l.bottom <= r.top || l.top >= r.bottom)); });
