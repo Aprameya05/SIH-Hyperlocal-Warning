@@ -25,15 +25,15 @@ function check(name, cond, detail) {
 //    directions, and the page-render branch exists.
 // ---------------------------------------------------------------------
 check('NAV_TAB_LIST includes UNIFIED FORECAST',
-  html.includes("'DASHBOARD', 'FORECAST', 'UNIFIED FORECAST', 'RADAR MAP'"));
+  html.includes("'DASHBOARD', 'FORECAST', 'UNIFIED FORECAST', 'SATELLITE'"));
 check('hashToTab maps #unified -> UNIFIED FORECAST',
   html.includes("'#unified':'UNIFIED FORECAST'"));
 check('tabToHash maps UNIFIED FORECAST -> #unified',
   html.includes("'UNIFIED FORECAST':'#unified'"));
 check('render branch for UNIFIED FORECAST exists',
   html.includes("activeNavTab === 'UNIFIED FORECAST'") && html.includes('<UnifiedForecastPage />'));
-check('existing FORECAST/RADAR MAP branches untouched',
-  html.includes("activeNavTab === 'FORECAST' &&") && html.includes("activeNavTab === 'RADAR MAP' &&"));
+check('existing FORECAST/SATELLITE branches present (RADAR MAP was renamed: there is no radar)',
+  html.includes("activeNavTab === 'FORECAST' &&") && html.includes("activeNavTab === 'SATELLITE' &&"));
 
 // ---------------------------------------------------------------------
 // 2. Extract and execute the pure helper functions added for Phase 36

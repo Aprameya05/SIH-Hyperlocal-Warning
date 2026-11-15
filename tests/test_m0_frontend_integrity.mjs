@@ -110,7 +110,7 @@ check('unavailable-predictors notice is present', html.includes('data-testid="un
 check('unified page applies the client guard on both load paths', (html.match(/guardUnifiedArtifact\(/g) || []).length >= 2);
 check('unified page shows the no-lead-forecast banner', html.includes('data-testid="no-lead-forecast-banner"'));
 check('withheld hazards render an explicit unavailable state', (html.match(/data-testid="hazard-unavailable"/g) || []).length >= 2);
-check('cloudburst is described as a daily heavy-rain score, not a verified cloudburst', html.includes('heavy-rain-day score') && html.includes('not a verified hourly cloudburst'));
+check('cloudburst is shown as unavailable (a heavy-rain-day proxy is not a cloudburst)', html.includes('no validated cloudburst model') && html.includes('is not a cloudburst'));
 check('CTT is labelled a proxy', html.includes('CTT PROXY'));
 check('shear layer label matches the computation (850-200 hPa)', html.includes('850-200 hPa wind shear') && !html.includes('0-6 km bulk shear layer'));
 

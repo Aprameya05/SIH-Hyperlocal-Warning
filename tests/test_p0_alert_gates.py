@@ -44,7 +44,8 @@ def test_dispatch_alerts_never_sends():
 
 def test_index_html_has_no_imd_branded_automatic_alert():
     html = (ROOT / "frontend" / "index.html").read_text()
-    assert "IMD Alert" not in html and "autoBrowserAlertsEnabled = false" in html
+    # the alert page, subscription form and browser-notification code were removed entirely (nothing can fire an automatic alert)
+    assert "IMD Alert" not in html and "new Notification(" not in html and "Notification.requestPermission" not in html and "handleSubscribe" not in html
 
 
 def test_workflows_use_fail_closed_gates():

@@ -24,4 +24,4 @@ Every value in the DRIFT command centre (`/drift`), with its source and how it i
 | SIMULATION mode | `drift_sim.js`, synthetic scenario, no network | synthetic | **simulation**, labelled, isolated | cannot reach alert code |
 | Legacy station dashboard (`/`) | `forecast.json`, `data/drift_live.json`, `skill_scores.json` for Bengaluru VOBL only | one airport | station model | tiles without a verified live source show a dash (hard-coded fallbacks removed in this change); banner states it is not national |
 
-Known remaining static content: the legacy station dashboard still contains hand-written model-card tables (slot AUROC 0.8710, thresholds) in its documentation views. They describe the Bengaluru station model only, sit behind a banner saying so, and are listed in `docs/OPERATIONAL_LIMITATIONS.md` and the PR notes as an open item.
+Legacy station dashboard: every typed metric, fake feed and unverifiable claim was removed or replaced by data; the dispositions are in `docs/evaluation/LEGACY_DASHBOARD_AUDIT.md` and are enforced by `tests/test_frontend_claims.py`.
