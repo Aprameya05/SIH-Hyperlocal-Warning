@@ -58,3 +58,28 @@ def test_markdown_relative_links_resolve():
             if not t.startswith(("http", "mailto")) and not (f.parent / t).resolve().exists():
                 bad.append((str(f.relative_to(ROOT)), t))
     assert not bad, bad
+
+
+def test_published_bundle_is_servable_by_cloudflare_pages(tmp_path):
+    """The exact bundle the deploy workflow publishes: references resolve with exact case, nothing over 25 MiB, no subscriber file."""
+    import sys
+    sys.path.insert(0, str(ROOT / "scripts" / "diagnostics"))
+    from check_bundle_references import check
+    out = tmp_path / "pages_dist"
+    subprocess.check_call([sys.executable, str(ROOT / "pipelines/publishing/build_pages_bundle.py"), str(out)], stdout=subprocess.DEVNULL)
+    assert check(out) == []
+
+
+def test_checker_detects_the_cloudflare_failure_mode(tmp_path):
+    """Regression for the failed Pages Git build: serving a tree that contains a >25 MiB file must be flagged."""
+    import sys
+    sys.path.insert(0, str(ROOT / "scripts" / "diagnostics"))
+    from check_bundle_references import check
+    (tmp_path / "index.html").write_text("<html></html>")
+    (tmp_path / "drift.html").write_text("<script src='assets/missing.js'></script>")
+    (tmp_path / "sw.js").write_text("")
+    (tmp_path / "manifest.json").write_text("{}")
+    with open(tmp_path / "big.json", "wb") as f:
+        f.truncate(26 * 1024 * 1024)
+    problems = check(tmp_path)
+    assert any("25 MiB" in p for p in problems) and any("missing.js" in p for p in problems)
