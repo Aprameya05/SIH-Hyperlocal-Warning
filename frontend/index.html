@@ -3267,7 +3267,7 @@ function injectDrainageOverlay(map, liveData) { /* removed: connected terrain po
         ? `Latest forecast\nis stale.`
         : alertActive
           ? `${hazardCfg.label} risk\nin the station model's slots.`
-          : `India's weather,\ndown to the grid.`;
+          : `Experimental guidance:\nstation score and 1° grid.`;
       const driftHeroSub = !isLiveData
         ? `Forecast initialized ${genAt} (${ageLabelForHero}) for ${activeLocation.displayName || 'your area'} -- not current conditions.`
         : alertActive
@@ -3396,8 +3396,8 @@ function injectDrainageOverlay(map, liveData) { /* removed: connected terrain po
               {[
                 ['all', 'ALL'],
                 ['thunderstorm', 'TS'],
-                ['cloudburst', 'CB'],
-                ['flash_flood', 'FF']
+                ['cloudburst', 'RAIN SCORE'],
+                ['flash_flood', 'FLOOD HEUR.']
               ].map(([l, label]) => {
                 const isActive = panLayer === l;
                 return (
@@ -3807,7 +3807,7 @@ function injectDrainageOverlay(map, liveData) { /* removed: connected terrain po
               border: '1px solid rgba(255, 255, 255, 0.10)', borderRadius: 10, padding: '6px 10px', width: 130
             }}>
               <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.08em', color: '#64748b', marginBottom: 5 }}>
-                {(panLayer === 'thunderstorm' ? 'TS' : panLayer === 'cloudburst' ? 'CB' : panLayer === 'flash_flood' ? 'FF' : 'HAZARD')} RISK SCALE
+                {(panLayer === 'thunderstorm' ? 'TS' : panLayer === 'cloudburst' ? 'HEAVY-RAIN SCORE (uncalibrated)' : panLayer === 'flash_flood' ? 'FLOOD HEURISTIC (unvalidated)' : 'HAZARD')} SCALE
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                 {[
