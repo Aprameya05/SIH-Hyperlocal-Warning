@@ -349,8 +349,8 @@
   }
   var GROUPS = [
     ['Instability', [['cape', 'CAPE', 0], ['cin', 'CIN', 0], ['lftx', 'Lifted index', 1], ['k_index', 'K-index', 1], ['total_totals', 'Total Totals', 1], ['lapse_850_500', '850–500 hPa lapse rate', 2]]],
-    ['Moisture', [['pwat', 'Precipitable water', 1], ['rh2m', '2 m RH', 0], ['d2m_c', '2 m dew point', 1], ['rh850', 'RH 850 hPa', 0], ['rh700', 'RH 700 hPa', 0], ['rh500', 'RH 500 hPa', 0]]],
-    ['Wind & dynamics', [['ws10', '10 m wind speed', 1], ['wd10', '10 m wind from', 0], ['shear_850_500', '850–500 hPa bulk shear', 1], ['w850', 'ω 850 hPa', 2], ['w700', 'ω 700 hPa', 2], ['w500', 'ω 500 hPa', 2]]],
+    ['Moisture', [['pwat', 'Precipitable water', 1], ['rh2m', '2 m RH', 0], ['d2m_c', '2 m dew point', 1], ['rh850', 'RH 850 hPa', 0], ['rh700', 'RH 700 hPa', 0], ['rh500', 'RH 500 hPa', 0], ['q850', 'Specific humidity 850 hPa', 2], ['q700', 'Specific humidity 700 hPa', 2], ['pwat_grad', 'PWAT gradient', 2]]],
+    ['Wind & dynamics', [['ws10', '10 m wind speed', 1], ['wd10', '10 m wind from', 0], ['shear_850_500', '850–500 hPa bulk shear', 1], ['w850', 'ω 850 hPa', 2], ['w700', 'ω 700 hPa', 2], ['w500', 'ω 500 hPa', 2], ['conv850', 'Convergence 850 hPa', 2], ['conv10', 'Convergence 10 m', 2]]],
     ['Temperature & pressure', [['t2m_c', '2 m temperature', 1], ['mslp_hpa', 'MSLP', 1]]],
     ['Precipitation & soil', [['precip_3h', 'Rain, 3 h amount', 1], ['apcp_cum', 'Rain accumulated since init', 1], ['soilw0_10', 'Soil moisture 0–10 cm (model)', 3]]]
   ];
