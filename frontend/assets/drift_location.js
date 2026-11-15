@@ -88,10 +88,10 @@
     S.search = function (q, limit) {
       q = (q || '').trim().toLowerCase(); if (q.length < 2) return [];
       var out = [];
-      S.places.forEach(function (p) { var n = p.ascii.toLowerCase(); if (n.indexOf(q) === 0 || n.indexOf(q) >= 0) out.push({ type: 'place', name: p.name, cell_id: p.cell, lat: p.lat, lon: p.lon, population: p.pop, _r: [n.indexOf(q) === 0 ? 0 : 1, -p.pop] }); });
-      S.states.forEach(function (s) { if (s.toLowerCase().indexOf(q) >= 0) out.push({ type: 'state', name: s, _r: [s.toLowerCase().indexOf(q) === 0 ? 0 : 1, 1e9] }); });
+      S.places.forEach(function (p) { var n = p.ascii.toLowerCase(); if (n.indexOf(q) === 0 || n.indexOf(q) >= 0) out.push({ type: 'place', name: p.name, cell_id: p.cell, lat: p.lat, lon: p.lon, population: p.pop, _r: [n === q ? 0 : n.indexOf(q) === 0 ? 1 : 2, -p.pop] }); });
+      S.states.forEach(function (s) { if (s.toLowerCase().indexOf(q) >= 0) out.push({ type: 'state', name: s, _r: [s.toLowerCase() === q ? 0 : s.toLowerCase().indexOf(q) === 0 ? 1 : 2, 1e9] }); });
       var seen = {};
-      S.districts.forEach(function (d) { var k = d.name + '|' + d.state; if (d.name.toLowerCase().indexOf(q) >= 0 && !seen[k]) { seen[k] = 1; out.push({ type: 'district', name: d.name, state: d.state, _r: [d.name.toLowerCase().indexOf(q) === 0 ? 0 : 1, 1e9 - 1] }); } });
+      S.districts.forEach(function (d) { var k = d.name + '|' + d.state; if (d.name.toLowerCase().indexOf(q) >= 0 && !seen[k]) { seen[k] = 1; out.push({ type: 'district', name: d.name, state: d.state, _r: [d.name.toLowerCase() === q ? 0 : d.name.toLowerCase().indexOf(q) === 0 ? 1 : 2, 1e9 - 1] }); } });
       out.sort(function (a, b) { return a._r[0] - b._r[0] || a._r[1] - b._r[1]; });
       return out.slice(0, limit || 10).map(function (r) { delete r._r; return r; });
     };

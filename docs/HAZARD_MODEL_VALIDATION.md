@@ -1,6 +1,6 @@
 # Hazard model validation
 
-Generated 2026-11-15 14:59 UTC by `scripts/utilities/generate_validation_docs.py` from `data/*_evaluation.json`. Nothing below is typed by hand.
+Generated 2026-11-15 16:13 UTC by `scripts/utilities/generate_validation_docs.py` from `data/*_evaluation.json`. Nothing below is typed by hand.
 
 Status per hazard (what the product actually serves):
 
@@ -22,12 +22,15 @@ Status per hazard (what the product actually serves):
 
 Temporal holdout (train 2024, test 2025), calibrated XGBoost; 95% CI = block bootstrap over forecast dates (200 resamples):
 
-| Lead | n | events | AUROC (95% CI) | PR-AUC (no skill) | Brier | Brier skill (95% CI) | ECE | POD | FAR | CSI | HSS | false alarms /100 forecasts | persistence AUROC | leave-region-out AUROC / BSS | published |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| +6 h | 2290 | 127 | 0.817 [0.777, 0.863] | 0.180 (0.056) | 0.0479 | 0.090 [0.054, 0.123] | 0.0126 | 0.496 | 0.793 | 0.171 | 0.232 | 10.6 | 0.621 | 0.805 / 0.090 | yes |
-| +12 h | 2435 | 241 | 0.741 [0.704, 0.782] | 0.231 (0.099) | 0.0833 | 0.072 [0.039, 0.104] | 0.0193 | 0.444 | 0.740 | 0.196 | 0.232 | 12.5 | 0.486 | 0.738 / 0.065 | yes |
-| +18 h | 2360 | 124 | 0.843 [0.803, 0.888] | 0.181 (0.052) | 0.0455 | 0.093 [0.067, 0.116] | 0.0152 | 0.573 | 0.787 | 0.183 | 0.253 | 11.1 | 0.568 | 0.834 / 0.077 | yes |
-| +24 h | 2438 | 231 | 0.742 [0.693, 0.782] | 0.210 (0.095) | 0.0801 | 0.070 [0.036, 0.096] | 0.0197 | 0.407 | 0.760 | 0.178 | 0.208 | 12.2 | 0.586 | 0.705 / 0.045 | yes |
+| Lead | n | events | AUROC (95% CI) | PR-AUC (no skill) | Brier | Brier skill (95% CI) | ECE | POD | FAR | CSI | HSS | BIAS | false alarms /100 forecasts | persistence AUROC | leave-region-out AUROC / BSS | published |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| +6 h | 2290 | 127 | 0.817 [0.777, 0.863] | 0.180 (0.056) | 0.0479 | 0.090 [0.054, 0.123] | 0.0126 | 0.496 | 0.793 | 0.171 | 0.232 | 2.40 | 10.6 | 0.621 | 0.805 / 0.090 | yes |
+| +12 h | 2435 | 241 | 0.741 [0.704, 0.782] | 0.231 (0.099) | 0.0833 | 0.072 [0.039, 0.104] | 0.0193 | 0.444 | 0.740 | 0.196 | 0.232 | 1.71 | 12.5 | 0.486 | 0.738 / 0.065 | yes |
+| +18 h | 2360 | 124 | 0.843 [0.803, 0.888] | 0.181 (0.052) | 0.0455 | 0.093 [0.067, 0.116] | 0.0152 | 0.573 | 0.787 | 0.183 | 0.253 | 2.69 | 11.1 | 0.568 | 0.834 / 0.077 | yes |
+| +24 h | 2438 | 231 | 0.742 [0.693, 0.782] | 0.210 (0.095) | 0.0801 | 0.070 [0.036, 0.096] | 0.0197 | 0.407 | 0.760 | 0.178 | 0.208 | 1.69 | 12.2 | 0.586 | 0.705 / 0.045 | yes |
+
+BIAS is the frequency bias (hits + false alarms) / (hits + misses) = POD / (1 - FAR), derived from the stored POD and FAR. **Reading the categorical scores honestly:** the probabilities are calibrated (low ECE, positive Brier skill), but at the stored decision thresholds the yes/no forecasts over-forecast (BIAS > 1) and most flagged cases are false alarms (FAR about 0.74-0.79 for thunderstorms, 0.83 for the 20 mm / 3 h rainfall target). Use the probability, not the yes/no flag; these scores do not support a warning-grade claim.
+
 
 Baselines on the same test rows (lead +12 h shown; all leads are in the JSON): climatology (training base rate), CAPE-threshold rule, logistic regression on 6 predictors, persistence (thunderstorm in the 3 h before issue).
 
@@ -57,14 +60,14 @@ By month of the valid time (2025 test, lead +12 h): {"4": {"n": 1093, "auroc": 0
 - **Labels.** NOAA CDR CMORPH V1.0 hourly 0.25 deg, 3 h accumulation ending at the valid time (satellite estimate, gauge-adjusted over land). **Predictors.** GFS 0.25 deg init 00Z, leads 9/15/21 h, cell centre = GFS grid point. 445,728 cell-windows, 32 init dates, monsoon, 15 Jun - 15 Sep, every 6th day.
 - **Gate.** calibrated model: Brier skill >= 0.01, AUROC >= 0.65 in temporal AND pooled leave-region-out holdout, and AUROC >= raw GFS rainfall rule.
 
-| Target | events (test) | AUROC (95% CI) | raw GFS rainfall AUROC | PR-AUC (no skill) | Brier skill (95% CI) | ECE | POD | FAR | CSI | false alarms /100 | leave-region-out AUROC / BSS | published |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 20mm_f9 | 650 | 0.894 [0.861, 0.919] | 0.859 | 0.0944 (0.0087) | 0.052 [0.023, 0.075] | 0.0027 | 0.220 | 0.833 | 0.105 | 0.96 | 0.866 / 0.027 | yes |
-| 20mm_f15 | 256 | 0.812 [0.743, 0.873] | 0.728 | 0.0170 (0.0034) | 0.005 [-0.006, 0.016] | 0.0010 | 0.031 | 0.928 | 0.022 | 0.14 | 0.793 / 0.002 | no |
-| 20mm_f21 | 888 | 0.819 [0.777, 0.857] | 0.797 | 0.0510 (0.0120) | 0.024 [0.006, 0.037] | 0.0016 | 0.096 | 0.912 | 0.048 | 1.19 | 0.802 / 0.009 | no |
+| Target | events (test) | AUROC (95% CI) | raw GFS rainfall AUROC | PR-AUC (no skill) | Brier skill (95% CI) | ECE | POD | FAR | CSI | BIAS | false alarms /100 | leave-region-out AUROC / BSS | published |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 20mm_f9 | 650 | 0.894 [0.861, 0.919] | 0.859 | 0.0944 (0.0087) | 0.052 [0.023, 0.075] | 0.0027 | 0.220 | 0.833 | 0.105 | 1.32 | 0.96 | 0.866 / 0.027 | yes |
+| 20mm_f15 | 256 | 0.812 [0.743, 0.873] | 0.728 | 0.0170 (0.0034) | 0.005 [-0.006, 0.016] | 0.0010 | 0.031 | 0.928 | 0.022 | 0.43 | 0.14 | 0.793 / 0.002 | no |
+| 20mm_f21 | 888 | 0.819 [0.777, 0.857] | 0.797 | 0.0510 (0.0120) | 0.024 [0.006, 0.037] | 0.0016 | 0.096 | 0.912 | 0.048 | 1.09 | 1.19 | 0.802 / 0.009 | no |
 | 40mm_f9 | insufficient events | | | | | | | | | | | no |
 | 40mm_f15 | insufficient events | | | | | | | | | | | no |
-| 40mm_f21 | 156 | 0.812 [0.732, 0.884] | 0.845 | 0.0091 (0.0021) | 0.003 [-0.007, 0.012] | 0.0013 | 0.070 | 0.965 | 0.024 | 0.41 | 0.776 / -0.003 | no |
+| 40mm_f21 | 156 | 0.812 [0.732, 0.884] | 0.845 | 0.0091 (0.0021) | 0.003 [-0.007, 0.012] | 0.0013 | 0.070 | 0.965 | 0.024 | 2.01 | 0.41 | 0.776 / -0.003 | no |
 
 **Limits.** CMORPH is a satellite estimate; heavy convective rainfall in mountains is under-estimated; monsoon only, two seasons, every 6th day: wide uncertainty; leads 9/15/21 h from 00Z only; 0.25 deg / 3 h cannot represent cloudbursts (>= 100 mm/h over ~10 km).
 

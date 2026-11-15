@@ -1,6 +1,6 @@
 # Forecast lead-time validation
 
-Generated 2026-11-15 14:59 UTC from the artifacts.
+Generated 2026-11-15 16:13 UTC from the artifacts.
 
 ## What is validated and what is not
 

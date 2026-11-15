@@ -53,3 +53,60 @@ def test_underlying_records_differ_by_location_and_follow_geography():
         assert recs["Port Blair"]["static"]["elev_mean_m"] < 500
         assert recs["Leh"]["fields"]["t2m_c"]["value"] < recs["Port Blair"]["fields"]["t2m_c"]["value"]
         assert recs["Leh"]["fields"]["pwat"]["value"] < recs["Port Blair"]["fields"]["pwat"]["value"]
+
+
+TWENTY = ["Leh", "Srinagar", "Delhi", "Jaipur", "Mumbai", "Pune", "Bengaluru", "Chennai", "Hyderabad", "Kochi", "Thiruvananthapuram", "Mangaluru",
+          "Panjim", "Kolkata", "Bhubaneswar", "Guwahati", "Shillong", "Patna", "Lucknow", "Port Blair"]       # "Goa" is a state: Panjim is its capital city
+VARS = ["cape", "cin", "t2m_c", "pwat", "rh2m", "ws10", "d2m_c", "mslp_hpa"]
+
+
+def test_twenty_locations_api_equals_published_artifact_cell_by_cell():
+    """Offline, repeatable: for each location the API record equals the value read DIRECTLY from data/india_fields_latest.json at the
+    resolved cell (not through any DRIFT lookup code), timestamps equal the artifact's, distinct places differ, and locations that fall outside
+    the land mask are reported as not covered (never forced onto a neighbouring cell)."""
+    import json
+    from pathlib import Path
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+    from backend.location_api import router
+    app = FastAPI(); app.include_router(router); c = TestClient(app)
+    art = json.loads((Path(__file__).resolve().parent.parent / "data" / "india_fields_latest.json").read_text())
+    cell_pos = {cid: i for i, cid in enumerate(art["cells"])}
+    H = 3
+    covered, uncovered, rows = {}, {}, {}
+    for name in TWENTY:
+        hit = next(x for x in c.get("/v1/search", params={"q": name}).json()["results"] if x["type"] == "place" and x["name"].lower() == name.lower())
+        r = c.get("/v1/resolve", params={"lat": hit["lat"], "lon": hit["lon"]}).json()
+        if not r["covered"]:
+            assert r["reason"] and "cell_id" not in r, name
+            uncovered[name] = r
+            continue
+        cid = r["cell_id"]; covered[name] = cid
+        rec = c.get("/v1/location", params={"cell_id": cid, "hour": H}).json()
+        assert rec["selected_hour"]["valid_time_utc"] == art["meta"]["files"][H]["valid_time_utc"]
+        assert rec["selected_hour"]["published_at_utc"] == art["meta"]["files"][H]["published_at_utc"]
+        assert rec["cycle"]["model_init_utc"] == art["meta"]["cycle_init_utc"]
+        assert rec["location"]["cell_id"] == cid == art["cells"][cell_pos[cid]]
+        vals = {}
+        for v in VARS:
+            raw = art["fields"][v][H][cell_pos[cid]]
+            api = rec["fields"][v]["value"]
+            assert (raw is None and api is None) or (raw is not None and api is not None and abs(raw - api) <= 0.5 * 10 ** -art["registry"][v]["decimals"] + 1e-9), (name, v, raw, api)
+            vals[v] = api
+        rows[name] = vals
+    assert len(covered) + len(uncovered) == 20 and len(covered) >= 17
+    # coastal gazetteer points whose 0.25 deg cell is mostly sea are NOT covered; they must offer the nearest covered cell, not substitute it silently
+    for n, r in uncovered.items():
+        assert r["nearest_covered_cell"]["cell_id"] in cell_pos and r["nearest_covered_cell"]["distance_deg"] > 0
+    assert {"Kochi", "Mangaluru", "Panjim"} >= set(uncovered), uncovered.keys()   # coastal gazetteer points in cells that are < 50% land
+    assert len(set(covered.values())) == len(covered)
+    for v in ("t2m_c", "pwat", "rh2m"):
+        assert len({round(r[v], 1) for r in rows.values() if r[v] is not None}) >= len(rows) - 3, v
+    assert rows["Leh"]["t2m_c"] < rows["Port Blair"]["t2m_c"] and rows["Leh"]["pwat"] < rows["Thiruvananthapuram"]["pwat"]
+
+
+def test_search_ranks_exact_matches_first():
+    from backend.location_service import Store
+    s = Store()
+    assert s.search("Goa", 3)[0] == {"type": "state", "name": "Goa"}      # not the Assam town Goalpara
+    assert s.search("Delhi", 1)[0]["name"] == "Delhi"

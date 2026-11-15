@@ -1066,6 +1066,7 @@
     <small>Thunderstorms · extreme rainfall · flash floods — live NWP guidance, honest provenance, and an interactive scenario simulation</small>
     <span class="cta">Open command centre &rarr;</span>
   </a>
+  <div style="background:#1b2742;color:#cfe3ff;font:12px system-ui;padding:8px 14px;text-align:center;border-bottom:1px solid #2c3d63">Legacy Bengaluru (VOBL airport) station dashboard. It is separate from the <a href="drift.html" style="color:#7cc4ff">DRIFT pan-India command centre</a>; station-model tiles describe Bengaluru only and must not be read as national performance. Tiles without a verified live source show —.</div>
   <div id="root"></div>
 
   <!-- Restore saved theme preference immediately -->
@@ -1329,15 +1330,15 @@
       { slot: 3, label: "EVENING", time: "18:00 - 24:00 IST", ts_probability: 0.096, ts_predicted: false, threshold: 0.163, icon: "🌆" }
     ];
 
-    // METRICS_SUMMARY -- static fallback values (Slot 2 v3 calibrated, 2023-2025 test period)
+    // METRICS_SUMMARY -- no static fallback values: unavailable verification is shown as unavailable
     // Dashboard bottom row reads liveData.verification.rolling_30d when available (see below)
     const METRICS_SUMMARY_FALLBACK = [
-      { name: 'AUROC', val: '0.871', delta: '▲ 0.02' },
-      { name: 'POD',   val: '0.473', delta: '▲ 0.03' },
-      { name: 'FAR',   val: '0.671', delta: '▼ 0.01' },
-      { name: 'CSI',   val: '0.293', delta: '▲ 0.01' },
-      { name: 'HSS',   val: '0.389', delta: '▲ 0.02' },
-      { name: 'BIAS',  val: '1.208', delta: '▲ 0.05' },
+      { name: 'AUROC', val: '—', delta: 'unavailable' },
+      { name: 'POD',   val: '—', delta: 'unavailable' },
+      { name: 'FAR',   val: '—', delta: 'unavailable' },
+      { name: 'CSI',   val: '—', delta: 'unavailable' },
+      { name: 'HSS',   val: '—', delta: 'unavailable' },
+      { name: 'BIAS',  val: '—', delta: 'unavailable' },
     ];
 
     const SHAP_DATA_FALLBACK = [
@@ -1600,11 +1601,11 @@
     }
 
     // --- AUROC HALF-CIRCLE GAUGE COMPONENT ---
-    function HalfCircleAurocGauge({ value = 0.871, size = 85 }) {
+    function HalfCircleAurocGauge({ value = null, size = 85 }) {
       const strokeWidth = 8;
       const radius = (size - strokeWidth) / 2;
       const circumference = Math.PI * radius;
-      const fillOffset = (1 - Math.min(Math.max(value, 0), 1)) * circumference;
+      const fillOffset = (1 - Math.min(Math.max(value == null ? 0 : value, 0), 1)) * circumference;
 
       return (
         <div className="relative flex items-center justify-center" style={{ width: size, height: size / 2 + 10 }}>
@@ -1614,7 +1615,7 @@
           </svg>
           <div className="absolute bottom-0 text-center font-mono">
             <span className="text-[11px] text-[#607d8b] block font-semibold">AUROC</span>
-            <span className="text-sm font-extrabold text-white">{value.toFixed(3)}</span>
+            <span className="text-sm font-extrabold text-white">{value == null ? '—' : value.toFixed(3)}</span>
           </div>
         </div>
       );
@@ -5084,10 +5085,10 @@ function injectDrainageOverlay(map, liveData) {
             {(() => {
               // Live rolling_30d > static test-period fallback
               const v = liveData?.verification?.rolling_30d;
-              const auroc = liveData?.model_performance?.auroc ?? 0.871;
-              const pod   = v?.pod   ?? 0.473;
-              const far   = v?.far   ?? 0.671;
-              const csi   = v?.csi   ?? 0.293;
+              const auroc = liveData?.model_performance?.auroc ?? null;   // no hard-coded fallback: unavailable stays unavailable
+              const pod   = v?.pod   ?? null;
+              const far   = v?.far   ?? null;
+              const csi   = v?.csi   ?? null;
               const isLive = !!v;
               return (
                 <div className="shimmer-card atc-card atc-card-hover p-4 rounded-xl flex flex-col justify-between font-mono min-h-[170px] transition-all duration-300">
@@ -5099,12 +5100,12 @@ function injectDrainageOverlay(map, liveData) {
                     <HalfCircleAurocGauge value={auroc} size={80} />
                   </div>
                   <div className="grid grid-cols-3 text-[11px] text-center gap-1 border-t border-[#172338] pt-1.5">
-                    <div><Tooltip term="POD" className="text-[#607d8b]">POD</Tooltip><div className={`font-bold ${pod >= 0.5 ? 'text-emerald-400' : pod >= 0.3 ? 'text-amber-400' : 'text-red-400'}`}>{pod.toFixed(2)}</div></div>
-                    <div><Tooltip term="FAR" className="text-[#607d8b]">FAR</Tooltip><div className={`font-bold ${far <= 0.5 ? 'text-emerald-400' : far <= 0.7 ? 'text-amber-400' : 'text-red-400'}`}>{far.toFixed(2)}</div></div>
-                    <div><Tooltip term="CSI" className="text-[#607d8b]">CSI</Tooltip><div className="text-white font-bold">{csi.toFixed(2)}</div></div>
+                    <div><Tooltip term="POD" className="text-[#607d8b]">POD</Tooltip><div className={`font-bold ${pod >= 0.5 ? 'text-emerald-400' : pod >= 0.3 ? 'text-amber-400' : 'text-red-400'}`}>{pod == null ? '—' : pod.toFixed(2)}</div></div>
+                    <div><Tooltip term="FAR" className="text-[#607d8b]">FAR</Tooltip><div className={`font-bold ${far <= 0.5 ? 'text-emerald-400' : far <= 0.7 ? 'text-amber-400' : 'text-red-400'}`}>{far == null ? '—' : far.toFixed(2)}</div></div>
+                    <div><Tooltip term="CSI" className="text-[#607d8b]">CSI</Tooltip><div className="text-white font-bold">{csi == null ? '—' : csi.toFixed(2)}</div></div>
                   </div>
                   <div className="text-[11px] text-[#3d5066] mt-1 text-center">
-                    {isLive ? '30-day live' : 'Test 2023-25'}
+                    {isLive ? '30-day live verification' : 'no live verification available'}
                   </div>
                 </div>
               );
@@ -5752,12 +5753,12 @@ function injectDrainageOverlay(map, liveData) {
               const fmtLive = (liveVal, fallbackVal) =>
                 typeof liveVal === 'number' ? liveVal.toFixed(3) : fallbackVal;
               const metrics = v ? [
-                { name: 'AUROC', val: liveData?.model_performance?.auroc?.toFixed(3) ?? '0.871', delta: '30-DAY' },
-                { name: 'POD',   val: fmtLive(v.pod,   '0.473'), delta: '30-DAY' },
-                { name: 'FAR',   val: fmtLive(v.far,   '0.671'), delta: '30-DAY' },
-                { name: 'CSI',   val: fmtLive(v.csi,   '0.293'), delta: '30-DAY' },
-                { name: 'HSS',   val: fmtLive(v.hss,   '0.389'), delta: '30-DAY' },
-                { name: 'BRIER', val: fmtLive(v.brier, '0.060'), delta: '30-DAY' },
+                { name: 'AUROC', val: liveData?.model_performance?.auroc?.toFixed(3) ?? '—', delta: '30-DAY' },
+                { name: 'POD',   val: fmtLive(v.pod, '—'), delta: '30-DAY' },
+                { name: 'FAR',   val: fmtLive(v.far, '—'), delta: '30-DAY' },
+                { name: 'CSI',   val: fmtLive(v.csi, '—'), delta: '30-DAY' },
+                { name: 'HSS',   val: fmtLive(v.hss, '—'), delta: '30-DAY' },
+                { name: 'BRIER', val: fmtLive(v.brier, '—'), delta: '30-DAY' },
               ] : METRICS_SUMMARY_FALLBACK;
               const isLive = !!v;
               return (
@@ -11093,11 +11094,11 @@ Source: csir-thunderstorm-bengaluru.pages.dev | IMD Station 43295`;
       const CB_METRICS = { slot0: {auroc:'0.989',auprc:'0.118'}, slot1: {auroc:'0.981',auprc:'0.088'}, slot2: {auroc:'0.743',auprc:'0.051'}, slot3: {auroc:'0.982',auprc:'0.088'} };
       const FF_METRICS = { slot0: {auroc:'0.992',auprc:'0.167'}, slot1: {auroc:'0.969',auprc:'0.264'}, slot2: {auroc:'0.997',auprc:'0.417'}, slot3: {auroc:'0.978',auprc:'0.144'} };
       const hKey = hazardCfg?.key || 'ts';
-      const cbff = hKey === 'cb' ? CB_METRICS : hKey === 'ff' ? FF_METRICS : null;
+      const cbff = null;   // CB_METRICS/FF_METRICS were hard-coded, unvalidated (proxy labels); never displayed
       const avgAuroc = cbff ? (Object.values(cbff).reduce((s,m) => s + parseFloat(m.auroc), 0) / 4).toFixed(3) : null;
       const metricInfo = {
         'AUROC': hKey === 'ts'
-          ? {val:'0.871', cv:'0.929', desc:'Area Under ROC Curve -- probability model discrimination', target:'>0.80', status:'EXCELLENT'}
+          ? {val:'--', cv:'--', desc:'Area Under ROC Curve -- no verified source wired to this tile; see the DRIFT evaluation page', target:'>0.80', status:'UNVERIFIED'}
           : {val: avgAuroc || '--', cv:'--', desc:`Area Under ROC Curve -- ${hazardCfg?.label} slot model discrimination (avg across 4 slots)`, target:'>0.85', status: avgAuroc && parseFloat(avgAuroc) > 0.85 ? 'EXCELLENT' : 'GOOD'},
         'Threshold': hKey === 'ts'
           ? {val:'0.45', cv:'--', desc:'Decision threshold for binary TS / No-TS output', target:'0.40-0.50', status:'OPTIMAL'}

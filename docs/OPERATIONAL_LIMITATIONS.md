@@ -12,3 +12,7 @@
 10. **Production exposure:** a subscribers JSON was found publicly served on the production site; the allow-list bundle builder in this branch excludes it, but this is not deployed (deployment is not authorised here). No data was downloaded.
 11. **Known baseline test failures** unrelated to this work: `test_indofloods_phase5` x3, `test_vobl_historical_gfs_ts_join` x6, 3 collection errors (missing phase modules).
 12. Static hosting means no server-side authentication on artifacts; `/v1` API CORS/auth must be set before any non-public deployment.
+13. **Coastal coverage:** gazetteer points for Kochi, Mangaluru and Panjim (Goa) fall in 0.25 degree cells that are under 50% Indian land, so they are reported NOT COVERED (with the nearest covered cell offered) rather than forced onto a neighbour.
+14. **Legacy station dashboard:** `frontend/index.html` still contains hand-written model-card tables (slot AUROC 0.8710, thresholds, per-slot lists) for the Bengaluru station model. Invented fallback metrics and unvalidated cloudburst/flash-flood slot metrics were removed from live tiles; the remaining static tables are behind a banner stating that they are station-only. A full line-by-line audit of this 12,000-line page is not complete.
+15. **Categorical skill is weak:** at the stored thresholds the yes/no forecasts over-forecast (BIAS about 1.3-2.4) with FAR 0.74-0.83; use probabilities, not flags (see HAZARD_MODEL_VALIDATION.md).
+16. **The `/v1` API is not deployed** (see docs/operations/API_DEPLOYMENT_BOUNDARY.md).

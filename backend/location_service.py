@@ -141,15 +141,15 @@ class Store:
             n = p["ascii"].lower()
             if n.startswith(q) or q in n:
                 out.append({"type": "place", "name": p["name"], "cell_id": p["cell"], "lat": p["lat"], "lon": p["lon"], "population": p["pop"],
-                            "rank": (0 if n.startswith(q) else 1, -p["pop"])})
+                            "rank": (0 if n == q else 1 if n.startswith(q) else 2, -p["pop"])})
         for i, s in enumerate(self.states):
             if q in s.lower():
-                out.append({"type": "state", "name": s, "rank": (0 if s.lower().startswith(q) else 1, 1e9)})
+                out.append({"type": "state", "name": s, "rank": (0 if s.lower() == q else 1 if s.lower().startswith(q) else 2, 1e9)})
         seen = set()
         for i, d in enumerate(self.districts):
             if q in d["name"].lower() and (d["name"], d["state"]) not in seen:
                 seen.add((d["name"], d["state"]))
-                out.append({"type": "district", "name": d["name"], "state": d["state"], "rank": (0 if d["name"].lower().startswith(q) else 1, 1e9 - 1)})
+                out.append({"type": "district", "name": d["name"], "state": d["state"], "rank": (0 if d["name"].lower() == q else 1 if d["name"].lower().startswith(q) else 2, 1e9 - 1)})
         out.sort(key=lambda r: r["rank"])
         for r in out:
             r.pop("rank")

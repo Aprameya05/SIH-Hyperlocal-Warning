@@ -21,7 +21,7 @@ def exact_exists(root: Path, rel: str) -> bool:
 
 def check(bundle: Path) -> list[str]:
     bad = []
-    for need in ("index.html", "drift.html", "sw.js", "manifest.json"):
+    for need in ("index.html", "drift.html", "sw.js", "manifest.json", "404.html"):
         if not (bundle / need).is_file():
             bad.append(f"missing required page/file {need}")
     for p in bundle.rglob("*"):

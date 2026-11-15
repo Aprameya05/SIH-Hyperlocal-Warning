@@ -22,7 +22,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 
 # Single files that are published (relative to the repo root).
 ALLOW_FILES = [
-    "index.html", "drift.html", "sw.js", "manifest.json",
+    "index.html", "drift.html", "sw.js", "manifest.json", "404.html",
     "forecast.json", "alert_log.json",
     "data/pan_india_grid.json", "data/canonical_forecast.json", "data/unified_forecast.json",
     "data/drift_live.json", "data/gfs_multiday_43295.json", "data/skill_scores.json",
@@ -43,7 +43,7 @@ ALLOW_DIRS = ["assets"]
 SOURCE_DIRS = {"assets": "frontend/assets"}
 # Frontend entry files live under frontend/ in the repository but are published at the bundle ROOT (Cloudflare Pages
 # serves the bundle root; the service worker must be at the root to control the whole site).
-FRONTEND_FILES = {"index.html", "drift.html", "sw.js", "manifest.json"}
+FRONTEND_FILES = {"index.html", "drift.html", "sw.js", "manifest.json", "404.html"}  # 404.html makes Pages answer unknown paths with a real 404 instead of the SPA fallback (200 + HTML)
 
 
 def source_of(rel: str, repo_root: Path = None) -> Path:

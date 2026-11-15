@@ -104,6 +104,8 @@ def region(request: Request, response: Response, state: Optional[str] = None, di
         return _reply(request, response, store().region(state, district, hour))
     except KeyError:
         raise HTTPException(404, "no cells match")
+    except IndexError:
+        raise HTTPException(422, "hour index out of range")
 
 
 @router.get("/compare")
@@ -114,7 +116,10 @@ def compare(request: Request, response: Response, cells: str = Query(...), hour:
     for c in ids:
         if c not in s.idx:
             raise HTTPException(404, f"unknown cell_id {c}")
-        out.append(s.record(c, hour))
+        try:
+            out.append(s.record(c, hour))
+        except IndexError:
+            raise HTTPException(422, "hour index out of range")
     return _reply(request, response, {"hour": hour, "locations": out})
 
 

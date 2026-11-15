@@ -242,3 +242,18 @@ def test_ingestion_never_overwrites_a_newer_cycle_and_records_its_status(tmp_pat
     rc = ing.main(["--cycle", "2026111512", "--out", str(out)])            # same cycle again: allowed, fails, status shows the failure
     st = json.loads((tmp_path / "ingest_status.json").read_text())
     assert rc == 1 and st["last_result"] == "FAILED" and "boom" in st["last_error"] and json.loads(out.read_text())["marker"] == "newer"
+
+
+def test_old_data_never_looks_current_after_failed_scheduled_runs():
+    """If every scheduled ingestion keeps failing the last good artifact stays on disk (see the all-or-nothing tests); the server then
+    recomputes each hour's status from the clock, so by +30 h nothing is CURRENT and health is not HEALTHY."""
+    from datetime import timedelta
+    from backend.location_service import Store, parse_utc
+    s = Store()
+    init = parse_utc(s.fields_doc["meta"]["cycle_init_utc"])
+    late = init + timedelta(hours=30)
+    h = s.health(now=late)
+    assert h["status"] != "HEALTHY" or not h["ready"], h["status"]
+    rec = s.record(s.cells[0][0] if isinstance(s.cells[0], (list, tuple)) else s.cells[0], 3, now=late)
+    assert rec["selected_hour"]["status"] in ("STALE", "PAST_VALID_TIME")
+    assert rec["selected_hour"]["status"] != "CURRENT"

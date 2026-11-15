@@ -52,7 +52,7 @@ test('built bundle: every resource loads, nothing 404s, national artifacts verif
 test('homepage entry opens the command centre and links back', async () => {
   const ctx = await browser.newContext({ viewport: DESKTOP }); const page = await ctx.newPage(); await page.route(TILE, r => r.abort());
   await page.goto(`${S.base}/index.html`); await page.waitForSelector('#drift-entry'); await shot(page, '01_homepage_entry');
-  await page.click('#drift-entry'); await page.waitForURL(/drift\.html/); await page.click('#home-link'); await page.waitForURL(/index\.html/); await ctx.close();
+  await page.click('#drift-entry'); await page.waitForURL(/\/drift(\.html)?$/); await page.click("#home-link"); await page.waitForURL(/\/(index\.html)?$/); await ctx.close();
 });
 
 test('national grid: land-only, unique stable ids, valid coordinates on the GFS lattice, all regions represented, honest resolution wording', async () => {
@@ -217,4 +217,45 @@ test('mobile: search reachable, map first, no horizontal overflow, panel updates
   const m = await page.evaluate(() => ({ over: document.documentElement.scrollWidth > innerWidth, q: document.getElementById('q').getBoundingClientRect().width, mapTop: document.getElementById('mapwrap').getBoundingClientRect().top, ctrlTop: document.getElementById('controls').getBoundingClientRect().top }));
   assert.equal(m.over, false); assert.ok(m.q > 150); assert.ok(m.mapTop < m.ctrlTop);
   await pick(page, 'Chennai'); assert.match(await detail(page), /Tamil Nadu/); await shot(page, '11_mobile_location'); await ctx.close();
+});
+
+const TWENTY = ['Leh', 'Srinagar', 'Delhi', 'Jaipur', 'Mumbai', 'Pune', 'Bengaluru', 'Chennai', 'Hyderabad', 'Kochi', 'Thiruvananthapuram', 'Mangaluru', 'Panjim', 'Kolkata', 'Bhubaneswar', 'Guwahati', 'Shillong', 'Patna', 'Lucknow', 'Port Blair'];
+test('twenty locations: what the panel shows equals the published JSON at that cell and hour; coastal points outside the land mask are reported unavailable', async () => {
+  const { ctx, page, w } = await open(DESKTOP);
+  const art = await page.evaluate(async () => (await (await fetch('data/india_fields_latest.json')).json()));
+  const pos = Object.fromEntries(art.cells.map((c, i) => [c, i]));
+  const shown = {}; let covered = 0; const notCovered = [];
+  for (const name of TWENTY) {
+    const hit = await page.evaluate(n => { const r = window.__drift.state.store.search(n, 6).find(x => x.type === 'place' && x.name.toLowerCase() === n.toLowerCase()); return r ? { lat: r.lat, lon: r.lon } : null; }, name);
+    assert.ok(hit, name + ' is in the gazetteer');
+    const res = await page.evaluate(h => window.__drift.state.store.resolve(h.lat, h.lon), hit);
+    if (!res.covered) { notCovered.push(name); assert.ok(res.reason, name + ' states why it is not covered'); continue; }
+    covered++;
+    const id = await pick(page, name);
+    assert.equal(id, res.cell_id);
+    const hour = await page.evaluate(() => window.__drift.state.hour);
+    const i = pos[id];
+    const want = { 'CAPE': art.fields.cape[hour][i], 'Precipitable water': art.fields.pwat[hour][i], '2 m temperature': art.fields.t2m_c[hour][i] };
+    for (const [label, expect] of Object.entries(want)) {
+      const got = num(await row(page, label), label);
+      assert.ok(expect == null ? got == null : Math.abs(got - expect) <= 0.51, `${name} ${label}: panel ${got} vs artifact ${expect}`);
+    }
+    const txt = await detail(page); assert.ok(txt.includes(art.meta.files[hour].valid_time_utc.slice(0, 13).replace('T', ' ')) || /\d{4}-\d{2}-\d{2} \d{2}:00Z/.test(txt), name + ' shows the valid time');
+    shown[name] = want;
+  }
+  assert.ok(covered >= 17 && notCovered.every(n => ['Kochi', 'Mangaluru', 'Panjim'].includes(n)), 'not covered: ' + notCovered);
+  assert.ok(new Set(Object.values(shown).map(v => v['2 m temperature'])).size >= covered - 3, 'temperatures differ by location');
+  assert.deepEqual(w.pageErrors, []);
+  await ctx.close();
+});
+
+test('mobile: the map legend never overlaps the basemap attribution; unknown paths are a real 404, never HTML with 200', async () => {
+  const { ctx, page } = await open({ width: 390, height: 844 });
+  await page.waitForSelector('#legend'); await page.waitForTimeout(1500);
+  const o = await page.evaluate(() => { const l = document.querySelector('#legend').getBoundingClientRect(), a = [...document.querySelectorAll('.maplibregl-ctrl-attrib')].map(e => e.getBoundingClientRect()).filter(r => r.width > 0);
+    return a.map(r => !(l.right <= r.left || l.left >= r.right || l.bottom <= r.top || l.top >= r.bottom)); });
+  assert.deepEqual(o.filter(Boolean), [], 'legend overlaps attribution');
+  const r = await page.evaluate(async () => { const x = await fetch('v1/health'); const y = await fetch('data/nonexistent.json'); return [x.status, y.status]; });
+  assert.deepEqual(r, [404, 404]);
+  await ctx.close();
 });

@@ -14,6 +14,12 @@ def f(x, n=3):
     return "n/a" if x is None else (f"{x:.{n}f}" if isinstance(x, float) else str(x))
 
 
+def bias(x):
+    """Frequency bias = (hits + false alarms) / (hits + misses) = POD / (1 - FAR); derived from the stored POD and FAR, not re-estimated."""
+    pod, far = x.get("pod"), x.get("far")
+    return None if pod is None or far is None or far >= 1 else pod / (1 - far)
+
+
 def ci(u, k):
     v = (u or {}).get(k)
     return "n/a" if not v else f"[{v[0]:.3f}, {v[1]:.3f}]"
@@ -40,15 +46,16 @@ def main():
          f"- **Validation.** {ts['validation']['A']}; {ts['validation']['B']}. Leakage controls: {'; '.join(ts['validation']['leakage_controls'])}.",
          f"- **Gate.** {ts['gate']['rule']}.\n",
          "Temporal holdout (train 2024, test 2025), calibrated XGBoost; 95% CI = block bootstrap over forecast dates (200 resamples):\n",
-         "| Lead | n | events | AUROC (95% CI) | PR-AUC (no skill) | Brier | Brier skill (95% CI) | ECE | POD | FAR | CSI | HSS | false alarms /100 forecasts | persistence AUROC | leave-region-out AUROC / BSS | published |",
-         "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
+         "| Lead | n | events | AUROC (95% CI) | PR-AUC (no skill) | Brier | Brier skill (95% CI) | ECE | POD | FAR | CSI | HSS | BIAS | false alarms /100 forecasts | persistence AUROC | leave-region-out AUROC / BSS | published |",
+         "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
     for L, r in ts["leads"].items():
         if "A_temporal_holdout" not in r:
             o.append(f"| +{L} h | insufficient events | | | | | | | | | | | | | | no |"); continue
         A = r["A_temporal_holdout"]; x = A["xgboost_calibrated"]; u = x.get("uncertainty"); B = r["B_pooled"]; p = A.get("persistence") or {}
         o.append(f"| +{L} h | {x['n']} | {x['n_events']} | {f(x['auroc'])} {ci(u, 'auroc_95ci')} | {f(x['pr_auc'])} ({f(x['pr_auc_no_skill'])}) | {f(x['brier'], 4)} | {f(x['bss_vs_climatology'])} {ci(u, 'bss_95ci')} | {f(x['ece'], 4)} | "
-                 f"{f(x['pod'])} | {f(x['far'])} | {f(x['csi'])} | {f(x['hss'])} | {f(x['false_alarms_per_100_forecasts'], 1)} | {f(p.get('auroc'))} | {f(B.get('auroc'))} / {f(B.get('bss_vs_climatology'))} | {'yes' if r['passes_gate'] else 'no'} |")
-    o += ["\nBaselines on the same test rows (lead +12 h shown; all leads are in the JSON): climatology (training base rate), CAPE-threshold rule, logistic regression on 6 predictors, persistence (thunderstorm in the 3 h before issue).\n",
+                 f"{f(x['pod'])} | {f(x['far'])} | {f(x['csi'])} | {f(x['hss'])} | {f(bias(x), 2)} | {f(x['false_alarms_per_100_forecasts'], 1)} | {f(p.get('auroc'))} | {f(B.get('auroc'))} / {f(B.get('bss_vs_climatology'))} | {'yes' if r['passes_gate'] else 'no'} |")
+    o += ["\nBIAS is the frequency bias (hits + false alarms) / (hits + misses) = POD / (1 - FAR), derived from the stored POD and FAR. **Reading the categorical scores honestly:** the probabilities are calibrated (low ECE, positive Brier skill), but at the stored decision thresholds the yes/no forecasts over-forecast (BIAS > 1) and most flagged cases are false alarms (FAR about 0.74-0.79 for thunderstorms, 0.83 for the 20 mm / 3 h rainfall target). Use the probability, not the yes/no flag; these scores do not support a warning-grade claim.\n",
+          "\nBaselines on the same test rows (lead +12 h shown; all leads are in the JSON): climatology (training base rate), CAPE-threshold rule, logistic regression on 6 predictors, persistence (thunderstorm in the 3 h before issue).\n",
           "| Lead | XGBoost AUROC | Logistic AUROC | CAPE-rule CSI | XGBoost CSI | Persistence CSI (rows with an observation) |\n|---|---|---|---|---|---|"]
     for L, r in ts["leads"].items():
         if "A_temporal_holdout" not in r:
@@ -65,13 +72,13 @@ def main():
           f"- **Target.** {rn['target']}",
           f"- **Labels.** {rn['data']['labels']}. **Predictors.** {rn['data']['predictors']}. {rn['data']['n_rows']:,} cell-windows, {rn['data']['n_init_dates']} init dates, {rn['data']['season']}.",
           f"- **Gate.** {rn['gate']['rule']}.\n",
-          "| Target | events (test) | AUROC (95% CI) | raw GFS rainfall AUROC | PR-AUC (no skill) | Brier skill (95% CI) | ECE | POD | FAR | CSI | false alarms /100 | leave-region-out AUROC / BSS | published |",
-          "|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
+          "| Target | events (test) | AUROC (95% CI) | raw GFS rainfall AUROC | PR-AUC (no skill) | Brier skill (95% CI) | ECE | POD | FAR | CSI | BIAS | false alarms /100 | leave-region-out AUROC / BSS | published |",
+          "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
     for k, r in rn["targets"].items():
         if "A_temporal_holdout" not in r:
             o.append(f"| {k} | insufficient events | | | | | | | | | | | no |"); continue
         x = r["A_temporal_holdout"]["xgboost_calibrated"]; u = x.get("uncertainty"); B = r["B_pooled"]
-        o.append(f"| {k} | {x['n_events']} | {f(x['auroc'])} {ci(u, 'auroc_95ci')} | {f(r['raw_gfs_rainfall_auroc_2025'])} | {f(x['pr_auc'], 4)} ({f(x['pr_auc_no_skill'], 4)}) | {f(x['bss_vs_climatology'])} {ci(u, 'bss_95ci')} | {f(x['ece'], 4)} | {f(x['pod'])} | {f(x['far'])} | {f(x['csi'])} | {f(x['false_alarms_per_100_forecasts'], 2)} | {f(B.get('auroc'))} / {f(B.get('bss_vs_climatology'))} | {'yes' if r['passes_gate'] else 'no'} |")
+        o.append(f"| {k} | {x['n_events']} | {f(x['auroc'])} {ci(u, 'auroc_95ci')} | {f(r['raw_gfs_rainfall_auroc_2025'])} | {f(x['pr_auc'], 4)} ({f(x['pr_auc_no_skill'], 4)}) | {f(x['bss_vs_climatology'])} {ci(u, 'bss_95ci')} | {f(x['ece'], 4)} | {f(x['pod'])} | {f(x['far'])} | {f(x['csi'])} | {f(bias(x), 2)} | {f(x['false_alarms_per_100_forecasts'], 2)} | {f(B.get('auroc'))} / {f(B.get('bss_vs_climatology'))} | {'yes' if r['passes_gate'] else 'no'} |")
     o += [f"\n**Limits.** {'; '.join(rn['limits'])}.\n",
           "## 3. Existing models (not retrained here)\n",
           f"- VOBL station thunderstorm model (Bengaluru airport only): {hz['hazards']['thunderstorm']['validation']}; mean AUROC {hz['hazards']['thunderstorm']['summary']['mean_auroc']}, Brier skill positive in {hz['hazards']['thunderstorm']['summary']['years_with_positive_bss']} of {len(hz['hazards']['thunderstorm']['folds'])} years. This is a single-station model and is not a pan-India prediction.",
