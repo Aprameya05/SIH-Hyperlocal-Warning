@@ -51,7 +51,7 @@ def test_ten_cities_resolve_to_distinct_cells_with_distinct_underlying_data(clie
     assert len(capes) >= 3, f"CAPE across 10 cities x 8 hours: {sorted(capes)}"
     assert elev["Srinagar"] > 1000 and elev["Chennai"] < 50 and elev["Leh" if "Leh" in elev else "Srinagar"] > 1000   # real terrain, not a copy
     assert recs["Delhi"]["location"]["state"] == "NCT of Delhi" and recs["Hyderabad"]["location"]["state"] == "Telangana"
-    assert recs["Mumbai"]["fields"]["cape"]["value"] != recs["Delhi"]["fields"]["cape"]["value"]
+    assert recs["Mumbai"]["fields"]["pwat"]["value"] != recs["Delhi"]["fields"]["pwat"]["value"]   # water vapour differs between places in every season; CAPE can be 0 in both at night
 
 
 def test_changing_the_location_changes_every_hazard_panel_not_just_the_highlight(client):

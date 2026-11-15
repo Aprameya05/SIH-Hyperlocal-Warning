@@ -225,6 +225,12 @@ def test_prediction_scripts_find_their_models_and_reproduce_the_committed_artifa
     m.main()
     new = json.loads(out.read_text())
     committed = json.loads((ROOT / "data" / ("india_ts_model_latest.json" if key == "leads" else "india_rain_model_latest.json")).read_text())
+    fields_cycle_hour = int(json.loads((ROOT / "data" / "india_fields_latest.json").read_text())["meta"]["cycle_init_utc"][11:13])
+    if key == "targets" and fields_cycle_hour != 0:
+        # the rainfall models were trained for 00Z cycles only: for a 12Z cycle the honest result is UNAVAILABLE, and it must reproduce exactly
+        assert new["meta"]["model_evaluated"] is False and "00Z" in new["meta"].get("reason", ""), new["meta"]
+        assert committed["meta"]["model_evaluated"] is False and new[key] == committed[key] == {} and "explanations" not in new
+        return
     assert new["meta"]["model_evaluated"] is True, new["meta"].get("reason")
     assert new[key] == committed[key] and new["explanations"] == committed["explanations"]
 
@@ -232,14 +238,14 @@ def test_prediction_scripts_find_their_models_and_reproduce_the_committed_artifa
 def test_ingestion_never_overwrites_a_newer_cycle_and_records_its_status(tmp_path, monkeypatch):
     from pipelines.ingestion import ingest_gfs_forecast as ing
     out = tmp_path / "fields.json"
-    out.write_text(json.dumps({"meta": {"cycle_init_utc": "2026-11-15T12:00:00Z"}, "marker": "newer"}))
+    out.write_text(json.dumps({"meta": {"cycle_init_utc": "2031-01-01T12:00:00Z"}, "marker": "newer"}))
     monkeypatch.setattr(g, "download_subset", lambda *a, **k: (_ for _ in ()).throw(AssertionError("must not download when refusing")))
-    rc = ing.main(["--cycle", "2026111500", "--out", str(out)])
+    rc = ing.main(["--cycle", "2031010100", "--out", str(out)])
     assert rc == 3 and json.loads(out.read_text())["marker"] == "newer"
     st = json.loads((tmp_path / "ingest_status.json").read_text())
     assert st["last_result"] == "REFUSED_OLDER_CYCLE" and st["last_attempt_utc"]
     monkeypatch.setattr(g, "download_subset", lambda *a, **k: (_ for _ in ()).throw(g.GfsError("boom")))
-    rc = ing.main(["--cycle", "2026111512", "--out", str(out)])            # same cycle again: allowed, fails, status shows the failure
+    rc = ing.main(["--cycle", "2031010112", "--out", str(out)])            # same cycle again: allowed, fails, status shows the failure
     st = json.loads((tmp_path / "ingest_status.json").read_text())
     assert rc == 1 and st["last_result"] == "FAILED" and "boom" in st["last_error"] and json.loads(out.read_text())["marker"] == "newer"
 
