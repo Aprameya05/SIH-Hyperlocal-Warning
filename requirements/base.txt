@@ -1,0 +1,3 @@
+# Core pipeline + API. Single source of truth stays in backend/requirements.txt
+# (CI's update_grid.yml installs exactly that file and tests/test_phase60 pins it).
+-r ../backend/requirements.txt

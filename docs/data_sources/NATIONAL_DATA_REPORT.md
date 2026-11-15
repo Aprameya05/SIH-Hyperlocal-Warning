@@ -1,6 +1,6 @@
 # DRIFT national data report
 
-Generated 2026-10-31 11:27Z from the committed artifacts by `scripts/utilities/generate_national_report.py`. GFS cycle **2026-10-31T00:00:00Z**; 4643 India land cells at 0.25 deg; forecast hours [3, 6, 9, 12, 15, 18, 21, 24].
+Generated 2026-11-15 15:25Z from the committed artifacts by `scripts/utilities/generate_national_report.py`. GFS cycle **2026-11-15T00:00:00Z**; 4643 India land cells at 0.25 deg; forecast hours [3, 6, 9, 12, 15, 18, 21, 24].
 
 ## 1. Source-to-output trace
 
@@ -30,6 +30,11 @@ Every value in a location panel comes from one of the rows below. **Where**: the
 | `rh500` | % | RAW_MODEL_OUTPUT | GFS RH 500 hPa | 0.25 deg GFS point | only while status = CURRENT |
 | `soilw0_10` | m3/m3 | MODEL_DIAGNOSTIC | GFS volumetric soil moisture 0-10 cm (land-surface model state, not observed) | 0.25 deg GFS point | only while status = CURRENT |
 | `apcp_cum` | mm | RAW_MODEL_OUTPUT | GFS accumulated precipitation from init to valid time (window verified from GRIB: start step 0) | 0.25 deg GFS point | only while status = CURRENT |
+| `conv850` | 1e-5 1/s | DERIVED_PHYSICAL | 850 hPa horizontal convergence = -div(V) from GFS winds by centred differences on the 0.25 deg grid (positive = convergence) | 0.25 deg GFS point | only while status = CURRENT |
+| `conv10` | 1e-5 1/s | DERIVED_PHYSICAL | 10 m horizontal convergence = -div(V10) by centred differences (positive = convergence) | 0.25 deg GFS point | only while status = CURRENT |
+| `pwat_grad` | mm/100 km | DERIVED_PHYSICAL | magnitude of the horizontal gradient of GFS precipitable water (moisture contrast) | 0.25 deg GFS point | only while status = CURRENT |
+| `q850` | g/kg | DERIVED_PHYSICAL | specific humidity at 850 hPa from GFS T and RH (Bolton saturation vapour pressure) | 0.25 deg GFS point | only while status = CURRENT |
+| `q700` | g/kg | DERIVED_PHYSICAL | specific humidity at 700 hPa from GFS T and RH | 0.25 deg GFS point | only while status = CURRENT |
 | `precip_3h` | mm | DERIVED_PHYSICAL | apcp_cum(f) - apcp_cum(f-3); the first hour equals apcp_cum | 0.25 deg GFS point | only while status = CURRENT |
 
 Static layers (not forecasts): elevation / relief / slope (AWS Terrain Tiles, SRTM-derived, ~1.2 km pixels, cell statistics); nearest INDOFLOODS gauge, its distance and recorded flood events (106 gauges, historical, nulled beyond 100 km). Daily heavy-rain-day outlook: `panindia_cb_v1`, **1 deg** cells, uncalibrated score. Model outputs: see section 4. None of the values is an observation; none except the model outputs is a probability; no heuristic is presented as one.
@@ -38,14 +43,14 @@ Static layers (not forecasts): elevation / relief / slope (AWS Terrain Tiles, SR
 
 | Time | Per forecast hour |
 |---|---|
-| f3 valid 2026-10-31T03:00:00Z | published (S3 Last-Modified) 2026-10-31T03:34:59Z · acquired 2026-10-31T10:58:10Z · APCP windows [[0, 3]] |
-| f6 valid 2026-10-31T06:00:00Z | published (S3 Last-Modified) 2026-10-31T03:36:12Z · acquired 2026-10-31T10:58:19Z · APCP windows [[0, 6]] |
-| f9 valid 2026-10-31T09:00:00Z | published (S3 Last-Modified) 2026-10-31T03:37:03Z · acquired 2026-10-31T10:58:30Z · APCP windows [[6, 9], [0, 9]] |
-| f12 valid 2026-10-31T12:00:00Z | published (S3 Last-Modified) 2026-10-31T03:37:03Z · acquired 2026-10-31T10:58:39Z · APCP windows [[6, 12], [0, 12]] |
-| f15 valid 2026-10-31T15:00:00Z | published (S3 Last-Modified) 2026-10-31T03:38:05Z · acquired 2026-10-31T10:58:51Z · APCP windows [[12, 15], [0, 15]] |
-| f18 valid 2026-10-31T18:00:00Z | published (S3 Last-Modified) 2026-10-31T03:39:14Z · acquired 2026-10-31T10:59:01Z · APCP windows [[12, 18], [0, 18]] |
-| f21 valid 2026-10-31T21:00:00Z | published (S3 Last-Modified) 2026-10-31T03:39:13Z · acquired 2026-10-31T10:59:10Z · APCP windows [[18, 21], [0, 21]] |
-| f24 valid 2026-11-01T00:00:00Z | published (S3 Last-Modified) 2026-10-31T03:41:08Z · acquired 2026-10-31T10:59:20Z · APCP windows [[18, 24], [0, 24]] |
+| f3 valid 2026-11-15T03:00:00Z | published (S3 Last-Modified) 2026-11-15T03:46:26Z · acquired 2026-11-15T14:26:20Z · APCP windows [[0, 3]] |
+| f6 valid 2026-11-15T06:00:00Z | published (S3 Last-Modified) 2026-11-15T03:32:47Z · acquired 2026-11-15T14:26:30Z · APCP windows [[0, 6]] |
+| f9 valid 2026-11-15T09:00:00Z | published (S3 Last-Modified) 2026-11-15T03:33:28Z · acquired 2026-11-15T14:26:40Z · APCP windows [[6, 9], [0, 9]] |
+| f12 valid 2026-11-15T12:00:00Z | published (S3 Last-Modified) 2026-11-15T03:34:30Z · acquired 2026-11-15T14:26:53Z · APCP windows [[6, 12], [0, 12]] |
+| f15 valid 2026-11-15T15:00:00Z | published (S3 Last-Modified) 2026-11-15T03:35:32Z · acquired 2026-11-15T14:27:03Z · APCP windows [[12, 15], [0, 15]] |
+| f18 valid 2026-11-15T18:00:00Z | published (S3 Last-Modified) 2026-11-15T03:50:32Z · acquired 2026-11-15T14:27:13Z · APCP windows [[12, 18], [0, 18]] |
+| f21 valid 2026-11-15T21:00:00Z | published (S3 Last-Modified) 2026-11-15T03:36:36Z · acquired 2026-11-15T14:27:25Z · APCP windows [[18, 21], [0, 21]] |
+| f24 valid 2026-11-16T00:00:00Z | published (S3 Last-Modified) 2026-11-15T03:37:37Z · acquired 2026-11-15T14:27:35Z · APCP windows [[18, 24], [0, 24]] |
 
 Operational lead time: **unavailable** - DRIFT records no time at which a forecast was made available to a user; the S3 time is the availability of the model input only.
 
@@ -98,34 +103,34 @@ Cells with no gauge within 100 km have no hydrological context; soil moisture is
 
 ## 3. Location acceptance table (different locations -> different underlying data)
 
-Selected forecast hour f12 (valid 2026-10-31T12:00:00Z), clock 11:27Z.
+Selected forecast hour f15 (valid 2026-11-15T15:00:00Z), clock 15:25Z.
 
 | Region | Location | Cell | State / district | Elev m | CAPE | CIN | PWAT mm | T2m C | RH % | K-index | Shear m/s | Rain 3h mm | Soil m3/m3 | TS p (+6h) | FF screen |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| North | Delhi | `IN025_2875_07725` | NCT of Delhi / North East | 214 | 0 | 0 | 23.9 | 28.4 | 38 | 15.9 | 4.9 | 0.0 | 0.263 | 0.000 | 0.0 |
-| North | Srinagar | `IN025_3400_07475` | Jammu & Kashmir / Srinagar | 1715 | 0 | 0 | 11.7 | 16.2 | 25 | 18.2 | 5.2 | 0.0 | 0.087 | 0.000 | 0.0 |
-| North | Chandigarh | `IN025_3075_07675` | Chandigarh / Chandigarh | 352 | 0 | 0 | 21.5 | 25.5 | 35 | 22.3 | 3.4 | 0.0 | 0.076 | 0.000 | 0.0 |
-| South | Bengaluru | `IN025_1300_07750` | Karnataka / Bangalore | 871 | 51 | -9 | 29.0 | 26.8 | 51 | 37.0 | 3.8 | 0.0 | 0.248 | 0.000 | 0.001 |
-| South | Chennai | `IN025_1300_08025` | Tamil Nadu / Chennai | 1 | 333 | -38 | 47.6 | 28.4 | 69 | 30.8 | 6.4 | 0.0 | n/a | 0.000 | 0.001 |
-| South | Thiruvananthapuram | `IN025_0850_07700` | Kerala / Thiruvananthapuram | 52 | 526 | -41 | 44.6 | 27.7 | 72 | 27.4 | 0.8 | 0.1 | 0.253 | 0.000 | 0.002 |
-| East | Kolkata | `IN025_2250_08825` | West Bengal / South Twenty Four Parganas | 7 | 540 | -14 | 55.9 | 28.5 | 68 | 32.0 | 5.9 | 0.4 | 0.297 | 0.009 | 0.014 |
-| East | Bhubaneswar | `IN025_2025_08575` | Odisha / Khordha | 47 | 726 | -13 | 55.2 | 26.2 | 83 | 33.8 | 4.5 | 0.6 | 0.290 | 0.022 | 0.06 |
-| East | Patna | `IN025_2550_08525` | Bihar / Patna | 52 | 515 | -6 | 45.3 | 25.7 | 80 | 30.7 | 9.9 | 0.5 | 0.302 | 0.065 | 0.036 |
-| West | Mumbai | `IN025_1900_07300` | Maharashtra / Thane | 23 | 1175 | -40 | 45.3 | 28.9 | 69 | 35.8 | 18.2 | 0.0 | 0.132 | 0.009 | 0.001 |
-| West | Ahmedabad | `IN025_2300_07250` | Gujarat / Ahmadabad | 43 | 249 | -9 | 34.6 | 32.1 | 38 | 31.3 | 13.4 | 0.0 | 0.192 | 0.002 | 0.0 |
-| West | Jaisalmer | `IN025_2700_07100` | Rajasthan / Jaisalmer | 203 | 0 | 0 | 16.0 | 31.8 | 16 | 15.3 | 7.5 | 0.0 | 0.099 | 0.000 | 0.0 |
-| Central | Bhopal | `IN025_2325_07750` | Madhya Pradesh / Bhopal | 482 | 5 | -5 | 28.4 | 24.8 | 58 | 21.3 | 15.8 | 0.0 | 0.131 | 0.000 | 0.0 |
-| Central | Nagpur | `IN025_2125_07900` | Maharashtra / Nagpur | 320 | 75 | -165 | 37.1 | 25.9 | 64 | 23.4 | 10.5 | 0.0 | 0.153 | 0.000 | 0.0 |
-| Central | Raipur | `IN025_2125_08175` | Chhattisgarh / Raipur | 290 | 356 | -8 | 37.8 | 25.8 | 72 | 25.4 | 8.0 | 0.0 | 0.263 | 0.000 | 0.0 |
-| Northeast | Guwahati | `IN025_2625_09175` | Assam / Kamrup | 67 | 0 | 0 | 46.1 | 24.7 | 68 | 31.6 | 12.1 | 0.0 | 0.150 | 0.022 | 0.001 |
-| Northeast | Imphal | `IN025_2475_09400` | Manipur / Kangpokpi | 825 | 26 | -71 | 36.6 | 21.1 | 76 | 34.0 | 5.9 | 0.0 | 0.264 | 0.009 | 0.001 |
-| Northeast | Shillong | `IN025_2550_09200` | Meghalaya / East Khasi Hills | 1358 | 37 | -26 | 30.0 | 16.9 | 94 | 33.3 | 12.6 | 1.9 | 0.283 | 0.237 | 0.077 |
-| rural | Rajasthan desert | `IN025_2600_07400` | Rajasthan / Pali | 364 | 3 | -1 | 22.7 | 28.0 | 37 | -1.0 | 7.8 | 0.0 | 0.091 | 0.000 | 0.0 |
-| rural | Western Ghats | `IN025_1100_07650` | Kerala / Palakkad | 446 | 707 | -32 | 38.3 | 25.8 | 74 | 34.6 | 2.3 | 0.2 | 0.264 | 0.000 | 0.005 |
-| rural | Himalaya | `IN025_3050_07900` | Uttarakhand / Rudraprayag | 2031 | 465 | -16 | 15.3 | 11.1 | 89 | 37.3 | 4.1 | 1.0 | 0.274 | 0.022 | 0.019 |
-| rural | Chhattisgarh forest | `IN025_2050_08200` | Chhattisgarh / Dhamtari | 406 | 445 | -20 | 36.6 | 24.2 | 81 | 26.4 | 4.4 | 0.1 | 0.268 | 0.000 | 0.001 |
-| rural | Sundarbans edge | `IN025_2200_08900` | West Bengal / South Twenty Four Parganas | 4 | 348 | -50 | 50.2 | 26.7 | 78 | 27.8 | 3.3 | 0.1 | 0.330 | 0.022 | 0.017 |
-| rural | Deccan plateau | `IN025_1650_07700` | Karnataka / Raichur | 378 | 52 | -1 | 36.2 | 33.3 | 34 | 37.9 | 4.4 | 0.0 | 0.130 | 0.000 | 0.001 |
+| North | Delhi | `IN025_2875_07725` | NCT of Delhi / North East | 214 | 0 | 0 | 16.7 | 26.6 | 27 | 19.3 | 16.6 | 0.0 | 0.239 | 0.072 | 0.001 |
+| North | Srinagar | `IN025_3400_07475` | Jammu & Kashmir / Srinagar | 1715 | 0 | 0 | 7.6 | 8.1 | 51 | 16.9 | 5.2 | 0.0 | 0.193 | 0.022 | 0.004 |
+| North | Chandigarh | `IN025_3075_07675` | Chandigarh / Chandigarh | 352 | 0 | 0 | 12.6 | 20.2 | 27 | 20.7 | 9.6 | 0.0 | 0.065 | 0.022 | 0.001 |
+| South | Bengaluru | `IN025_1300_07750` | Karnataka / Bangalore | 871 | 0 | 0 | 20.8 | 20.8 | 64 | 12.6 | 5.6 | 0.0 | 0.239 | 0.000 | 0.0 |
+| South | Chennai | `IN025_1300_08025` | Tamil Nadu / Chennai | 1 | 123 | -35 | 57.7 | 26.6 | 76 | 36.4 | 5.2 | 0.1 | n/a | 0.003 | 0.002 |
+| South | Thiruvananthapuram | `IN025_0850_07700` | Kerala / Thiruvananthapuram | 52 | 258 | -6 | 52.6 | 24.6 | 88 | 24.7 | 8.0 | 0.6 | 0.282 | 0.022 | 0.019 |
+| East | Kolkata | `IN025_2250_08825` | West Bengal / South Twenty Four Parganas | 7 | 0 | 0 | 23.5 | 26.4 | 47 | -3.2 | 16.2 | 0.0 | 0.240 | 0.000 | 0.0 |
+| East | Bhubaneswar | `IN025_2025_08575` | Odisha / Khordha | 47 | 0 | 0 | 22.3 | 21.9 | 80 | -12.3 | 12.7 | 0.0 | 0.198 | 0.000 | 0.0 |
+| East | Patna | `IN025_2550_08525` | Bihar / Patna | 52 | 0 | 0 | 25.9 | 24.7 | 50 | 13.0 | 20.6 | 0.0 | 0.188 | 0.000 | 0.0 |
+| West | Mumbai | `IN025_1900_07300` | Maharashtra / Thane | 23 | 1 | -3 | 21.1 | 26.6 | 60 | -12.7 | 11.7 | 0.0 | 0.078 | 0.000 | 0.0 |
+| West | Ahmedabad | `IN025_2300_07250` | Gujarat / Ahmadabad | 43 | 0 | 0 | 28.1 | 28.2 | 33 | 18.0 | 19.7 | 0.0 | 0.178 | 0.000 | 0.0 |
+| West | Jaisalmer | `IN025_2700_07100` | Rajasthan / Jaisalmer | 203 | 0 | 0 | 11.7 | 26.2 | 23 | -13.8 | 13.3 | 0.0 | 0.106 | 0.000 | 0.0 |
+| Central | Bhopal | `IN025_2325_07750` | Madhya Pradesh / Bhopal | 482 | 0 | 0 | 21.2 | 22.1 | 40 | 20.0 | 20.2 | 0.0 | 0.120 | 0.000 | 0.0 |
+| Central | Nagpur | `IN025_2125_07900` | Maharashtra / Nagpur | 320 | 0 | 0 | 16.9 | 22.5 | 41 | -12.5 | 13.9 | 0.0 | 0.132 | 0.000 | 0.0 |
+| Central | Raipur | `IN025_2125_08175` | Chhattisgarh / Raipur | 290 | 0 | 0 | 17.9 | 22.7 | 52 | -12.7 | 15.9 | 0.0 | 0.177 | 0.000 | 0.0 |
+| Northeast | Guwahati | `IN025_2625_09175` | Assam / Kamrup | 67 | 40 | -34 | 35.3 | 22.2 | 71 | 27.4 | 31.2 | 0.3 | 0.136 | 0.009 | 0.012 |
+| Northeast | Imphal | `IN025_2475_09400` | Manipur / Kangpokpi | 825 | 0 | -2 | 20.5 | 13.6 | 91 | 17.5 | 27.0 | 0.0 | 0.197 | 0.002 | 0.0 |
+| Northeast | Shillong | `IN025_2550_09200` | Meghalaya / East Khasi Hills | 1358 | 2 | -7 | 17.0 | 12.9 | 91 | 21.6 | 27.6 | 0.1 | 0.228 | 0.002 | 0.01 |
+| rural | Rajasthan desert | `IN025_2600_07400` | Rajasthan / Pali | 364 | 0 | 0 | 15.8 | 22.5 | 34 | 11.1 | 13.1 | 0.0 | 0.081 | 0.000 | 0.0 |
+| rural | Western Ghats | `IN025_1100_07650` | Kerala / Palakkad | 446 | 9 | -30 | 41.6 | 22.0 | 90 | 26.7 | 8.9 | 0.1 | 0.257 | 0.002 | 0.007 |
+| rural | Himalaya | `IN025_3050_07900` | Uttarakhand / Rudraprayag | 2031 | 0 | 0 | 10.6 | 4.7 | 78 | 25.9 | 10.0 | 0.5 | 0.210 | 0.108 | 0.048 |
+| rural | Chhattisgarh forest | `IN025_2050_08200` | Chhattisgarh / Dhamtari | 406 | 0 | 0 | 14.6 | 18.7 | 74 | -15.0 | 12.6 | 0.0 | 0.211 | 0.000 | 0.0 |
+| rural | Sundarbans edge | `IN025_2200_08900` | West Bengal / South Twenty Four Parganas | 4 | 0 | 0 | 24.6 | 23.3 | 69 | -5.1 | 15.5 | 0.0 | 0.198 | 0.000 | 0.0 |
+| rural | Deccan plateau | `IN025_1650_07700` | Karnataka / Raichur | 378 | 0 | 0 | 15.7 | 25.7 | 30 | -12.6 | 4.7 | 0.0 | 0.129 | 0.000 | 0.0 |
 
 ## 4. Model evaluation (reproducible: `pipelines/feature_engineering/build_thunderstorm_training_dataset.py` -> `models/thunderstorm/train_and_evaluate_thunderstorm_model.py`; `pipelines/feature_engineering/build_rainfall_training_dataset.py` -> `models/extreme_rainfall/train_and_evaluate_extreme_rainfall_model.py`)
 

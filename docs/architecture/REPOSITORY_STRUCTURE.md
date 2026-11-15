@@ -19,3 +19,10 @@
 - Large datasets are tracked as-is; a Git LFS policy is deferred.
 - No LICENSE file is added: the licence choice belongs to the owners.
 - `backend/requirements.txt` remains the dependency list used by workflows.
+
+## Two grids (not a duplicate)
+- **National grid** (current): 4,643 land cells at 0.25 degrees, `IN025_*` ids, `data/india_fields_latest.json`, served by `backend/location_service.py` and `frontend/assets/location_engine.js`.
+- **Legacy application grid**: 992 cells at 1 degree, `IND_*` ids, `data/pan_india_grid.json` plus the VOBL station forecast. Still produced by `update_grid.yml` and `forecast_update.yml`; documented in `docs/architecture/CANONICAL_GRID.md`.
+
+## Removed in this pass (history keeps them)
+Raw Himawari segment binaries (`B13_S05/06.DAT`, `HS_H09_*.bz2`), four demo `.mp4` clips, `index_backup.html`, a duplicate `forecast_action-1.py`, a Windows `.wslconfig` and a `.bat` launcher, all under `research/legacy_experiments/` with zero references from code, tests or workflows (evidence: `docs/architecture/REPOSITORY_INVENTORY.md`). `rag/chroma_db` is kept and flagged experimental pending the owners' decision.

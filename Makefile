@@ -1,6 +1,7 @@
 PY ?= python3
-.PHONY: install ingest predict test e2e gate bundle serve inventory docs
-install: ; $(PY) -m pip install -r backend/requirements.txt
+.PHONY: help  install ingest predict test e2e gate bundle serve inventory docs
+help: ; @grep -E '^[a-z-]+:' Makefile | cut -d: -f1
+install: ; $(PY) -m pip install -r requirements/dev.txt
 ingest: ; $(PY) pipelines/ingestion/ingest_gfs_forecast.py
 predict: ; $(PY) models/thunderstorm/predict_thunderstorm.py && $(PY) models/extreme_rainfall/predict_extreme_rainfall.py
 test: ; $(PY) -m pytest tests -q

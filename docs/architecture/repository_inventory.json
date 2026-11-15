@@ -1,11 +1,40 @@
 [
 {
+"path": ".env.example",
+"class": "other",
+"kb": 0.2,
+"active_refs": 1,
+"ref_sample": [
+"CONTRIBUTING.md"
+]
+},
+{
+"path": ".github/ISSUE_TEMPLATE/bug_report.md",
+"class": "automated workflow / repo config",
+"kb": 0.1,
+"active_refs": 0,
+"ref_sample": []
+},
+{
+"path": ".github/ISSUE_TEMPLATE/data_source_request.md",
+"class": "automated workflow / repo config",
+"kb": 0.2,
+"active_refs": 0,
+"ref_sample": []
+},
+{
+"path": ".github/pull_request_template.md",
+"class": "automated workflow / repo config",
+"kb": 0.2,
+"active_refs": 0,
+"ref_sample": []
+},
+{
 "path": ".github/workflows/drift_check.yml",
 "class": "automated workflow / repo config",
 "kb": 12.0,
-"active_refs": 2,
+"active_refs": 1,
 "ref_sample": [
-"README.md",
 "research/legacy_experiments/populate_cape_baseline.py"
 ]
 },
@@ -13,11 +42,11 @@
 "path": ".github/workflows/forecast_update.yml",
 "class": "automated workflow / repo config",
 "kb": 29.3,
-"active_refs": 29,
+"active_refs": 26,
 "ref_sample": [
-"README.md",
 "backend/data_sources/himawari_features.py",
-"backend/unified_api.py"
+"backend/unified_api.py",
+"canonical_forecast_writer.py"
 ]
 },
 {
@@ -31,9 +60,8 @@
 "path": ".github/workflows/retrain_trigger.yml",
 "class": "automated workflow / repo config",
 "kb": 6.0,
-"active_refs": 3,
+"active_refs": 2,
 "ref_sample": [
-"README.md",
 "tests/test_indofloods_phase56.py",
 "tests/test_p0_1_production_contract.py"
 ]
@@ -42,20 +70,19 @@
 "path": ".github/workflows/update_grid.yml",
 "class": "automated workflow / repo config",
 "kb": 5.8,
-"active_refs": 15,
+"active_refs": 14,
 "ref_sample": [
 ".github/workflows/forecast_update.yml",
-"README.md",
-"backend/dispatch_alerts.py"
+"backend/dispatch_alerts.py",
+"backend/pipeline.py"
 ]
 },
 {
 "path": ".github/workflows/weekly_digest.yml",
 "class": "automated workflow / repo config",
 "kb": 9.1,
-"active_refs": 2,
+"active_refs": 1,
 "ref_sample": [
-"README.md",
 "tests/test_m2_producers.py"
 ]
 },
@@ -67,9 +94,16 @@
 "ref_sample": []
 },
 {
-"path": "README.md",
+"path": "CONTRIBUTING.md",
 "class": "documentation",
-"kb": 38.2,
+"kb": 0.7,
+"active_refs": 0,
+"ref_sample": []
+},
+{
+"path": "Makefile",
+"class": "other",
+"kb": 0.8,
 "active_refs": 0,
 "ref_sample": []
 },
@@ -110,11 +144,11 @@
 "path": "backend/alerts.py",
 "class": "backend / API",
 "kb": 18.8,
-"active_refs": 40,
+"active_refs": 38,
 "ref_sample": [
 ".github/workflows/forecast_update.yml",
 ".github/workflows/update_grid.yml",
-"README.md"
+"backend/alert_policy.py"
 ]
 },
 {
@@ -123,7 +157,7 @@
 "kb": 2.7,
 "active_refs": 46,
 "ref_sample": [
-"README.md",
+"CONTRIBUTING.md",
 "backend/data_sources/himawari_features.py",
 "backend/location_api.py"
 ]
@@ -168,11 +202,11 @@
 "path": "backend/data_sources/himawari.py",
 "class": "backend / API",
 "kb": 3.5,
-"active_refs": 33,
+"active_refs": 31,
 "ref_sample": [
-"README.md",
 "backend/data_sources/__init__.py",
-"backend/data_sources/source_registry.py"
+"backend/data_sources/source_registry.py",
+"canonical_forecast_writer.py"
 ]
 },
 {
@@ -190,11 +224,11 @@
 "path": "backend/data_sources/imdaa.py",
 "class": "backend / API",
 "kb": 3.6,
-"active_refs": 9,
+"active_refs": 8,
 "ref_sample": [
-"README.md",
 "backend/data_sources/imerg.py",
-"backend/data_sources/source_registry.py"
+"backend/data_sources/source_registry.py",
+"data/pan_india_common_grid_992.json"
 ]
 },
 {
@@ -212,7 +246,7 @@
 "path": "backend/data_sources/metar.py",
 "class": "backend / API",
 "kb": 2.7,
-"active_refs": 20,
+"active_refs": 18,
 "ref_sample": [
 "backend/data_sources/__init__.py",
 "backend/data_sources/source_registry.py",
@@ -244,22 +278,22 @@
 "path": "backend/drainage.py",
 "class": "backend / API",
 "kb": 8.4,
-"active_refs": 13,
+"active_refs": 12,
 "ref_sample": [
-"README.md",
 "backend/data_sources/dem.py",
-"backend/pipeline.py"
+"backend/pipeline.py",
+"data/drift_live.json"
 ]
 },
 {
 "path": "backend/fetch_insat3d.py",
 "class": "backend / API",
 "kb": 8.6,
-"active_refs": 5,
+"active_refs": 4,
 "ref_sample": [
-"README.md",
 "backend/data_sources/imdaa.py",
-"backend/data_sources/imerg.py"
+"backend/data_sources/imerg.py",
+"data/pan_india_common_grid_992.json"
 ]
 },
 {
@@ -287,7 +321,7 @@
 "path": "backend/location_service.py",
 "class": "backend / API",
 "kb": 35.5,
-"active_refs": 13,
+"active_refs": 14,
 "ref_sample": [
 "backend/location_api.py",
 "frontend/assets/drift_app.js",
@@ -320,11 +354,11 @@
 "path": "backend/models/unified_mtl/heads.py",
 "class": "machine learning (model code)",
 "kb": 7.9,
-"active_refs": 22,
+"active_refs": 21,
 "ref_sample": [
-"README.md",
 "backend/alerts.py",
-"backend/models/unified_mtl/__init__.py"
+"backend/models/unified_mtl/__init__.py",
+"backend/models/unified_mtl/inference_engine.py"
 ]
 },
 {
@@ -424,7 +458,7 @@
 "path": "backend/pipeline.py",
 "class": "backend / API",
 "kb": 46.4,
-"active_refs": 91,
+"active_refs": 89,
 "ref_sample": [
 ".github/workflows/forecast_update.yml",
 ".github/workflows/retrain_trigger.yml",
@@ -435,11 +469,11 @@
 "path": "backend/requirements.txt",
 "class": "backend / API",
 "kb": 0.9,
-"active_refs": 5,
+"active_refs": 4,
 "ref_sample": [
 ".github/workflows/update_grid.yml",
-"README.md",
-"backend/unified_api.py"
+"backend/unified_api.py",
+"tests/test_phase60_update_grid_requirements.py"
 ]
 },
 {
@@ -457,11 +491,11 @@
 "path": "canonical_forecast_writer.py",
 "class": "forecast production / operations",
 "kb": 28.6,
-"active_refs": 28,
+"active_refs": 27,
 "ref_sample": [
 ".github/workflows/forecast_update.yml",
 ".github/workflows/update_grid.yml",
-"README.md"
+"backend/pipeline.py"
 ]
 },
 {
@@ -478,11 +512,11 @@
 "path": "compute_realtime_shap.py",
 "class": "forecast production / operations",
 "kb": 13.4,
-"active_refs": 11,
+"active_refs": 9,
 "ref_sample": [
 ".github/workflows/forecast_update.yml",
-"README.md",
-"forecast_action.py"
+"forecast_action.py",
+"gfs_row_select.py"
 ]
 },
 {
@@ -500,11 +534,11 @@
 "path": "data/alert_history.json",
 "class": "data (reference or generated)",
 "kb": 14.7,
-"active_refs": 5,
+"active_refs": 4,
 "ref_sample": [
 ".github/workflows/forecast_update.yml",
 "forecast_action.py",
-"research/legacy_experiments/forecast_action-1.py"
+"research/legacy_experiments/forecast_action.py"
 ]
 },
 {
@@ -584,7 +618,7 @@
 "path": "data/bengaluru_thunderstorm_features_merged.csv",
 "class": "historical / training dataset",
 "kb": 1819.2,
-"active_refs": 17,
+"active_refs": 16,
 "ref_sample": [
 "backend/unified_api.py",
 "forecast_action.py",
@@ -997,7 +1031,7 @@
 "path": "data/external/historical_gfs/manifest.json",
 "class": "historical / training dataset",
 "kb": 53.1,
-"active_refs": 15,
+"active_refs": 14,
 "ref_sample": [
 "data/external/historical_gfs/phase_0_4_20_holdout_manifest.json",
 "data/external/historical_gfs/phase_0_4_20_train_manifest.json",
@@ -1060,7 +1094,7 @@
 "path": "data/forecast_log.csv",
 "class": "historical / training dataset",
 "kb": 132.8,
-"active_refs": 18,
+"active_refs": 17,
 "ref_sample": [
 ".github/workflows/drift_check.yml",
 ".github/workflows/forecast_update.yml",
@@ -1071,18 +1105,18 @@
 "path": "data/gfs_history_43295.json",
 "class": "data (reference or generated)",
 "kb": 0.6,
-"active_refs": 6,
+"active_refs": 5,
 "ref_sample": [
 "forecast_action.py",
 "gfs_row_select.py",
-"research/legacy_experiments/forecast_action-1.py"
+"research/legacy_experiments/forecast_action.py"
 ]
 },
 {
 "path": "data/gfs_multiday_43295.json",
 "class": "data (reference or generated)",
 "kb": 0.6,
-"active_refs": 11,
+"active_refs": 9,
 "ref_sample": [
 ".github/workflows/forecast_update.yml",
 "forecast_action.py",
@@ -1114,7 +1148,7 @@
 "path": "data/gfs_realtime_43295.csv",
 "class": "generated forecast artifact",
 "kb": 0.9,
-"active_refs": 16,
+"active_refs": 15,
 "ref_sample": [
 ".github/workflows/forecast_update.yml",
 "backend/data_sources/gfs.py",
@@ -1154,7 +1188,7 @@
 "path": "data/himawari_history.json",
 "class": "generated forecast artifact",
 "kb": 2.3,
-"active_refs": 12,
+"active_refs": 11,
 "ref_sample": [
 ".github/workflows/forecast_update.yml",
 "backend/data_sources/himawari_features.py",
@@ -1165,7 +1199,7 @@
 "path": "data/himawari_realtime.json",
 "class": "generated forecast artifact",
 "kb": 0.4,
-"active_refs": 23,
+"active_refs": 22,
 "ref_sample": [
 ".github/workflows/forecast_update.yml",
 "backend/data_sources/himawari.py",
@@ -1285,11 +1319,11 @@
 "path": "data/pan_india_grid.json",
 "class": "generated published artifact",
 "kb": 5026.6,
-"active_refs": 46,
+"active_refs": 45,
 "ref_sample": [
 ".github/workflows/forecast_update.yml",
 ".github/workflows/update_grid.yml",
-"README.md"
+"atomic_write.py"
 ]
 },
 {
@@ -1327,7 +1361,7 @@
 "path": "data/pipeline_health.json",
 "class": "data (reference or generated)",
 "kb": 0.6,
-"active_refs": 9,
+"active_refs": 8,
 "ref_sample": [
 ".github/workflows/drift_check.yml",
 ".github/workflows/forecast_update.yml",
@@ -1366,7 +1400,7 @@
 "path": "data/realtime_shap.json",
 "class": "data (reference or generated)",
 "kb": 7.3,
-"active_refs": 8,
+"active_refs": 7,
 "ref_sample": [
 ".github/workflows/forecast_update.yml",
 "clean_stale_data.py",
@@ -1388,7 +1422,7 @@
 "path": "data/skill_scores.json",
 "class": "data (reference or generated)",
 "kb": 2.3,
-"active_refs": 7,
+"active_refs": 6,
 "ref_sample": [
 ".github/workflows/forecast_update.yml",
 "frontend/index.html",
@@ -1437,18 +1471,18 @@
 "path": "data/unified_forecast.json",
 "class": "generated published artifact",
 "kb": 31269.6,
-"active_refs": 25,
+"active_refs": 24,
 "ref_sample": [
 ".github/workflows/forecast_update.yml",
 ".github/workflows/update_grid.yml",
-"README.md"
+"backend/alerts.py"
 ]
 },
 {
 "path": "data/upperair_realtime_43295.csv",
 "class": "generated forecast artifact",
 "kb": 69.5,
-"active_refs": 13,
+"active_refs": 12,
 "ref_sample": [
 ".github/workflows/forecast_update.yml",
 "clean_stale_data.py",
@@ -1484,6 +1518,41 @@
 ]
 },
 {
+"path": "docs/DATA_SOURCE_AND_PROVENANCE_MATRIX.md",
+"class": "documentation",
+"kb": 2.3,
+"active_refs": 0,
+"ref_sample": []
+},
+{
+"path": "docs/DEMO_RUNBOOK.md",
+"class": "documentation",
+"kb": 0.9,
+"active_refs": 0,
+"ref_sample": []
+},
+{
+"path": "docs/FINAL_SIH_REQUIREMENT_TRACEABILITY.md",
+"class": "documentation",
+"kb": 1.4,
+"active_refs": 0,
+"ref_sample": []
+},
+{
+"path": "docs/FINAL_SYSTEM_ARCHITECTURE.md",
+"class": "documentation",
+"kb": 3.2,
+"active_refs": 0,
+"ref_sample": []
+},
+{
+"path": "docs/FINAL_VERIFICATION_REPORT.md",
+"class": "documentation",
+"kb": 1.7,
+"active_refs": 0,
+"ref_sample": []
+},
+{
 "path": "docs/FORECAST_LEAD_TIME_VALIDATION.md",
 "class": "documentation",
 "kb": 4.0,
@@ -1509,6 +1578,13 @@
 "ref_sample": [
 "scripts/utilities/run_location_acceptance.py"
 ]
+},
+{
+"path": "docs/OPERATIONAL_LIMITATIONS.md",
+"class": "documentation",
+"kb": 1.8,
+"active_refs": 0,
+"ref_sample": []
 },
 {
 "path": "docs/architecture/CANONICAL_FORECAST_SCHEMA.md",
@@ -1562,16 +1638,25 @@
 {
 "path": "docs/architecture/REPOSITORY_INVENTORY.md",
 "class": "documentation",
-"kb": 6.6,
+"kb": 9.5,
 "active_refs": 1,
 "ref_sample": [
 "scripts/diagnostics/inventory_repository.py"
 ]
 },
 {
+"path": "docs/architecture/REPOSITORY_STRUCTURE.md",
+"class": "documentation",
+"kb": 2.1,
+"active_refs": 1,
+"ref_sample": [
+"CONTRIBUTING.md"
+]
+},
+{
 "path": "docs/architecture/repository_inventory.json",
 "class": "documentation",
-"kb": 156.7,
+"kb": 169.9,
 "active_refs": 1,
 "ref_sample": [
 "scripts/diagnostics/inventory_repository.py"
@@ -1616,11 +1701,11 @@
 "path": "docs/archive/implementation_snapshots/SIH_FINAL_LIVE_SPATIAL_PASS_20260930_131403Z/changed_files/assets/location_engine.js",
 "class": "documentation",
 "kb": 7.5,
-"active_refs": 7,
+"active_refs": 6,
 "ref_sample": [
 ".github/workflows/update_grid.yml",
-"README.md",
-"frontend/assets/location_engine.js"
+"frontend/assets/location_engine.js",
+"frontend/index.html"
 ]
 },
 {
@@ -1634,18 +1719,18 @@
 "path": "docs/archive/implementation_snapshots/SIH_FINAL_LIVE_SPATIAL_PASS_20260930_131403Z/changed_files/location_engine.py",
 "class": "documentation",
 "kb": 11.8,
-"active_refs": 17,
+"active_refs": 16,
 "ref_sample": [
 ".github/workflows/update_grid.yml",
-"README.md",
-"backend/pipeline.py"
+"backend/pipeline.py",
+"frontend/assets/location_engine.js"
 ]
 },
 {
 "path": "docs/archive/implementation_snapshots/SIH_FINAL_LIVE_SPATIAL_PASS_20260930_131403Z/changed_files/sw.js",
 "class": "documentation",
 "kb": 5.6,
-"active_refs": 6,
+"active_refs": 5,
 "ref_sample": [
 "frontend/index.html",
 "pipelines/publishing/build_pages_bundle.py",
@@ -1777,9 +1862,8 @@
 "path": "docs/archive/implementation_snapshots/SIH_IMPLEMENTATION_PATCH_20260930_130455Z/workflows/drift_check.yml",
 "class": "documentation",
 "kb": 12.6,
-"active_refs": 2,
+"active_refs": 1,
 "ref_sample": [
-"README.md",
 "research/legacy_experiments/populate_cape_baseline.py"
 ]
 },
@@ -1787,9 +1871,8 @@
 "path": "docs/archive/implementation_snapshots/SIH_IMPLEMENTATION_PATCH_20260930_130455Z/workflows/retrain_trigger.yml",
 "class": "documentation",
 "kb": 6.2,
-"active_refs": 3,
+"active_refs": 2,
 "ref_sample": [
-"README.md",
 "tests/test_indofloods_phase56.py",
 "tests/test_p0_1_production_contract.py"
 ]
@@ -2626,6 +2709,13 @@
 "ref_sample": []
 },
 {
+"path": "docs/archive/reports/README_legacy_20261011.md",
+"class": "documentation",
+"kb": 38.2,
+"active_refs": 0,
+"ref_sample": []
+},
+{
 "path": "docs/archive/requirement_audits/MASTER_REMEDIATION_PLAN.md",
 "class": "documentation",
 "kb": 9.9,
@@ -2636,10 +2726,8 @@
 "path": "docs/archive/requirement_audits/MASTER_SIH_REQUIREMENT_MATRIX.md",
 "class": "documentation",
 "kb": 14.1,
-"active_refs": 1,
-"ref_sample": [
-"README.md"
-]
+"active_refs": 0,
+"ref_sample": []
 },
 {
 "path": "docs/archive/requirement_audits/SIH_A_TO_Z_CLAIM_AUDIT.md",
@@ -2680,10 +2768,8 @@
 "path": "docs/assets/readme_banner.svg",
 "class": "documentation",
 "kb": 2.8,
-"active_refs": 1,
-"ref_sample": [
-"README.md"
-]
+"active_refs": 0,
+"ref_sample": []
 },
 {
 "path": "docs/data_sources/INDOFLOODS_DATA_INVENTORY.md",
@@ -2745,10 +2831,20 @@
 {
 "path": "docs/data_sources/NATIONAL_DATA_REPORT.md",
 "class": "documentation",
-"kb": 18.3,
+"kb": 19.2,
 "active_refs": 1,
 "ref_sample": [
 "scripts/utilities/generate_national_report.py"
+]
+},
+{
+"path": "docs/data_sources/SATELLITE_AND_REANALYSIS_ACCESS.md",
+"class": "documentation",
+"kb": 0.9,
+"active_refs": 2,
+"ref_sample": [
+"backend/data_sources/gmgsi.py",
+"scripts/utilities/generate_validation_docs.py"
 ]
 },
 {
@@ -2965,9 +3061,8 @@
 "path": "docs/models/PAN_INDIA_HAZARD_COEFFICIENTS.md",
 "class": "documentation",
 "kb": 5.0,
-"active_refs": 2,
+"active_refs": 1,
 "ref_sample": [
-"README.md",
 "canonical_forecast_writer.py"
 ]
 },
@@ -2989,9 +3084,8 @@
 "path": "docs/operations/KNOWN_ISSUES.md",
 "class": "documentation",
 "kb": 7.2,
-"active_refs": 3,
+"active_refs": 2,
 "ref_sample": [
-"README.md",
 "pytest.ini",
 "scripts/check_maplibre_pin.py"
 ]
@@ -3000,40 +3094,40 @@
 "path": "fetch_dem_terrain.py",
 "class": "weather data ingestion / processing",
 "kb": 13.1,
-"active_refs": 11,
+"active_refs": 10,
 "ref_sample": [
 ".github/workflows/forecast_update.yml",
-"README.md",
-"backend/data_sources/dem.py"
+"backend/data_sources/dem.py",
+"backend/pipeline.py"
 ]
 },
 {
 "path": "fetch_himawari_realtime.py",
 "class": "weather data ingestion / processing",
 "kb": 38.6,
-"active_refs": 20,
+"active_refs": 19,
 "ref_sample": [
 ".github/workflows/forecast_update.yml",
-"README.md",
-"backend/data_sources/himawari.py"
+"backend/data_sources/himawari.py",
+"backend/data_sources/himawari_features.py"
 ]
 },
 {
 "path": "fetch_metar.py",
 "class": "weather data ingestion / processing",
 "kb": 5.6,
-"active_refs": 11,
+"active_refs": 9,
 "ref_sample": [
 ".github/workflows/forecast_update.yml",
-"README.md",
-"backend/data_sources/metar.py"
+"backend/data_sources/metar.py",
+"data/pan_india_common_grid_992.json"
 ]
 },
 {
 "path": "forecast.json",
 "class": "generated forecast artifact",
 "kb": 25.7,
-"active_refs": 48,
+"active_refs": 45,
 "ref_sample": [
 ".github/workflows/drift_check.yml",
 ".github/workflows/forecast_update.yml",
@@ -3044,7 +3138,7 @@
 "path": "forecast_action.py",
 "class": "weather data ingestion / processing",
 "kb": 72.9,
-"active_refs": 49,
+"active_refs": 47,
 "ref_sample": [
 ".github/workflows/drift_check.yml",
 ".github/workflows/forecast_update.yml",
@@ -3124,44 +3218,40 @@
 "path": "frontend/assets/images/afternoon1.png",
 "class": "other",
 "kb": 2520.8,
-"active_refs": 3,
+"active_refs": 2,
 "ref_sample": [
 "frontend/index.html",
-"pipelines/publishing/build_pages_bundle.py",
-"research/legacy_experiments/index_backup.html"
+"pipelines/publishing/build_pages_bundle.py"
 ]
 },
 {
 "path": "frontend/assets/images/evening1.png",
 "class": "other",
 "kb": 2323.9,
-"active_refs": 3,
+"active_refs": 2,
 "ref_sample": [
 "frontend/index.html",
-"pipelines/publishing/build_pages_bundle.py",
-"research/legacy_experiments/index_backup.html"
+"pipelines/publishing/build_pages_bundle.py"
 ]
 },
 {
 "path": "frontend/assets/images/morning1.png",
 "class": "other",
 "kb": 2478.8,
-"active_refs": 3,
+"active_refs": 2,
 "ref_sample": [
 "frontend/index.html",
-"pipelines/publishing/build_pages_bundle.py",
-"research/legacy_experiments/index_backup.html"
+"pipelines/publishing/build_pages_bundle.py"
 ]
 },
 {
 "path": "frontend/assets/images/night1.png",
 "class": "other",
 "kb": 2450.0,
-"active_refs": 3,
+"active_refs": 2,
 "ref_sample": [
 "frontend/index.html",
-"pipelines/publishing/build_pages_bundle.py",
-"research/legacy_experiments/index_backup.html"
+"pipelines/publishing/build_pages_bundle.py"
 ]
 },
 {
@@ -3178,21 +3268,20 @@
 "path": "frontend/assets/location_engine.js",
 "class": "other",
 "kb": 9.8,
-"active_refs": 6,
+"active_refs": 5,
 "ref_sample": [
 ".github/workflows/update_grid.yml",
-"README.md",
-"frontend/index.html"
+"frontend/index.html",
+"scripts/sync_unified_cb_into_pan_india_grid.py"
 ]
 },
 {
 "path": "frontend/assets/shap_all_slots.png",
 "class": "other",
 "kb": 265.3,
-"active_refs": 2,
+"active_refs": 1,
 "ref_sample": [
-"frontend/index.html",
-"research/legacy_experiments/index_backup.html"
+"frontend/index.html"
 ]
 },
 {
@@ -3266,18 +3355,18 @@
 "path": "frontend/index.html",
 "class": "other",
 "kb": 725.4,
-"active_refs": 28,
+"active_refs": 27,
 "ref_sample": [
 ".github/workflows/forecast_update.yml",
-"README.md",
-"backend/data_sources/himawari_features.py"
+"backend/data_sources/himawari_features.py",
+"backend/models/unified_mtl/inference_engine.py"
 ]
 },
 {
 "path": "frontend/manifest.json",
 "class": "other",
 "kb": 1.5,
-"active_refs": 15,
+"active_refs": 14,
 "ref_sample": [
 "data/external/historical_gfs/phase_0_4_20_holdout_manifest.json",
 "data/external/historical_gfs/phase_0_4_20_train_manifest.json",
@@ -3288,7 +3377,7 @@
 "path": "frontend/sw.js",
 "class": "other",
 "kb": 5.1,
-"active_refs": 6,
+"active_refs": 5,
 "ref_sample": [
 "frontend/index.html",
 "pipelines/publishing/build_pages_bundle.py",
@@ -3310,11 +3399,11 @@
 "path": "gfs_fetcher.py",
 "class": "weather data ingestion / processing",
 "kb": 34.2,
-"active_refs": 18,
+"active_refs": 15,
 "ref_sample": [
 ".github/workflows/forecast_update.yml",
-"README.md",
-"backend/data_sources/gfs.py"
+"backend/data_sources/gfs.py",
+"data/pan_india_common_grid_992.json"
 ]
 },
 {
@@ -3669,11 +3758,11 @@
 "path": "models/cb_ff_feature_list.json",
 "class": "model artifacts (checkpoints, metrics)",
 "kb": 1.3,
-"active_refs": 4,
+"active_refs": 3,
 "ref_sample": [
 "forecast_action.py",
-"research/legacy_experiments/forecast_action-1.py",
-"research/legacy_experiments/forecast_action.py"
+"research/legacy_experiments/forecast_action.py",
+"train_cb_ff_models.py"
 ]
 },
 {
@@ -4066,7 +4155,7 @@
 "path": "models/nowcast_slot0_xgb_v2_calibrated.pkl",
 "class": "model artifacts (checkpoints, metrics)",
 "kb": 218.8,
-"active_refs": 6,
+"active_refs": 5,
 "ref_sample": [
 "compute_realtime_shap.py",
 "forecast_action.py",
@@ -4084,7 +4173,7 @@
 "path": "models/nowcast_slot0_xgb_v3_calibrated.pkl",
 "class": "model artifacts (checkpoints, metrics)",
 "kb": 432.4,
-"active_refs": 6,
+"active_refs": 5,
 "ref_sample": [
 "compute_realtime_shap.py",
 "forecast_action.py",
@@ -4102,7 +4191,7 @@
 "path": "models/nowcast_slot0_xgb_v4_calibrated.pkl",
 "class": "model artifacts (checkpoints, metrics)",
 "kb": 525.8,
-"active_refs": 6,
+"active_refs": 5,
 "ref_sample": [
 "compute_realtime_shap.py",
 "forecast_action.py",
@@ -4113,7 +4202,7 @@
 "path": "models/nowcast_slot0_xgb_v4_ensemble.pkl",
 "class": "model artifacts (checkpoints, metrics)",
 "kb": 3545.5,
-"active_refs": 7,
+"active_refs": 6,
 "ref_sample": [
 "compute_realtime_shap.py",
 "forecast_action.py",
@@ -4124,7 +4213,7 @@
 "path": "models/nowcast_slot0_xgb_v6_temporal.pkl",
 "class": "model artifacts (checkpoints, metrics)",
 "kb": 382.5,
-"active_refs": 9,
+"active_refs": 8,
 "ref_sample": [
 "compute_realtime_shap.py",
 "data/realtime_shap.json",
@@ -4149,7 +4238,7 @@
 "path": "models/nowcast_slot1_xgb_v2_calibrated.pkl",
 "class": "model artifacts (checkpoints, metrics)",
 "kb": 244.4,
-"active_refs": 6,
+"active_refs": 5,
 "ref_sample": [
 "compute_realtime_shap.py",
 "forecast_action.py",
@@ -4167,7 +4256,7 @@
 "path": "models/nowcast_slot1_xgb_v3_calibrated.pkl",
 "class": "model artifacts (checkpoints, metrics)",
 "kb": 243.0,
-"active_refs": 6,
+"active_refs": 5,
 "ref_sample": [
 "compute_realtime_shap.py",
 "forecast_action.py",
@@ -4185,7 +4274,7 @@
 "path": "models/nowcast_slot1_xgb_v4_calibrated.pkl",
 "class": "model artifacts (checkpoints, metrics)",
 "kb": 242.9,
-"active_refs": 6,
+"active_refs": 5,
 "ref_sample": [
 "compute_realtime_shap.py",
 "forecast_action.py",
@@ -4205,7 +4294,7 @@
 "path": "models/nowcast_slot1_xgb_v5_temporal.pkl",
 "class": "model artifacts (checkpoints, metrics)",
 "kb": 3380.3,
-"active_refs": 6,
+"active_refs": 5,
 "ref_sample": [
 "compute_realtime_shap.py",
 "forecast_action.py",
@@ -4216,7 +4305,7 @@
 "path": "models/nowcast_slot1_xgb_v6_temporal.pkl",
 "class": "model artifacts (checkpoints, metrics)",
 "kb": 271.2,
-"active_refs": 12,
+"active_refs": 11,
 "ref_sample": [
 "compute_realtime_shap.py",
 "data/canonical_forecast.json",
@@ -4241,7 +4330,7 @@
 "path": "models/nowcast_slot2_xgb_v2_calibrated.pkl",
 "class": "model artifacts (checkpoints, metrics)",
 "kb": 675.6,
-"active_refs": 8,
+"active_refs": 7,
 "ref_sample": [
 "compute_realtime_shap.py",
 "forecast_action.py",
@@ -4259,7 +4348,7 @@
 "path": "models/nowcast_slot2_xgb_v3_calibrated.pkl",
 "class": "model artifacts (checkpoints, metrics)",
 "kb": 570.5,
-"active_refs": 6,
+"active_refs": 5,
 "ref_sample": [
 "compute_realtime_shap.py",
 "forecast_action.py",
@@ -4277,7 +4366,7 @@
 "path": "models/nowcast_slot2_xgb_v4_calibrated.pkl",
 "class": "model artifacts (checkpoints, metrics)",
 "kb": 577.7,
-"active_refs": 6,
+"active_refs": 5,
 "ref_sample": [
 "compute_realtime_shap.py",
 "forecast_action.py",
@@ -4297,7 +4386,7 @@
 "path": "models/nowcast_slot2_xgb_v5_temporal.pkl",
 "class": "model artifacts (checkpoints, metrics)",
 "kb": 4567.4,
-"active_refs": 6,
+"active_refs": 5,
 "ref_sample": [
 "compute_realtime_shap.py",
 "forecast_action.py",
@@ -4308,7 +4397,7 @@
 "path": "models/nowcast_slot2_xgb_v6_temporal.pkl",
 "class": "model artifacts (checkpoints, metrics)",
 "kb": 435.5,
-"active_refs": 12,
+"active_refs": 11,
 "ref_sample": [
 "compute_realtime_shap.py",
 "data/canonical_forecast.json",
@@ -4333,7 +4422,7 @@
 "path": "models/nowcast_slot3_xgb_v2_calibrated.pkl",
 "class": "model artifacts (checkpoints, metrics)",
 "kb": 161.6,
-"active_refs": 6,
+"active_refs": 5,
 "ref_sample": [
 "compute_realtime_shap.py",
 "forecast_action.py",
@@ -4351,7 +4440,7 @@
 "path": "models/nowcast_slot3_xgb_v3_calibrated.pkl",
 "class": "model artifacts (checkpoints, metrics)",
 "kb": 257.6,
-"active_refs": 6,
+"active_refs": 5,
 "ref_sample": [
 "compute_realtime_shap.py",
 "forecast_action.py",
@@ -4369,7 +4458,7 @@
 "path": "models/nowcast_slot3_xgb_v4_calibrated.pkl",
 "class": "model artifacts (checkpoints, metrics)",
 "kb": 447.0,
-"active_refs": 6,
+"active_refs": 5,
 "ref_sample": [
 "compute_realtime_shap.py",
 "forecast_action.py",
@@ -4389,7 +4478,7 @@
 "path": "models/nowcast_slot3_xgb_v5_temporal.pkl",
 "class": "model artifacts (checkpoints, metrics)",
 "kb": 4551.0,
-"active_refs": 6,
+"active_refs": 5,
 "ref_sample": [
 "compute_realtime_shap.py",
 "forecast_action.py",
@@ -4400,7 +4489,7 @@
 "path": "models/nowcast_slot3_xgb_v6_temporal.pkl",
 "class": "model artifacts (checkpoints, metrics)",
 "kb": 669.8,
-"active_refs": 10,
+"active_refs": 9,
 "ref_sample": [
 "compute_realtime_shap.py",
 "data/realtime_shap.json",
@@ -4688,11 +4777,11 @@
 "path": "pan_india_gfs_fetcher.py",
 "class": "weather data ingestion / processing",
 "kb": 17.7,
-"active_refs": 13,
+"active_refs": 12,
 "ref_sample": [
 ".github/workflows/forecast_update.yml",
-"README.md",
-"backend/data_sources/__init__.py"
+"backend/data_sources/__init__.py",
+"backend/data_sources/gfs.py"
 ]
 },
 {
@@ -5213,10 +5302,8 @@
 "path": "pytest.ini",
 "class": "tests",
 "kb": 1.1,
-"active_refs": 1,
-"ref_sample": [
-"README.md"
-]
+"active_refs": 0,
+"ref_sample": []
 },
 {
 "path": "rag/analog_scaler.pkl",
@@ -5312,13 +5399,6 @@
 "path": "research/legacy_experiments/.gitkeep",
 "class": "other",
 "kb": 0.0,
-"active_refs": 0,
-"ref_sample": []
-},
-{
-"path": "research/legacy_experiments/.wslconfig",
-"class": "other",
-"kb": 0.1,
 "active_refs": 0,
 "ref_sample": []
 },
@@ -5447,20 +5527,6 @@
 "ref_sample": []
 },
 {
-"path": "research/legacy_experiments/B13_S05.DAT",
-"class": "other",
-"kb": 5909.7,
-"active_refs": 0,
-"ref_sample": []
-},
-{
-"path": "research/legacy_experiments/B13_S06.DAT",
-"class": "other",
-"kb": 5909.7,
-"active_refs": 0,
-"ref_sample": []
-},
-{
 "path": "research/legacy_experiments/CHANGELOG.md",
 "class": "other",
 "kb": 0.3,
@@ -5479,39 +5545,9 @@
 ]
 },
 {
-"path": "research/legacy_experiments/HS_H09_20260725_1530_B13_FLDK_R20_S0410.DAT.bz2",
-"class": "other",
-"kb": 2905.3,
-"active_refs": 0,
-"ref_sample": []
-},
-{
-"path": "research/legacy_experiments/HS_H09_20260725_1530_B13_FLDK_R20_S0510.DAT.bz2",
-"class": "other",
-"kb": 3103.8,
-"active_refs": 1,
-"ref_sample": [
-"tests/test_himawari.py"
-]
-},
-{
-"path": "research/legacy_experiments/HS_H09_20260725_1530_B13_FLDK_R20_S0610.DAT.bz2",
-"class": "other",
-"kb": 2858.8,
-"active_refs": 0,
-"ref_sample": []
-},
-{
 "path": "research/legacy_experiments/RADAR_INTEGRATION.md",
 "class": "other",
 "kb": 4.3,
-"active_refs": 0,
-"ref_sample": []
-},
-{
-"path": "research/legacy_experiments/afternoon.mp4",
-"class": "other",
-"kb": 2456.2,
 "active_refs": 0,
 "ref_sample": []
 },
@@ -5550,7 +5586,7 @@
 "path": "research/legacy_experiments/bengaluru_thunderstorm_features_merged.csv",
 "class": "other",
 "kb": 1819.2,
-"active_refs": 17,
+"active_refs": 16,
 "ref_sample": [
 "backend/unified_api.py",
 "forecast_action.py",
@@ -5571,11 +5607,11 @@
 "path": "research/legacy_experiments/compute_realtime_shap.py",
 "class": "other",
 "kb": 10.1,
-"active_refs": 11,
+"active_refs": 9,
 "ref_sample": [
 ".github/workflows/forecast_update.yml",
-"README.md",
-"compute_realtime_shap.py"
+"compute_realtime_shap.py",
+"forecast_action.py"
 ]
 },
 {
@@ -5604,13 +5640,6 @@
 ]
 },
 {
-"path": "research/legacy_experiments/evening.mp4",
-"class": "other",
-"kb": 2052.6,
-"active_refs": 0,
-"ref_sample": []
-},
-{
 "path": "research/legacy_experiments/evening.png",
 "class": "other",
 "kb": 2469.8,
@@ -5621,11 +5650,11 @@
 "path": "research/legacy_experiments/fetch_dem_terrain.py",
 "class": "other",
 "kb": 13.1,
-"active_refs": 11,
+"active_refs": 10,
 "ref_sample": [
 ".github/workflows/forecast_update.yml",
-"README.md",
-"backend/data_sources/dem.py"
+"backend/data_sources/dem.py",
+"backend/pipeline.py"
 ]
 },
 {
@@ -5643,11 +5672,11 @@
 "path": "research/legacy_experiments/fetch_himawari_realtime.py",
 "class": "other",
 "kb": 17.5,
-"active_refs": 20,
+"active_refs": 19,
 "ref_sample": [
 ".github/workflows/forecast_update.yml",
-"README.md",
-"backend/data_sources/himawari.py"
+"backend/data_sources/himawari.py",
+"backend/data_sources/himawari_features.py"
 ]
 },
 {
@@ -5665,11 +5694,11 @@
 "path": "research/legacy_experiments/fetch_metar.py",
 "class": "other",
 "kb": 5.6,
-"active_refs": 11,
+"active_refs": 9,
 "ref_sample": [
 ".github/workflows/forecast_update.yml",
-"README.md",
-"backend/data_sources/metar.py"
+"backend/data_sources/metar.py",
+"data/pan_india_common_grid_992.json"
 ]
 },
 {
@@ -5687,7 +5716,7 @@
 "path": "research/legacy_experiments/forecast.json",
 "class": "other",
 "kb": 23.2,
-"active_refs": 48,
+"active_refs": 45,
 "ref_sample": [
 ".github/workflows/drift_check.yml",
 ".github/workflows/forecast_update.yml",
@@ -5695,17 +5724,10 @@
 ]
 },
 {
-"path": "research/legacy_experiments/forecast_action-1.py",
-"class": "other",
-"kb": 60.3,
-"active_refs": 0,
-"ref_sample": []
-},
-{
 "path": "research/legacy_experiments/forecast_action.py",
 "class": "other",
 "kb": 64.9,
-"active_refs": 49,
+"active_refs": 47,
 "ref_sample": [
 ".github/workflows/drift_check.yml",
 ".github/workflows/forecast_update.yml",
@@ -5740,11 +5762,11 @@
 "path": "research/legacy_experiments/gfs_fetcher.py",
 "class": "other",
 "kb": 34.2,
-"active_refs": 18,
+"active_refs": 15,
 "ref_sample": [
 ".github/workflows/forecast_update.yml",
-"README.md",
-"backend/data_sources/gfs.py"
+"backend/data_sources/gfs.py",
+"data/pan_india_common_grid_992.json"
 ]
 },
 {
@@ -5757,17 +5779,10 @@
 ]
 },
 {
-"path": "research/legacy_experiments/index_backup.html",
-"class": "other",
-"kb": 346.2,
-"active_refs": 0,
-"ref_sample": []
-},
-{
 "path": "research/legacy_experiments/main.py",
 "class": "other",
 "kb": 28.3,
-"active_refs": 122,
+"active_refs": 120,
 "ref_sample": [
 ".github/workflows/drift_check.yml",
 ".github/workflows/forecast_update.yml",
@@ -5782,23 +5797,9 @@
 "ref_sample": []
 },
 {
-"path": "research/legacy_experiments/morning.mp4",
-"class": "other",
-"kb": 2056.5,
-"active_refs": 0,
-"ref_sample": []
-},
-{
 "path": "research/legacy_experiments/morning.png",
 "class": "other",
 "kb": 2184.2,
-"active_refs": 0,
-"ref_sample": []
-},
-{
-"path": "research/legacy_experiments/night.mp4",
-"class": "other",
-"kb": 2546.2,
 "active_refs": 0,
 "ref_sample": []
 },
@@ -5813,10 +5814,9 @@
 "path": "research/legacy_experiments/october_threshold_fix.py",
 "class": "other",
 "kb": 1.2,
-"active_refs": 3,
+"active_refs": 2,
 "ref_sample": [
 "frontend/index.html",
-"research/legacy_experiments/index_backup.html",
 "verify_today.py"
 ]
 },
@@ -5824,11 +5824,11 @@
 "path": "research/legacy_experiments/pan_india_gfs_fetcher.py",
 "class": "other",
 "kb": 16.0,
-"active_refs": 13,
+"active_refs": 12,
 "ref_sample": [
 ".github/workflows/forecast_update.yml",
-"README.md",
-"backend/data_sources/__init__.py"
+"backend/data_sources/__init__.py",
+"backend/data_sources/gfs.py"
 ]
 },
 {
@@ -5853,7 +5853,7 @@
 "path": "research/legacy_experiments/predict.py",
 "class": "other",
 "kb": 2.0,
-"active_refs": 39,
+"active_refs": 37,
 "ref_sample": [
 "backend/models/unified_mtl/heads.py",
 "backend/models/unified_mtl/inference_engine.py",
@@ -5894,11 +5894,11 @@
 "path": "research/legacy_experiments/requirements.txt",
 "class": "other",
 "kb": 0.8,
-"active_refs": 5,
+"active_refs": 4,
 "ref_sample": [
 ".github/workflows/update_grid.yml",
-"README.md",
-"backend/unified_api.py"
+"backend/unified_api.py",
+"tests/test_phase60_update_grid_requirements.py"
 ]
 },
 {
@@ -5921,13 +5921,6 @@
 "path": "research/legacy_experiments/run_daily_forecast_v2.py",
 "class": "other",
 "kb": 15.0,
-"active_refs": 0,
-"ref_sample": []
-},
-{
-"path": "research/legacy_experiments/run_himawari.bat",
-"class": "other",
-"kb": 0.2,
 "active_refs": 0,
 "ref_sample": []
 },
@@ -6500,7 +6493,7 @@
 "path": "results/verification_report.json",
 "class": "evaluation outputs (legacy)",
 "kb": 2.9,
-"active_refs": 7,
+"active_refs": 6,
 "ref_sample": [
 ".github/workflows/drift_check.yml",
 "forecast_action.py",
@@ -6750,22 +6743,22 @@
 "path": "scripts/gfs_aws_source.py",
 "class": "pipeline / utility scripts",
 "kb": 13.9,
-"active_refs": 6,
+"active_refs": 5,
 "ref_sample": [
 ".github/workflows/forecast_update.yml",
-"README.md",
-"models/flash_flood_v2/README_DO_NOT_RENAME.json"
+"models/flash_flood_v2/README_DO_NOT_RENAME.json",
+"scripts/ci_gfs_connectivity_diagnostic.py"
 ]
 },
 {
 "path": "scripts/gfs_live_cb_predictors.py",
 "class": "pipeline / utility scripts",
 "kb": 17.5,
-"active_refs": 12,
+"active_refs": 11,
 "ref_sample": [
 ".github/workflows/forecast_update.yml",
-"README.md",
-"backend/forecast_integrity.py"
+"backend/forecast_integrity.py",
+"backend/unified_api.py"
 ]
 },
 {
@@ -6908,11 +6901,11 @@
 "path": "scripts/sync_unified_cb_into_pan_india_grid.py",
 "class": "pipeline / utility scripts",
 "kb": 10.7,
-"active_refs": 5,
+"active_refs": 4,
 "ref_sample": [
 ".github/workflows/update_grid.yml",
-"README.md",
-"frontend/assets/location_engine.js"
+"frontend/assets/location_engine.js",
+"tests/test_location_engine_js.mjs"
 ]
 },
 {
@@ -7029,11 +7022,11 @@
 "path": "terrain_lookup.py",
 "class": "weather data ingestion / processing",
 "kb": 6.7,
-"active_refs": 5,
+"active_refs": 4,
 "ref_sample": [
-"README.md",
 "backend/pipeline.py",
-"regrid.py"
+"regrid.py",
+"scripts/diagnostics/inventory_repository.py"
 ]
 },
 {
@@ -7063,10 +7056,15 @@
 "path": "tests/e2e/package.json",
 "class": "tests",
 "kb": 0.3,
-"active_refs": 1,
-"ref_sample": [
-"README.md"
-]
+"active_refs": 0,
+"ref_sample": []
+},
+{
+"path": "tests/e2e/test-results/.last-run.json",
+"class": "tests",
+"kb": 0.0,
+"active_refs": 0,
+"ref_sample": []
 },
 {
 "path": "tests/fixtures/legacy_unified_sample.json",
@@ -7181,9 +7179,8 @@
 "path": "tests/test_himawari.py",
 "class": "tests",
 "kb": 0.3,
-"active_refs": 2,
+"active_refs": 1,
 "ref_sample": [
-"README.md",
 "pytest.ini"
 ]
 },
@@ -7250,7 +7247,7 @@
 {
 "path": "tests/test_location_acceptance.py",
 "class": "tests",
-"kb": 1.7,
+"kb": 3.1,
 "active_refs": 0,
 "ref_sample": []
 },
@@ -7275,8 +7272,9 @@
 "path": "tests/test_location_parity.py",
 "class": "tests",
 "kb": 4.4,
-"active_refs": 2,
+"active_refs": 3,
 "ref_sample": [
+"CONTRIBUTING.md",
 "backend/location_service.py",
 "frontend/assets/drift_location.js"
 ]
@@ -7382,9 +7380,8 @@
 "path": "tests/test_nomads.py",
 "class": "tests",
 "kb": 0.7,
-"active_refs": 2,
+"active_refs": 1,
 "ref_sample": [
-"README.md",
 "pytest.ini"
 ]
 },
@@ -7623,10 +7620,8 @@
 "path": "tests/test_phase57_pan_india_grid_cb_sync.py",
 "class": "tests",
 "kb": 13.9,
-"active_refs": 1,
-"ref_sample": [
-"README.md"
-]
+"active_refs": 0,
+"ref_sample": []
 },
 {
 "path": "tests/test_phase58_artifact_freshness_check_decoupled_from_exit_code.py",
@@ -7771,9 +7766,8 @@
 "path": "tests/test_segments.py",
 "class": "tests",
 "kb": 1.1,
-"active_refs": 2,
+"active_refs": 1,
 "ref_sample": [
-"README.md",
 "pytest.ini"
 ]
 },
@@ -7781,9 +7775,8 @@
 "path": "tests/test_segments_v2.py",
 "class": "tests",
 "kb": 1.1,
-"active_refs": 2,
+"active_refs": 1,
 "ref_sample": [
-"README.md",
 "pytest.ini"
 ]
 },
@@ -7848,18 +7841,18 @@
 "path": "validate_canonical_forecast.py",
 "class": "forecast production / operations",
 "kb": 8.3,
-"active_refs": 6,
+"active_refs": 5,
 "ref_sample": [
-"README.md",
 "backend/requirements.txt",
-"canonical_forecast_writer.py"
+"canonical_forecast_writer.py",
+"tests/test_canonical_forecast.py"
 ]
 },
 {
 "path": "verify_today.py",
 "class": "forecast production / operations",
 "kb": 11.6,
-"active_refs": 13,
+"active_refs": 11,
 "ref_sample": [
 ".github/workflows/forecast_update.yml",
 "fetch_metar.py",
