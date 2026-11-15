@@ -6,7 +6,7 @@ import path from 'node:path';
 import { buildDist, serve, launch, watch, ROOT } from './harness.mjs';
 
 let browser, S;
-const SHOTS = process.env.DRIFT_SHOTS ? path.join(ROOT, 'docs/demo_screenshots') : null;
+const SHOTS = process.env.DRIFT_SHOTS ? path.join(ROOT, 'docs/demo/screenshots') : null;
 if (SHOTS) fs.mkdirSync(SHOTS, { recursive: true });
 const DESKTOP = { width: 1440, height: 900 }, MOBILE = { width: 390, height: 844 };
 const TILE = /tile\.openstreetmap\.org/;

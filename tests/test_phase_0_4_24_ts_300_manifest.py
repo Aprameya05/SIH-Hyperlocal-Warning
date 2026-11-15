@@ -65,7 +65,7 @@ def test_episode_clustering_respects_48h_gap():
 
 
 def test_manifest_csv_output_has_300_event_groups_and_600_files():
-    out_csv = REPO_ROOT / "docs" / "PHASE_0_4_24_TS_300_EVENT_MANIFEST.csv"
+    out_csv = REPO_ROOT / "docs" / "archive" / "phase_history" / "PHASE_0_4_24_TS_300_EVENT_MANIFEST.csv"
     assert out_csv.exists(), "run scripts/design_phase_0_4_24_ts_300_candidates.py first"
     with open(out_csv) as f:
         rows = list(csv.DictReader(f))
@@ -77,7 +77,7 @@ def test_manifest_csv_output_has_300_event_groups_and_600_files():
 
 
 def test_manifest_partition_and_label_counts():
-    out_csv = REPO_ROOT / "docs" / "PHASE_0_4_24_TS_300_EVENT_MANIFEST.csv"
+    out_csv = REPO_ROOT / "docs" / "archive" / "phase_history" / "PHASE_0_4_24_TS_300_EVENT_MANIFEST.csv"
     with open(out_csv) as f:
         rows = list(csv.DictReader(f))
     event_rows = {}
@@ -94,7 +94,7 @@ def test_manifest_partition_and_label_counts():
 
 
 def test_manifest_no_cross_partition_episode_overlap():
-    out_csv = REPO_ROOT / "docs" / "PHASE_0_4_24_TS_300_EVENT_MANIFEST.csv"
+    out_csv = REPO_ROOT / "docs" / "archive" / "phase_history" / "PHASE_0_4_24_TS_300_EVENT_MANIFEST.csv"
     with open(out_csv) as f:
         rows = list(csv.DictReader(f))
     train_episodes = {r["episode_id"] for r in rows if r["partition"] == "train"}
@@ -104,7 +104,7 @@ def test_manifest_no_cross_partition_episode_overlap():
 
 
 def test_manifest_no_event_group_crosses_partitions():
-    out_csv = REPO_ROOT / "docs" / "PHASE_0_4_24_TS_300_EVENT_MANIFEST.csv"
+    out_csv = REPO_ROOT / "docs" / "archive" / "phase_history" / "PHASE_0_4_24_TS_300_EVENT_MANIFEST.csv"
     with open(out_csv) as f:
         rows = list(csv.DictReader(f))
     partitions_by_key = {}
@@ -115,7 +115,7 @@ def test_manifest_no_event_group_crosses_partitions():
 
 
 def test_manifest_every_row_has_both_leads():
-    out_csv = REPO_ROOT / "docs" / "PHASE_0_4_24_TS_300_EVENT_MANIFEST.csv"
+    out_csv = REPO_ROOT / "docs" / "archive" / "phase_history" / "PHASE_0_4_24_TS_300_EVENT_MANIFEST.csv"
     with open(out_csv) as f:
         rows = list(csv.DictReader(f))
     leads_by_key = {}

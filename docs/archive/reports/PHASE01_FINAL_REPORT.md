@@ -1,8 +1,8 @@
 # PHASE 0.1 — FINAL REPORT (Top-Level Summary)
 
-Full detail: `docs/PHASE_0_1_COMPLETION_REPORT.md`,
-`docs/PHASE_0_1_AUDIT_DISCREPANCY_RESOLUTION.md`,
-`docs/PHASE_0_1_FF_CURRENT_STATE.md`.
+Full detail: `docs/archive/phase_history/PHASE_0_1_COMPLETION_REPORT.md`,
+`docs/archive/phase_history/PHASE_0_1_AUDIT_DISCREPANCY_RESOLUTION.md`,
+`docs/archive/phase_history/PHASE_0_1_FF_CURRENT_STATE.md`.
 
 1. **Audit discrepancy**: The master audit's claim that
    `data/catchment_characteristics_indofloods.csv` is missing is **wrong** —
@@ -52,7 +52,7 @@ Full detail: `docs/PHASE_0_1_COMPLETION_REPORT.md`,
 
 11. **Files changed**: `forecast_action.py`, `index.html`,
     `gfs_row_select.py`, `test_gfs_row_select.py`,
-    `docs/MASTER_SIH_REQUIREMENT_MATRIX.md`, plus 3 new docs.
+    `docs/archive/requirement_audits/MASTER_SIH_REQUIREMENT_MATRIX.md`, plus 3 new docs.
 
 PRODUCTION MODIFIED: YES — labels/provenance strings and one test-support
 function parameter only; no prediction logic, coefficients, formulas, or

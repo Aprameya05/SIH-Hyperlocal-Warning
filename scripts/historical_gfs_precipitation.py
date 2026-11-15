@@ -5,7 +5,7 @@ historical_gfs_precipitation.py -- Phase 0.4.5 RESEARCH-ONLY helper.
 Reconstructs a physically meaningful interval-precipitation feature from two
 historical GFS forecast leads of the SAME initialization cycle, using the
 GRIB accumulation semantics verified directly from real files in
-docs/PHASE_0_4_4_HISTORICAL_GFS_FEATURE_CONTRACT.md Part 2:
+docs/archive/phase_history/PHASE_0_4_4_HISTORICAL_GFS_FEATURE_CONTRACT.md Part 2:
 
   tp(lead_end) and tp(lead_start) are both "accumulated since forecast start"
   (startStep=0 confirmed for both f003 and f006 in the real pilot files), so
@@ -33,7 +33,7 @@ ACCUMULATION_SEMANTICS = (
     "GFS tp (total precipitation, surface, kg/m^2) accumulated from forecast "
     "start (step 0) through the requested lead -- confirmed by direct GRIB "
     "metadata inspection (startStep=0 for both f003 and f006 in the real "
-    "pilot files) in docs/PHASE_0_4_4_HISTORICAL_GFS_FEATURE_CONTRACT.md "
+    "pilot files) in docs/archive/phase_history/PHASE_0_4_4_HISTORICAL_GFS_FEATURE_CONTRACT.md "
     "Part 2. Differencing two such accumulations sharing the same start "
     "(step 0) and the same initialization yields the precipitation total "
     "for the disjoint interval between the two valid times."
@@ -150,7 +150,7 @@ def compute_interval_precipitation(
                 f"accumulation windows do not both start at step 0 "
                 f"(start_step={start_step}, end_start_step={end_start_step}) "
                 f"-- the differencing validity established in "
-                f"docs/PHASE_0_4_4_HISTORICAL_GFS_FEATURE_CONTRACT.md Part 2 "
+                f"docs/archive/phase_history/PHASE_0_4_4_HISTORICAL_GFS_FEATURE_CONTRACT.md Part 2 "
                 f"does not hold for this pair; refusing to compute a "
                 f"silently-wrong interval total"
             ), **base,

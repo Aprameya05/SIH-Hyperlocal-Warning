@@ -36,7 +36,7 @@ GRID_STEP   = 1.0  # degrees
 NOMADS_BASE = "https://nomads.ncep.noaa.gov/cgi-bin/filter_gfs_0p25.pl"
 HEADERS     = {"User-Agent": "Mozilla/5.0 (compatible; SIH-Hyperlocal/1.0)"}
 
-# Pipeline ownership (see docs/PIPELINE_OWNERSHIP.md): backend/pipeline.py is
+# Pipeline ownership (see docs/architecture/PIPELINE_OWNERSHIP.md): backend/pipeline.py is
 # the canonical writer of data/pan_india_grid.json (it also produces
 # ctt_grid.json, convergence, QPE and CTT-drop-rate fields this script does
 # not compute, and runs on the GFS-aligned 4x/day cadence). This script used

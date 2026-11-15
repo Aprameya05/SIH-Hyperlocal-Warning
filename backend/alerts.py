@@ -53,7 +53,7 @@ except ImportError:
 # produce "disk I/O error" on writes even with ample free space and a
 # structurally valid database file (confirmed on this dev environment via
 # direct SQLite write tests at multiple paths under the project mount --
-# see docs/PIPELINE_OWNERSHIP.md). ALERTS_DB_PATH lets deployment
+# see docs/architecture/PIPELINE_OWNERSHIP.md). ALERTS_DB_PATH lets deployment
 # relocate the database off such a mount without any code change; the
 # default is unchanged from before (data/alerts.db next to the repo).
 DB_PATH = Path(os.environ.get("ALERTS_DB_PATH", "")) if os.environ.get("ALERTS_DB_PATH") else (

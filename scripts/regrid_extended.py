@@ -234,7 +234,7 @@ class CellRegridResult:
 
 
 def cell_id_for(lat: float, lon: float) -> str:
-    """Canonical cell_id convention for the 992-cell grid (docs/CANONICAL_GRID.md).
+    """Canonical cell_id convention for the 992-cell grid (docs/architecture/CANONICAL_GRID.md).
     Deterministic from lat/lon -- not stored in production pan_india_grid.json,
     used only by the new pan-India label-engine scripts (Phase 4)."""
     return f"IND_{lat:.1f}_{lon:.1f}"

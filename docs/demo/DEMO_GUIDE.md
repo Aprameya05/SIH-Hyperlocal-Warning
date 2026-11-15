@@ -6,7 +6,7 @@ location's** atmospheric, precipitation, terrain and hydrological context, plus 
 clearly marked **SIMULATION** mode demonstrates the warning workflow with synthetic data.
 
 Detailed numbers (24-location table, coverage matrix, full evaluation tables) are in
-[`docs/NATIONAL_DATA_REPORT.md`](docs/NATIONAL_DATA_REPORT.md), generated from the artifacts.
+[`docs/data_sources/NATIONAL_DATA_REPORT.md`](../data_sources/NATIONAL_DATA_REPORT.md), generated from the artifacts.
 
 ## 1. Launch locally
 
@@ -27,7 +27,7 @@ python3 pipelines/validation/validate_national_fields.py --max-age-hours 20 && p
 
 API (FastAPI, same logic as the browser): `/v1/search?q=`, `/v1/resolve?lat=&lon=`, `/v1/location?cell_id=|lat=&lon=[&hour=]`,
 `/v1/region?state=|district=`, `/v1/compare?cells=a,b,c`, `/v1/coverage`, `/v1/meta` (ETag + invalidation on new ingestion).
-Browser tests: `cd tests/e2e && npm install && PYTHON=python3 npm test` (system Chrome; `DRIFT_SHOTS=1` refreshes `docs/demo_screenshots`).
+Browser tests: `cd tests/e2e && npm install && PYTHON=python3 npm test` (system Chrome; `DRIFT_SHOTS=1` refreshes `docs/demo/screenshots`).
 
 ## 2. Five-minute judging demonstration
 

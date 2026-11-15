@@ -156,7 +156,7 @@ CONTRACT_VERSION = "phase_0_4_12_v1"
 # separate predictor rows for the SAME event_group_key (e.g. a 00Z+3h and a
 # 00Z+6h forecast both targeting slot 1) -- those rows are correlated, not
 # independent, and must never be split across train/validation/test. See
-# docs/PHASE_0_4_12_HISTORICAL_GFS_TS_DATASET_CONTRACT.md.
+# docs/archive/phase_history/PHASE_0_4_12_HISTORICAL_GFS_TS_DATASET_CONTRACT.md.
 EVENT_GROUP_KEY_FORMAT = "{cell_id}|{ist_date}|{slot_id}"
 
 
@@ -709,7 +709,7 @@ def build_pilot(cycle: str, leads: List[int], out_csv: Path, out_manifest: Path,
     manifest = {
         "phase": "0.4.12",
         "contract_version": CONTRACT_VERSION,
-        "contract_doc": "docs/PHASE_0_4_12_HISTORICAL_GFS_TS_DATASET_CONTRACT.md",
+        "contract_doc": "docs/archive/phase_history/PHASE_0_4_12_HISTORICAL_GFS_TS_DATASET_CONTRACT.md",
         "status": "BUILT_FROM_ACTUAL_FILES",
         "cycle": cycle,
         "leads_requested": leads,

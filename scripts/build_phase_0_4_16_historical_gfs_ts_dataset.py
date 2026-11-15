@@ -49,7 +49,7 @@ from historical_dataset_split import (  # noqa: E402
 )
 
 DATASET_CONTRACT_VERSION = "phase_0_4_16_v1"
-DATASET_CONTRACT_DOC = "docs/PHASE_0_4_12_HISTORICAL_GFS_TS_DATASET_CONTRACT.md"
+DATASET_CONTRACT_DOC = "docs/archive/phase_history/PHASE_0_4_12_HISTORICAL_GFS_TS_DATASET_CONTRACT.md"
 
 # The 8 cycles that make up this pilot dataset: the 2 original pilots
 # (Phase 0.4.8/0.4.10/0.4.10B, already regenerated under the Phase 0.4.12

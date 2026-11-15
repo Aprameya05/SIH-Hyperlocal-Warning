@@ -28,8 +28,8 @@ MAPPING_CSV = PROCESSED_DIR / "indofloods_grid_mapping.csv"
 EVENTS_CSV = PROCESSED_DIR / "indofloods_grid_events.csv"
 CONTEXT_SCRIPT = REPO_ROOT / "scripts" / "prepare_indofloods_rainfall_context.py"
 CONTEXT_CSV = PROCESSED_DIR / "rainfall_context_preview.csv"
-LABEL_DEF_DOC = REPO_ROOT / "docs" / "INDOFLOODS_LABEL_DEFINITION.md"
-NEG_AUDIT_DOC = REPO_ROOT / "docs" / "INDOFLOODS_NEGATIVE_LABEL_AUDIT.md"
+LABEL_DEF_DOC = REPO_ROOT / "docs" / "data_sources" / "INDOFLOODS_LABEL_DEFINITION.md"
+NEG_AUDIT_DOC = REPO_ROOT / "docs" / "data_sources" / "INDOFLOODS_NEGATIVE_LABEL_AUDIT.md"
 
 PASS = 0
 FAIL = 0

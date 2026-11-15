@@ -21,12 +21,12 @@ Target grid: the existing pan-India hazard grid's own definition
 (backend/pipeline.py: BOUNDS = {S:6, N:37, W:68, E:98}). As of the Phase 4.5
 integrity fix (2026-09-30), backend/pipeline.py locks two separate,
 non-ambiguous constants: APPLICATION_GRID_STEP = 1.0 (the canonical
-992-cell output/application grid -- see docs/CANONICAL_GRID.md) and
+992-cell output/application grid -- see docs/architecture/CANONICAL_GRID.md) and
 SOURCE_GRID_STEP_FALLBACK_DEG = 0.25 (GFS native source-grid spacing,
 used only as a fallback estimate inside compute_convergence_grid, never
 for the output grid). Earlier revisions of this docstring described a
 single ambiguous "GRID_STEP" that could be either value depending on
-context -- that was the actual bug (see docs/PHASE_4_5_INTEGRITY_AUDIT.md).
+context -- that was the actual bug (see docs/archive/phase_history/PHASE_4_5_INTEGRITY_AUDIT.md).
 Callers of this module pass the step they need; this module does not
 hardcode which one is "the" target.
 
@@ -241,7 +241,7 @@ class CellRegridResult:
 
 
 def cell_id_for(lat: float, lon: float) -> str:
-    """Canonical cell_id convention for the 992-cell grid (docs/CANONICAL_GRID.md).
+    """Canonical cell_id convention for the 992-cell grid (docs/architecture/CANONICAL_GRID.md).
     Deterministic from lat/lon -- not stored in production pan_india_grid.json,
     used only by the new pan-India label-engine scripts (Phase 4)."""
     return f"IND_{lat:.1f}_{lon:.1f}"

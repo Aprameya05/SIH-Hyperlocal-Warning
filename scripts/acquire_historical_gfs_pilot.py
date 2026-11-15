@@ -12,7 +12,7 @@ network-connected machine. It was authored in a sandbox whose network egress
 policy rejects every relevant host (confirmed in Phase 0.4.2) -- it has
 therefore NOT been executed end-to-end against the live GDEX service. Treat
 its HTTP-calling code as reviewed-but-untested against the real endpoint, and
-read docs/PHASE_0_4_3_HISTORICAL_GFS_ACQUISITION_GUIDE.md before running it.
+read docs/archive/phase_history/PHASE_0_4_3_HISTORICAL_GFS_ACQUISITION_GUIDE.md before running it.
 
 Hard requirements honored by this script:
   - no hardcoded credentials, ever
@@ -163,7 +163,7 @@ def main():
                           "GLOBAL file regardless of --bbox (GDEX direct files are not "
                           "pre-subset) -- bbox is recorded in the manifest and is relevant to "
                           "the OPeNDAP path, which this script does not implement a client for "
-                          "(see docs/PHASE_0_4_3_HISTORICAL_GFS_ACQUISITION_GUIDE.md).")
+                          "(see docs/archive/phase_history/PHASE_0_4_3_HISTORICAL_GFS_ACQUISITION_GUIDE.md).")
     ap.add_argument("--out-dir", default=str(DEFAULT_OUT_DIR), help=f"Output directory (default: {DEFAULT_OUT_DIR})")
     ap.add_argument("--execute", action="store_true", help="Actually perform the network fetch. Without this flag, dry-run only.")
     ap.add_argument("--dry-run", action="store_true", help="Explicit dry run (default behavior even without this flag).")
@@ -177,7 +177,7 @@ def main():
         print(f"Dataset: {DATASET_ID} ({DATASET_LANDING_PAGE})")
         print(f"License: {LICENSE}")
         print("Recommended pilot: a single 2015-2020 cycle, leads 003 and 006, "
-              "bbox 10-16N/74-80E (see docs/PHASE_0_4_3_HISTORICAL_GFS_ACQUISITION_GUIDE.md).")
+              "bbox 10-16N/74-80E (see docs/archive/phase_history/PHASE_0_4_3_HISTORICAL_GFS_ACQUISITION_GUIDE.md).")
         return
 
     validate_cycle(args.cycle)

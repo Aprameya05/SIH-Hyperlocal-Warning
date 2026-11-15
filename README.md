@@ -42,7 +42,7 @@ This README documents what DRIFT actually does, what evidence backs each claim, 
 
 SIH26077 asks for a system that provides **real-time, hyperlocal early warning for thunderstorms, cloudbursts and flash floods**, with an actionable **2 to 6 hour lead time**, using a **genuinely spatiotemporal, multimodal, multi-task model** fed by GFS, satellite (INSAT-3D/3DR), IMDAA reanalysis, METAR, DEM/terrain and drainage data, producing **simultaneous multi-hazard probability maps with explainability (XAI)** and **automated categorized alerts**.
 
-The repository does not contain a verbatim copy of the original SIH26077 problem statement document (no PDF/text of the official statement is checked into `docs/` or elsewhere in the repo). What exists instead is a point-by-point internal requirement list reconstructed from the statement and re-verified against the code repeatedly across the project's history — most recently in [`docs/SIH26077_LIVE_REQUIREMENT_MATRIX.md`](docs/SIH26077_LIVE_REQUIREMENT_MATRIX.md), a 20-row matrix, and consolidated further in [`docs/MASTER_SIH_REQUIREMENT_MATRIX.md`](docs/MASTER_SIH_REQUIREMENT_MATRIX.md) and [`docs/FINAL_SIH_IMPLEMENTATION_AUDIT.md`](docs/FINAL_SIH_IMPLEMENTATION_AUDIT.md). The summary above is drawn from those three documents, which is the closest verifiable source this repository has to the original wording. **This is a genuine documentation gap** — the official problem statement text itself should be attached to `docs/` if a copy exists outside this repo.
+The repository does not contain a verbatim copy of the original SIH26077 problem statement document (no PDF/text of the official statement is checked into `docs/` or elsewhere in the repo). What exists instead is a point-by-point internal requirement list reconstructed from the statement and re-verified against the code repeatedly across the project's history — most recently in [`docs/SIH26077_LIVE_REQUIREMENT_MATRIX.md`](docs/SIH26077_LIVE_REQUIREMENT_MATRIX.md), a 20-row matrix, and consolidated further in [`docs/archive/requirement_audits/MASTER_SIH_REQUIREMENT_MATRIX.md`](docs/archive/requirement_audits/MASTER_SIH_REQUIREMENT_MATRIX.md) and [`docs/FINAL_SIH_IMPLEMENTATION_AUDIT.md`](docs/FINAL_SIH_IMPLEMENTATION_AUDIT.md). The summary above is drawn from those three documents, which is the closest verifiable source this repository has to the original wording. **This is a genuine documentation gap** — the official problem statement text itself should be attached to `docs/` if a copy exists outside this repo.
 
 ## 2. What DRIFT is, honestly
 
@@ -219,7 +219,7 @@ flowchart TB
 ### Thunderstorm (TS)
 
 - **VOBL**: a trained, calibrated XGBoost model consuming GFS + METAR + Himawari-derived features, with per-slot fallback to a hardcoded climatology (`{0:0.037, 1:0.011, 2:0.063, 3:0.059}`, tagged `"fallback": true`) if no model artifact is found for a slot.
-- **Pan-India**: a fixed-coefficient physics formula over CAPE, K-index, Totals-Totals, wind shear, convergence and CTT-drop (weights sum to 1.00, documented in [`docs/PAN_INDIA_HAZARD_COEFFICIENTS.md`](docs/PAN_INDIA_HAZARD_COEFFICIENTS.md)), minus a CIN penalty, clipped to [0,1]. This is **not** a trained model. `backend/pipeline.py` has zero `.fit(`/training calls for this path (grep-confirmed).
+- **Pan-India**: a fixed-coefficient physics formula over CAPE, K-index, Totals-Totals, wind shear, convergence and CTT-drop (weights sum to 1.00, documented in [`docs/models/PAN_INDIA_HAZARD_COEFFICIENTS.md`](docs/models/PAN_INDIA_HAZARD_COEFFICIENTS.md)), minus a CIN penalty, clipped to [0,1]. This is **not** a trained model. `backend/pipeline.py` has zero `.fit(`/training calls for this path (grep-confirmed).
 - **Verified live coverage** (`pan_india_grid.json`, 2026-10-11): all 992 cells report `value_type: heuristic_risk_score` for TS; only VOBL has a genuinely trained TS model (1 of 992 cells by model type, though the VOBL station itself maps to its own `forecast.json`, not a pan-India cell).
 
 ### Cloudburst (CB)
@@ -243,7 +243,7 @@ Only **PAN_INDIA** (per-cell trained/heuristic hazard values from the 992-cell g
 
 ## 8. SIH requirement traceability matrix
 
-Consolidated from [`docs/SIH26077_LIVE_REQUIREMENT_MATRIX.md`](docs/SIH26077_LIVE_REQUIREMENT_MATRIX.md) (20-row matrix mapped directly to the SIH26077 requirement list) and cross-checked against [`docs/MASTER_SIH_REQUIREMENT_MATRIX.md`](docs/MASTER_SIH_REQUIREMENT_MATRIX.md) and [`docs/FINAL_SIH_IMPLEMENTATION_AUDIT.md`](docs/FINAL_SIH_IMPLEMENTATION_AUDIT.md), then re-verified where possible against the current live `pan_india_grid.json`/`unified_forecast.json` and current code rather than copied blindly — these source docs are dated across several months and some statuses have moved since (notably CB, which has progressed from heuristic-only to a real trained, LODO-validated model since the audits were written).
+Consolidated from [`docs/SIH26077_LIVE_REQUIREMENT_MATRIX.md`](docs/SIH26077_LIVE_REQUIREMENT_MATRIX.md) (20-row matrix mapped directly to the SIH26077 requirement list) and cross-checked against [`docs/archive/requirement_audits/MASTER_SIH_REQUIREMENT_MATRIX.md`](docs/archive/requirement_audits/MASTER_SIH_REQUIREMENT_MATRIX.md) and [`docs/FINAL_SIH_IMPLEMENTATION_AUDIT.md`](docs/FINAL_SIH_IMPLEMENTATION_AUDIT.md), then re-verified where possible against the current live `pan_india_grid.json`/`unified_forecast.json` and current code rather than copied blindly — these source docs are dated across several months and some statuses have moved since (notably CB, which has progressed from heuristic-only to a real trained, LODO-validated model since the audits were written).
 
 | # | Requirement | Status | Evidence |
 |---|---|---|---|
@@ -309,7 +309,7 @@ python -m pytest tests/ -q
 python -m pytest tests/ -q --collect-only
 ```
 
-Collection was confirmed working in this session: **993 tests collected** across `tests/` plus the root-level `test_*.py` files, with `pytest.ini`'s `addopts` excluding `SIH_*Z` snapshot folders and four modules that need either the `satpy` package (`test_himawari.py`, `test_segments.py`, `test_segments_v2.py`) or a live NOMADS network call (`test_nomads.py`) — documented as known, non-code environment limitations in [`docs/KNOWN_ISSUES.md`](docs/KNOWN_ISSUES.md), not as broken tests.
+Collection was confirmed working in this session: **993 tests collected** across `tests/` plus the root-level `test_*.py` files, with `pytest.ini`'s `addopts` excluding `SIH_*Z` snapshot folders and four modules that need either the `satpy` package (`test_himawari.py`, `test_segments.py`, `test_segments_v2.py`) or a live NOMADS network call (`test_nomads.py`) — documented as known, non-code environment limitations in [`docs/operations/KNOWN_ISSUES.md`](docs/operations/KNOWN_ISSUES.md), not as broken tests.
 
 ## 12. Results and validation
 
@@ -328,9 +328,9 @@ Where this document cannot trace a number to a specific file, it says so rather 
 - Repository: <https://github.com/Aprameya05/SIH-Hyperlocal-Warning>
 - Workflows: [`.github/workflows/forecast_update.yml`](.github/workflows/forecast_update.yml), [`.github/workflows/update_grid.yml`](.github/workflows/update_grid.yml), [`.github/workflows/drift_check.yml`](.github/workflows/drift_check.yml), [`.github/workflows/retrain_trigger.yml`](.github/workflows/retrain_trigger.yml), [`.github/workflows/weekly_digest.yml`](.github/workflows/weekly_digest.yml)
 - Core pipeline code: [`backend/pipeline.py`](backend/pipeline.py), [`forecast_action.py`](forecast_action.py), [`scripts/sync_unified_cb_into_pan_india_grid.py`](scripts/sync_unified_cb_into_pan_india_grid.py), [`assets/location_engine.js`](assets/location_engine.js)
-- Model documentation: [`docs/PHASE_21_PANINDIA_CB_MODEL.md`](docs/PHASE_21_PANINDIA_CB_MODEL.md), [`docs/PHASE_28_FLASH_FLOOD_PU_HARDENING.md`](docs/PHASE_28_FLASH_FLOOD_PU_HARDENING.md), [`docs/PAN_INDIA_HAZARD_COEFFICIENTS.md`](docs/PAN_INDIA_HAZARD_COEFFICIENTS.md)
-- SIH requirement audits: [`docs/SIH26077_LIVE_REQUIREMENT_MATRIX.md`](docs/SIH26077_LIVE_REQUIREMENT_MATRIX.md), [`docs/MASTER_SIH_REQUIREMENT_MATRIX.md`](docs/MASTER_SIH_REQUIREMENT_MATRIX.md), [`docs/FINAL_SIH_IMPLEMENTATION_AUDIT.md`](docs/FINAL_SIH_IMPLEMENTATION_AUDIT.md)
-- Known issues: [`docs/KNOWN_ISSUES.md`](docs/KNOWN_ISSUES.md)
+- Model documentation: [`docs/PHASE_21_PANINDIA_CB_MODEL.md`](docs/PHASE_21_PANINDIA_CB_MODEL.md), [`docs/PHASE_28_FLASH_FLOOD_PU_HARDENING.md`](docs/PHASE_28_FLASH_FLOOD_PU_HARDENING.md), [`docs/models/PAN_INDIA_HAZARD_COEFFICIENTS.md`](docs/models/PAN_INDIA_HAZARD_COEFFICIENTS.md)
+- SIH requirement audits: [`docs/SIH26077_LIVE_REQUIREMENT_MATRIX.md`](docs/SIH26077_LIVE_REQUIREMENT_MATRIX.md), [`docs/archive/requirement_audits/MASTER_SIH_REQUIREMENT_MATRIX.md`](docs/archive/requirement_audits/MASTER_SIH_REQUIREMENT_MATRIX.md), [`docs/FINAL_SIH_IMPLEMENTATION_AUDIT.md`](docs/FINAL_SIH_IMPLEMENTATION_AUDIT.md)
+- Known issues: [`docs/operations/KNOWN_ISSUES.md`](docs/operations/KNOWN_ISSUES.md)
 
 ---
 

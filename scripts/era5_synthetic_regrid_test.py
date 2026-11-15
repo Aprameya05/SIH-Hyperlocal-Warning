@@ -13,7 +13,7 @@ the 992 canonical cells.
 
 No real ERA5 data was available in this sandbox (no CDS credentials, no
 network egress to cds.climate.copernicus.eu -- see
-docs/PHASE_0_3_ERA5_PILOT_VALIDATION.md). The array built below is entirely
+docs/archive/phase_history/PHASE_0_3_ERA5_PILOT_VALIDATION.md). The array built below is entirely
 SYNTHETIC: structurally shaped like an ERA5 0.25deg lat/lon grid over a
 small test bounding box, filled with deterministic placeholder numbers.
 It is NEVER written anywhere as if it were real ERA5 data.

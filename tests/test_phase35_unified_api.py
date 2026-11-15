@@ -9,7 +9,7 @@ A real, pre-existing, out-of-scope environment issue was found while
 writing these tests: data/alerts.db (the pre-existing alert-history
 SQLite file) raises "disk I/O error" on this machine, unrelated to any
 code in this phase (a fresh file at a different path works fine; see
-docs/PHASE_35_UNIFIED_OPERATIONAL_API.md). Tests that need a working
+docs/archive/phase_history/PHASE_35_UNIFIED_OPERATIONAL_API.md). Tests that need a working
 alerts table monkeypatch backend.alerts.DB_PATH to a temp file rather
 than depend on, or attempt to repair, that file.
 """

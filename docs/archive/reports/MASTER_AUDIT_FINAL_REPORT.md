@@ -1,7 +1,7 @@
 # MASTER AUDIT COMPLETE
 
 1. **Total SIH requirements counted**: 29 (27 numbered requirement rows in
-   `docs/MASTER_SIH_REQUIREMENT_MATRIX.md`; rows #6 and #14 each split into two sub-statuses because
+   `docs/archive/requirement_audits/MASTER_SIH_REQUIREMENT_MATRIX.md`; rows #6 and #14 each split into two sub-statuses because
    part of the requirement is real and part is not, giving 29 status counts total).
 
 2. **GREEN count**: 2 (CAPE, wind shear — real GFS/ERA5 data, used in production and training, no caveats)
@@ -52,7 +52,7 @@
     proxy variables) in parallel → P0.3 (calibrate pan-India heuristic, shares labeling work with P0.1)
     → P1.1 (train or re-badge MTL) → P1.2 (populate null grid fields) → P2 (data/model-version hygiene)
     → P3 (quick reliability fixes, can run anytime) → P4 (UI fallback labeling) → P5 (alert channel
-    accuracy) → P6 (docs consolidation). Full detail in `docs/MASTER_REMEDIATION_PLAN.md`.
+    accuracy) → P6 (docs consolidation). Full detail in `docs/archive/requirement_audits/MASTER_REMEDIATION_PLAN.md`.
 
 14. **Exact files created**:
     - `/tmp/audit_repo/docs/MASTER_SIH_REQUIREMENT_MATRIX.md`

@@ -17,7 +17,7 @@ data/unified_forecast.json, the regression suite fails loudly instead of
 the corruption being discovered by accident days later.
 
 The single authoritative generator for this artifact is
-scripts/phase34_build_unified_forecast.py (see docs/PIPELINE_OWNERSHIP.md).
+scripts/phase34_build_unified_forecast.py (see docs/architecture/PIPELINE_OWNERSHIP.md).
 No GitHub Actions workflow writes this file; it is a local/offline
 artifact regenerated on demand and consumed by backend/unified_api.py's
 GET /forecast/all as the OFFLINE_ARTIFACT fallback.
@@ -72,7 +72,7 @@ def test_artifact_is_not_phase24_schema():
         "data/unified_forecast.json has reverted to the Phase 24 "
         "artifact_type label -- the Phase 24 pipeline wrote this file "
         "again; re-run scripts/phase34_build_unified_forecast.py and find "
-        "the writer (see docs/PIPELINE_OWNERSHIP.md)"
+        "the writer (see docs/architecture/PIPELINE_OWNERSHIP.md)"
     )
     records = d.get("records", [])
     assert records, "artifact has no records"

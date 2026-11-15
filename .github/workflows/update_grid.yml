@@ -24,7 +24,7 @@ jobs:
 
       # 2026-10-10: moved from AFTER "Run pipeline" to immediately after
       # checkout. This workflow is the sole writer of
-      # data/pan_india_grid.json (docs/PIPELINE_OWNERSHIP.md), and this
+      # data/pan_india_grid.json (docs/architecture/PIPELINE_OWNERSHIP.md), and this
       # workflow has been failing on EVERY run for several days straight
       # (confirmed via the GitHub Checks API across 10+ consecutive runs,
       # all failing at "Build canonical forecast" immediately after this

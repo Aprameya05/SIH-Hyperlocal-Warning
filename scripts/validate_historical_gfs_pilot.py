@@ -294,7 +294,7 @@ def main():
                 # that was a real bug in this script, not a missing-data
                 # finding about the GFS archive. This data genuinely is GFS
                 # (same model family as the live pipeline, per
-                # docs/PHASE_0_4_2_HISTORICAL_GFS_FEASIBILITY.md), so
+                # docs/archive/phase_history/PHASE_0_4_2_HISTORICAL_GFS_FEASIBILITY.md), so
                 # source_name="gfs" is the accurate value; the fact that it
                 # comes from the NCAR GDEX d084001 *historical* archive rather
                 # than a live fetch is preserved in the separate

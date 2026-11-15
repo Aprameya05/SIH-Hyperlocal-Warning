@@ -166,7 +166,7 @@ jobs:
           python pan_india_gfs_fetcher.py $SLOT_ARG
           # pan_india_gfs_fetcher.py writes its own slot-scoped artifact, not the
           # shared data/pan_india_grid.json (that path is owned solely by
-          # backend/pipeline.py via update_grid.yml -- see docs/PIPELINE_OWNERSHIP.md).
+          # backend/pipeline.py via update_grid.yml -- see docs/architecture/PIPELINE_OWNERSHIP.md).
           [ -f data/pan_india_grid_slotrun.json ] && python3 -c 'import json; d=json.load(open("data/pan_india_grid_slotrun.json")); c=d.get("grid_cells",[]); s=d.get("summary",{}).get("thunderstorm",{}); print("pan-India slot-run grid:",len(c),"cells ts_max="+str(round(s.get("max_prob",0)*100,1))+"%")' || echo 'pan-India slot-run grid not yet available'
         continue-on-error: true
 

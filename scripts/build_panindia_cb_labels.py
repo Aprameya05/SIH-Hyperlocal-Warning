@@ -8,7 +8,7 @@ canonical cells. Threshold is UNCHANGED from what the code actually runs
 (CB_THRESHOLD_MM = 64.5 -- note: dev/Fetch cb ff labels.py's own docstring
 says "100 mm/day", but its executed CB_THRESHOLD_MM constant is 64.5; this
 script matches the real executed behavior, not the stale comment -- see
-docs/LABEL_ENGINE.md).
+docs/models/LABEL_ENGINE.md).
 
 Source: imd_rain/rain/{2015-2025}.grd -- real IMD 0.25-degree daily
 gridded rainfall, format verified this pass (file sizes match
@@ -40,7 +40,7 @@ IMD_N_LON = int(round((IMD_LON_END - IMD_LON_START) / IMD_STEP)) + 1  # 135
 
 CB_THRESHOLD_MM = 64.5  # matches the ACTUAL executed constant, not the stale docstring
 
-# Canonical 992-cell grid (docs/CANONICAL_GRID.md)
+# Canonical 992-cell grid (docs/architecture/CANONICAL_GRID.md)
 CANON_BOUNDS = {"S": 6, "N": 37, "W": 68, "E": 98}
 CANON_STEP = 1.0
 
@@ -156,7 +156,7 @@ def main():
         "cell_days_missing": n_missing,
         "threshold_mm": CB_THRESHOLD_MM,
         "positive_rate_pct": round(100.0 * n_positive / (n_positive + n_negative), 4) if (n_positive + n_negative) else None,
-        "temporal_resolution": "daily (source), applied to all 4 six-hour slots -- see docs/LABEL_ENGINE.md",
+        "temporal_resolution": "daily (source), applied to all 4 six-hour slots -- see docs/models/LABEL_ENGINE.md",
     }
     print(summary)
     import json

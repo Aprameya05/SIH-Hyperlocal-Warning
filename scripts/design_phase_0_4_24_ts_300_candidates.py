@@ -394,7 +394,7 @@ def main():
     n_event_groups = len(selected_all)
     n_files = len(manifest_rows)
 
-    out_csv = REPO_ROOT / "docs" / "PHASE_0_4_24_TS_300_EVENT_MANIFEST.csv"
+    out_csv = REPO_ROOT / "docs" / "archive" / "phase_history" / "PHASE_0_4_24_TS_300_EVENT_MANIFEST.csv"
     fieldnames = list(manifest_rows[0].keys()) if manifest_rows else []
     with open(out_csv, "w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
@@ -473,7 +473,7 @@ def main():
         "existing_20_holdout": len(existing_holdout),
     }
     print(json.dumps(result, indent=2, default=str))
-    (REPO_ROOT / "docs" / "PHASE_0_4_24_SELECTION_RESULT.json").write_text(json.dumps(result, indent=2, default=str))
+    (REPO_ROOT / "docs" / "archive" / "phase_history" / "PHASE_0_4_24_SELECTION_RESULT.json").write_text(json.dumps(result, indent=2, default=str))
 
 
 if __name__ == "__main__":

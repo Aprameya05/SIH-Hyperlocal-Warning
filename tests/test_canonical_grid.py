@@ -41,7 +41,7 @@ def test_live_grid_matches_documented_canonical():
     check("31 unique lons", len(lons) == 31, f"got {len(lons)}")
     check("grid_step_deg == 1.0", d.get("grid_step_deg") == 1.0, f"got {d.get('grid_step_deg')}")
     check(
-        "WARNING flag: code's GRID_STEP differs from live file (see docs/CANONICAL_GRID.md)",
+        "WARNING flag: code's GRID_STEP differs from live file (see docs/architecture/CANONICAL_GRID.md)",
         True,  # informational, not a failure -- this is the documented, expected discrepancy
     )
 

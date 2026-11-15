@@ -8,7 +8,7 @@ cell via point-in-cell on the gauge's own coordinates (Phase 5's
 cell/date event label. `GaugeID` is preserved explicitly through
 `processed/indofloods/indofloods_grid_events.csv` on every row; catchment
 centroids are never substituted for the gauge point. Full chain and
-justification: `docs/INDOFLOODS_LABEL_DEFINITION.md`.
+justification: `docs/data_sources/INDOFLOODS_LABEL_DEFINITION.md`.
 
 ## 2. Multi-gauge aggregation rule (and justification)
 `cell_event(cell, date) = 1` if ANY qualifying gauge in that cell has an
@@ -30,7 +30,7 @@ each gauge's operational-window length show 50.5% of gauges have fewer
 than 0.9 level-entries per day and 17.3% have fewer than 0.5 -- i.e. data
 coverage is intermittent for roughly half the network. A day with no
 recorded event cannot be treated as confirmed non-flood dataset-wide.
-Full reasoning: `docs/INDOFLOODS_NEGATIVE_LABEL_AUDIT.md`.
+Full reasoning: `docs/data_sources/INDOFLOODS_NEGATIVE_LABEL_AUDIT.md`.
 
 ## 4. Continuous predictor sources found (or none, and what's needed)
 Only one real, gridded source exists in this repo:
@@ -41,7 +41,7 @@ ERA5 CSVs in `data/` are single-point (Bengaluru only), not usable for a
 pan-India grid. A gridded daily precipitation product covering India at
 1.0-degree resolution or finer, spanning 1970-2020, would be needed to
 cover the rest of the INDOFLOODS period -- not fetched this phase.
-Details: `docs/FF_HISTORICAL_PREDICTOR_AUDIT.md`.
+Details: `docs/models/FF_HISTORICAL_PREDICTOR_AUDIT.md`.
 
 ## 5. Existing IMD rainfall assessment (or "no such source exists in repo")
 Real and usable for its covered window. 129x135 0.25-degree grid, lat
@@ -64,7 +64,7 @@ mapped). Unique event dates: 2,791. Common label+predictor period:
 through 2025 with no further INDOFLOODS events to pair it with).
 
 ## 7. Leakage findings (new + carried over)
-Carried over from Phase 5 (`docs/INDOFLOODS_LEAKAGE_AUDIT.md`): all
+Carried over from Phase 5 (`docs/data_sources/INDOFLOODS_LEAKAGE_AUDIT.md`): all
 `floodevents_indofloods.csv` fields besides `EventID`/gauge/`Start Date`
 are post-hoc/OBSERVED and unusable as predictors; `Warning
 Level`/`Danger Level` must never be features; `Txd` precipitation columns

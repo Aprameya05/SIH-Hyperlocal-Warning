@@ -2,7 +2,7 @@
 backend/data_sources/imerg.py
 ================================
 GPM IMERG (NASA/GES DISC) QPE candidate -- see
-docs/PHASE_0_2_EXTERNAL_DATA_CATALOG.md section B1.
+docs/archive/phase_history/PHASE_0_2_EXTERNAL_DATA_CATALOG.md section B1.
 
 That research pass found a plausible access path (FTP/HTTP via GES DISC,
 free PPS/Earthdata account registration, `earthaccess`/`gpm_api` Python
@@ -48,7 +48,7 @@ class IMERGSource(BaseSourceAdapter):
                 f"GPM IMERG requires a free NASA Earthdata/GES DISC account; no credentials "
                 f"configured (missing env var(s): {', '.join(missing_creds)}). A plausible access "
                 f"path (earthaccess/gpm_api, FTP/HTTP via GES DISC) is catalogued in "
-                f"docs/PHASE_0_2_EXTERNAL_DATA_CATALOG.md section B1 but has never been tested "
+                f"docs/archive/phase_history/PHASE_0_2_EXTERNAL_DATA_CATALOG.md section B1 but has never been tested "
                 f"live from this repository's environments. Currently used in production as a "
                 f"GFS precipitation-rate proxy, explicitly code-commented 'QPE PROXY'.",
                 quality_flags=["no_credentials", "endpoint_access_never_verified_live", "gfs_proxy_used_in_production"],

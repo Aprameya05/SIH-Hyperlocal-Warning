@@ -18,7 +18,7 @@ MyDrive/SIH-Historical-GFS/logs/phase_0_4_26_final_evidence_report.json
 and could be mistaken for current truth.
 
 This script is the single authoritative replacement. It:
-  - reads ONLY the authoritative manifest (docs/PHASE_0_4_24_TS_300_EVENT_MANIFEST.csv)
+  - reads ONLY the authoritative manifest (docs/archive/phase_history/PHASE_0_4_24_TS_300_EVENT_MANIFEST.csv)
     and the persisted per-batch CSVs under processed_batches/ -- never a
     notebook variable, never in-memory state from a prior cell.
   - is FAIL CLOSED: on any real data-integrity violation (unexpected
@@ -41,7 +41,7 @@ only assembles and validates what has already been persisted.
 
 Usage:
     python3 scripts/phase_0_4_26_final_evidence.py \\
-        --manifest docs/PHASE_0_4_24_TS_300_EVENT_MANIFEST.csv \\
+        --manifest docs/archive/phase_history/PHASE_0_4_24_TS_300_EVENT_MANIFEST.csv \\
         --processed-batches-dir /content/drive/MyDrive/SIH-Historical-GFS/processed_batches \\
         --train-out /content/drive/MyDrive/SIH-Historical-GFS/train/phase_0_4_26_train.csv \\
         --holdout-out /content/drive/MyDrive/SIH-Historical-GFS/holdout/phase_0_4_26_holdout.csv \\
@@ -331,7 +331,7 @@ def assemble_and_validate(manifest_df: pd.DataFrame, acquired_df: pd.DataFrame) 
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--manifest", type=Path, default=REPO_ROOT / "docs" / "PHASE_0_4_24_TS_300_EVENT_MANIFEST.csv")
+    parser.add_argument("--manifest", type=Path, default=REPO_ROOT / "docs" / "archive" / "phase_history" / "PHASE_0_4_24_TS_300_EVENT_MANIFEST.csv")
     parser.add_argument("--processed-batches-dir", type=Path, required=True)
     parser.add_argument("--train-out", type=Path, required=True)
     parser.add_argument("--holdout-out", type=Path, required=True)

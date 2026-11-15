@@ -13,7 +13,7 @@ task brief.
    `data/variables_description_indofloods.pdf`.
 
 2. **Exact schema of each**: see
-   `docs/INDOFLOODS_FORENSIC_INVENTORY.md` Sections 1-6 for full
+   `docs/data_sources/INDOFLOODS_FORENSIC_INVENTORY.md` Sections 1-6 for full
    column/dtype listings. Summary: metadata 214 rows x 18 cols; catchment
    characteristics 155 rows x 108 cols; flood events 4,548 rows x 13 cols;
    precipitation 4,548 rows x 11 cols; shapefiles 155 gauges x 5 files
@@ -55,7 +55,7 @@ task brief.
    disagreement that made this a real decision, not a formality. Full
    reasoning and the caveat this leaves (catchment-wide variables
    attributed to a cell that may not represent most of the catchment's
-   area) is in `docs/INDOFLOODS_FORENSIC_INVENTORY.md` Section 4.
+   area) is in `docs/data_sources/INDOFLOODS_FORENSIC_INVENTORY.md` Section 4.
 
 10. **Mapping statistics**: 214/214 gauges MAPPED, 0 OUTSIDE_GRID, 0
     INVALID_COORDS. 106 distinct cells occupied; 48 cells receive more
@@ -97,12 +97,12 @@ task brief.
     socioeconomic/exposure descriptors (GDP PPP and GDP-per-capita PPP for
     six snapshot years, HDI for six years, population count/density,
     night lights, road density, urban percentage, land cover/soil/
-    lithology type). Full catalog: `docs/INDOFLOODS_FEATURE_CATALOG.md`.
+    lithology type). Full catalog: `docs/data_sources/INDOFLOODS_FEATURE_CATALOG.md`.
 
 15. **Potential susceptibility features**: stream-order/drainage-network
     topology, all morphometric shape/relief/drainage-density indices,
     Bioclim climate normals, and land cover/soil type/lithology type — all
-    flagged STATIC SUSCEPTIBILITY in `docs/INDOFLOODS_LEAKAGE_AUDIT.md`.
+    flagged STATIC SUSCEPTIBILITY in `docs/data_sources/INDOFLOODS_LEAKAGE_AUDIT.md`.
 
 16. **Variables that can support observed-event labels**: `floodevents_
     indofloods.csv`'s `Start Date` (as the label-anchoring timestamp) and
@@ -115,7 +115,7 @@ task brief.
     years), night lights, population count/density, road density, urban
     percentage — these describe exposure/impact, not hazard likelihood,
     and are explicitly flagged not to be used as susceptibility features
-    (`docs/INDOFLOODS_LEAKAGE_AUDIT.md`).
+    (`docs/data_sources/INDOFLOODS_LEAKAGE_AUDIT.md`).
 
 18. **Leakage findings**: (a) every non-`Start Date` field in
     `floodevents_indofloods.csv` (peak level/date, discharge, volume,
@@ -164,7 +164,7 @@ task brief.
     feature set (155 of 992 cells' worth of catchments), but it has no
     negative (non-flood) examples and no continuous per-cell-per-day
     precipitation series — every `Txd` record exists only because a flood
-    already happened there. See `docs/INDOFLOODS_LEAKAGE_AUDIT.md` for
+    already happened there. See `docs/data_sources/INDOFLOODS_LEAKAGE_AUDIT.md` for
     the full reasoning.
 
 22. **What's still missing before it can influence the live flash-flood

@@ -9,7 +9,7 @@ grid/pipeline code. Writes ONLY to processed/indofloods/.
 Mapping method: point-in-cell using the gauge's own Latitude/Longitude from
 metadata_indofloods.csv (the instrument location, i.e. the flood-observation
 point), snapped to the nearest canonical grid cell. See
-docs/INDOFLOODS_FORENSIC_INVENTORY.md section 4 for why point mapping (not a
+docs/data_sources/INDOFLOODS_FORENSIC_INVENTORY.md section 4 for why point mapping (not a
 catchment-polygon overlap/centroid method) is used, despite a documented
 gauge-point-vs-catchment-centroid mismatch rate.
 

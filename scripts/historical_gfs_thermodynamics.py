@@ -22,7 +22,7 @@ production's live K-Index/Totals-Totals use GFS's own dewpoint field
 directly (when NOMADS serves var_DPT). The GDEX d084001 archive used for
 this project's historical pilot does not carry a dewpoint field at isobaric
 levels at all (confirmed by full shortName enumeration in
-docs/PHASE_0_4_4_HISTORICAL_GFS_FEATURE_CONTRACT.md Part 3) -- only
+docs/archive/phase_history/PHASE_0_4_4_HISTORICAL_GFS_FEATURE_CONTRACT.md Part 3) -- only
 temperature and relative humidity are available at the required levels
 (850/700/500 hPa). Magnus-Tetens recovers an approximate dewpoint from T+RH;
 it is a well-established meteorological approximation but it is NOT the
@@ -40,7 +40,7 @@ DEWPOINT_FORMULA = "Magnus-Tetens"
 SOURCE_HISTORICAL_GFS = "historical_gfs"
 
 # Magnus-Tetens coefficients (same widely-used form cited in
-# docs/PHASE_0_4_4_HISTORICAL_GFS_FEATURE_CONTRACT.md Part 3).
+# docs/archive/phase_history/PHASE_0_4_4_HISTORICAL_GFS_FEATURE_CONTRACT.md Part 3).
 _MAGNUS_A = 17.67
 _MAGNUS_B = 243.5  # degC
 _MAGNUS_E0 = 6.112  # hPa, saturation vapor pressure reference
@@ -216,7 +216,7 @@ def compute_k_index_historical(t850_k: Optional[float], rh850_pct: Optional[floa
     Identical formula to backend/pipeline.py::compute_k_index -- the only
     difference is Td850/Td700 are DERIVED here (Magnus-Tetens from T+RH),
     not read directly from a GRIB dewpoint field (none exists in this
-    archive, see docs/PHASE_0_4_4_HISTORICAL_GFS_FEATURE_CONTRACT.md)."""
+    archive, see docs/archive/phase_history/PHASE_0_4_4_HISTORICAL_GFS_FEATURE_CONTRACT.md)."""
     td850 = derive_dewpoint(t850_k, rh850_pct)
     td700 = derive_dewpoint(t700_k, rh700_pct)
 

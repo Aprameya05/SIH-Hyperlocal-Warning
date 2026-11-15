@@ -29,7 +29,7 @@ sys.path.insert(0, str(REPO_ROOT / "scripts"))
 
 from acquire_historical_gfs_pilot import build_direct_url  # noqa: E402
 
-MANIFEST_PATH = REPO_ROOT / "docs" / "PHASE_0_4_24_TS_300_EVENT_MANIFEST.csv"
+MANIFEST_PATH = REPO_ROOT / "docs" / "archive" / "phase_history" / "PHASE_0_4_24_TS_300_EVENT_MANIFEST.csv"
 
 
 @pytest.mark.parametrize(

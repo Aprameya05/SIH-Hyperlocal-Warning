@@ -16,7 +16,7 @@ already share.
 Also verifies data/pan_india_grid.json is NOT written by
 forecast_update.yml's GENERATED_FILES (it must stay the sole domain
 of update_grid.yml / backend/pipeline.py per
-docs/PIPELINE_OWNERSHIP.md -- re-adding it there would reintroduce the
+docs/architecture/PIPELINE_OWNERSHIP.md -- re-adding it there would reintroduce the
 exact two-writer race this project already fixed once, 2026-09-30).
 """
 import json
@@ -225,7 +225,7 @@ def test_nested_forecasts_grid_cells_list_is_synced_identically_to_the_top_level
 
 
 def test_pan_india_grid_json_is_not_committed_by_forecast_update_workflow():
-    """docs/PIPELINE_OWNERSHIP.md: data/pan_india_grid.json must stay the
+    """docs/architecture/PIPELINE_OWNERSHIP.md: data/pan_india_grid.json must stay the
     sole domain of update_grid.yml/backend/pipeline.py. Re-adding it to
     forecast_update.yml's GENERATED_FILES would reintroduce the exact
     two-writer race this project already fixed once (2026-09-30)."""

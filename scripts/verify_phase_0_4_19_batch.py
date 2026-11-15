@@ -8,7 +8,7 @@ verify_phase_0_4_15_oversized_stage_b.py (grid metadata, GRIB2 integrity,
 init/lead/valid-time/IST-slot/event_group_key recomputation, required
 field presence, tp/prate metadata, label cross-check, partition check,
 duplicate-SHA256 detection) -- but reads its list of expected targets from
-docs/PHASE_0_4_17_ACQUISITION_MANIFEST.csv instead of a hardcoded Python
+docs/archive/phase_history/PHASE_0_4_17_ACQUISITION_MANIFEST.csv instead of a hardcoded Python
 list, since this batch's 20 event groups (40 files) are too many to
 hand-maintain as a literal table the way Phase 0.4.15's 6-file list was.
 
@@ -44,7 +44,7 @@ import build_vobl_historical_gfs_ts_join as join_mod  # noqa: E402
 from historical_dataset_split import assign_partition, TRAIN, HOLDOUT  # noqa: E402
 
 CELL_ID = "IND_13.0_78.0"
-CANDIDATE_MANIFEST_CSV = REPO_ROOT / "docs" / "PHASE_0_4_17_ACQUISITION_MANIFEST.csv"
+CANDIDATE_MANIFEST_CSV = REPO_ROOT / "docs" / "archive" / "phase_history" / "PHASE_0_4_17_ACQUISITION_MANIFEST.csv"
 RAW_DIR = REPO_ROOT / "data" / "external" / "historical_gfs" / "raw"
 PROVENANCE_MANIFEST = REPO_ROOT / "data" / "external" / "historical_gfs" / "manifest.json"
 LABELS_PATH = REPO_ROOT / "docs/archive/implementation_snapshots/SIH_PANINDIA_GRID_LABELS_20260930_143541Z" / "processed" / "labels" / "ts_labels.csv"

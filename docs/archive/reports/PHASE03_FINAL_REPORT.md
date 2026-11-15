@@ -1,8 +1,8 @@
 # Phase 0.3 Final Report (top-level mirror)
 
-Full detail lives in `docs/PHASE_0_3_COMPLETION_REPORT.md` and its companion docs:
-`docs/PHASE_0_3_INDOFLOODS_RECONCILIATION.md`, `docs/PHASE_0_3_ERA5_PILOT_VALIDATION.md`,
-`docs/PHASE_0_3_CARTODEM_VALIDATION.md`, `docs/PHASE_0_3_HYDROLOGY_VALIDATION.md`.
+Full detail lives in `docs/archive/phase_history/PHASE_0_3_COMPLETION_REPORT.md` and its companion docs:
+`docs/archive/phase_history/PHASE_0_3_INDOFLOODS_RECONCILIATION.md`, `docs/archive/phase_history/PHASE_0_3_ERA5_PILOT_VALIDATION.md`,
+`docs/archive/phase_history/PHASE_0_3_CARTODEM_VALIDATION.md`, `docs/archive/phase_history/PHASE_0_3_HYDROLOGY_VALIDATION.md`.
 
 ## Headline results
 
@@ -27,11 +27,11 @@ Full detail lives in `docs/PHASE_0_3_COMPLETION_REPORT.md` and its companion doc
 
 ## Files created this phase
 
-- `docs/PHASE_0_3_INDOFLOODS_RECONCILIATION.md`
-- `docs/PHASE_0_3_ERA5_PILOT_VALIDATION.md`
-- `docs/PHASE_0_3_CARTODEM_VALIDATION.md`
-- `docs/PHASE_0_3_HYDROLOGY_VALIDATION.md`
-- `docs/PHASE_0_3_COMPLETION_REPORT.md`
+- `docs/archive/phase_history/PHASE_0_3_INDOFLOODS_RECONCILIATION.md`
+- `docs/archive/phase_history/PHASE_0_3_ERA5_PILOT_VALIDATION.md`
+- `docs/archive/phase_history/PHASE_0_3_CARTODEM_VALIDATION.md`
+- `docs/archive/phase_history/PHASE_0_3_HYDROLOGY_VALIDATION.md`
+- `docs/archive/phase_history/PHASE_0_3_COMPLETION_REPORT.md`
 - `scripts/era5_synthetic_regrid_test.py` (new, read-only w.r.t. all production code)
 - `processed/era5_pilot/synthetic_era5_regrid_test.csv` (synthetic data only)
 - `processed/era5_pilot/synthetic_era5_regrid_summary.json` (synthetic data only)

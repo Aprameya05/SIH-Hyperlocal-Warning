@@ -570,7 +570,12 @@ def test_contract_version_written_to_manifest():
         pytest.skip("default pilot manifest not yet built")
     manifest = json.loads(DEFAULT_OUT_MANIFEST.read_text())
     assert manifest["contract_version"] == CONTRACT_VERSION
-    assert manifest["contract_doc"] == "docs/PHASE_0_4_12_HISTORICAL_GFS_TS_DATASET_CONTRACT.md"
+    # Provenance manifests are historical records and keep the path the doc had when they were written; the document itself
+    # was later moved into docs/archive/phase_history/. Compare by file name and require the document to exist in the repo.
+    from pathlib import Path as _P
+    name = "PHASE_0_4_12_HISTORICAL_GFS_TS_DATASET_CONTRACT.md"
+    assert _P(manifest["contract_doc"]).name == name
+    assert list((_P(__file__).resolve().parent.parent / "docs").rglob(name)), "the contract document must exist under docs/"
     assert "event_group_keys" in manifest
 
 

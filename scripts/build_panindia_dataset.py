@@ -3,7 +3,7 @@
 build_panindia_dataset.py -- Phase 5 dataset construction.
 
 Builds the maximum REAL supervised dataset possible from what already
-exists in this repository, per docs/PANINDIA_DATASET_SCHEMA.md. Does not
+exists in this repository, per docs/architecture/PANINDIA_DATASET_SCHEMA.md. Does not
 invent predictors, does not invent labels, does not collapse UNKNOWN into
 NEGATIVE, does not let the FF rainfall proxy enter the observed ff_label
 field.
@@ -300,7 +300,7 @@ PANINDIA_CB_PREDICTOR_NOTE = (
     "1.5M+ rows x 12 predictors x 5 always-identical missing-status columns "
     "of pure redundancy, this partition's CSV omits the per-row predictor "
     "columns entirely and states this fact once here instead -- see "
-    "docs/PANINDIA_DATASET_SCHEMA.md and docs/PHASE_5_DATASET_REPORT.md. "
+    "docs/architecture/PANINDIA_DATASET_SCHEMA.md and docs/archive/phase_history/PHASE_5_DATASET_REPORT.md. "
     "A consumer that needs the full identity+predictor+label schema for "
     "this partition should left-join these rows against an all-missing "
     "predictor block built from PREDICTOR_FIELDS in this script."

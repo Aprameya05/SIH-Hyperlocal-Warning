@@ -7,7 +7,7 @@ current GFS pressure-level RH+temperature CTT proxy (see
 docs/LIVE_OPERATIONAL_AUDIT.md CTT row).
 
 Unlike GFS/Himawari/METAR/DEM, GMGSI has NO prior work anywhere in this
-repository -- it does not appear in docs/PHASE_0_2_EXTERNAL_DATA_CATALOG.md
+repository -- it does not appear in docs/archive/phase_history/PHASE_0_2_EXTERNAL_DATA_CATALOG.md
 or any other audit document, and no endpoint for it has ever been
 verified from this repo's environments. Per the Phase 1 instructions:
 verify the actual accessible NOAA product/endpoint before wiring it in,

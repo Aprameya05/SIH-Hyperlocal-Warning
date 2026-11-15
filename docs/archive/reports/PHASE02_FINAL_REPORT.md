@@ -85,7 +85,7 @@ relevant (network egress in this sandbox did not allow authenticated downloads t
   alone. GPM IMERG and ERA5 address the *sub-daily predictor resolution* half of the Phase 5.7
   blocker, but the *real-time ingestion pipeline* and *calibration* halves still require actual
   engineering work this phase did not perform. The three structural gaps in
-  `docs/PHASE_0_1_FF_CURRENT_STATE.md` are now more addressable in principle (IMERG solves the
+  `docs/archive/phase_history/PHASE_0_1_FF_CURRENT_STATE.md` are now more addressable in principle (IMERG solves the
   temporal-resolution gap conceptually) but none are closed in practice yet.
 
 ## Which current GRAY requirements could realistically move

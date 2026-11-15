@@ -3,7 +3,7 @@
 
 These are deterministic checks over values *already verified by hand* in
 this phase (GRIB inspection, label-file lookup, manifest.json cross-check)
-documented in docs/PHASE_0_4_14_STAGE_B_ACQUISITION_VERIFICATION.md. They
+documented in docs/archive/phase_history/PHASE_0_4_14_STAGE_B_ACQUISITION_VERIFICATION.md. They
 do not re-run GRIB inspection (that requires the actual 3+ GB of files,
 not committed to the repo) -- they lock in the event_group_key and
 year-split contract outcomes for the 6 Stage B targets using the real

@@ -13,9 +13,9 @@ Not integrated into production. No production file modified.
   (rainfall-only), C (combined), each with a logistic and an XGBoost PU
   variant (Elkan-Noto SCAR correction), temporal split, spatial holdout,
   sensitivity analysis, feature importance, and SHAP.
-- `docs/FF_PU_FEATURE_CATALOG.md` — every feature, source, units,
+- `docs/models/FF_PU_FEATURE_CATALOG.md` — every feature, source, units,
   hazard relevance, leakage status.
-- `docs/PHASE_5_7_FF_PU_MODEL_REPORT.md` — full write-up.
+- `docs/archive/phase_history/PHASE_5_7_FF_PU_MODEL_REPORT.md` — full write-up.
 - `tests/test_ff_pu_phase57.py` — 13 tests.
 - All model/eval artifacts under `processed/ff_pu/`.
 

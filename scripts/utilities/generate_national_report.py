@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generates docs/NATIONAL_DATA_REPORT.md FROM THE ARTIFACTS (nothing typed by hand): source-to-output trace, coverage matrix,
+"""Generates docs/data_sources/NATIONAL_DATA_REPORT.md FROM THE ARTIFACTS (nothing typed by hand): source-to-output trace, coverage matrix,
 a multi-region location acceptance table and the model evaluation tables."""
 import json
 import sys
@@ -86,8 +86,8 @@ def main():
       "- **Flash-flood prediction**: needs time-stamped observed flash-flood events (location, onset), observed soil moisture and live river levels, drainage/catchment hydrology beyond 106 gauges, then a validated model.\n"
       "- **Operational 2-6 h warnings**: needs a recorded publication time for DRIFT's own forecasts and an approved alert policy (registries are empty by decision).\n"
       "- **0-6 km wind shear, observed radar/satellite grid fields, per-cell observations**: not integrated.\n")
-    (ROOT / "docs" / "NATIONAL_DATA_REPORT.md").write_text("\n".join(out))
-    print("wrote docs/NATIONAL_DATA_REPORT.md", len(rows), "locations")
+    (ROOT / "docs" / "data_sources" / "NATIONAL_DATA_REPORT.md").write_text("\n".join(out))
+    print("wrote docs/data_sources/NATIONAL_DATA_REPORT.md", len(rows), "locations")
 
 
 if __name__ == "__main__":

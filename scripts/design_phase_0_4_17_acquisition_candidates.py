@@ -283,7 +283,7 @@ def main():
     candidates = select_candidates(labels)
     rows = build_manifest_rows(candidates)
 
-    out_csv = REPO_ROOT / "docs" / "PHASE_0_4_17_ACQUISITION_MANIFEST.csv"
+    out_csv = REPO_ROOT / "docs" / "archive" / "phase_history" / "PHASE_0_4_17_ACQUISITION_MANIFEST.csv"
     fieldnames = ["priority", "target_ist_date", "target_slot", "label", "event_group_key",
                   "target_valid_time", "selected_gfs_cycle", "selected_lead", "reason",
                   "partition", "season", "expected_file", "expected_role"]
@@ -313,7 +313,7 @@ def main():
         "seasons_covered": sorted({r["season"] for r, _ in candidates}),
     }
     print(json.dumps(summary, indent=2))
-    (REPO_ROOT / "docs" / "PHASE_0_4_17_ACQUISITION_SUMMARY.json").write_text(json.dumps(summary, indent=2))
+    (REPO_ROOT / "docs" / "archive" / "phase_history" / "PHASE_0_4_17_ACQUISITION_SUMMARY.json").write_text(json.dumps(summary, indent=2))
     print(f"\nWrote {out_csv} ({n_files} rows, {n_events} event groups)")
 
 

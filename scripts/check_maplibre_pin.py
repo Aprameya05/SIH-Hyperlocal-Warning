@@ -5,7 +5,7 @@ Static regression guard: fails if index.html references a floating
 
 Why this exists: maplibre-gl@4.7.1 (resolved from an unpinned "@4" tag) was
 found to throw ~100+ uncaught internal "Cannot read properties of undefined
-(reading 'getLayer')" exceptions per page load (see docs/KNOWN_ISSUES.md).
+(reading 'getLayer')" exceptions per page load (see docs/operations/KNOWN_ISSUES.md).
 maplibre-gl@3.6.2 reduces this to a small, parked residual. A floating "@4"
 (or any other floating major/minor) tag would silently re-introduce the
 regression the next time jsDelivr resolves it to a new release, with no
@@ -43,7 +43,7 @@ def main():
             print(f"  - {m}")
         print(
             "Pin to an exact version (e.g. maplibre-gl@3.6.2) instead. "
-            "See docs/KNOWN_ISSUES.md for why this matters."
+            "See docs/operations/KNOWN_ISSUES.md for why this matters."
         )
         return 1
 
@@ -61,7 +61,7 @@ def main():
         print(
             "NOTE: pinned version is not the currently-documented 3.6.2 "
             "baseline. If this was an intentional, tested upgrade, update "
-            "docs/KNOWN_ISSUES.md to match. If not, this may be accidental."
+            "docs/operations/KNOWN_ISSUES.md to match. If not, this may be accidental."
         )
     return 0
 
