@@ -96,7 +96,7 @@ REQUIRED_SUBDAILY_LABEL_SOURCES = {
                            "for training a meaningful subdaily model (7 positives is too few "
                            "for any legitimate held-out evaluation). Pan-India: none. "
                            "A separate, unintegrated patch module "
-                           "(SIH_IMPLEMENTATION_PATCH_20260930_130455Z/changed_files/"
+                           "(docs/archive/implementation_snapshots/SIH_IMPLEMENTATION_PATCH_20260930_130455Z/changed_files/"
                            "metar_ground_truth.py) designs a more rigorous live-METAR-window "
                            "aggregation for this same VOBL/6h-slot ground truth, but was never "
                            "wired into the live pipeline and has not accumulated any history.",
@@ -119,7 +119,7 @@ REQUIRED_SUBDAILY_LABEL_SOURCES = {
                    "observations to timestamp a flash-flood ONSET rather than "
                    "just its reported Start Date.",
         "currently_have": "INDOFLOODS Start Date / End Date only (daily "
-                           "resolution; see docs/FF_LABEL_READINESS.md). The "
+                           "resolution; see docs/models/FF_LABEL_READINESS.md). The "
                            "underlying metadata_indofloods.csv streamflow "
                            "record continuity is itself non-continuous for "
                            "most gauges, so even if sub-daily timestamps existed "

@@ -17,8 +17,8 @@ sys.path.insert(0, str(REPO_ROOT / "scripts"))
 import design_phase_0_4_17_acquisition_candidates as design_mod  # noqa: E402
 from historical_dataset_split import TRAIN, HOLDOUT  # noqa: E402
 
-MANIFEST_PATH = REPO_ROOT / "docs" / "PHASE_0_4_17_ACQUISITION_MANIFEST.csv"
-PLAN_PATH = REPO_ROOT / "docs" / "PHASE_0_4_17_ACQUISITION_PLAN.md"
+MANIFEST_PATH = REPO_ROOT / "docs" / "archive" / "phase_history" / "PHASE_0_4_17_ACQUISITION_MANIFEST.csv"
+PLAN_PATH = REPO_ROOT / "docs" / "archive" / "phase_history" / "PHASE_0_4_17_ACQUISITION_PLAN.md"
 
 
 def _skip_if_labels_missing():

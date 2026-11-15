@@ -49,13 +49,14 @@ from atomic_write import atomic_write_json, AtomicWriteError  # noqa: E402
 # file computed a local duplicate-check string ("{lat:.1f}_{lon:.1f}", no
 # "IND_" prefix) and never persisted it into the cell object at all.
 from regrid import cell_id_for  # noqa: E402
+from backend.forecast_integrity import annotate_grid  # noqa: E402
 
 terrain_grid = get_terrain_grid()
 
 # ---------------------------------------------------------------------------
 # CONFIG
 # ---------------------------------------------------------------------------
-# Pipeline ownership (see docs/PIPELINE_OWNERSHIP.md): this pipeline is the
+# Pipeline ownership (see docs/architecture/PIPELINE_OWNERSHIP.md): this pipeline is the
 # sole/canonical writer of data/pan_india_grid.json and data/ctt_grid.json.
 # pan_india_gfs_fetcher.py (root) used to also write pan_india_grid.json on a
 # separate cron; it now writes to data/pan_india_grid_slotrun.json instead so
@@ -66,7 +67,7 @@ OUT_FILE = OUT_DIR / "pan_india_grid.json"
 # ---------------------------------------------------------------------------
 # CANONICAL APPLICATION GRID -- LOCKED (Phase 4.5 integrity fix, 2026-09-30)
 # ---------------------------------------------------------------------------
-# docs/CANONICAL_GRID.md formalizes the deployed 992-cell, 1.0-degree grid
+# docs/architecture/CANONICAL_GRID.md formalizes the deployed 992-cell, 1.0-degree grid
 # as the single canonical application/prediction grid. Before this fix,
 # GRID_STEP was a single constant doing two unrelated jobs: (1) a fallback
 # estimate of the GFS *source* grid spacing (line ~204, compute_convergence_grid
@@ -84,7 +85,7 @@ OUT_FILE = OUT_DIR / "pan_india_grid.json"
 # BOUNDS or the expected cell count is also updated. GFS source-resolution
 # handling (input data) is untouched -- GFS is still fetched/parsed at its
 # native 0.25-degree resolution; only the OUTPUT application grid is locked.
-APPLICATION_GRID_STEP = 1.0         # LOCKED -- canonical 992-cell grid, do not change without updating docs/CANONICAL_GRID.md and EXPECTED_APPLICATION_CELL_COUNT below
+APPLICATION_GRID_STEP = 1.0         # LOCKED -- canonical 992-cell grid, do not change without updating docs/architecture/CANONICAL_GRID.md and EXPECTED_APPLICATION_CELL_COUNT below
 EXPECTED_APPLICATION_CELL_COUNT = 992  # 32 lats x 31 lons at 1.0deg over BOUNDS below
 BOUNDS    = {"S": 6, "N": 37, "W": 68, "E": 98}
 
@@ -872,9 +873,9 @@ def _score_lead(date_str: str, cycle: str, cycle_init_dt, lead_hours: int,
                 f"Expected exactly {EXPECTED_APPLICATION_CELL_COUNT} cells "
                 f"(APPLICATION_GRID_STEP={APPLICATION_GRID_STEP} over BOUNDS={BOUNDS}), "
                 f"got {len(cells)}. Refusing to write data/pan_india_grid.json in this "
-                f"state -- see docs/CANONICAL_GRID.md. If this is a deliberate grid "
+                f"state -- see docs/architecture/CANONICAL_GRID.md. If this is a deliberate grid "
                 f"resolution change, update EXPECTED_APPLICATION_CELL_COUNT AND "
-                f"docs/CANONICAL_GRID.md in the same change, not silently."
+                f"docs/architecture/CANONICAL_GRID.md in the same change, not silently."
             )
         seen_ids = set()
         for c in cells:
@@ -1007,6 +1008,10 @@ def run(cycle_override: str = None):
         "features_active": legacy["features_active"],
         "grid_cells": legacy["grid_cells"],
     }
+
+    # M0: additive time semantics (operational lead = valid - issued), explicit list of unavailable
+    # predictors and honest hazard value types. See backend/forecast_integrity.py.
+    annotate_grid(output)
 
     try:
         atomic_write_json(OUT_FILE, output, indent=None)

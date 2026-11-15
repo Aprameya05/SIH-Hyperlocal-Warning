@@ -4,7 +4,7 @@ tests/test_phase7_himawari_b08.py
 Phase 7 -- Himawari-9 AHI Band 8 (6.185um, water-vapor-sensitive IR
 channel) acquisition and feature-extraction tests.
 
-Scope, per docs/PHASE_7_HIMAWARI_B08_IMPLEMENTATION.md: B08 is an
+Scope, per docs/archive/phase_history/PHASE_7_HIMAWARI_B08_IMPLEMENTATION.md: B08 is an
 independent, additively-wired, fail-open OBSERVED/DERIVED artifact
 (data/himawari_b08_features.json). It must NEVER affect B13's existing
 production output (data/himawari_realtime.json, data/himawari_history.json,
@@ -15,7 +15,7 @@ forecast_action.py.
 All tests here use mocks/fixtures -- no real network call is made
 anywhere in this file, and nothing here is claimed as live verification.
 Real-run validation (if the environment's network allows it) is reported
-separately in docs/PHASE_7_HIMAWARI_B08_IMPLEMENTATION.md, not asserted
+separately in docs/archive/phase_history/PHASE_7_HIMAWARI_B08_IMPLEMENTATION.md, not asserted
 by a test.
 """
 import importlib

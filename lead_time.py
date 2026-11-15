@@ -70,6 +70,13 @@ class LeadTime:
 
     def to_json(self) -> dict:
         d = asdict(self)
+        # M2 semantics: `hours` is valid_from minus the GFS FETCH time (when DRIFT downloaded inputs). That is an
+        # acquisition lead, not an operational warning lead: it ignores when the forecast reached any user. It is kept
+        # under its legacy name for compatibility, labelled explicitly, and the operational lead is null + status.
+        d["acquisition_lead_hours"] = d["hours"]
+        d["hours_semantics"] = "LEGACY_ACQUISITION_LEAD_NOT_OPERATIONAL"
+        d["operational_lead_hours"] = None
+        d["operational_lead_status"] = "UNAVAILABLE_NO_AVAILABILITY_TIME"
         return d
 
 

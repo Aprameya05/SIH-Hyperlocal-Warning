@@ -6,7 +6,7 @@ Attempts genuine event-based flash-flood labeling from
 data/floodevents_indofloods.csv, generalized pan-India (NOT the old
 "blindly apply 200km-of-Bengaluru" approach).
 
-HISTORICAL FINDING, preserved for the record (see docs/LABEL_ENGINE.md,
+HISTORICAL FINDING, preserved for the record (see docs/models/LABEL_ENGINE.md,
 Phase 4, 2026-09-30): at that time, no gauge-coordinate file existed
 anywhere in this repo. data/floodevents_indofloods.csv and
 data/precipitation_variables_indofloods.csv both lacked lat/lon, and no

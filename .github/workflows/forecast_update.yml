@@ -166,7 +166,7 @@ jobs:
           python pan_india_gfs_fetcher.py $SLOT_ARG
           # pan_india_gfs_fetcher.py writes its own slot-scoped artifact, not the
           # shared data/pan_india_grid.json (that path is owned solely by
-          # backend/pipeline.py via update_grid.yml -- see docs/PIPELINE_OWNERSHIP.md).
+          # backend/pipeline.py via update_grid.yml -- see docs/architecture/PIPELINE_OWNERSHIP.md).
           [ -f data/pan_india_grid_slotrun.json ] && python3 -c 'import json; d=json.load(open("data/pan_india_grid_slotrun.json")); c=d.get("grid_cells",[]); s=d.get("summary",{}).get("thunderstorm",{}); print("pan-India slot-run grid:",len(c),"cells ts_max="+str(round(s.get("max_prob",0)*100,1))+"%")' || echo 'pan-India slot-run grid not yet available'
         continue-on-error: true
 
@@ -337,82 +337,26 @@ jobs:
         # trusting the validation dict's own booleans, which are
         # computed by the same process.
         run: |
-          python3 -c "
-          import json, os, sys
-          from datetime import datetime, timezone
-
-          def fail(reason):
-              print(f'NOT OK: {reason}')
-              with open('/tmp/unified_artifact_check_ok.txt', 'w') as f:
-                  f.write('false')
-              sys.exit(0)
-
-          path = 'data/unified_forecast.json'
-
-          try:
-              with open('/tmp/pre_unified_artifact_marker.txt') as f:
-                  marker_epoch = int(f.read().strip())
-          except Exception as exc:
-              fail(f'pre-build marker missing or unreadable ({type(exc).__name__}: {exc}) -- '
-                   f'cannot prove this run touched the file at all')
-
-          try:
-              mtime_epoch = os.path.getmtime(path)
-          except Exception as exc:
-              fail(f'{path} missing or stat-unreadable ({type(exc).__name__}: {exc})')
-          if mtime_epoch < marker_epoch:
-              fail(f'{path} filesystem mtime ({mtime_epoch:.0f}) is OLDER than the pre-build marker '
-                   f'for this run ({marker_epoch}) -- this is provably the untouched last-known-good '
-                   f'artifact from a previous run, not something this run wrote')
-
-          try:
-              with open(path, encoding='utf-8') as f:
-                  artifact = json.load(f)
-          except Exception as exc:
-              fail(f'{path} missing or unparseable ({type(exc).__name__}: {exc})')
-
-          generated_at = artifact.get('generated_at_utc')
-          try:
-              generated_dt = datetime.fromisoformat(generated_at.replace('Z', '+00:00'))
-          except Exception as exc:
-              fail(f'generated_at_utc missing or unparseable ({generated_at!r}: {exc})')
-          age_minutes = (datetime.now(timezone.utc) - generated_dt).total_seconds() / 60.0
-          if age_minutes > 30:
-              fail(f'artifact is {age_minutes:.1f} minutes old -- not freshly written this run '
-                   f'(the script left the old last-known-good artifact untouched, a genuine reject)')
-
-          records = artifact.get('records', [])
-          if len(records) != 4960:
-              fail(f'expected exactly 4960 records, found {len(records)} (re-derived directly, '
-                   f'not trusting the self-reported validation dict)')
-          unique_cells = {r.get('cell_id') for r in records}
-          if len(unique_cells) != 992:
-              fail(f'expected exactly 992 unique cell_ids, found {len(unique_cells)} (re-derived directly)')
-          lead_hours_by_cell = {}
-          for r in records:
-              lead_hours_by_cell.setdefault(r.get('cell_id'), set()).add(r.get('lead_hours'))
-          incomplete_cells = [c for c, leads in lead_hours_by_cell.items() if len(leads) != 5]
-          if incomplete_cells:
-              fail(f'{len(incomplete_cells)} cell(s) do not have exactly 5 distinct lead_hours '
-                   f'(re-derived directly): {incomplete_cells[:5]}')
-
-          v = artifact.get('validation', {})
-          required_true = [
-              'exactly_992_cells', 'exactly_4960_records', 'all_5_lead_slots_present_per_cell',
-              'lead_time_arithmetic_correct_for_every_record', 'all_present_probabilities_in_0_1_range',
-              'ff_never_carries_a_fabricated_probability', 'no_unavailable_probability_mapped_to_a_risk_category',
-          ]
-          failed_keys = [k for k in required_true if not v.get(k)]
-          if failed_keys:
-              fail(f'validation keys failed: {failed_keys}')
-
-          print(f'OK: artifact is {age_minutes:.1f} min old, mtime proves this-run origin, '
-                f'4960 records across 992 cells x 5 leads re-derived directly, all validation keys true')
-          with open('/tmp/unified_artifact_check_ok.txt', 'w') as f:
-              f.write('true')
-          "
+          # Independent, fail-closed verification (pipelines/validation/validate_unified_artifact.py): re-derives every rule
+          # from the data; the artifact's own `validation` block is ignored. Marker/mtime/age checks are retained.
+          python3 pipelines/validation/validate_unified_artifact.py data/unified_forecast.json \
+            --marker /tmp/pre_unified_artifact_marker.txt --max-age-minutes 30 \
+            --ok-file /tmp/unified_artifact_check_ok.txt || true
+          [ -f /tmp/unified_artifact_check_ok.txt ] || echo false > /tmp/unified_artifact_check_ok.txt
           echo "ok=$(cat /tmp/unified_artifact_check_ok.txt)" >> "$GITHUB_OUTPUT"
         continue-on-error: true
+
+      - name: Verify VOBL forecast contract (fail closed)
+        # fallback / defaulted / climatology slots must never drive alert_active or peak_probability
+        run: python3 pipelines/validation/validate_station_forecast.py forecast.json
+
+      - name: Build DRIFT command-centre feed (from this run's artifacts) and validate it (fail closed)
+        # Runs AFTER the unified-artifact, grid and VOBL gates so it only ever summarises verified, current inputs.
+        # The validator rejects a feed that was not regenerated in this run (max age 30 min).
+        run: |
+          python3 models/evaluation/summarise_baseline_evaluations.py
+          python3 pipelines/publishing/build_live_feed.py
+          python3 pipelines/validation/validate_live_feed.py data/drift_live.json --max-age-minutes 30
 
       - name: Send WhatsApp alerts
         env:
@@ -421,45 +365,16 @@ jobs:
         run: python send_alerts.py
         continue-on-error: true
 
-      - name: Push alert notification
-        run: |
-          ALERT=$(python -c "
-          import json, sys
-          try:
-              d = json.load(open('forecast.json'))
-              if d.get('alert_active'):
-                  pk = d.get('peak_slot', '?')
-                  prob = round(d.get('peak_probability', 0)*100, 1)
-                  slot_names = {0:'00:01-06:00',1:'06:01-12:00',2:'12:01-18:00',3:'18:01-24:00'}
-                  window = slot_names.get(pk, str(pk))
-                  regime = d.get('convective_initiation', {}).get('monsoon_regime', '')
-                  cape = d.get('convective_initiation', {}).get('cape_now', 0)
-                  sigmet = d.get('sigmet_bulletin') or ''
-                  intensity = 'SEVERE' if prob >= 70 else 'MODERATE' if prob >= 40 else 'LIGHT'
-                  msg = f'VOBL TS ALERT {intensity} | Slot {pk} ({window} IST) | {prob}% probability | CAPE {cape:.0f} J/kg | Regime {regime}'
-                  if sigmet:
-                      msg += f'\n---\n{sigmet}'
-                  print(msg)
-          except Exception as e:
-              pass
-          ")
-          if [ -n "$ALERT" ]; then
-            curl -s -o /dev/null -X POST \
-              -H "Title: VOBL Thunderstorm Alert" \
-              -H "Priority: high" \
-              -H "Tags: thunder,cloud,rotating_light" \
-              -d "$ALERT" \
-              https://ntfy.sh/csir-vobl-thunderstorm || true
-            echo "Alert notification sent"
-          else
-            echo "No alert -- notification skipped"
-          fi
-        continue-on-error: true
+      - name: Push alert notification (withheld unless eligible)
+        # Previously this POSTed "VOBL TS ALERT ... % probability" (plus raw SIGMET text) to a public ntfy topic
+        # straight from forecast.json with no freshness/fallback/eligibility check. Now it evaluates the alert
+        # policy and records why nothing is sent. Nothing is published to ntfy from here.
+        run: python3 pipelines/validation/guard_automated_alerts.py forecast.json
 
       - name: Inject Worker URL into dashboard
         run: |
-          sed -i "s|WORKER_URL_PLACEHOLDER|${{ secrets.WORKER_URL }}|g" index.html
-          echo "Worker URL injected into index.html"
+          sed -i "s|WORKER_URL_PLACEHOLDER|${{ secrets.WORKER_URL }}|g" frontend/index.html
+          echo "Worker URL injected into frontend/index.html"
 
       - name: Commit and push forecast outputs
         # 2026-10-08 fix: a real production bug, found and root-caused by
@@ -506,7 +421,7 @@ jobs:
         run: |
           git config --global user.name  "SIH Forecast Bot"
           git config --global user.email "bot@sih-hyperlocal.in"
-          GENERATED_FILES="forecast.json data/gfs_realtime_43295.csv data/upperair_realtime_43295.csv data/gfs_multiday_43295.json data/himawari_realtime.json data/himawari_history.json data/himawari_b08_features.json data/realtime_shap.json data/verification_today.json data/pipeline_health.json data/skill_scores.json data/forecast_log.csv data/alert_history.json data/blr_terrain.json"
+          GENERATED_FILES="forecast.json data/gfs_realtime_43295.csv data/upperair_realtime_43295.csv data/gfs_multiday_43295.json data/himawari_realtime.json data/himawari_history.json data/himawari_b08_features.json data/realtime_shap.json data/verification_today.json data/pipeline_health.json data/skill_scores.json data/forecast_log.csv data/alert_history.json data/blr_terrain.json data/drift_live.json data/hazard_evaluation.json"
           if [ "$UNIFIED_ARTIFACT_OUTCOME" = "true" ]; then
             GENERATED_FILES="$GENERATED_FILES data/unified_forecast.json"
           else
@@ -574,34 +489,10 @@ jobs:
           set -e
           rm -rf pages_dist
           mkdir -p pages_dist
-          rsync -a \
-            --exclude='/.git/' \
-            --exclude='/.github/' \
-            --exclude='/.pytest_cache/' \
-            --exclude='/__pycache__/' \
-            --exclude='/backend/' \
-            --exclude='/dev/' \
-            --exclude='/docs/' \
-            --exclude='/DBSIH-Historical-GFSraw/' \
-            --exclude='/imd_rain/' \
-            --exclude='/models/' \
-            --exclude='/notebooks/' \
-            --exclude='/pages/' \
-            --exclude='/pages_dist/' \
-            --exclude='/processed/' \
-            --exclude='/rag/' \
-            --exclude='/results/' \
-            --exclude='/schemas/' \
-            --exclude='/scripts/' \
-            --exclude='/tests/' \
-            --exclude='/worker/' \
-            --exclude='/SIH_*/' \
-            --exclude='/data/external/' \
-            --exclude='/data/_gfs_live_cb_cache/' \
-            --exclude='/data/_gfs_live_tmp/' \
-            --exclude='/data/_terrain_tile_cache/' \
-            --exclude='/data/_location_geocode_cache.json' \
-            ./ pages_dist/
+          # ALLOW-LIST publish (was a deny-list rsync that also shipped data/subscribers.json, research
+          # CSVs and stale internal state). Only files the frontend/service worker fetch are copied;
+          # the script fails the build if anything forbidden (subscribers, secrets, CSV, pkl...) is present.
+          python3 pipelines/publishing/build_pages_bundle.py pages_dist
           echo "Oversized files remaining in pages_dist (must be empty):"
           find pages_dist -type f -size +25M
           if [ -n "$(find pages_dist -type f -size +25M)" ]; then
@@ -620,7 +511,20 @@ jobs:
         # in the artifact itself -- this is a second, independent gate
         # right before deploy, not a re-implementation of that logic.
         if: steps.unified_artifact_check.outputs.ok == 'true'
-        run: python3 scripts/ci_validate_unified_artifact.py pages_dist/data/unified_forecast.json
+        run: python3 pipelines/validation/validate_unified_artifact.py pages_dist/data/unified_forecast.json
+
+
+      - name: Validate pan-India grid before deploy (fail closed)
+        if: steps.unified_artifact_check.outputs.ok == 'true'
+        run: python3 pipelines/validation/validate_pan_india_grid.py pages_dist/data/pan_india_grid.json
+      - name: Validate national location artifacts in the publish bundle (fail closed)
+        run: python3 pipelines/validation/validate_national_fields.py pages_dist/data --max-age-hours 48
+
+      - name: Validate DRIFT live feed in the publish bundle (fail closed)
+        run: python3 pipelines/validation/validate_live_feed.py pages_dist/data/drift_live.json --max-age-minutes 180
+
+      - name: Release-readiness gate (fail closed; every check must pass before any deployment)
+        run: python3 pipelines/validation/check_release_readiness.py pages_dist --max-age-hours 48
 
       - name: Deploy to Cloudflare Pages
         if: steps.unified_artifact_check.outputs.ok == 'true'

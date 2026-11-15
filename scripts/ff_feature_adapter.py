@@ -64,6 +64,19 @@ sys.path.insert(0, str(REPO_ROOT / "scripts"))
 TERRAIN_PATH = REPO_ROOT / "data" / "pan_india_terrain_992.json"
 FF_METADATA_PATH = REPO_ROOT / "processed" / "ff_pu" / "model_metadata.json"
 
+# Referenced by backend/unified_api.py (GET /forecast, "ff_realtime_ceiling_note")
+# but never defined (CRITICAL_BUGS #15: every /forecast call returned HTTP 500).
+# Meaning, taken from the consumer's own ff_note text: FF's rainfall inputs come
+# from the IMD gridded daily-rainfall archive (imd_rain/rain/<year>.grd), which is
+# a research archive and not a real-time feed. FF can therefore never be fresher
+# than the newest date in that archive, regardless of how current the GFS cycle is.
+FF_REALTIME_CEILING_NOTE = (
+    "FF rainfall inputs come from the IMD gridded daily-rainfall archive "
+    "(imd_rain/rain/<year>.grd), which is a research archive, not a real-time feed. "
+    "FF freshness is capped by the newest date present in that archive and cannot "
+    "reflect current weather. FF reports a PU ranking score only, never a probability."
+)
+
 RAIN_COLS = ["rain_1d", "rain_3d", "rain_5d", "rain_10d", "rain_max1d_5d",
              "rain_recent_vs_antecedent_ratio", "rain_accel_3d_minus_prior3d"]
 

@@ -1,0 +1,160 @@
+{
+ "generated_at_utc": "2026-11-15T14:25:53Z",
+ "kind": "EVALUATION_RECOMPUTED_FROM_COMMITTED_RESULT_FILES",
+ "claims_policy": "No accuracy claim in DRIFT may exceed what is shown here. Operational 2-6 h skill is NOT evaluated for any hazard.",
+ "hazards": {
+  "thunderstorm": {
+   "hazard": "thunderstorm",
+   "target": "VOBL (Bengaluru airport) thunderstorm in a 6-hour IST slot window (station-level observation label)",
+   "scope": "ONE STATION (VOBL), not pan-India",
+   "validation": "walk-forward by year (train on earlier years only)",
+   "baseline": "climatological event frequency of the test year (Brier = p(1-p))",
+   "folds": [
+    {
+     "test_year": 2021,
+     "train_years": "2015-2020",
+     "n": 361,
+     "n_event_slots": 69,
+     "event_rate": 0.1911,
+     "auroc": 0.927,
+     "brier": 0.0857,
+     "brier_climatology": 0.1546,
+     "bss_vs_climatology": 0.4456,
+     "pod": 0.739,
+     "far": 0.354,
+     "hss": 0.61,
+     "csi": 0.5258
+    },
+    {
+     "test_year": 2022,
+     "train_years": "2015-2021",
+     "n": 362,
+     "n_event_slots": 62,
+     "event_rate": 0.1713,
+     "auroc": 0.9627,
+     "brier": 0.0613,
+     "brier_climatology": 0.1419,
+     "bss_vs_climatology": 0.5681,
+     "pod": 0.952,
+     "far": 0.352,
+     "hss": 0.713,
+     "csi": 0.6277
+    },
+    {
+     "test_year": 2023,
+     "train_years": "2015-2022",
+     "n": 331,
+     "n_event_slots": 41,
+     "event_rate": 0.1239,
+     "auroc": 0.8884,
+     "brier": 0.093,
+     "brier_climatology": 0.1085,
+     "bss_vs_climatology": 0.1428,
+     "pod": 0.732,
+     "far": 0.595,
+     "hss": 0.431,
+     "csi": 0.3529
+    },
+    {
+     "test_year": 2024,
+     "train_years": "2015-2023",
+     "n": 305,
+     "n_event_slots": 20,
+     "event_rate": 0.0656,
+     "auroc": 0.8647,
+     "brier": 0.0791,
+     "brier_climatology": 0.0613,
+     "bss_vs_climatology": -0.2916,
+     "pod": 0.65,
+     "far": 0.745,
+     "hss": 0.3,
+     "csi": 0.2241
+    },
+    {
+     "test_year": 2025,
+     "train_years": "2015-2024",
+     "n": 365,
+     "n_event_slots": 35,
+     "event_rate": 0.0959,
+     "auroc": 0.858,
+     "brier": 0.094,
+     "brier_climatology": 0.0867,
+     "bss_vs_climatology": -0.0837,
+     "pod": 0.714,
+     "far": 0.688,
+     "hss": 0.348,
+     "csi": 0.2778
+    }
+   ],
+   "summary": {
+    "mean_auroc": 0.9002,
+    "mean_bss_vs_climatology": 0.1562,
+    "mean_pod": 0.7574,
+    "mean_far": 0.5468,
+    "mean_hss": 0.4804,
+    "years_with_positive_bss": 3
+   },
+   "limits": [
+    "Station-only: no pan-India thunderstorm model has been validated.",
+    "Skill is for slot windows, not for a lead-specific 2-6 h forecast.",
+    "FAR rises in later years (see folds); per-year n_event_slots is small."
+   ]
+  },
+  "extreme_rainfall": {
+   "hazard": "extreme_rainfall",
+   "target": "IMD gridded daily rainfall >= 64.5 mm/24 h at 0.25 deg (heavy-rain DAY proxy). NOT a cloudburst.",
+   "scope": "pan-India grid, 10 held-out dates (leave-one-date-out), 6 informative",
+   "variants": {
+    "uncalibrated": {
+     "n": 1930,
+     "event_rate": 0.2073,
+     "auroc": 0.7462,
+     "pr_auc": 0.4225,
+     "baseline_pr_auc_no_skill": 0.2073,
+     "brier": 0.1881,
+     "brier_climatology": 0.1643,
+     "bss_vs_climatology": -0.1448,
+     "pod": 0.6075,
+     "far": 0.6074,
+     "csi": 0.3131,
+     "hss": 0.3009
+    },
+    "calibrated": {
+     "n": 1930,
+     "event_rate": 0.2073,
+     "auroc": 0.7542,
+     "pr_auc": 0.4177,
+     "baseline_pr_auc_no_skill": 0.2073,
+     "brier": 0.1407,
+     "brier_climatology": 0.1643,
+     "bss_vs_climatology": 0.1434,
+     "pod": 0.1475,
+     "far": 0.398,
+     "csi": 0.1344,
+     "hss": 0.1692
+    }
+   },
+   "summary": {
+    "uncalibrated_beats_climatology_brier": false,
+    "calibrated_beats_climatology_brier": true,
+    "note": "The uncalibrated score has NEGATIVE Brier skill versus climatology: it is a ranking score, not a probability. Calibration improves Brier but collapses POD, so no threshold is validated for alerting."
+   },
+   "limits": [
+    "Only 10 held-out dates; spatial autocorrelation inflates effective sample size.",
+    "Whole-day aggregate over GFS f006-f027: carries no lead-specific skill.",
+    "Target is a heavy-rain day proxy; verified cloudbursts are not in the label set."
+   ]
+  },
+  "flash_flood": {
+   "hazard": "flash_flood",
+   "validated": false,
+   "target": "none validated: no observed flash-flood event labels are wired to a pan-India model",
+   "scope": "unavailable",
+   "baseline": null,
+   "limits": [
+    "The only flood model is a PU-learning research ranking (not a probability).",
+    "Needed for live operation: observed flood event labels with times and locations, river-gauge/soil-moisture/antecedent-rainfall predictors, catchment hydrology per cell."
+   ]
+  }
+ }
+}

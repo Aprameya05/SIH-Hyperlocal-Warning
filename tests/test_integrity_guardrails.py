@@ -174,7 +174,7 @@ def test_b4_ff_observed_not_claimed_without_source():
     status = summary["genuine_event_based_ff"]["status"]
     check("genuine event-based FF status starts with UNKNOWN", status.startswith("UNKNOWN"), f"got {status!r}")
     # As of 2026-09-30 (INDOFLOODS archive ingestion, see
-    # docs/INDOFLOODS_DATA_INVENTORY.md), catchment_characteristics_indofloods.csv
+    # docs/data_sources/INDOFLOODS_DATA_INVENTORY.md), catchment_characteristics_indofloods.csv
     # DOES now exist in the repo -- but it carries no lat/lon of its own, and
     # nothing has integrated it (or metadata_indofloods.csv, which does carry
     # real gauge coordinates) into the label-building pipeline yet. So the
@@ -189,7 +189,7 @@ def test_b4_ff_observed_not_claimed_without_source():
     check("ff_labels_proxy.csv/ff_labels_summary.json still show FF genuine-event status as UNKNOWN "
           "(catchment_characteristics_indofloods.csv and metadata_indofloods.csv now exist on disk as of "
           "the 2026-09-30 INDOFLOODS ingestion, but are not yet wired into any label-building script -- "
-          "see docs/INDOFLOODS_DATA_INVENTORY.md)",
+          "see docs/data_sources/INDOFLOODS_DATA_INVENTORY.md)",
           status.startswith("UNKNOWN"))
 
 

@@ -77,7 +77,7 @@ def write_empty_verification(date_str: str, reason: str) -> dict:
         "slots_verified":       0,
         "thunderstorm_observed": None,
         "slot_results":          [],
-        "rolling_30d": {"POD": 0.0, "FAR": 0.0, "HSS": 0.0, "Brier": 0.0},
+        "rolling_30d": {"POD": None, "FAR": None, "HSS": None, "Brier": None},   # undefined, not zero
         "note":                  reason,
     }
     OUTPUT_JSON.parent.mkdir(parents=True, exist_ok=True)
@@ -104,29 +104,31 @@ def compute_metrics(df: pd.DataFrame) -> dict:
     """Compute POD/FAR/HSS/Brier/CSI from a dataframe with predicted/actual columns."""
     df = df.dropna(subset=["predicted", "actual"])
     if len(df) == 0:
-        return {"POD": 0.0, "FAR": 0.0, "HSS": 0.0, "Brier": 0.0, "CSI": 0.0, "n": 0}
+        return {"POD": None, "FAR": None, "HSS": None, "Brier": None, "CSI": None, "n": 0}   # nothing verified: undefined
 
     hits = int(((df["predicted"] == 1) & (df["actual"] == 1)).sum())
     miss = int(((df["predicted"] == 0) & (df["actual"] == 1)).sum())
     fa   = int(((df["predicted"] == 1) & (df["actual"] == 0)).sum())
     cn   = int(((df["predicted"] == 0) & (df["actual"] == 0)).sum())
 
-    pod   = hits / (hits + miss) if (hits + miss) > 0 else 0.0
-    far   = fa / (hits + fa) if (hits + fa) > 0 else 0.0
-    csi   = hits / (hits + miss + fa) if (hits + miss + fa) > 0 else 0.0
+    # A score with an empty denominator is UNDEFINED (None), never 0.0: zero would read as "perfectly wrong".
+    pod   = hits / (hits + miss) if (hits + miss) > 0 else None
+    far   = fa / (hits + fa) if (hits + fa) > 0 else None
+    csi   = hits / (hits + miss + fa) if (hits + miss + fa) > 0 else None
     denom = ((hits + miss) * (miss + cn) + (hits + fa) * (fa + cn))
-    hss   = 2 * (hits * cn - miss * fa) / denom if denom > 0 else 0.0
+    hss   = 2 * (hits * cn - miss * fa) / denom if denom > 0 else None
 
     # Brier: use ts_probability if available, else binary predicted
     if "ts_probability" in df.columns:
-        brier = float(((df["ts_probability"].fillna(0) - df["actual"]) ** 2).mean())
+        _p = df.dropna(subset=["ts_probability"])      # missing probabilities are excluded, never treated as 0
+        brier = float(((_p["ts_probability"] - _p["actual"]) ** 2).mean()) if len(_p) else None
     else:
         brier = float(((df["predicted"] - df["actual"]) ** 2).mean())
 
     return {
-        "POD": round(pod, 3), "FAR": round(far, 3),
-        "HSS": round(hss, 3), "Brier": round(brier, 4),
-        "CSI": round(csi, 3),
+        "POD": None if pod is None else round(pod, 3), "FAR": None if far is None else round(far, 3),
+        "HSS": None if hss is None else round(hss, 3), "Brier": None if brier is None else round(brier, 4),
+        "CSI": None if csi is None else round(csi, 3),
         "n": len(df), "hits": hits, "misses": miss,
         "false_alarms": fa, "correct_negatives": cn,
     }

@@ -39,14 +39,21 @@ def get_today_ist() -> str:
     return datetime.now(IST).strftime("%Y-%m-%d")
 
 
-def get_issued_ist() -> str:
-    """Alert is always issued at 09:40 IST when forecast_action runs."""
-    today = datetime.now(IST).replace(hour=9, minute=40, second=0, microsecond=0)
-    return today.strftime("%Y-%m-%d %H:%M")
+def get_issued_ist(forecast: dict | None = None) -> str | None:
+    """Issue time = the forecast file's own recorded `generated_at` (IST). No time is ever invented: the old code
+    hard-coded 09:40 IST regardless of when the forecast was produced. None when the forecast records no time.
+    NOTE this is the GENERATION time, not when any user received the forecast (no availability time is recorded)."""
+    g = (forecast or {}).get("generated_at")
+    if not isinstance(g, str):
+        return None
+    try:
+        return datetime.strptime(g.replace(" IST", "").strip(), "%Y-%m-%d %H:%M").strftime("%Y-%m-%d %H:%M")
+    except ValueError:
+        return None
 
 
-def lead_time_min(issued_ist: str, observed_ist: str) -> int | None:
-    if not observed_ist:
+def lead_time_min(issued_ist: str | None, observed_ist: str | None) -> int | None:
+    if not observed_ist or not issued_ist:
         return None
     fmt = "%Y-%m-%d %H:%M"
     t0 = datetime.strptime(issued_ist, fmt)
@@ -62,7 +69,7 @@ def build_event(
 ) -> dict:
     """Construct a single event record from today's forecast.json data."""
     now_ist = get_today_ist()
-    issued = get_issued_ist()
+    issued = get_issued_ist(forecast)
 
     # Primary slot (usually slot 2 — afternoon)
     peak_slot_idx = forecast.get("peak_slot", 2)
@@ -100,6 +107,7 @@ def build_event(
         "alert_issued_ist": issued,
         "event_first_observed_ist": observed_time_ist,
         "lead_time_min": lead,
+        "lead_time_basis": "FORECAST_GENERATED_AT_TO_FIRST_OBSERVATION_NOT_OPERATIONAL_LEAD",
         "model_prob": round(model_prob, 4),
         "threshold_used": round(threshold, 4),
         "thunderstorm_observed": thunderstorm_observed,
@@ -130,15 +138,17 @@ def recompute_summary(events: list) -> dict:
     n_ts_obs = hits + misses
     n_alert = hits + false_alarms
 
-    pod = round(hits / n_ts_obs, 3) if n_ts_obs > 0 else 0.0
-    far = round(false_alarms / n_alert, 3) if n_alert > 0 else 0.0
+    # M0: a skill score whose denominator is zero is UNDEFINED, not 0. Returning 0.0 made the dashboard
+    # show "POD 0% / CSI 0.000" beside a log full of older hits when the 30-day window was empty.
+    pod = round(hits / n_ts_obs, 3) if n_ts_obs > 0 else None
+    far = round(false_alarms / n_alert, 3) if n_alert > 0 else None
     denom_csi = hits + misses + false_alarms
-    csi = round(hits / denom_csi, 3) if denom_csi > 0 else 0.0
+    csi = round(hits / denom_csi, 3) if denom_csi > 0 else None
 
     # Heidke Skill Score
     n = len(recent)
     expected = ((hits + false_alarms) * (hits + misses) + (correct_rejections + false_alarms) * (correct_rejections + misses)) / n if n > 0 else 0
-    hss = round((hits + correct_rejections - expected) / (n - expected), 3) if n > expected else 0.0
+    hss = round((hits + correct_rejections - expected) / (n - expected), 3) if n > expected else None
 
     lead_times = [e["lead_time_min"] for e in recent if e.get("lead_time_min") is not None]
     mean_lead = round(sum(lead_times) / len(lead_times)) if lead_times else None
@@ -156,7 +166,11 @@ def recompute_summary(events: list) -> dict:
         "hss": hss,
         "mean_lead_time_min": mean_lead,
         "mean_lead_time_hr": mean_lead_hr,
-        "note": "Computed from verified events in alert_log.json only (slot-2, 30-day rolling window).",
+        "window_days": 30,
+        "n_events_in_log_total": len(events),
+        "note": ("Computed from recorded events in alert_log.json only (30-day rolling window). "
+                 "A score is null when its denominator is zero (undefined), never 0. "
+                 + ("No recorded event falls inside the window." if not recent else "")).strip(),
     }
 
 

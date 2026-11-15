@@ -16,9 +16,9 @@ This module does NOT re-run the hazard engine, re-fetch GFS, or duplicate
 any scoring logic. It reads the two existing, already-produced artifacts
 and assembles them into ONE schema-validated, versioned, per-cell array
 with explicit per-hazard provenance/status -- see
-docs/CANONICAL_FORECAST_SCHEMA.md for the full rationale.
+docs/architecture/CANONICAL_FORECAST_SCHEMA.md for the full rationale.
 
-Lead times (2h/4h/6h): see docs/CANONICAL_FORECAST_SCHEMA.md's "Lead-time
+Lead times (2h/4h/6h): see docs/architecture/CANONICAL_FORECAST_SCHEMA.md's "Lead-time
 honesty" section. Neither forecast.json nor pan_india_grid.json currently
 carries more than one GFS-forecast-hour's worth of data per generation
 cycle (verified this phase: pan_india_gfs_fetcher.py's resolve_gfs_cycle()
@@ -141,7 +141,7 @@ def _file_freshness_state(path: Path, stale_after_hours: float, now: datetime, f
       by this run -- i.e. this run read an artifact left on disk by an
       earlier run/session, which is exactly what happened for every local
       validation performed in this sandbox (no live network fetch occurs
-      here; see docs/CANONICAL_FORECAST_SCHEMA.md 'Freshness semantics').
+      here; see docs/architecture/CANONICAL_FORECAST_SCHEMA.md 'Freshness semantics').
     """
     if not path.exists():
         return "FAILED", None, None
@@ -160,7 +160,7 @@ def build_pan_india_cells(grid: dict, generated_at: datetime, gfs_valid_time):
     """Builds the 992 canonical cells' forecasts from the pan-India physics
     engine's grid_cells array. Every hazard is explicitly marked PROXY (this
     IS the hand-weighted physics engine documented in
-    docs/PAN_INDIA_HAZARD_COEFFICIENTS.md -- never called ML)."""
+    docs/models/PAN_INDIA_HAZARD_COEFFICIENTS.md -- never called ML)."""
     cells_raw = grid.get("grid_cells") or grid.get("cells") or []
     gfs_cycle = grid.get("gfs_cycle")
     gfs_fhour = grid.get("gfs_fhour")
@@ -182,17 +182,17 @@ def build_pan_india_cells(grid: dict, generated_at: datetime, gfs_valid_time):
                     "thunderstorm": _hazard_block(
                         c.get("thunderstorm_probability"), "PROXY",
                         "GFS 0.25deg (regridded to canonical 1.0deg cell)",
-                        "hand-weighted physics-proxy formula (see docs/PAN_INDIA_HAZARD_COEFFICIENTS.md)",
+                        "hand-weighted physics-proxy formula (see docs/models/PAN_INDIA_HAZARD_COEFFICIENTS.md)",
                         "pan_india_physics_proxy_v1"),
                     "cloudburst": _hazard_block(
                         c.get("cloudburst_probability"), "PROXY",
                         "GFS 0.25deg (regridded to canonical 1.0deg cell)",
-                        "hand-weighted physics-proxy formula (see docs/PAN_INDIA_HAZARD_COEFFICIENTS.md)",
+                        "hand-weighted physics-proxy formula (see docs/models/PAN_INDIA_HAZARD_COEFFICIENTS.md)",
                         "pan_india_physics_proxy_v1"),
                     "flash_flood": _hazard_block(
                         c.get("flash_flood_probability"), "PROXY",
                         "GFS 0.25deg (regridded to canonical 1.0deg cell) + BLR-only terrain where applicable",
-                        "hand-weighted physics-proxy formula (see docs/PAN_INDIA_HAZARD_COEFFICIENTS.md)",
+                        "hand-weighted physics-proxy formula (see docs/models/PAN_INDIA_HAZARD_COEFFICIENTS.md)",
                         "pan_india_physics_proxy_v1"),
                 }
                 gfs_dq = _source_status("AVAILABLE", gfs_gen)
@@ -200,7 +200,7 @@ def build_pan_india_cells(grid: dict, generated_at: datetime, gfs_valid_time):
                 reason = ("no lead-specific GFS forecast fetch exists for this lead hour -- "
                           "pan_india_gfs_fetcher.py fetches a single current forecast hour per run "
                           f"(cycle={gfs_cycle}, fhour={gfs_fhour}), not distinct +2h/+4h/+6h-from-now "
-                          "forecast fields; see docs/CANONICAL_FORECAST_SCHEMA.md 'Lead-time honesty'")
+                          "forecast fields; see docs/architecture/CANONICAL_FORECAST_SCHEMA.md 'Lead-time honesty'")
                 hazards = {
                     "thunderstorm": _hazard_block(None, "UNAVAILABLE", "none", "none", "none", reason),
                     "cloudburst": _hazard_block(None, "UNAVAILABLE", "none", "none", "none", reason),
@@ -333,7 +333,7 @@ def overlay_vobl_ml_cell(cells: list, fc: dict, himawari_dq, terrain_dq):
                 method_note = (f"NOT a trained-model prediction -- {slot_source} lookup for slot {slot_idx} "
                                 f"({slot_label}, {slot_window} IST): {slot_fallback_reason or 'no model artifact available'}")
             elif slot_source == "model_defaults":
-                hz_status = "AVAILABLE"
+                hz_status = "PROXY"        # M2: climatological-default inputs are not today's atmosphere
                 model_for_hazard = model_used
                 method_note = (f"trained XGBoost, {model_version} -- ran on CLIMATOLOGICAL DEFAULT input "
                                 f"features (no live GFS/upper-air row was available for today), NOT today's "
@@ -375,6 +375,24 @@ def overlay_vobl_ml_cell(cells: list, fc: dict, himawari_dq, terrain_dq):
 
             lead_fc["data_quality"]["himawari"] = himawari_dq
             lead_fc["data_quality"]["terrain"] = terrain_dq
+
+        # M2: the "+2h/+4h/+6h" entries are look-ups of the IST slot window containing that clock time. They are NOT
+        # lead-specific model runs, and the lead is measured from the forecast's GENERATION moment, not from when it
+        # became available to anyone. Say so on every entry (additive fields; existing fields unchanged).
+        for lead_fc in cell["forecasts"]:
+            lead_fc["lead_semantics"] = {
+                "kind": "SLOT_WINDOW_LOOKUP_NOT_LEAD_SPECIFIC",
+                "requested_offset_hours_from_generation": lead_fc.get("lead_hours"),
+                "operational_lead_hours": None,
+                "operational_lead_status": "UNAVAILABLE_NO_AVAILABILITY_TIME",
+                "note": ("Entries that land in the same slot window share that slot's single model output. The offset "
+                         "is from generation time; no forecast availability time is recorded, so no operational lead "
+                         "time is claimed."),
+            }
+            for blk in (lead_fc.get("hazards") or {}).values():
+                if isinstance(blk, dict):
+                    blk["lead_specific"] = False
+                    blk["resolution"] = "STATION_SLOT_WINDOW"
 
 
 def build_canonical_forecast(gfs_freshly_fetched: bool = False, himawari_freshly_fetched: bool = False) -> dict:

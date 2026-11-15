@@ -23,7 +23,7 @@ PROD_FILES = [
     "forecast.json",
     os.path.join("data", "pan_india_grid.json"),
     os.path.join("data", "canonical_forecast" + ".json"),  # split to avoid tripping the sole-writer grep guardrail
-    "index.html",
+    os.path.join("frontend", "index.html"),
 ]
 
 

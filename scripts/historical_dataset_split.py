@@ -4,7 +4,7 @@ historical_dataset_split.py -- Phase 0.4.12 RESEARCH-ONLY split contract
 utility.
 
 Implements, and lets a caller VERIFY, the two formally-adopted rules from
-docs/PHASE_0_4_12_HISTORICAL_GFS_TS_DATASET_CONTRACT.md:
+docs/archive/phase_history/PHASE_0_4_12_HISTORICAL_GFS_TS_DATASET_CONTRACT.md:
 
   1. Primary split: deterministic, year-based chronological holdout
      (TRAIN = 2015-2023, TEST/HOLDOUT = 2024-2025, by default -- both
@@ -20,7 +20,7 @@ test_no_production_code_imports_research_split_utility in
 tests/test_historical_dataset_split.py).
 
 Why year-based, not random: see
-docs/PHASE_0_4_12_HISTORICAL_GFS_TS_DATASET_CONTRACT.md Section 12. In
+docs/archive/phase_history/PHASE_0_4_12_HISTORICAL_GFS_TS_DATASET_CONTRACT.md Section 12. In
 short -- rows sharing an event_group_key (e.g. a 00Z+3h and a 00Z+6h
 forecast of the same slot) are correlated predictions of one real-world
 outcome; a row-level random split could put one in train and the other in

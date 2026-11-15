@@ -63,46 +63,62 @@ import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(REPO_ROOT))
+from backend import forecast_integrity as integrity  # noqa: E402
+
 UNIFIED_PATH = REPO_ROOT / "data" / "unified_forecast.json"
 GRID_PATH = REPO_ROOT / "data" / "pan_india_grid.json"
 SYNC_LEAD_HOURS = 2  # CB is daily-resolution; any lead carries the same value
 
 
 def build_cb_lookup(unified: dict) -> dict[str, dict]:
-    """cell_id -> {probability, model_version, source_status} for the
-    chosen lead, CB records only, and only where a real probability
-    exists (never a None/UNAVAILABLE CB entry)."""
+    """cell_id -> daily CB outlook, from the integrity layer's daily_outlook only.
+
+    M0: the unified artifact's per-lead CB values are a single daily aggregate copied to five lead
+    slots and are withheld (probability null) by backend/forecast_integrity.py. The honest source is
+    daily_outlook, and only entries that are CURRENT are synced. Legacy artifacts are sanitised first,
+    so an old or replayed artifact can never feed the live grid."""
+    unified = integrity.sanitize_artifact(unified)
     out = {}
-    for rec in unified.get("records", []):
-        if rec.get("lead_hours") != SYNC_LEAD_HOURS:
+    for cid, entry in (unified.get("daily_outlook") or {}).items():
+        cb = entry.get("CB") or {}
+        if cb.get("probability") is None or cb.get("temporal_status") != integrity.TemporalStatus.CURRENT:
             continue
-        cb = rec.get("CB", {})
-        if cb.get("probability") is None:
-            continue
-        out[rec["cell_id"]] = {
+        out[cid] = {
             "probability": cb["probability"],
             "model_version": cb.get("model_version"),
             "source_status": cb.get("source_status"),
+            "model_init_time_utc": cb.get("model_init_time_utc"),
+            "window_start_utc": cb.get("window_start_utc"),
+            "window_end_utc": cb.get("window_end_utc"),
+            "event_class": cb.get("event_class"),
         }
     return out
 
 
 def build_ff_research_status_lookup(unified: dict) -> dict[str, dict]:
-    """cell_id -> {pu_score, model_version} ONLY where a real PU
-    ranking score genuinely exists (never fabricates a status for a
-    cell outside real INDOFLOODS catchment coverage) -- additive
-    metadata, never touches flash_flood_probability itself."""
+    """cell_id -> {pu_score, model_version, basis} ONLY where a real PU ranking score exists.
+
+    M0: that score is computed from the fixed 2024-08-01 rainfall cycle, so it is read from the
+    withheld value's historical_reference and always carried with a HISTORICAL_REPLAY designation
+    and its basis time. It is additive research metadata; it never touches flash_flood_probability."""
+    unified = integrity.sanitize_artifact(unified)
     out = {}
     for rec in unified.get("records", []):
         if rec.get("lead_hours") != SYNC_LEAD_HOURS:
             continue
-        ff = rec.get("FF", {})
-        pu_score = ff.get("extra", {}).get("pu_ranking_score")
+        ff = rec.get("FF", {}) or {}
+        ref = ff.get("historical_reference") or {}
+        pu_score = ref.get("pu_ranking_score")
+        if pu_score is None and ff.get("temporal_status") == integrity.TemporalStatus.CURRENT:
+            pu_score = (ff.get("extra") or {}).get("pu_ranking_score")
         if pu_score is None:
             continue
         out[rec["cell_id"]] = {
             "pu_score": pu_score,
             "model_version": ff.get("model_version"),
+            "designation": ref.get("designation") or "CURRENT",
+            "basis_time_utc": ref.get("model_init_time_utc"),
         }
     return out
 
@@ -154,12 +170,22 @@ def main() -> int:
                 cell["cloudburst_probability_source"] = "panindia_cb_v1 (Phase 21, LODO-validated XGBoost, REAL trained model)"
                 cell["cloudburst_probability_model_version"] = cb["model_version"]
                 cell["cloudburst_source_status"] = cb["source_status"]
+                # M0 terminology/lead honesty: a daily heavy-rain-day score, not a lead-specific
+                # forecast and not a verified hourly cloudburst.
+                cell["cloudburst_event_class"] = cb.get("event_class")
+                cell["cloudburst_lead_specific"] = False
+                cell["cloudburst_model_init_time_utc"] = cb.get("model_init_time_utc")
+                cell["cloudburst_window_start_utc"] = cb.get("window_start_utc")
+                cell["cloudburst_window_end_utc"] = cb.get("window_end_utc")
+                cell["cloudburst_value_type"] = "MODEL_SCORE_UNCALIBRATED"
                 n_cb += 1
             ff = ff_lookup.get(cid)
             if ff is not None:
                 cell["flash_flood_research_status"] = "RESEARCH_ONLY_PU_SCORE_AVAILABLE"
                 cell["flash_flood_research_pu_score"] = ff["pu_score"]
                 cell["flash_flood_research_model_version"] = ff["model_version"]
+                cell["flash_flood_research_designation"] = ff["designation"]
+                cell["flash_flood_research_basis_time_utc"] = ff["basis_time_utc"]
             else:
                 cell["flash_flood_research_status"] = "NO_RESEARCH_COVERAGE"
         return n_cb, n_ff
@@ -179,6 +205,9 @@ def main() -> int:
           f"({len(ff_lookup)} with a real PU score), and mirrored the same sync into "
           f"{n_forecast_lists} forecasts[].grid_cells list(s) (the array the deployed frontend "
           f"actually reads) of {GRID_PATH} (lead_hours={SYNC_LEAD_HOURS})")
+
+    if "forecasts" in grid or "generated_at_utc" in grid:
+        integrity.annotate_grid(grid)       # refresh hazard_value_types / lead semantics after the sync
 
     tmp_path = GRID_PATH.with_suffix(".json.tmp")
     with open(tmp_path, "w", encoding="utf-8") as f:

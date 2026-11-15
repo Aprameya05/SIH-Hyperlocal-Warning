@@ -1,9 +1,9 @@
 {
   "date": "2026-11-15",
-  "generated_at": "2026-11-15 22:51 IST",
+  "generated_at": "2026-11-15 19:55 IST",
   "alert_active": false,
-  "peak_slot": 3,
-  "peak_probability": 0.0016,
+  "peak_slot": 0,
+  "peak_probability": 0.0,
   "model_version": "v5_temporal_v4_ensemble",
   "slots": [
     {
@@ -34,7 +34,11 @@
         "source_cycle": null,
         "source_fhour": null,
         "reason": "reference_time unavailable (no valid GFS fetched_at_utc for this run)",
-        "clipped": false
+        "clipped": false,
+        "acquisition_lead_hours": null,
+        "hours_semantics": "LEGACY_ACQUISITION_LEAD_NOT_OPERATIONAL",
+        "operational_lead_hours": null,
+        "operational_lead_status": "UNAVAILABLE_NO_AVAILABILITY_TIME"
       },
       "cb_probability": 0.0,
       "ff_probability": 0.0,
@@ -71,7 +75,11 @@
         "source_cycle": null,
         "source_fhour": null,
         "reason": "reference_time unavailable (no valid GFS fetched_at_utc for this run)",
-        "clipped": false
+        "clipped": false,
+        "acquisition_lead_hours": null,
+        "hours_semantics": "LEGACY_ACQUISITION_LEAD_NOT_OPERATIONAL",
+        "operational_lead_hours": null,
+        "operational_lead_status": "UNAVAILABLE_NO_AVAILABILITY_TIME"
       },
       "cb_probability": 0.0476,
       "ff_probability": 0.0,
@@ -108,7 +116,11 @@
         "source_cycle": null,
         "source_fhour": null,
         "reason": "reference_time unavailable (no valid GFS fetched_at_utc for this run)",
-        "clipped": false
+        "clipped": false,
+        "acquisition_lead_hours": null,
+        "hours_semantics": "LEGACY_ACQUISITION_LEAD_NOT_OPERATIONAL",
+        "operational_lead_hours": null,
+        "operational_lead_status": "UNAVAILABLE_NO_AVAILABILITY_TIME"
       },
       "cb_probability": 0.0,
       "ff_probability": 0.0,
@@ -128,8 +140,8 @@
       "source": "model_defaults",
       "model_used": "nowcast_slot3_xgb_v6_temporal.pkl",
       "model_version": "v6_temporal",
-      "fallback": false,
-      "fallback_reason": null,
+      "fallback": true,
+      "fallback_reason": "no valid GFS row: inputs are hard-coded climatological defaults",
       "raw_probability": 0.0022,
       "cape": 0.0,
       "k_index": 30.0,
@@ -145,7 +157,11 @@
         "source_cycle": null,
         "source_fhour": null,
         "reason": "reference_time unavailable (no valid GFS fetched_at_utc for this run)",
-        "clipped": false
+        "clipped": false,
+        "acquisition_lead_hours": null,
+        "hours_semantics": "LEGACY_ACQUISITION_LEAD_NOT_OPERATIONAL",
+        "operational_lead_hours": null,
+        "operational_lead_status": "UNAVAILABLE_NO_AVAILABILITY_TIME"
       },
       "cb_probability": 0.0,
       "ff_probability": 0.0,
@@ -166,21 +182,21 @@
     "ERA5_u_850hPa": -1.15371337890625,
     "ERA5_v_850hPa": -3.49830810546875,
     "instability_level": "Stable",
-    "iwv_mm": 40.0,
+    "iwv_mm": 20.28,
     "ctt_drop_rate_c_per_h": null,
-    "iwv_category": "MODERATE",
+    "iwv_category": "LOW",
     "iwv_threshold_mm": 55.0,
-    "iwv_pct_of_threshold": 0.727,
+    "iwv_pct_of_threshold": 0.369,
     "iwv_source": "GFS PRECIP_WATER (model-derived precipitable water, not satellite-observed IWV)"
   },
   "satellite": {
     "himawari9": {
-      "timestamp_utc": "2026-11-15T17:10:00",
-      "timestamp_ist": "2026-11-15T22:40:00",
-      "vobl_bt_celsius": -41.95,
-      "min_bt_50km": -63.77,
-      "mean_bt_50km": -43.59,
-      "cold_pixels_count": 343,
+      "timestamp_utc": "2026-11-15T12:50:00",
+      "timestamp_ist": "2026-11-15T18:20:00",
+      "vobl_bt_celsius": -55.49,
+      "min_bt_50km": -61.5,
+      "mean_bt_50km": -50.33,
+      "cold_pixels_count": 458,
       "storm_detected": true,
       "alert_level": "GREEN",
       "nearest_pixel_dist_km": 2.17,
@@ -190,6 +206,19 @@
       "available": true
     },
     "history": [
+      {
+        "timestamp_utc": "2026-11-14T12:30:00",
+        "timestamp_ist": "2026-11-14T18:00:00",
+        "vobl_bt_celsius": 1.11,
+        "min_bt_50km": -11.88,
+        "mean_bt_50km": 6.13,
+        "cold_pixels_count": 0,
+        "storm_detected": false,
+        "nearest_pixel_dist_km": null,
+        "threshold_celsius": -40.0,
+        "data_source": "Himawari-9 Band 13 (10.4um) via NOAA AWS S3",
+        "bt_trend_1h": null
+      },
       {
         "timestamp_utc": "2026-11-14T16:30:00",
         "timestamp_ist": "2026-11-14T22:00:00",
@@ -254,19 +283,6 @@
         "threshold_celsius": -40.0,
         "data_source": "Himawari-9 Band 13 (10.4um) via NOAA AWS S3",
         "bt_trend_1h": null
-      },
-      {
-        "timestamp_utc": "2026-11-15T17:10:00",
-        "timestamp_ist": "2026-11-15T22:40:00",
-        "vobl_bt_celsius": -41.95,
-        "min_bt_50km": -63.77,
-        "mean_bt_50km": -43.59,
-        "cold_pixels_count": 343,
-        "storm_detected": true,
-        "nearest_pixel_dist_km": 2.17,
-        "threshold_celsius": -40.0,
-        "data_source": "Himawari-9 Band 13 (10.4um) via NOAA AWS S3",
-        "bt_trend_1h": null
       }
     ]
   },
@@ -278,9 +294,9 @@
   "convective_initiation": {
     "instability_score": 0.0,
     "initiation_status": "POST-CONVECTIVE",
-    "initiation_message": "Next peak window in 14.1h (tomorrow 1300 IST)",
+    "initiation_message": "Next peak window in 17.1h (tomorrow 1300 IST)",
     "initiation_risk": "MINIMAL",
-    "hours_to_peak": 14.1,
+    "hours_to_peak": 17.1,
     "cape_now": 0.0,
     "ki_now": 3.83,
     "li_now": 3.54,
@@ -293,7 +309,7 @@
     "monsoon_regime": "NEUTRAL",
     "regime_thresh_factor": 1.0,
     "peak_window_ist": "1300\u20131800 IST",
-    "computed_at": "2026-11-15 22:51 IST"
+    "computed_at": "2026-11-15 19:55 IST"
   },
   "multiday_outlook": [
     {
@@ -355,7 +371,7 @@
       "3": 0.0
     },
     "mean_flood_susceptibility_top10pct": 0.874,
-    "iwv_terrain_compound_factor": 0.25,
+    "iwv_terrain_compound_factor": 0.0,
     "high_risk_zones": [
       {
         "lat": 13.91,
@@ -415,7 +431,7 @@
       }
     ],
     "data_file": "data/blr_terrain.json",
-    "computed_at": "2026-11-15 22:51 IST"
+    "computed_at": "2026-11-15 19:55 IST"
   },
   "hazard_summary": {
     "cloudburst": {
@@ -490,7 +506,7 @@
     "query_cape": 0.0,
     "query_ki": 3.83,
     "query_li": 3.54,
-    "computed_at": "2026-11-15 22:51 IST"
+    "computed_at": "2026-11-15 19:55 IST"
   },
   "airport_impact": {
     "total_departures_today": 143,
@@ -532,7 +548,7 @@
         "impact_pct": 0.1
       }
     ],
-    "computed_at": "2026-11-15 22:51 IST"
+    "computed_at": "2026-11-15 19:55 IST"
   },
   "synoptic_regime": {
     "regime_id": "R1",
@@ -545,7 +561,7 @@
     "ki_used": 3.83,
     "t2m_c": 28.0,
     "month": 11,
-    "computed_at": "2026-11-15 22:51 IST"
+    "computed_at": "2026-11-15 19:55 IST"
   },
   "verification": {
     "pod": 0.0,
@@ -922,32 +938,36 @@
   },
   "metar": {
     "station": "VOBL",
-    "obs_time": "2026-11-15T16:30:00.000Z",
-    "temp_c": 20,
+    "obs_time": "2026-11-15T12:30:00.000Z",
+    "temp_c": 23,
     "dewpoint_c": 14,
-    "rh_pct": 68.4,
-    "wind_dir": 50,
-    "wind_speed_kt": 5,
+    "rh_pct": 56.9,
+    "wind_dir": 40,
+    "wind_speed_kt": 3,
     "wind_gust_kt": null,
     "visibility_sm": 3.73,
     "visibility_km": 6.0,
-    "altimeter_hpa": 1018,
+    "altimeter_hpa": 1016,
     "flight_category": "MVFR",
     "wx_string": "",
     "sky_cover": [
       {
         "cover": "FEW",
-        "base_ft": 1500
+        "base_ft": 1200
+      },
+      {
+        "cover": "SCT",
+        "base_ft": 8000
       }
     ],
     "thunderstorm_present": false,
-    "raw": "METAR VOBL 151630Z 05005KT 6000 FEW015 20/14 Q1018 NOSIG",
-    "fetched_utc": "2026-11-15T17:21:52Z"
+    "raw": "METAR VOBL 151230Z 04003KT 6000 FEW012 SCT080 23/14 Q1016 NOSIG",
+    "fetched_utc": "2026-11-15T13:04:08Z"
   },
   "sigmet_bulletin": null,
   "pipeline_health": {
-    "generated_at_utc": "2026-11-15T17:21:54Z",
-    "generated_at_ist": "2026-11-15 22:51 IST",
+    "generated_at_utc": "2026-11-15T14:25:51Z",
+    "generated_at_ist": "2026-11-15 19:55 IST",
     "components": {
       "gfs": {
         "status": "MISSING",
@@ -958,9 +978,9 @@
       },
       "himawari9": {
         "status": "OK",
-        "timestamp_utc": "2026-11-15T17:10:00",
+        "timestamp_utc": "2026-11-15T12:50:00",
         "storm_detected": true,
-        "min_bt_50km": -63.77,
+        "min_bt_50km": -61.5,
         "staleness": "UNKNOWN"
       },
       "upper_air": {
@@ -983,10 +1003,10 @@
     "thunderstorm_observed": null,
     "slot_results": [],
     "rolling_30d": {
-      "POD": 0.0,
-      "FAR": 0.0,
-      "HSS": 0.0,
-      "Brier": 0.0
+      "POD": null,
+      "FAR": null,
+      "HSS": null,
+      "Brier": null
     },
     "note": "IMD observation file not found"
   }

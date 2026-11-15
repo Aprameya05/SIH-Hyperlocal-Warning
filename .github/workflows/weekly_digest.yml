@@ -77,7 +77,10 @@ jobs:
           labeled = 0
           for row in recent_rows:
               try:
-                  prob = float(row.get("ts_probability") or row.get("ts_prob") or 0)
+                  _praw = row.get("ts_probability") or row.get("ts_prob")
+                  if _praw in (None, ""):
+                      continue          # a missing score is excluded, never counted as 0
+                  prob = float(_praw)
                   pred = int(row.get("ts_predicted") or 0)
                   label_raw = row.get("ts_label_actual", "")
                   if label_raw == "":
@@ -125,7 +128,8 @@ jobs:
               "lookback_days": lookback,
               "generated_at": now_ist.isoformat(),
               "regime": regime,
-              "today_max_prob_pct": round(today_max * 100, 1),
+              "today_max_score_pct": round(today_max * 100, 1),   # uncalibrated station-slot SCORE, not a probability
+              "digest_kind": "INTERNAL_MODEL_SELF_VERIFICATION_NOT_AN_OFFICIAL_WARNING",
               "metrics": {
                   "labeled_rows": labeled,
                   "ts_days": ts_days,
@@ -160,20 +164,24 @@ jobs:
           regime = d.get("regime", "UNKNOWN")
           drift = "⚠️ DRIFT" if d.get("drift_flag") else "✓ OK"
 
-          title = f"[CSIR] Weekly Digest — {d['period_end']} | {regime}"
+          fm = lambda v, n=3: "n/a (undefined)" if v is None else f"{v:.{n}f}"
+          title = f"DRIFT weekly model self-check — {d['period_end']} | {regime}"
           body = (
-              f"Period: {d['period_start']} → {d['period_end']}\n"
-              f"POD={pod:.3f}  FAR={far:.3f}  HSS={hss:.3f}  Brier={brier:.4f}\n"
-              f"TS Days: {m['ts_days']}/{m['labeled_rows']} ({m.get('ts_rate_pct','?')}% base rate)\n"
-              f"Alerts: {d['alert_days_in_period']} days | Model: {drift}\n"
-              f"Today max prob: {d['today_max_prob_pct']}%"
-          ) if (pod and far and hss and brier) else f"Digest generated. Labeled rows: {m['labeled_rows']}. Regime: {regime}."
+              "Internal VOBL station-model verification. NOT an IMD/NDMA warning; not a forecast.\n"
+              f"Period: {d['period_start']} → {d['period_end']} (n={m['labeled_rows']} labelled slot-days)\n"
+              f"POD={fm(pod)}  FAR={fm(far)}  HSS={fm(hss)}  Brier={fm(brier, 4)}\n"
+              f"Observed thunderstorm slot-days: {m['ts_days']}/{m['labeled_rows']} ({m.get('ts_rate_pct','n/a')}% base rate)\n"
+              f"Days the model score exceeded its threshold: {d['alert_days_in_period']} | Drift check: {drift}\n"
+              f"Today's highest slot score: {d['today_max_score_pct']}% (uncalibrated score)"
+          )
+          if m["labeled_rows"] < 30:
+              body += "\nSmall sample: metrics are unreliable."
 
           token = os.environ.get("NTFY_TOKEN", "")
           headers = {
               "Title": title.encode(),
               "Priority": "default",
-              "Tags": "thunderstorm,digest,weekly",
+              "Tags": "digest,weekly",
               "Authorization": f"Bearer {token}" if token else "",
           }
           req = urllib.request.Request(

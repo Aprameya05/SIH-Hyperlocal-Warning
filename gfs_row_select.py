@@ -3,7 +3,7 @@
 gfs_row_select.py — single source of truth for "which row of
 data/gfs_realtime_43295.csv is the freshest valid GFS input".
 
-Background (see docs/PIPELINE_OWNERSHIP.md and the 2026-09-30 root-cause
+Background (see docs/architecture/PIPELINE_OWNERSHIP.md and the 2026-09-30 root-cause
 report): gfs_fetcher.py appends one row per slot per day to
 data/gfs_realtime_43295.csv and never re-sorts the file. forecast_action.py
 and compute_realtime_shap.py both used to take gfs_df.iloc[0] after

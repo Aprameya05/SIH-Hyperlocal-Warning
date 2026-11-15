@@ -18,7 +18,7 @@ label = 1.
 
 Unlabeled/background: every other (cell, date) with real (non-masked) IMD
 rainfall in the 69 event cells, 2015-01-01 to 2020-09-24 (the documented
-common period; see docs/PHASE_5_6_HISTORICAL_DATA_DECISION.md Section 6).
+common period; see docs/archive/phase_history/PHASE_5_6_HISTORICAL_DATA_DECISION.md Section 6).
 label = None (never 0). We do NOT extend the background population to
 2025 even though .grd files exist through 2025, because INDOFLOODS has no
 event record past 2020-09-24 -- treating 2021-2025 cell-days as unlabeled
@@ -56,7 +56,7 @@ COMMON_WINDOW_END = pd.Timestamp("2020-09-24")  # last mapped INDOFLOODS event d
 # day's full 24h rainfall total in hand at the moment a flash flood is
 # actually developing (flash floods are sub-daily events; IMD's gridded
 # product is a T+1 daily accumulation, not a same-day nowcast feed).
-# Decision (documented here and in docs/FF_PU_FEATURE_CATALOG.md): rain_Xd
+# Decision (documented here and in docs/models/FF_PU_FEATURE_CATALOG.md): rain_Xd
 # features use STRICTLY PRIOR days [T-X, T-1] -- same-day (T) rainfall is
 # EXCLUDED from all backward-sum features to avoid using a same-day total
 # that would not be fully observed yet at flash-flood issue time. This is
@@ -177,7 +177,7 @@ def main():
     if n_positive_dedup != 620:
         reconciliation["discrepancy_reason"] = (
             "Phase 5.6's 620/69/131 figures were computed over the full 2015-2025 IMD file "
-            "window (docs/PHASE_5_6_HISTORICAL_DATA_DECISION.md Section 7), not the narrower "
+            "window (docs/archive/phase_history/PHASE_5_6_HISTORICAL_DATA_DECISION.md Section 7), not the narrower "
             "2015-01-01..2020-09-24 common-period cut used here for the actual training table "
             "(no INDOFLOODS event exists after 2020-09-24 in this dataset, so the two windows "
             "produce identical positive sets in practice -- any difference is not expected and is "

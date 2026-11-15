@@ -161,7 +161,7 @@ def test_5_freshness_from_real_mtime_not_generated_at():
 
 def test_6_frontend_canonical_fetch_and_parses():
     print("6. index.html fetches canonical_forecast.json additively and the embedded script still parses")
-    html = (REPO_ROOT / "index.html").read_text()
+    html = (REPO_ROOT / "frontend" / "index.html").read_text()
     check("index.html fetches data/canonical_forecast.json",
           "canonical_forecast.json" in html)
     check("existing forecast.json fetch is untouched (additive, not replaced)",

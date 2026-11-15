@@ -2,7 +2,7 @@
 """
 acquire_phase_0_4_19_batch.py -- Phase 0.4.19 manifest-driven batch
 acquisition for the Phase 0.4.18-cleaned candidate batch
-(docs/PHASE_0_4_17_ACQUISITION_MANIFEST.csv, 20 event groups / 40 unique
+(docs/archive/phase_history/PHASE_0_4_17_ACQUISITION_MANIFEST.csv, 20 event groups / 40 unique
 files).
 
 This script does NOT invent a new URL pattern. It reuses, by import, the
@@ -42,7 +42,7 @@ Safety properties (all deliberate, see docstrings below):
     HOLDOUT files out of any training dataset -- this script performs no
     training and makes no claim about downstream usage
   - GDEX's direct-file HTTPS path does not publish a remote checksum
-    (confirmed absent from docs/PHASE_0_4_3_HISTORICAL_GFS_ACQUISITION_GUIDE.md's
+    (confirmed absent from docs/archive/phase_history/PHASE_0_4_3_HISTORICAL_GFS_ACQUISITION_GUIDE.md's
     documented access mechanisms) -- the SHA-256 this script records is
     explicitly labeled an ACQUISITION FINGERPRINT (this project's own
     record of what it downloaded), never described as a "remote
@@ -84,7 +84,7 @@ from acquire_historical_gfs_pilot import (  # noqa: E402
     human_size, sha256_of_file, build_direct_url,
 )
 
-MANIFEST_CSV = REPO_ROOT / "docs" / "PHASE_0_4_17_ACQUISITION_MANIFEST.csv"
+MANIFEST_CSV = REPO_ROOT / "docs" / "archive" / "phase_history" / "PHASE_0_4_17_ACQUISITION_MANIFEST.csv"
 OUT_DIR = REPO_ROOT / "data" / "external" / "historical_gfs"
 RAW_DIR = OUT_DIR / "raw"
 PROVENANCE_MANIFEST = OUT_DIR / "manifest.json"
@@ -378,7 +378,7 @@ def check_free_space(raw_root: Path, targets: list[DownloadTarget], skip: bool) 
 
     # Conservative per-file estimate: mean of this project's own observed
     # GDEX file sizes to date (216.9-551.7 MB range, documented in
-    # docs/PHASE_0_4_19_ACQUISITION_READINESS_AUDIT.md) -- never invented,
+    # docs/archive/phase_history/PHASE_0_4_19_ACQUISITION_READINESS_AUDIT.md) -- never invented,
     # drawn from real prior downloads.
     ASSUMED_MEAN_FILE_BYTES = 394_700_000
     already_present = sum(

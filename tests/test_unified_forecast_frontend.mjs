@@ -11,7 +11,7 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dirname, '..');
-const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+const html = fs.readFileSync(path.join(ROOT, 'frontend', 'index.html'), 'utf8');
 
 const failures = [];
 function check(name, cond, detail) {
@@ -25,15 +25,15 @@ function check(name, cond, detail) {
 //    directions, and the page-render branch exists.
 // ---------------------------------------------------------------------
 check('NAV_TAB_LIST includes UNIFIED FORECAST',
-  html.includes("'DASHBOARD', 'FORECAST', 'UNIFIED FORECAST', 'RADAR MAP'"));
+  html.includes("'DASHBOARD', 'FORECAST', 'UNIFIED FORECAST', 'SATELLITE'"));
 check('hashToTab maps #unified -> UNIFIED FORECAST',
   html.includes("'#unified':'UNIFIED FORECAST'"));
 check('tabToHash maps UNIFIED FORECAST -> #unified',
   html.includes("'UNIFIED FORECAST':'#unified'"));
 check('render branch for UNIFIED FORECAST exists',
   html.includes("activeNavTab === 'UNIFIED FORECAST'") && html.includes('<UnifiedForecastPage />'));
-check('existing FORECAST/RADAR MAP branches untouched',
-  html.includes("activeNavTab === 'FORECAST' &&") && html.includes("activeNavTab === 'RADAR MAP' &&"));
+check('existing FORECAST/SATELLITE branches present (RADAR MAP was renamed: there is no radar)',
+  html.includes("activeNavTab === 'FORECAST' &&") && html.includes("activeNavTab === 'SATELLITE' &&"));
 
 // ---------------------------------------------------------------------
 // 2. Extract and execute the pure helper functions added for Phase 36
@@ -129,9 +129,9 @@ if (fs.existsSync(artifactPath)) {
   const ffRecord = artifact.records.find(r => r.FF.probability !== null);
   check('no FF record in the offline artifact ever carries a non-null probability',
     ffRecord === undefined);
-  const unavailableSample = artifact.records.find(r => r.TS.status === 'OUT_OF_DOMAIN_STATION_ONLY');
-  check('an OUT_OF_DOMAIN_STATION_ONLY TS record has risk_category NOT_AVAILABLE, never LOW',
-    unavailableSample && unavailableSample.TS.risk_category === 'NOT_AVAILABLE');
+  // M0: withheld blocks carry a withheld status; the invariant is that a null-probability block is NEVER mapped to LOW
+  const nullAsRisk = artifact.records.find(r => ['TS', 'CB', 'FF'].some(hz => r[hz].probability === null && r[hz].risk_category !== 'NOT_AVAILABLE'));
+  check('a null-probability block has risk_category NOT_AVAILABLE, never LOW', nullAsRisk === undefined);
 } else {
   check('offline artifact data/unified_forecast.json exists (run scripts/phase34_build_unified_forecast.py)', false);
 }

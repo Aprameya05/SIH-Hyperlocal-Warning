@@ -93,7 +93,7 @@ FEATURE_EXTRACTION_VERSION = "himawari_features.py@phase2-hardened"
 
 # Phase 7 (additive, independently-isolated OBSERVED/DERIVED artifact --
 # see docs/PHASE_6_HIMAWARI_MULTIBAND_AUDIT.md and
-# docs/PHASE_7_HIMAWARI_B08_IMPLEMENTATION.md). Band 8 (6.185um, the
+# docs/archive/phase_history/PHASE_7_HIMAWARI_B08_IMPLEMENTATION.md). Band 8 (6.185um, the
 # upper-tropospheric water-vapor-sensitive AHI channel) is a SEPARATE
 # fetch from Band 13 -- each HSD segment file is single-band, so B08
 # requires its own S3/JAXA GETs. B08 brightness temperature is NEVER
@@ -874,7 +874,7 @@ def main():
                 "note": "OBSERVED/DERIVED Himawari-9 AHI Band 8 artifact. B08 "
                         "brightness temperature is a real calibrated radiance "
                         "observation, NOT a retrieved IWV product -- see "
-                        "docs/PHASE_7_HIMAWARI_B08_IMPLEMENTATION.md. Not "
+                        "docs/archive/phase_history/PHASE_7_HIMAWARI_B08_IMPLEMENTATION.md. Not "
                         "consumed by any model today.",
                 "feature_extraction_version": B08_FEATURE_VERSION,
                 "satellite": "Himawari-9",

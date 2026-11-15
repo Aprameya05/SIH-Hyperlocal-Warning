@@ -25,7 +25,7 @@ Output is written ONLY to processed/indofloods/rainfall_context_preview.csv
 (a preview artifact for this audit, not a production file, not a "negative
 dataset" -- it contains only real antecedent-rainfall context rows for
 already-known positive flood-event dates; see
-docs/FF_HISTORICAL_PREDICTOR_AUDIT.md).
+docs/models/FF_HISTORICAL_PREDICTOR_AUDIT.md).
 
 Deterministic: reading the same .grd files and events CSV twice produces
 byte-identical output (no randomness, no wall-clock dependence).

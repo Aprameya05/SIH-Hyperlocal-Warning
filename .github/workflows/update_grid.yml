@@ -24,7 +24,7 @@ jobs:
 
       # 2026-10-10: moved from AFTER "Run pipeline" to immediately after
       # checkout. This workflow is the sole writer of
-      # data/pan_india_grid.json (docs/PIPELINE_OWNERSHIP.md), and this
+      # data/pan_india_grid.json (docs/architecture/PIPELINE_OWNERSHIP.md), and this
       # workflow has been failing on EVERY run for several days straight
       # (confirmed via the GitHub Checks API across 10+ consecutive runs,
       # all failing at "Build canonical forecast" immediately after this
@@ -64,7 +64,7 @@ jobs:
 
       - name: Sync real panindia_cb_v1 CB probabilities into the grid
         # 2026-10-10: the DEPLOYED frontend's location search
-        # (assets/location_engine.js) reads cloudburst_probability from
+        # (frontend/assets/location_engine.js) reads cloudburst_probability from
         # this file, populated above by backend/pipeline.py's
         # deterministic physics-baseline formula -- confirmed by
         # directly inspecting the live site's real network traffic that
@@ -79,6 +79,17 @@ jobs:
         # committed version, not stale from checkout time.
         run: python scripts/sync_unified_cb_into_pan_india_grid.py
         continue-on-error: true
+
+      - name: Verify pan-India grid integrity (fail closed)
+        # Independent gate: re-derives the grid contract from the data. A violation fails the job, so no canonical
+        # build, no alert dispatch and no commit happen; the last-known-good grid on main is untouched.
+        run: python3 pipelines/validation/validate_pan_india_grid.py data/pan_india_grid.json
+
+      - name: Rebuild DRIFT command-centre feed from the fresh grid (fail closed)
+        run: |
+          python3 models/evaluation/summarise_baseline_evaluations.py
+          python3 pipelines/publishing/build_live_feed.py
+          python3 pipelines/validation/validate_live_feed.py data/drift_live.json --max-age-minutes 30 --require-cells
 
       - name: Build canonical forecast
         # 2026-10-10: this step has failed on every run for several days
@@ -108,6 +119,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/pan_india_grid.json data/ctt_grid.json data/canonical_forecast.json
+          git add data/pan_india_grid.json data/ctt_grid.json data/canonical_forecast.json data/drift_live.json data/hazard_evaluation.json
           git diff --staged --quiet || git commit -m "Auto: GFS grid update $(date -u +%Y%m%dT%H%MZ)"
           git push

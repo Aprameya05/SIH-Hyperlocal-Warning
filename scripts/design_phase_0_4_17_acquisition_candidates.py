@@ -39,7 +39,7 @@ from build_vobl_historical_gfs_ts_join import (  # noqa: E402
 from historical_dataset_split import assign_partition, TRAIN, HOLDOUT  # noqa: E402
 
 CELL_ID = "IND_13.0_78.0"
-LABELS_PATH = REPO_ROOT / "SIH_PANINDIA_GRID_LABELS_20260930_143541Z" / "processed" / "labels" / "ts_labels.csv"
+LABELS_PATH = REPO_ROOT / "docs/archive/implementation_snapshots/SIH_PANINDIA_GRID_LABELS_20260930_143541Z" / "processed" / "labels" / "ts_labels.csv"
 
 SLOT_LABELS = {0: "0001-0600", 1: "0601-1200", 2: "1201-1800", 3: "1801-2400"}
 SLOT_LABEL_TO_ID = {v: k for k, v in SLOT_LABELS.items()}
@@ -283,7 +283,7 @@ def main():
     candidates = select_candidates(labels)
     rows = build_manifest_rows(candidates)
 
-    out_csv = REPO_ROOT / "docs" / "PHASE_0_4_17_ACQUISITION_MANIFEST.csv"
+    out_csv = REPO_ROOT / "docs" / "archive" / "phase_history" / "PHASE_0_4_17_ACQUISITION_MANIFEST.csv"
     fieldnames = ["priority", "target_ist_date", "target_slot", "label", "event_group_key",
                   "target_valid_time", "selected_gfs_cycle", "selected_lead", "reason",
                   "partition", "season", "expected_file", "expected_role"]
@@ -313,7 +313,7 @@ def main():
         "seasons_covered": sorted({r["season"] for r, _ in candidates}),
     }
     print(json.dumps(summary, indent=2))
-    (REPO_ROOT / "docs" / "PHASE_0_4_17_ACQUISITION_SUMMARY.json").write_text(json.dumps(summary, indent=2))
+    (REPO_ROOT / "docs" / "archive" / "phase_history" / "PHASE_0_4_17_ACQUISITION_SUMMARY.json").write_text(json.dumps(summary, indent=2))
     print(f"\nWrote {out_csv} ({n_files} rows, {n_events} event groups)")
 
 

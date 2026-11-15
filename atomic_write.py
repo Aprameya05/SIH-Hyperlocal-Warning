@@ -67,7 +67,7 @@ def atomic_write_json(dest: "str | Path", obj: Any, *, indent: int = 2) -> None:
     after a partial write), then writes it atomically via atomic_write_bytes.
     """
     # allow_nan=False: this repo's own integrity rule is "no NaN, no Infinity"
-    # in any published forecast artifact (see docs/CANONICAL_FORECAST_SCHEMA.md)
+    # in any published forecast artifact (see docs/architecture/CANONICAL_FORECAST_SCHEMA.md)
     # -- catching it here, at serialization time, is earlier and cheaper than
     # catching it in a separate downstream validator. This must fail BEFORE
     # any file is touched, so it is deliberately outside the try/except in

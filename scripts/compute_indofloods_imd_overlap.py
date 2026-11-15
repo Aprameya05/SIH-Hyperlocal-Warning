@@ -7,7 +7,7 @@ canonical 992-cell grid.
 Reuses the grid constants and .grd-reading logic from Phase 5.5's
 scripts/prepare_indofloods_rainfall_context.py verbatim (not reinvented).
 Writes nothing; only reads existing files and prints/returns numbers used
-in docs/PHASE_5_6_HISTORICAL_DATA_DECISION.md.
+in docs/archive/phase_history/PHASE_5_6_HISTORICAL_DATA_DECISION.md.
 
 Candidate background days are explicitly labeled "candidate unlabeled /
 background" throughout -- never "negative" -- per Case B (Phase 5.5:

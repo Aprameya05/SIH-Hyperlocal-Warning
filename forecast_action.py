@@ -300,7 +300,7 @@ def build_pipeline_health(now: datetime, gfs_df: pd.DataFrame,
 def score_hazard_slots(obs_by_slot: dict, feature_cols: list,
                        hazard: str, models_dir: Path) -> dict:
     """Score all 4 slots for a hazard (cb or ff) and return calibrated probs."""
-    probs = {i: 0.0 for i in range(4)}
+    probs = {i: None for i in range(4)}      # None = not scored (missing model / error); never a fabricated 0.0
     for slot_id in range(4):
         model_path = models_dir / f"{hazard}_slot_{slot_id}_model.json"
         cal_path   = models_dir / f"{hazard}_slot_{slot_id}_calibrator.pkl"
@@ -592,6 +592,12 @@ def main():
             None if not is_fallback
             else f"preferred model(s) missing from models/ — using {model_name}"
         )
+        # M2: a slot scored on hard-coded climatological defaults (no GFS row) is a FALLBACK even when the preferred
+        # model loaded; it must never be treated as a live model output or drive an alert.
+        if data_source == "model_defaults":
+            is_fallback = True
+            fallback_reason = ((fallback_reason + "; ") if fallback_reason else "") + \
+                "no valid GFS row: inputs are hard-coded climatological defaults"
 
         from lead_time import compute_lead_time
         lt = compute_lead_time(
@@ -627,8 +633,9 @@ def main():
               f"threshold={threshold}  predicted={'YES' if float(cal) >= threshold else 'NO'}")
 
     # ── CB / FF hazard scoring ────────────────────────────────────────────────
-    cb_probs = {0: 0.0, 1: 0.0, 2: 0.0, 3: 0.0}
-    ff_probs = {0: 0.0, 1: 0.0, 2: 0.0, 3: 0.0}
+    # M2: unscored hazards are None (unavailable), never 0.0 -- zero is a prediction, null is "no prediction"
+    cb_probs = {0: None, 1: None, 2: None, 3: None}
+    ff_probs = {0: None, 1: None, 2: None, 3: None}
     cb_ff_feat_path = MODELS / "cb_ff_feature_list.json"
     if cb_ff_feat_path.exists() and obs_by_slot:
         try:
@@ -646,8 +653,8 @@ def main():
     # Inject CB/FF probs into each slot dict
     for s in slots_output:
         sid = s["slot"]
-        s["cb_probability"] = cb_probs.get(sid, 0.0)
-        s["ff_probability"] = ff_probs.get(sid, 0.0)
+        s["cb_probability"] = cb_probs.get(sid)
+        s["ff_probability"] = ff_probs.get(sid)
 
     # ── Load previous forecast for trend delta ────────────────────────────────
     prev_probs = {}
@@ -676,13 +683,20 @@ def main():
             s["trend"] = "UNKNOWN"
 
     # ── Aggregate results ─────────────────────────────────────────────────────
-    alert_active     = any(s["ts_predicted"] for s in slots_output)
-    peak_slot        = max(results, key=results.get)
-    peak_probability = results[peak_slot]
+    # M2: alert_active / peak come ONLY from slots scored on real inputs by the preferred model. A fallback slot
+    # (climatological defaults, climatology lookup, lower-priority model) can neither raise an alert nor be the peak.
+    _elig = [s for s in slots_output if not s.get("fallback")]
+    alert_active     = any(s["ts_predicted"] for s in _elig)
+    if _elig:
+        _pk = max(_elig, key=lambda s: s["ts_probability"])
+        peak_slot, peak_probability = _pk["slot"], results[_pk["slot"]]
+    else:
+        peak_slot, peak_probability = None, None          # no eligible slot: undefined, not 0.0
+    _pp = peak_probability or 0.0
     met_slot         = next((s for s in slots_output if s["slot"] == 2), slots_output[0])
 
     print(f"\n  Alert: {'ACTIVE ⚡' if alert_active else 'None'}  "
-          f"Peak: Slot {peak_slot} ({peak_probability*100:.1f}%)")
+          f"Peak: " + (f"Slot {peak_slot} ({peak_probability*100:.1f}%)" if peak_slot is not None else "none (no slot on real inputs)"))
 
     # ── Wind fallback chain ───────────────────────────────────────────────────
     _ua_wind = (upper_air.get(2) or upper_air.get(3) or
@@ -702,7 +716,7 @@ def main():
         "generated_at":     now.strftime("%Y-%m-%d %H:%M IST"),
         "alert_active":     alert_active,
         "peak_slot":        peak_slot,
-        "peak_probability": round(float(peak_probability), 4),
+        "peak_probability": None if peak_probability is None else round(float(peak_probability), 4),
         "model_version":    "v5_temporal_v4_ensemble",  # production ensemble
         "slots":            slots_output,
         "met_parameters": {
@@ -958,9 +972,10 @@ def main():
                 # Per-slot terrain-routed FF risk: raw ff_prob amplified by local terrain
                 ff_terrain_risk = {}
                 for s in slots_output:
-                    ff_p = s.get("ff_probability", 0.0)
-                    # Susceptibility amplifies risk in low-lying drainage areas
-                    terrain_amplified = round(min(1.0, ff_p * (0.4 + 0.6 * mean_fs_top) * 1.8), 4)
+                    ff_p = s.get("ff_probability")
+                    # Susceptibility amplifies risk in low-lying drainage areas (None stays None: unscored slot)
+                    terrain_amplified = (None if ff_p is None
+                                         else round(min(1.0, ff_p * (0.4 + 0.6 * mean_fs_top) * 1.8), 4))
                     ff_terrain_risk[str(s["slot"])] = terrain_amplified
 
                 # Named high-risk drainage zones (top susceptibility cells)
@@ -1032,21 +1047,17 @@ def main():
     )
 
     # ── Hazard summary (CB / FF) ──────────────────────────────────────────────
+    def _haz_summary(probs, thr):
+        scored = {k: v for k, v in probs.items() if v is not None}
+        if not scored:                                   # nothing scored: undefined, never 0 / never an alert
+            return {"max_prob": None, "peak_slot": None, "alert": False, "slots": probs, "threshold": thr}
+        pk = max(scored, key=scored.get)
+        return {"max_prob": round(scored[pk], 4), "peak_slot": int(pk), "alert": scored[pk] >= thr,
+                "slots": probs, "threshold": thr}
+
     forecast["hazard_summary"] = {
-        "cloudburst": {
-            "max_prob":  round(max(cb_probs.values()), 4),
-            "peak_slot": int(max(cb_probs, key=cb_probs.get)),
-            "alert":     max(cb_probs.values()) >= 0.30,
-            "slots":     cb_probs,
-            "threshold": 0.30,
-        },
-        "flash_flood": {
-            "max_prob":  round(max(ff_probs.values()), 4),
-            "peak_slot": int(max(ff_probs, key=ff_probs.get)),
-            "alert":     max(ff_probs.values()) >= 0.25,
-            "slots":     ff_probs,
-            "threshold": 0.25,
-        },
+        "cloudburst": _haz_summary(cb_probs, 0.30),
+        "flash_flood": _haz_summary(ff_probs, 0.25),
     }
 
     # ── Historical analogs ────────────────────────────────────────────────────
@@ -1172,12 +1183,18 @@ def main():
 
     # ── Verification metrics ──────────────────────────────────────────────────
     slot2_30d = verification.get("metrics_30day", {}).get("2", {})
+
+    def _m(d, key, nd):
+        """Metric or None. A missing/undefined score is None -- never coerced to 0.0 (zero reads as 'perfectly wrong')."""
+        v = (d or {}).get(key)
+        return None if v is None else round(float(v), nd)
+
     forecast["verification"] = {
-        "pod":           round(float(slot2_30d.get("POD", 0)), 3) if slot2_30d else None,
-        "far":           round(float(slot2_30d.get("FAR", 0)), 3) if slot2_30d else None,
-        "hss":           round(float(slot2_30d.get("HSS", 0)), 3) if slot2_30d else None,
-        "brier":         round(float(slot2_30d.get("Brier", 0)), 4) if slot2_30d else None,
-        "csi":           round(float(slot2_30d.get("CSI", 0)), 3) if slot2_30d else None,
+        "pod":           _m(slot2_30d, "POD", 3),
+        "far":           _m(slot2_30d, "FAR", 3),
+        "hss":           _m(slot2_30d, "HSS", 3),
+        "brier":         _m(slot2_30d, "Brier", 4),
+        "csi":           _m(slot2_30d, "CSI", 3),
         "n_days":        slot2_30d.get("n_days"),
         "n_ts":          slot2_30d.get("n_ts"),
         "date_verified": verification.get("generated_at"),
@@ -1185,12 +1202,7 @@ def main():
         "window":        "30-day",
         "available":     bool(slot2_30d),
         "all_slots_30d": {
-            str(k): {
-                "pod":   round(float(v.get("POD", 0)), 3),
-                "far":   round(float(v.get("FAR", 0)), 3),
-                "hss":   round(float(v.get("HSS", 0)), 3),
-                "brier": round(float(v.get("Brier", 0)), 4),
-            }
+            str(k): {"pod": _m(v, "POD", 3), "far": _m(v, "FAR", 3), "hss": _m(v, "HSS", 3), "brier": _m(v, "Brier", 4)}
             for k, v in verification.get("metrics_30day", {}).items()
         },
     }
@@ -1270,8 +1282,8 @@ def main():
         valid_start = now.strftime("%H%M")
         valid_end   = (now + timedelta(hours=6)).strftime("%H%M")
         date_sig    = now.strftime("%d/%b/%Y").upper()
-        intensity   = ("SEVERE"   if peak_probability >= 0.70 else
-                       "MODERATE" if peak_probability >= 0.40 else
+        intensity   = ("SEVERE"   if _pp >= 0.70 else
+                       "MODERATE" if _pp >= 0.40 else
                        "LIGHT")
         tops_fl     = ("FL400" if intensity == "SEVERE" else
                        "FL350" if intensity == "MODERATE" else "FL300")
@@ -1307,7 +1319,7 @@ def main():
 
     print("\n" + "=" * 65)
     print(f"  forecast.json written — alert={alert_active}  "
-          f"peak=Slot{peak_slot} {peak_probability*100:.1f}%")
+          f"peak=Slot{peak_slot} {_pp*100:.1f}%")
     print(f"  Tmax={forecast['gfs_tmax_c']}°C  Tmin={forecast['gfs_tmin_c']}°C  "
           f"Rain={forecast['gfs_rainfall_mm']}mm")
     print(f"  Wind u500={forecast['met_parameters']['ERA5_u_500hPa']}  "
@@ -1398,15 +1410,15 @@ def main():
                 "generated_at":     now.strftime("%Y-%m-%d %H:%M IST"),
                 "peak_slot":        peak_slot,
                 "peak_slot_label":  SLOT_LABELS.get(peak_slot, ""),
-                "peak_probability": round(float(peak_probability), 4),
+                "peak_probability": None if peak_probability is None else round(float(peak_probability), 4),
                 "monsoon_regime":   monsoon_regime,
                 "cape":             peak_s.get("cape", 0),
                 "k_index":          peak_s.get("k_index", 0),
                 "metar_override":   metar_ts_override,
                 "sigmet_intensity": (
-                    "SEVERE"   if peak_probability >= 0.70 else
-                    "MODERATE" if peak_probability >= 0.40 else
-                    "LIGHT"    if peak_probability > 0    else None
+                    "SEVERE"   if _pp >= 0.70 else
+                    "MODERATE" if _pp >= 0.40 else
+                    "LIGHT"    if _pp > 0    else None
                 ),
             })
             # Keep last 90 alert events
@@ -1451,7 +1463,7 @@ if __name__ == "__main__":
             "crash_traceback":   tb,
             "alert_active":      False,
             "peak_slot":         None,
-            "peak_probability":  0.0,
+            "peak_probability":  None,
             "slots": [],
             "convective_initiation": {
                 "monsoon_regime": "UNKNOWN",

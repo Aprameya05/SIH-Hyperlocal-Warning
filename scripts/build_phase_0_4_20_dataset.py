@@ -7,7 +7,7 @@ batch (40 files / 20 event groups, verified GREEN).
 This script does NOT hardcode a cycle list (unlike
 build_phase_0_4_16_historical_gfs_ts_dataset.py's CYCLES table). It
 derives every (event_group_key, cycle, leads, partition, label) tuple
-from docs/PHASE_0_4_17_ACQUISITION_MANIFEST.csv at run time, and
+from docs/archive/phase_history/PHASE_0_4_17_ACQUISITION_MANIFEST.csv at run time, and
 independently recomputes the GRIB-derived event_group_key and the
 assign_partition()-derived TRAIN/HOLDOUT split for every row it builds --
 the manifest CSV's own columns are a plan to check against, never trusted
@@ -72,9 +72,9 @@ from historical_dataset_split import (  # noqa: E402
 )
 
 BUILDER_VERSION = "phase_0_4_20_v1"
-DATASET_CONTRACT_DOC = "docs/PHASE_0_4_12_HISTORICAL_GFS_TS_DATASET_CONTRACT.md"
+DATASET_CONTRACT_DOC = "docs/archive/phase_history/PHASE_0_4_12_HISTORICAL_GFS_TS_DATASET_CONTRACT.md"
 
-CANDIDATE_MANIFEST_CSV = REPO_ROOT / "docs" / "PHASE_0_4_17_ACQUISITION_MANIFEST.csv"
+CANDIDATE_MANIFEST_CSV = REPO_ROOT / "docs" / "archive" / "phase_history" / "PHASE_0_4_17_ACQUISITION_MANIFEST.csv"
 PROVENANCE_MANIFEST = REPO_ROOT / "data" / "external" / "historical_gfs" / "manifest.json"
 DEFAULT_OUT_DIR = REPO_ROOT / "data" / "external" / "historical_gfs"
 

@@ -28,6 +28,9 @@ import urllib.request
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from backend import alert_policy  # noqa: E402
+
 DATA_DIR      = Path("data")
 FORECAST_PATH = Path("forecast.json")   # root-level, not data/
 FALLBACK_SUB  = DATA_DIR / "subscribers.json"
@@ -186,6 +189,11 @@ def main():
 
     print(f"[alerts] Forecast peak={peak_prob*100:.0f}% | {gen_ist} | {len(subscribers)} subscriber(s)")
 
+    pol = alert_policy.evaluate_forecast_alerts(forecast)
+    policy_ok = bool(pol["eligible_slots"])
+    if not policy_ok:
+        print(f"[alerts] automated threshold alerts WITHHELD by the alert policy: {pol['reason_counts']} "
+              f"({alert_policy.explain(sorted(pol['reason_counts']))}). Daily digests are unaffected.")
     sent = 0
     for sub in subscribers:
         name      = sub.get("name", "Researcher")
@@ -194,7 +202,9 @@ def main():
         threshold = sub.get("threshold", 30) / 100.0
         do_digest = sub.get("daily_digest", True)
 
-        alert_fire  = peak_prob >= threshold
+        # Automated forecast alerts must pass the shared eligibility policy (owner decisions Q14/Q16/Q18); the old rule
+        # (peak_probability >= subscriber threshold) fired on climatology/fallback values and had no provenance check.
+        alert_fire  = (peak_prob >= threshold) and policy_ok
         digest_fire = do_digest and (is_morning or args.force_digest)
 
         if not alert_fire and not digest_fire:

@@ -8,7 +8,7 @@ Covers: positive deduplication correctness, unlabeled label really is
 null/None (never 0) everywhere, no accidental U->0 conversion in the build
 script's source, temporal feature alignment (no rainfall feature uses
 same-day-or-later data), no future rainfall leakage, the feature allowlist
-matches docs/FF_PU_FEATURE_CATALOG.md (no socioeconomic columns present),
+matches docs/models/FF_PU_FEATURE_CATALOG.md (no socioeconomic columns present),
 no post-event INDOFLOODS fields present, temporal split boundaries
 correct, spatial holdout cell excluded from training, determinism.
 """
@@ -24,7 +24,7 @@ REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT_DIR = os.path.join(REPO_ROOT, "processed", "ff_pu")
 TABLE_CSV = os.path.join(OUT_DIR, "ff_pu_training_table.csv")
 BUILD_SCRIPT = os.path.join(REPO_ROOT, "scripts", "build_ff_pu_dataset.py")
-FEATURE_CATALOG_MD = os.path.join(REPO_ROOT, "docs", "FF_PU_FEATURE_CATALOG.md")
+FEATURE_CATALOG_MD = os.path.join(REPO_ROOT, "docs", "models", "FF_PU_FEATURE_CATALOG.md")
 
 SOCIOECONOMIC_COLUMNS = [
     "2015_GDP_PPP", "2010_GDP_PPP", "2005_GDP_PPP", "2000_GDP_PPP", "1995_GDP_PPP", "1990_GDP_PPP",
