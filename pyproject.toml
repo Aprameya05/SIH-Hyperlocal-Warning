@@ -3,14 +3,15 @@ name = "drift-hyperlocal-warning"
 version = "0.1.0"
 description = "DRIFT: pan-India, location-aware early-warning decision support (SIH26077)"
 requires-python = ">=3.11"
-dynamic = ["dependencies"]
+# Runtime dependencies are deliberately NOT declared here: install them from requirements/*.txt
+# (requirements/base.txt -> backend/requirements.txt is the CI contract). Declaring them here makes
+# Cloudflare Pages' build image pip-install the whole scientific stack (numpy, rasterio, numba, ...)
+# before running the stdlib-only bundle builder, which is slow and unnecessary.
+dependencies = []
 
 [tool.setuptools]
-py-modules = []   # application, not an installable package; pyproject only declares metadata and dependencies
-
-[tool.setuptools.dynamic]
-dependencies = { file = ["backend/requirements.txt"] }
+py-modules = []   # application, not an installable package
 
 [project.optional-dependencies]
-# Kept in sync by tests/test_repo_layout.py; the files under requirements/ are authoritative for installs.
+# Kept in sync with requirements/ml.txt + requirements/dev.txt by tests/test_repo_layout.py.
 dev = ["pytest>=8.0", "httpx>=0.27", "scikit-learn==1.7.2", "xgboost>=2.0.0", "joblib>=1.3.0", "shap>=0.45.0", "pandas>=2.0.0", "scipy>=1.11", "shapely>=2.0", "pyproj>=3.6", "pillow>=10.0"]

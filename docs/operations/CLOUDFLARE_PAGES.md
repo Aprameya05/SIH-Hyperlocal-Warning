@@ -21,3 +21,8 @@ In Cloudflare dashboard -> Workers & Pages -> `sih-hyperlocal-warning` -> Settin
 - Leave the production branch as it is. Or disable automatic Git builds for the project and rely on the workflow path.
 
 Verify any bundle before deploying: `python3 scripts/diagnostics/check_bundle_references.py pages_dist` (exact-case references, 25 MiB limit, forbidden files) and `make gate`.
+
+## Settings applied (with the owner's approval, 2026-11-15)
+- Branch control: production branch `main`; **automatic production deployments disabled**; preview deployments for all non-production branches stay enabled. Production is deployed only by the GitHub Actions Wrangler workflow.
+- Build command `python3 pipelines/publishing/build_pages_bundle.py pages_dist`, output directory `pages_dist`, root directory = repository root.
+- Pages' Python build image pip-installs a project when it finds `pyproject.toml`; `pyproject.toml` therefore declares no runtime dependencies (the bundle builder is standard-library only).
