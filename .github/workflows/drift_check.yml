@@ -189,7 +189,7 @@ jobs:
           pip install "joblib>=1.3.0" "scikit-learn>=1.5.0" "xgboost>=2.0.0" "pandas>=2.0.0" 2>/dev/null || true
 
           # Run recalibration on all slots with available data
-          python recalibrate_models.py \
+          python models/thunderstorm/station/recalibrate_station_models.py \
             --slots 0 1 2 3 \
             --cal-years 2024 2025 \
           || echo "Recalibration failed — keeping existing models"
@@ -211,7 +211,7 @@ jobs:
                   print(f"  ✗ {p.name}: {e}", file=sys.stderr)
           print(f"\n  {models_found} recalibrated model(s) verified")
           if models_found == 0:
-              print("WARNING: No recalibrated models found — check recalibrate_models.py output")
+              print("WARNING: No recalibrated models found — check recalibrate_station_models.py output")
           EOF
 
       - name: Run smoke test after recalibration

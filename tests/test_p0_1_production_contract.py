@@ -217,11 +217,11 @@ def test_shap_never_falls_back_to_a_different_model_than_declared():
 
 def test_retrain_trigger_recal_branch_invokes_an_existing_script():
     workflow_src = (REPO_ROOT / ".github" / "workflows" / "retrain_trigger.yml").read_text()
-    assert "recalibrate_models.py" in workflow_src
+    assert "recalibrate_station_models.py" in workflow_src
     # Whatever path the workflow invokes it by, that path must exist in the repo.
     import re
-    m = re.search(r"python\s+(\S*recalibrate_models\.py)", workflow_src)
-    assert m, "could not find the recalibrate_models.py invocation in retrain_trigger.yml"
+    m = re.search(r"python\s+(\S*recalibrate_station_models\.py)", workflow_src)
+    assert m, "could not find the recalibrate_station_models.py invocation in retrain_trigger.yml"
     invoked_path = m.group(1)
     assert (REPO_ROOT / invoked_path).exists(), (
         f"retrain_trigger.yml invokes '{invoked_path}', which does not exist in the repo"
