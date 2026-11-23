@@ -22,6 +22,14 @@ on:
         required: false
         default: "0.20"
 
+permissions:
+  contents: write
+
+# Share the publisher lock so this job never races forecast/grid/fields commits to main.
+concurrency:
+  group: sih-forecast-publish
+  cancel-in-progress: false
+
 jobs:
   drift-check:
     runs-on: ubuntu-latest
@@ -185,9 +193,6 @@ jobs:
           echo "=== AUTO-RECALIBRATION TRIGGERED ==="
           echo "Drifted slots: ${{ steps.drift.outputs.drift_slots }}"
 
-          # Install recalibration deps (isotonic regression is in scikit-learn)
-          pip install "joblib>=1.3.0" "scikit-learn>=1.5.0" "xgboost>=2.0.0" "pandas>=2.0.0" 2>/dev/null || true
-
           # Run recalibration on all slots with available data
           python models/thunderstorm/station/recalibrate_station_models.py \
             --slots 0 1 2 3 \
@@ -211,37 +216,31 @@ jobs:
                   print(f"  ✗ {p.name}: {e}", file=sys.stderr)
           print(f"\n  {models_found} recalibrated model(s) verified")
           if models_found == 0:
-              print("WARNING: No recalibrated models found — check recalibrate_station_models.py output")
+              print("ERROR: recalibration was triggered but no recalibrated model was produced", file=sys.stderr)
+              sys.exit(1)
           EOF
-
-      - name: Run smoke test after recalibration
-        if: steps.drift.outputs.should_recalibrate == 'true'
-        run: |
-          python forecast_action.py
-        continue-on-error: true
 
       - name: Commit drift report and recalibrated models
         run: |
           git config --global user.name  "CSIR Drift Monitor"
           git config --global user.email "drift@csir-thunderstorm.in"
 
-          # Pull latest before committing (avoid non-fast-forward)
-          cp forecast.json /tmp/forecast_before_drift.json 2>/dev/null || true
-          git pull origin main --no-rebase || true
-          cp /tmp/forecast_before_drift.json forecast.json 2>/dev/null || true
-
-          git add results/drift_report.json || true
+          # Only files this workflow owns are committed. forecast.json and data/pipeline_health.json
+          # belong to forecast_update.yml and are never touched here.
+          git add results/drift_report.json
 
           if [ "${{ steps.drift.outputs.should_recalibrate }}" == "true" ]; then
-            git add models/*recal*.pkl results/calibration_results_*.json results/reliability_slot*.png 2>/dev/null || true
-            git add forecast.json data/pipeline_health.json 2>/dev/null || true
+            git add models/*recal*.pkl
+            git add results/calibration_results_*.json results/reliability_slot*.png 2>/dev/null || true  # optional outputs
             COMMIT_MSG="auto: recalibration triggered — drifted slots: ${{ steps.drift.outputs.drift_slots }} ($(date -u '+%Y-%m-%d %H:%M UTC'))"
           else
             COMMIT_MSG="auto: drift check — no drift ($(date -u '+%Y-%m-%d %H:%M UTC'))"
           fi
 
           git diff --staged --quiet || git commit -m "$COMMIT_MSG"
-          git push origin main --force-with-lease
+          # Fast-forward only, never force: rebase onto the latest main, then push.
+          git pull --rebase --autostash origin main
+          git push origin HEAD:main
 
       - name: Notify drift status via ntfy.sh
         run: |
@@ -252,16 +251,8 @@ jobs:
               -H "Priority: default" \
               -H "Tags: warning,brain" \
               -d "Model drift detected in slots: ${DRIFT_SLOTS}. Auto-recalibration triggered. Check results/drift_report.json for details." \
-              https://ntfy.sh/csir-vobl-thunderstorm || true
+              https://ntfy.sh/csir-vobl-thunderstorm || echo "::warning::drift notification could not be delivered"
             echo "Drift notification sent"
           else
             echo "No drift — notification skipped"
           fi
-        continue-on-error: true
-
-      - name: Deploy updated dashboard to Cloudflare Pages
-        if: steps.drift.outputs.should_recalibrate == 'true'
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          command: pages deploy . --project-name=csir-thunderstorm-bengaluru --branch=main
