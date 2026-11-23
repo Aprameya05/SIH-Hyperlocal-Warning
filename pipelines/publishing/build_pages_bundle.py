@@ -98,7 +98,7 @@ def build(out_dir: Path, repo_root: Path = REPO_ROOT) -> list[str]:
         base = repo_root / SOURCE_DIRS.get(d, d)
         for src in sorted(base.rglob("*")) if base.exists() else []:
             if src.is_file() and "images" not in src.relative_to(base).parts:      # hero images are published by alias at the root
-                rel = d + "/" + str(src.relative_to(base))
+                rel = d + "/" + src.relative_to(base).as_posix()
                 dst = out_dir / rel
                 dst.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(src, dst)
@@ -114,7 +114,7 @@ def check(out_dir: Path) -> list[str]:
     for f in out_dir.rglob("*"):
         if not f.is_file():
             continue
-        rel = str(f.relative_to(out_dir))
+        rel = f.relative_to(out_dir).as_posix()
         for pat in FORBIDDEN_GLOBS:
             if fnmatch.fnmatch(f.name.lower(), pat) or fnmatch.fnmatch(rel.lower(), pat):
                 problems.append(f"forbidden file published: {rel} (matches {pat})")
