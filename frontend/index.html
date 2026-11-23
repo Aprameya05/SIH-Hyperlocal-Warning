@@ -5985,6 +5985,52 @@ function injectDrainageOverlay(map, liveData) { /* removed: connected terrain po
       );
     }
 
+
+    // Real GFS guidance for one 6-hour IST slot at the VOBL grid cell, from the validated 0.25 deg store (same artifacts and status logic as the Dashboard card).
+    // This is NWP model output, not a station forecast and not a thunderstorm probability. Past hours are labelled PAST; stale or invalid hours are withheld.
+    const VOBL_LATLON = [13.1979, 77.7063];
+    const GUIDANCE_KEYS = [['cape', 'CAPE', 'J/kg', 0], ['cin', 'CIN', 'J/kg', 0], ['k_index', 'K-index', '°C', 1], ['pwat', 'Precip. water', 'mm', 1], ['shear_850_500', '850–500 shear', 'm/s', 1], ['t2m_c', '2 m temp', '°C', 1], ['ws10', '10 m wind', 'm/s', 1], ['precip_3h', 'Rain, 3 h', 'mm', 1]];
+    function slotGuidance(slotIdx, nowMs) {
+      const S = window.__driftStore;
+      if (!S) return { status: 'LOADING', reason: 'loading the GFS fields' };
+      if (!S.fieldsOk) return { status: 'UNAVAILABLE', reason: 'GFS fields failed verification: ' + (S.problems && S.problems[0] || 'unknown') };
+      const r = S.resolve(VOBL_LATLON[0], VOBL_LATLON[1]); if (!r.covered) return { status: 'UNAVAILABLE', reason: 'VOBL is outside the grid' };
+      const rec0 = S.record(r.cell_id, null, nowMs); if (!rec0.cycle) return { status: 'UNAVAILABLE', reason: 'no GFS cycle available' };
+      const hours = rec0.cycle.hours, day0 = Math.floor((nowMs + 19800000) / 86400000) * 86400000 - 19800000;
+      for (const addDay of [0, 1]) {
+        const start = day0 + addDay * 86400000 + slotIdx * 6 * 3600000, end = start + 6 * 3600000;
+        const idxs = hours.map((h, i) => [i, Date.parse(h.valid_time_utc)]).filter(x => x[1] > start && x[1] <= end).map(x => x[0]);
+        if (!idxs.length) continue;
+        const recs = idxs.map(i => S.record(r.cell_id, i, nowMs).selected_hour ? { i, rec: S.record(r.cell_id, i, nowMs) } : null).filter(Boolean);
+        const okRecs = recs.filter(x => ['CURRENT', 'PAST_VALID_TIME'].includes(x.rec.selected_hour.status));
+        const label = new Date(start + 19800000).toISOString().slice(5, 10) + ' ' + String(((slotIdx * 6) % 24)).padStart(2, '0') + ':00–' + String(((slotIdx * 6 + 6) % 24)).padStart(2, '0') + ':00 IST';
+        const past = end < nowMs;
+        if (!okRecs.length) return { status: 'WITHHELD', reason: 'the GFS hours for this window are stale or failed provenance checks', label };
+        const vals = GUIDANCE_KEYS.map(([k, name, unit, dec]) => {
+          const xs = okRecs.map(x => x.rec.fields[k]).filter(f => f && f.value != null && isFinite(f.value)).map(f => f.value);
+          return { key: k, name, unit, dec, value: xs.length ? (k === 't2m_c' ? Math.max(...xs) : Math.max(...xs)) : null };
+        });
+        return { status: past ? 'PAST' : 'OK', label, hours: okRecs.map(x => 'f' + String(x.rec.selected_hour.fhour).padStart(3, '0')).join(' '), cycle: rec0.cycle.model_init_utc, vals, past };
+      }
+      return { status: 'NONE', reason: 'the latest GFS cycle (' + String(rec0.cycle.model_init_utc).slice(0, 13).replace('T', ' ') + 'Z) has no forecast hour inside this window' };
+    }
+    function SlotGuidance({ slot, withheld }) {
+      const [, tick] = React.useState(0);
+      React.useEffect(() => { const h = () => tick(t => t + 1); window.addEventListener('drift-store-ready', h); return () => window.removeEventListener('drift-store-ready', h); }, []);
+      const g = slotGuidance(slot, Date.now());
+      return (
+        <div className="relative z-10 mt-3 rounded-xl border border-slate-700/60 bg-slate-900/40 p-3" data-testid={'slot-guidance-' + slot}>
+          <div className="text-[10px] font-bold uppercase tracking-wider text-sky-300">GFS guidance at VOBL{g.label ? ' · ' + g.label : ''}{g.status === 'PAST' ? ' · PAST' : ''}</div>
+          {g.vals ? (<>
+            <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-[12px] font-mono">
+              {g.vals.map(v => (<div key={v.key} className="flex justify-between gap-2"><span className="text-slate-400">{v.name}</span><span className="text-white font-bold">{v.value == null ? '—' : v.value.toFixed(v.dec)} <span className="text-slate-500 font-normal">{v.unit}</span></span></div>))}
+            </div>
+            <div className="mt-2 text-[10px] text-slate-500 leading-snug">Highest value among {g.hours}, GFS {String(g.cycle).slice(0, 13).replace('T', ' ')}Z cycle, 0.25° cell. NWP model output{g.past ? ' for a window that has ended' : ''}; not a thunderstorm probability.</div>
+          </>) : <div className="mt-2 text-[12px] text-slate-400">{g.status === 'NONE' ? 'No guidance: ' : g.status === 'WITHHELD' ? 'Withheld: ' : ''}{g.reason}</div>}
+        </div>
+      );
+    }
+
     function ForecastPage({ slots, selectedSlotIndex, onSelectSlot, liveData, hazardCfg }) {
       const { lang } = React.useContext(LangContext);
       // Find peak slot index (highest ts_probability)
@@ -6095,6 +6141,14 @@ function injectDrainageOverlay(map, liveData) { /* removed: connected terrain po
                     <span className="text-[11px] font-mono text-slate-400">score, not validated per slot</span>
                   </div>
 
+                  {(s.probability == null || !isFinite(s.probability) || s.fallback) ? <>
+                    <div className="relative z-10 mt-3 text-center" data-testid={'slot-withheld-' + s.slot}>
+                      <span className="inline-flex items-center gap-1 text-slate-300 text-xs font-bold tracking-wide">STATION SCORE WITHHELD</span>
+                      <div className="text-[11px] text-slate-400 mt-1 leading-snug">{s.fallback_reason ? String(s.fallback_reason).slice(0, 110) : 'no valid prediction'}</div>
+                    </div>
+                    <SlotGuidance slot={s.slot} withheld />
+                  </> : <>
+                  <SlotGuidance slot={s.slot} />
                   {/* Probability gauge + Trend Arrow & Delta */}
                   <div className="relative z-10 my-4 text-center">
                     <CircularArcGauge probability={s.probability} threshold={s.threshold} size={134} />
@@ -6130,6 +6184,7 @@ function injectDrainageOverlay(map, liveData) { /* removed: connected terrain po
                     </div>
                   </div>
 
+                  </>}
                   {/* Footer: threshold + status */}
                   <div className="relative z-10 border-t border-slate-800/80 pt-3 text-xs space-y-1.5">
                     <div className="flex items-center justify-between">
