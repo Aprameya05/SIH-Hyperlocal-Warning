@@ -99,7 +99,8 @@ test('selection persists until another cell is chosen or the panel is closed; cl
   assert.equal(await page.$eval('.di-panel', e => e.getAttribute('data-cell')), 'IN025_1350_07800');
   assert.equal(await page.evaluate(() => { const d = window.__driftInspector.getMap().getSource('insp-sel')._data; return d && d.properties ? d.properties.id : null; }), 'IN025_1350_07800');
   await page.keyboard.press('Escape'); await page.waitForFunction(() => window.__driftInspector.state().cell_id === null);
-  assert.equal(await page.$('.di-panel.open'), null);
+  await page.waitForFunction(() => !document.querySelector('.di-panel.open'));   // the panel hides on the scheduled render
+  assert.equal(await page.evaluate(() => !!document.querySelector('.di-panel.open')), false);   // (never assert on an ElementHandle: a failure would try to print the whole page object)
   assert.equal(await page.evaluate(() => { const d = window.__driftInspector.getMap().getSource('insp-sel')._data; return d && d.features ? d.features.length : 0; }), 0);                              // highlight removed
   await clickLatLon(page, 13.25, 77.75); await page.click('.di-x'); await page.waitForFunction(() => window.__driftInspector.state().cell_id === null);
   const url = new URL(page.url()); assert.ok(url.searchParams.get('cell') !== undefined); await ctx.close();
@@ -205,5 +206,6 @@ test('API failure: with the fields artifact unreachable the inspector says UNAVA
   await page.waitForFunction(() => window.__driftInspector && window.__driftStoreProblems !== undefined, null, { timeout: 30000 });
   assert.equal(await page.evaluate(() => window.__driftStore), null);
   assert.equal(await page.evaluate(() => window.__driftInspector.select('IN025_1325_07775')), false);                                                  // nothing to inspect, no crash
-  assert.equal(await page.$('.di-panel.open'), null); await ctx.close();
+  await page.waitForFunction(() => !document.querySelector('.di-panel.open'));   // the panel hides on the scheduled render
+  assert.equal(await page.evaluate(() => !!document.querySelector('.di-panel.open')), false);   // (never assert on an ElementHandle: a failure would try to print the whole page object) await ctx.close();
 });
