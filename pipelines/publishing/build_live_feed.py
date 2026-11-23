@@ -49,6 +49,9 @@ def build(now: datetime | None = None) -> dict:
     now = now or datetime.now(timezone.utc)
     grid, unified, vobl = _load("data/pan_india_grid.json"), _load("data/unified_forecast.json"), _load("forecast.json")
     sources, problems = [], []
+    # Pan-India thunderstorm model state comes from the published artifact, never from a hardcoded string.
+    _ts = ((_load("data/india_ts_model_latest.json") or {}).get("meta") or {})
+    _ts_ok = bool(_ts.get("model_evaluated")) and bool(_ts.get("calibrated"))
 
     # ---- pan-India grid (NWP guidance fields) ------------------------------------------------------------
     g_ok, g_rep = False, {}
@@ -180,10 +183,26 @@ def build(now: datetime | None = None) -> dict:
                  "cells": cells, "hydrology": hydrology, "terrain": terrain_meta},
         "hazards": {
             "thunderstorm": {
-                "status": "PARTIAL", "pan_india_model": "UNAVAILABLE",
-                "summary": "Station model for VOBL (Bengaluru) slot windows is live; pan-India thunderstorm shows NWP "
-                           "instability guidance only (CAPE/CIN). No pan-India thunderstorm probability exists.",
-                "target": "Thunderstorm at VOBL within a 6-h IST slot (observation label); pan-India: none",
+                "status": "PARTIAL",
+                "pan_india_model": "EXPERIMENTAL_PRE_MONSOON_VALIDATION" if _ts_ok else "UNAVAILABLE",
+                "pan_india_model_detail": ({
+                    "model_version": _ts.get("model_version"), "cycle_init_utc": _ts.get("cycle_init_utc"),
+                    "leads": _ts.get("leads"), "value_type": _ts.get("value_type"),
+                    "evaluation_ref": _ts.get("evaluation_ref"), "applicability": _ts.get("applicability"),
+                    "limits": "validated on Apr-Jun 2024/2025 only (113 METAR stations); not validated for other seasons; "
+                              "NWP forecast hours +6/12/18/24 h, not a 2-6 h nowcast",
+                } if _ts_ok else None),
+                "summary": ("Station model for VOBL (Bengaluru) slot windows is live (inputs partly fixed constants; see its "
+                            "fallback flags). A calibrated pan-India thunderstorm probability (ts_panindia_xgb_v1, +6/12/18/24 h "
+                            "NWP hours) is published as an EXPERIMENTAL product validated on Apr-Jun only; it is a probability of "
+                            "a METAR-reported thunderstorm and is extrapolated to non-station cells."
+                            if _ts_ok else
+                            "Station model for VOBL (Bengaluru) slot windows is live; pan-India thunderstorm shows NWP "
+                            "instability guidance only (CAPE/CIN). The pan-India thunderstorm model artifact is unavailable or "
+                            "not evaluated, so no pan-India thunderstorm probability is shown."),
+                "target": ("Thunderstorm at VOBL within a 6-h IST slot (observation label); pan-India: METAR-reported "
+                           "thunderstorm at the forecast hour (model estimate)" if _ts_ok else
+                           "Thunderstorm at VOBL within a 6-h IST slot (observation label); pan-India: none"),
                 "station_slots": slots, "station_evidence": evidence, "evaluation": "thunderstorm",
                 "supported_predictors": ["CAPE", "CIN"], "unsupported_predictors": ["K-index", "Totals-Totals",
                     "850 hPa convergence", "0-6 km wind shear", "PWAT (pan-India)", "cloud-top temperature / drop rate"]},
