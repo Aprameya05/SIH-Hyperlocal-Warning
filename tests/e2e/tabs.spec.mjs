@@ -178,3 +178,21 @@ test('Satellite tab shows the VOBL point observation that forecast.json carries 
   assert.match(t, /VOBL point observation/i); assert.ok(t.includes(Number(v.vobl_bt_celsius).toFixed(1)), 'the artifact brightness temperature is printed');
   assert.doesNotMatch(t, /VOBL point observation unavailable/i); await ctx.close();
 });
+
+test('Forecast tab: every 6-hour slot shows real GFS guidance for VOBL equal to the artifact, even when the station score is withheld; no empty gauge or "vs prev run" for a withheld slot', async () => {
+  const { ctx, page, w } = await open('#forecast');
+  await page.waitForFunction(() => window.__driftStore && window.__driftStore.fieldsOk && document.querySelector('[data-testid^=slot-guidance-]'), null, { timeout: 60000 });
+  const store = await page.evaluate(() => { const S = window.__driftStore, r = S.resolve(13.1979, 77.7063); return { cell: r.cell_id }; });
+  const fi = FIELDS.cells.indexOf(store.cell); assert.ok(fi >= 0);
+  const text = await page.evaluate(() => [0, 1, 2, 3].map(i => (document.querySelector(`[data-testid=slot-guidance-${i}]`) || {}).innerText || ''));
+  const t = await body(page);
+  assert.doesNotMatch(t, /vs prev run/); assert.equal(await page.$$eval('[data-testid^=slot-withheld-]', e => e.length), 4);
+  let withValues = 0;
+  for (const x of text) { assert.match(x, /GFS guidance at VOBL/i); if (/CAPE/.test(x)) { withValues++; assert.doesNotMatch(x, /NaN|undefined/); } else assert.match(x, /No guidance|Withheld/i); }
+  assert.ok(withValues >= 2, `at least two slots carry real values: ${JSON.stringify(text)}`);
+  // the numbers equal the artifact: the highest CAPE among the GFS hours of the slot that has values
+  const cap = await page.evaluate(() => { const S = window.__driftStore; return [0, 1, 2, 3].map(i => { const el = document.querySelector(`[data-testid=slot-guidance-${i}]`); const m = el && /CAPE\s*([0-9.\-]+)/.exec(el.innerText); return m ? +m[1] : null; }); });
+  const allCape = FIELDS.fields.cape.map(row => row[fi]); const mx = Math.max(...allCape);
+  assert.ok(cap.filter(v => v != null).every(v => allCape.some(a => Math.round(a) === v)), `every shown CAPE is an artifact value: ${cap} vs ${allCape}`); assert.ok(Math.max(...cap.filter(v => v != null)) <= Math.round(mx));
+  assert.equal(w.pageErrors.length, 0, JSON.stringify(w.pageErrors)); await ctx.close();
+});
