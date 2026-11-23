@@ -171,3 +171,10 @@ test('Models and Scores show the held-out evaluation tables from the published a
   assert.ok(/Pan-India thunderstorm model/i.test(sc2) && /UNAVAILABLE|Rolling/i.test(sc2)); assert.doesNotMatch(sc, forbidden);
   assert.equal(w.pageErrors.length, 0, JSON.stringify(w.pageErrors)); await ctx.close();
 });
+
+test('Satellite tab shows the VOBL point observation that forecast.json carries (it previously read "unavailable" because of a wrong field check)', async () => {
+  const { ctx, page } = await open('#satellite');
+  const t = await body(page); const v = baseForecast().satellite.himawari9;
+  assert.match(t, /VOBL point observation/i); assert.ok(t.includes(Number(v.vobl_bt_celsius).toFixed(1)), 'the artifact brightness temperature is printed');
+  assert.doesNotMatch(t, /VOBL point observation unavailable/i); await ctx.close();
+});
