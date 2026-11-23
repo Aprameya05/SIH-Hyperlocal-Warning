@@ -31,6 +31,13 @@ on:
   schedule:
     - cron: "0 3 1 10 *"   # 1st October 03:00 UTC — post-monsoon data complete
 
+permissions:
+  contents: write
+
+concurrency:
+  group: sih-forecast-publish
+  cancel-in-progress: false
+
 jobs:
   retrain:
     runs-on: ubuntu-latest
@@ -154,12 +161,14 @@ jobs:
           EOF
 
       - name: Commit updated models and results
+        # Only on main: HEAD:main from another ref would publish an unreviewed branch (the 2026-10-11 failure).
+        if: github.ref == 'refs/heads/main'
         run: |
           git config --global user.name  "CSIR Retrain Bot"
           git config --global user.email "bot@csir-thunderstorm.in"
 
           cp forecast.json /tmp/forecast_generated.json
-          git pull origin main --no-rebase || true
+          git pull --rebase --autostash origin main
           cp /tmp/forecast_generated.json forecast.json
 
           git add \
@@ -172,4 +181,4 @@ jobs:
           git diff --staged --quiet || \
             git commit -m "retrain: recalibration $(date -u '+%Y-%m-%d') slot=${{ steps.action.outputs.slot }}"
 
-          git push origin main --force-with-lease
+          git push origin HEAD:main
