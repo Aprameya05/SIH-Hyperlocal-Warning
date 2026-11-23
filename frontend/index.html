@@ -43,8 +43,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800;900&display=swap" rel="stylesheet">
   
   <!-- MapLibre GL JS (free, no API key needed) -->
-  <link href="https://cdn.jsdelivr.net/npm/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
-  <script src="https://cdn.jsdelivr.net/npm/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+  <link href="./assets/vendor/maplibre-gl.css" rel="stylesheet" />
+  <script src="./assets/vendor/maplibre-gl.js"></script>
 
   <!-- Tailwind CSS CDN -->
   <!-- Worker URL injected by GitHub Actions (sed replace before deploy) -->
@@ -76,18 +76,32 @@
   </script>
 
   <!-- React & ReactDOM UMD -->
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="./assets/vendor/react.production.min.js"></script>
+  <script src="./assets/vendor/react-dom.production.min.js"></script>
   
   <!-- Framer Motion UMD CDN -->
-  <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
+  <script src="./assets/vendor/framer-motion-10.16.4.js"></script>
 
   <!-- Babel Standalone for JSX -->
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="./assets/vendor/babel-standalone-7.26.4.min.js"></script>
+  <script src="./assets/vendor/jspdf-2.5.1.umd.min.js"></script>
   <!-- Location engine: coordinate -> multi-architecture bundle, plain script (not JSX) -->
   <script src="./assets/location_engine.js"></script>
   <script src="./assets/forecast_integrity.js"></script>
+  <script src="./assets/drift_location.js"></script>
+  <script src="./assets/legacy_fields_bridge.js"></script>
+  <script>
+    // The validated 0.25 deg artifacts (GFS fields with per-file provenance, grid, statics, Himawari B13). Reloaded every 10 minutes so the
+    // card never keeps showing an old cycle; the dashboard re-renders when the store changes.
+    (function () {
+      function go() {
+        window.DriftFieldsBridge.load(null, window.DriftLocation, '').then(function (r) {
+          window.__driftStore = r.store; window.__driftStoreProblems = r.problems; window.dispatchEvent(new Event('drift-store-ready'));
+        });
+      }
+      go(); setInterval(go, 10 * 60 * 1000);
+    })();
+  </script>
 
   
   <style>
@@ -1067,7 +1081,25 @@
     <span class="cta">Open command centre &rarr;</span>
   </a>
   <div style="background:#1b2742;color:#cfe3ff;font:12px system-ui;padding:8px 14px;text-align:center;border-bottom:1px solid #2c3d63">Legacy Bengaluru (VOBL airport) station dashboard. It is separate from the <a href="drift.html" style="color:#7cc4ff">DRIFT pan-India command centre</a>; station-model tiles describe Bengaluru only and must not be read as national performance. Tiles without a verified live source show —.</div>
-  <div id="root"></div>
+  <div id="root">
+    <!-- Shown until React mounts (the page is compiled in the browser, which takes a few seconds); React replaces this on render. -->
+    <div id="boot-loading" role="status" aria-live="polite" style="min-height:60vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:#94a3b8;font-family:-apple-system,BlinkMacSystemFont,'Inter',sans-serif;text-align:center;padding:24px">
+      <div style="width:34px;height:34px;border:3px solid rgba(148,163,184,.25);border-top-color:#38bdf8;border-radius:50%;animation:bootspin 0.9s linear infinite"></div>
+      <div style="font-size:14px;font-weight:600;letter-spacing:.04em">Loading the Bengaluru station dashboard&hellip;</div>
+      <div style="font-size:12px;color:#64748b">Preparing the interface in your browser. This takes a few seconds on the first visit.</div>
+    </div>
+    <style>@keyframes bootspin{to{transform:rotate(360deg)}}</style>
+  </div>
+  <script>
+    // If the interface has not mounted after 25 s (blocked CDN, old browser, script error) say so instead of leaving a black page.
+    setTimeout(function () {
+      var el = document.getElementById('boot-loading');
+      if (!el) return;
+      el.innerHTML = '<div style="font-size:15px;font-weight:700;color:#fca5a5">The station dashboard could not start.</div>' +
+        '<div style="font-size:13px;max-width:520px;line-height:1.5">A required script did not load or failed to run (check your connection or content blocker). ' +
+        'The pan-India command centre does not depend on it: <a href="drift.html" style="color:#38bdf8">open the command centre</a> or <a href="" style="color:#38bdf8">reload</a>.</div>';
+    }, 25000);
+  </script>
 
   <!-- Restore saved theme preference immediately -->
   <script>
@@ -2343,6 +2375,13 @@ function injectDrainageOverlay(map, liveData) { /* removed: connected terrain po
 
     function DashboardOverviewPage({ slots, selectedSlotIndex, onSelectSlot, isLiveData, lastUpdated, liveTime, liveData, onNavTabChange, fetchLatencyMs, mousePos, hazardCfg, canonicalPipelineRun }) {
       const { lang } = React.useContext(LangContext);
+      const [fieldStore, setFieldStore] = React.useState(window.__driftStore || null);
+      const [fieldHour, setFieldHour] = React.useState(null);    // null = the store's default (next valid) forecast hour
+      React.useEffect(() => {
+        const h = () => setFieldStore(window.__driftStore || null);
+        window.addEventListener('drift-store-ready', h);
+        return () => window.removeEventListener('drift-store-ready', h);
+      }, []);
       const mapContainerRef = React.useRef(null);
       const mapRef = React.useRef(null);
       const voblPopupRef = React.useRef(null);
@@ -2571,30 +2610,35 @@ function injectDrainageOverlay(map, liveData) { /* removed: connected terrain po
               name: name || null,
               lat, lng,
               cellLat: cell.lat, cellLon: cell.lon,
-              ts: cell.thunderstorm_probability ?? null,
-              cb: cell.cloudburst_probability ?? null,
-              ff: cell.flash_flood_probability ?? null,
-              ffTerrainAdjusted: cell.flash_flood_probability_terrain_adjusted ?? null,
+              // The 1 deg grid scores are hand-weighted heuristics (value_type heuristic_risk_score, never calibrated): they are not shown as probabilities.
+              ts: cell.is_calibrated_probability === true ? (cell.thunderstorm_probability ?? null) : null,
+              cb: null,
+              ff: null,
+              ffTerrainAdjusted: null,
               modelType: cell.model_type ?? null,
               valueType: cell.value_type ?? null,
               isCalibratedProbability: cell.is_calibrated_probability ?? false,
-              leadH: cell.forecast_lead_hours ?? null,
-              validAt: cell.forecast_valid_at_utc ?? null,
-              timeUntilValidH: cell.time_until_valid_hours ?? null,
-              operationalLeadH: cell.operational_lead_hours ?? cell.time_until_valid_hours ?? null,
-              nwpLeadH: cell.nwp_lead_hours ?? cell.forecast_lead_hours ?? null,
-              drivers: {
-                cape: cell.cape ?? null,
-                cin: cell.cin ?? null,
-                pwat_mm: cell.pwat_mm ?? null,
-                k_index: cell.k_index ?? null,
-                totals_totals: cell.totals_totals ?? null,
-                wind_shear_ms: cell.wind_shear_ms ?? null,
-                convergence_s: cell.convergence_s ?? null,
-                ctt_c: cell.ctt_c ?? null,
-                ctt_drop_rate_c_hr: cell.ctt_drop_rate_c_hr ?? null,
-                qpe_mm: cell.qpe_mm ?? null,
-              },
+              timeUntilValidH: null,
+              nwpLeadH: null,
+              ...(() => {
+                // Real values for the clicked point from the validated 0.25 deg store (current only; else null + reason), plus the satellite observation.
+                const R = window.DriftFieldsBridge.diagnostics(window.__driftStore || null, lat, lng, null, Date.now());
+                const V = R.values, S = R.satellite, ok = (k) => (V[k] && V[k].value != null ? V[k].value : null);
+                const satOK = S && S.status === 'CURRENT' && S.ctt_p10_k != null;
+                return {
+                  realDiag: R,
+                  leadH: R.selected_hour ? R.selected_hour.fhour : null,
+                  validAt: R.selected_hour ? R.selected_hour.valid_time_utc : null,
+                  operationalLeadH: R.selected_hour ? R.selected_hour.operational_lead_hours : null,
+                  drivers: {
+                    cape: ok('cape'), cin: ok('cin'), pwat_mm: ok('pwat'), k_index: ok('k_index'), totals_totals: ok('total_totals'),
+                    wind_shear_ms: ok('shear_850_500'), convergence_s: ok('conv850'),
+                    ctt_c: satOK ? S.ctt_p10_k - 273.15 : null,
+                    ctt_drop_rate_c_hr: satOK ? S.dtdt_60min_k_per_h : null,
+                    qpe_mm: null,
+                  },
+                };
+              })(),
               terrain: cell.terrain ?? null,
             });
           }
@@ -3982,8 +4026,8 @@ function injectDrainageOverlay(map, liveData) { /* removed: connected terrain po
 
               const hazards = [
                 ['THUNDERSTORM', d.ts, '#ef4444'],
-                ['CLOUDBURST', d.cb, '#38bdf8'],
-                ['FLASH FLOOD', d.ffTerrainAdjusted ?? d.ff, '#f59e0b'],
+                ['CLOUDBURST', null, '#38bdf8'],          // no validated cloudburst model exists: never a percentage
+                ['FLASH FLOOD', null, '#f59e0b'],         // no validated flash-flood model exists: never a percentage
               ];
               const dominant = hazards.reduce((a, b) => ((b[1] ?? -1) > (a[1] ?? -1) ? b : a), hazards[0]);
               const domProb = dominant[1];
@@ -4014,53 +4058,92 @@ function injectDrainageOverlay(map, liveData) { /* removed: connected terrain po
                     </div>
                   </div>
 
-                  {/* 4 Diagnostic Pillars */}
-                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: isMobile ? 10 : 16 }}>
-                    <div style={{ padding: '16px 18px', borderRadius: 14, background: 'rgba(15, 23, 42, 0.5)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                      <div style={{ fontSize: 10, fontWeight: 700, color: '#64748b', letterSpacing: '0.08em' }}>INSTABILITY (CAPE/CIN)</div>
-                      <div style={{ fontSize: 24, fontWeight: 700, color: '#f8fafc', margin: '6px 0 2px' }}>
-                        {d.drivers.cape != null ? `${Math.round(d.drivers.cape)}` : 'UNAVAILABLE'} <span style={{ fontSize: 12, color: '#64748b' }}>J/kg</span>
+                  {/* Diagnostics: real values from the validated 0.25 deg GFS fields store + Himawari-9 B13 (assets/legacy_fields_bridge.js).
+                      A value appears only if the store marks it current; otherwise it is WITHHELD with the reason. Nothing is defaulted. */}
+                  {(() => {
+                    const R = window.DriftFieldsBridge.diagnostics(fieldStore, d.lat ?? d.cellLat, d.lng ?? d.cellLon, fieldHour, Date.now());
+                    const V = R.values, SAT = R.satellite, SH = R.selected_hour;
+                    const utc = (t) => (t ? String(t).slice(0, 16).replace('T', ' ') + 'Z' : '--');
+                    const stat = R.status === 'OK' ? ['FRESH', '#22c55e'] : R.status === 'STALE' ? ['STALE', '#ef4444'] : [R.status === 'UNAVAILABLE' ? 'UNAVAILABLE' : String(R.status).replace(/_/g, ' '), '#f59e0b'];
+                    const fv = (v) => window.DriftFieldsBridge.fmt(v);
+                    const Pillar = ({ title, main, unit, sub, subColor }) => (
+                      <div style={{ padding: '16px 18px', borderRadius: 14, background: 'rgba(15, 23, 42, 0.5)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: '#64748b', letterSpacing: '0.08em' }}>{title}</div>
+                        <div style={{ fontSize: main == null ? 15 : 24, fontWeight: 700, color: main == null ? '#64748b' : '#f8fafc', margin: '6px 0 2px' }}>
+                          {main == null ? 'WITHHELD' : main} {main != null && unit ? <span style={{ fontSize: 12, color: '#64748b' }}>{unit}</span> : null}
+                        </div>
+                        <div style={{ fontSize: 11, color: subColor || '#64748b', lineHeight: 1.4 }}>{sub}</div>
                       </div>
-                      <div style={{ fontSize: 11, color: d.drivers.cin != null ? '#eab308' : '#64748b' }}>
-                        CIN: {d.drivers.cin != null ? `${Math.round(d.drivers.cin)} J/kg` : '--'}
+                    );
+                    const why = (v) => (v && v.reason) || 'no value';
+                    const cinLine = V.cin && V.cin.value != null ? `CIN: ${fv(V.cin)} J/kg (negative = inhibition)` : `CIN withheld: ${why(V.cin)}`;
+                    const satOK = SAT && SAT.status === 'CURRENT' && SAT.ctt_p10_k != null;
+                    const rate = satOK ? SAT.dtdt_60min_k_per_h : null;
+                    return (
+                      <div data-testid="real-diagnostics">
+                        <div style={{ padding: '12px 14px', borderRadius: 12, marginBottom: 14, background: 'rgba(15, 23, 42, 0.6)', border: `1px solid ${stat[1]}55` }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                            <span style={{ padding: '3px 10px', borderRadius: 9999, fontSize: 11, fontWeight: 700, color: stat[1], background: `${stat[1]}18`, border: `1px solid ${stat[1]}44` }}>{stat[0]}</span>
+                            {R.cycle ? (
+                              <span style={{ fontSize: 12, color: '#cbd5e1' }}>
+                                GFS 0.25° cycle {utc(R.cycle.model_init_utc)} · f{String(SH.fhour).padStart(3, '0')} valid {utc(SH.valid_time_utc)} · data age {R.cycle.age_hours} h
+                              </span>
+                            ) : <span style={{ fontSize: 12, color: '#fbbf24' }}>Atmospheric fields unavailable: {R.reason}</span>}
+                          </div>
+                          {R.cycle ? (
+                            <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 6, lineHeight: 1.5 }}>
+                              Published by NOAA {utc(SH.published_at_utc)} · acquired by DRIFT {utc(SH.acquired_at_utc)} · operational lead {SH.operational_lead_hours != null ? `+${SH.operational_lead_hours.toFixed(1)} h` : 'none (valid time already past at acquisition)'}
+                              <span style={{ color: '#64748b' }}> (valid minus acquisition; excludes dissemination)</span> · cell {R.cell.id} ({R.cell.lat}°N, {R.cell.lon}°E)
+                            </div>
+                          ) : null}
+                          {R.status === 'STALE' ? (
+                            <div style={{ fontSize: 12, color: '#fca5a5', marginTop: 6, fontWeight: 600 }}>
+                              This forecast cycle is {R.cycle.age_hours} h old (limit 18 h). Values are withheld, not shown as current.
+                            </div>
+                          ) : null}
+                          {R.hours.length > 0 ? (
+                            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 10 }}>
+                              {R.hours.map((h) => (
+                                <button key={h.index} onClick={() => setFieldHour(h.index)} title={`valid ${utc(h.valid_time_utc)} · ${h.status}`}
+                                  style={{ cursor: 'pointer', padding: '3px 9px', borderRadius: 8, fontSize: 11, fontWeight: 700,
+                                    color: h.index === SH.index ? '#0b1220' : '#94a3b8', background: h.index === SH.index ? '#38bdf8' : 'rgba(255,255,255,0.05)',
+                                    border: '1px solid rgba(255,255,255,0.1)' }}>
+                                  f{h.fhour}
+                                </button>
+                              ))}
+                            </div>
+                          ) : null}
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: isMobile ? 10 : 16 }}>
+                          <Pillar title="INSTABILITY (CAPE/CIN)" main={V.cape && V.cape.value != null ? fv(V.cape) : null} unit="J/kg"
+                            sub={V.cape && V.cape.value != null ? cinLine : `CAPE withheld: ${why(V.cape)}`} subColor={V.cin && V.cin.value != null ? '#eab308' : '#64748b'} />
+                          <Pillar title="PRECIPITABLE WATER (PWAT)" main={V.pwat && V.pwat.value != null ? fv(V.pwat) : null} unit="mm"
+                            sub={V.pwat && V.pwat.value != null ? 'Integrated water vapour, GFS model output' : why(V.pwat)} subColor="#38bdf8" />
+                          <Pillar title="CLOUD-TOP BRIGHTNESS TEMP (Himawari-9 B13, observed)" main={satOK ? (SAT.ctt_p10_k - 273.15).toFixed(1) : null} unit="°C"
+                            sub={satOK ? `p10 of cell pixels, scan ${utc(SAT.scene_nominal_utc)}, ${Math.round(SAT.age_minutes)} min ago · 60-min change ${rate != null ? (rate > 0 ? '+' : '') + rate.toFixed(1) + ' K/h' : 'n/a'} · not a retrieved CTT`
+                              : (SAT ? (SAT.reason || 'satellite scan unavailable') : 'satellite artifact not loaded')} subColor={satOK && SAT.ctt_p10_k < 233 ? '#ef4444' : '#64748b'} />
+                          <Pillar title="WIND SHEAR (850–500 hPa bulk)" main={V.shear_850_500 && V.shear_850_500.value != null ? fv(V.shear_850_500) : null} unit="m/s"
+                            sub={V.shear_850_500 && V.shear_850_500.value != null ? '|V500 − V850| from GFS winds. 850–200 hPa and 0–6 km shear are not ingested' : why(V.shear_850_500)} />
+                          <Pillar title="LOW-LEVEL CONVERGENCE (850 hPa)" main={V.conv850 && V.conv850.value != null ? fv(V.conv850) : null} unit="×10⁻⁵ s⁻¹"
+                            sub={V.conv850 && V.conv850.value != null ? `−∇·V from GFS winds · divergence ${V.div850.value > 0 ? '+' : ''}${V.div850.value.toFixed(2)} · 10 m: ${fv(V.conv10) ?? 'withheld'}` : why(V.conv850)} />
+                          <Pillar title="K-INDEX" main={V.k_index && V.k_index.value != null ? fv(V.k_index) : null} unit="°C"
+                            sub={V.k_index && V.k_index.value != null ? 'calculated from GFS T and RH at 850/700/500 hPa' : why(V.k_index)} />
+                          <Pillar title="TOTAL TOTALS" main={V.total_totals && V.total_totals.value != null ? fv(V.total_totals) : null} unit="°C"
+                            sub={V.total_totals && V.total_totals.value != null ? 'calculated from GFS T and RH at 850/500 hPa' : why(V.total_totals)} />
+                          <Pillar title="LIFTED INDEX / LAPSE RATE" main={V.lftx && V.lftx.value != null ? fv(V.lftx) : null} unit="K"
+                            sub={V.lftx && V.lftx.value != null ? `GFS surface lifted index (negative = unstable) · 850–500 hPa lapse rate ${fv(V.lapse_850_500) ?? 'withheld'} K/km` : why(V.lftx)} />
+                        </div>
+                        {R.withheld.length > 0 && R.status === 'OK' ? (
+                          <div data-testid="unavailable-predictors" style={{ marginTop: 14, fontSize: 11, color: '#fbbf24', lineHeight: 1.5 }}>
+                            No value at this cell and hour: {R.withheld.join(', ')}.
+                          </div>
+                        ) : null}
                       </div>
-                    </div>
+                    );
+                  })()}
 
-                    <div style={{ padding: '16px 18px', borderRadius: 14, background: 'rgba(15, 23, 42, 0.5)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                      <div style={{ fontSize: 10, fontWeight: 700, color: '#64748b', letterSpacing: '0.08em' }}>PRECIPITABLE WATER (PWAT)</div>
-                      <div style={{ fontSize: 24, fontWeight: 700, color: '#f8fafc', margin: '6px 0 2px' }}>
-                        {d.drivers.pwat_mm != null ? `${d.drivers.pwat_mm.toFixed(1)}` : 'UNAVAILABLE'} <span style={{ fontSize: 12, color: '#64748b' }}>mm</span>
-                      </div>
-                      <div style={{ fontSize: 11, color: '#38bdf8' }}>Integrated water vapor</div>
-                    </div>
-
-                    <div style={{ padding: '16px 18px', borderRadius: 14, background: 'rgba(15, 23, 42, 0.5)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                      <div style={{ fontSize: 10, fontWeight: 700, color: '#64748b', letterSpacing: '0.08em' }}>CTT PROXY (GFS saturated-layer temp)</div>
-                      <div style={{ fontSize: 24, fontWeight: 700, color: '#f8fafc', margin: '6px 0 2px' }}>
-                        {d.drivers.ctt_c != null ? `${d.drivers.ctt_c.toFixed(1)}°C` : 'UNAVAILABLE'}
-                      </div>
-                      <div style={{ fontSize: 11, color: d.drivers.ctt_c != null && d.drivers.ctt_c < -40 ? '#ef4444' : '#64748b' }}>
-                        {d.drivers.ctt_c != null && d.drivers.ctt_c < -40 ? 'Deep convective core' : 'Moderate cloud depth'}
-                      </div>
-                    </div>
-
-                    <div style={{ padding: '16px 18px', borderRadius: 14, background: 'rgba(15, 23, 42, 0.5)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                      <div style={{ fontSize: 10, fontWeight: 700, color: '#64748b', letterSpacing: '0.08em' }}>KINEMATICS / SHEAR</div>
-                      <div style={{ fontSize: 24, fontWeight: 700, color: '#f8fafc', margin: '6px 0 2px' }}>
-                        {d.drivers.wind_shear_ms != null ? `${d.drivers.wind_shear_ms.toFixed(1)}` : 'UNAVAILABLE'} <span style={{ fontSize: 12, color: '#64748b' }}>m/s</span>
-                      </div>
-                      <div style={{ fontSize: 11, color: '#64748b' }}>850-200 hPa wind shear (GFS)</div>
-                    </div>
-                  </div>
-
-                  {gridMeta?.unavailable_predictors?.length > 0 && (
-                    <div data-testid="unavailable-predictors" style={{ marginTop: 14, fontSize: 11, color: '#fbbf24', lineHeight: 1.5 }}>
-                      Not computed in the current pan-India grid (null in every cell, never zero): {gridMeta.unavailable_predictors.join(', ')}.
-                      Hazard scores for the grid were computed without them.
-                    </div>
-                  )}
                   <div style={{ marginTop: 18, paddingTop: 14, borderTop: '1px solid rgba(255, 255, 255, 0.05)', fontSize: 11, color: '#64748b', lineHeight: 1.5 }}>
-                    * PHYSICS CONTRIBUTION -- deterministic contributors derived from thermodynamic physics baseline formulas (not SHAP; this grid cell is evaluated using physics baselines, not an empirical ML model). Click any cell on the map above to inspect its live coordinates.
+                    * DIAGNOSTICS -- model output or physics calculated from GFS fields at this 0.25° cell, plus a Himawari-9 satellite observation. These are inputs, not hazard predictions; no SHAP or ML attribution is implied. Click any cell on the map above to inspect its live coordinates.
                   </div>
                 </div>
               );
@@ -4070,57 +4153,60 @@ function injectDrainageOverlay(map, liveData) { /* removed: connected terrain po
           {/* ── 5. FORECAST TIMELINE (Primary Operational Horizon) ────────────── */}
           <section style={{ padding: isMobile ? '28px 18px' : '44px 56px', borderBottom: '1px solid rgba(255, 255, 255, 0.07)' }}>
             <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', color: '#64748b', marginBottom: 4 }}>FORECAST TIMELINE</div>
-            <div style={{ fontSize: 13, color: '#94a3b8', marginBottom: isMobile ? 14 : 20 }}>NWP forecast hour; no operational lead time is recorded</div>
+            <div style={{ fontSize: 13, color: '#94a3b8', marginBottom: isMobile ? 14 : 20 }}>GFS cycle, forecast hour, valid time, publication and acquisition times, and the operational lead measured from them</div>
             {(() => {
-              if (!gridMeta) {
+              const R = window.DriftFieldsBridge.diagnostics(fieldStore, activeLocation.latitude, activeLocation.longitude, fieldHour, Date.now());
+              const utc = (t) => (t ? String(t).slice(0, 16).replace('T', ' ') + 'Z' : '--');
+              if (!R.cycle) {
                 return (
-                  <div style={{ padding: 18, borderRadius: 12, background: 'rgba(15, 23, 42, 0.45)', color: '#64748b', fontSize: 13 }}>
-                    Loading forecast...
+                  <div data-testid="timeline-unavailable" style={{ padding: 18, borderRadius: 12, background: 'rgba(15, 23, 42, 0.45)', color: '#fbbf24', fontSize: 13 }}>
+                    Forecast timeline unavailable: {R.reason || 'loading'}.
                   </div>
                 );
               }
-              if (gridMeta.forecast_unavailable || !gridMeta.is_primary_forecast) {
-                return (
-                  <div style={{ padding: 18, borderRadius: 12, background: 'rgba(15, 23, 42, 0.45)', color: '#64748b', fontSize: 13 }}>
-                    Forecast unavailable -- no primary forecast lead was produced this cycle.
-                  </div>
-                );
-              }
-              const leadH = null;   // no operational lead time is recorded; none is derived
-              const validAt = gridMeta.forecast_valid_at_utc ?? null;
+              const SH = R.selected_hour, stale = R.status === 'STALE';
+              const col = R.status === 'OK' ? '#22c55e' : stale ? '#ef4444' : '#f59e0b';
+              const lead = SH.operational_lead_hours;
               return (
-                <div style={{
-                  padding: isMobile ? '18px 16px' : '26px 30px', borderRadius: 16,
-                  background: 'rgba(15, 23, 42, 0.5)', border: '1px solid rgba(255, 255, 255, 0.06)'
-                }}>
+                <div data-testid="real-timeline" style={{ padding: isMobile ? '18px 16px' : '26px 30px', borderRadius: 16, background: 'rgba(15, 23, 42, 0.5)', border: `1px solid ${col}55` }}>
+                  {stale ? (
+                    <div style={{ marginBottom: 14, padding: '10px 14px', borderRadius: 10, background: '#7f1d1d44', color: '#fecaca', fontSize: 13, fontWeight: 700 }}>
+                      STALE FORECAST: the newest GFS cycle in the published data is {R.cycle.age_hours} h old (limit 18 h). Nothing below is current.
+                    </div>
+                  ) : null}
                   <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 10 : 20, flexWrap: 'wrap' }}>
                     <div style={{ textAlign: 'left' }}>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: '#64748b' }}>NOW</div>
-                      <div style={{ fontSize: 12, color: '#cbd5e1', marginTop: 2 }}>{gridMeta.gfs_cycle ? `Cycle ${gridMeta.gfs_cycle}` : 'Init'}</div>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: '#64748b' }}>GFS CYCLE</div>
+                      <div style={{ fontSize: 13, color: '#e2e8f0', marginTop: 2 }}>{utc(R.cycle.model_init_utc)}</div>
+                      <div style={{ fontSize: 10, color: '#64748b' }}>age {R.cycle.age_hours} h</div>
                     </div>
                     <div style={{ flex: 1, minWidth: 60, height: 2, background: 'linear-gradient(90deg, rgba(56, 189, 248, 0.2), #2563eb)' }} />
                     <div style={{ textAlign: 'center' }}>
-                      <div style={{ fontSize: isMobile ? 22 : 32, fontWeight: 700, color: '#38bdf8', letterSpacing: '-0.02em' }}>
-                        {window.DriftForecastIntegrity.leadLabel(leadH)}
+                      <div style={{ fontSize: isMobile ? 22 : 32, fontWeight: 700, color: lead != null ? '#38bdf8' : '#64748b', letterSpacing: '-0.02em' }}>
+                        {lead != null ? `+${lead.toFixed(1)} h` : 'NONE'}
                       </div>
-                      <div style={{ fontSize: 10, color: '#64748b', fontWeight: 600 }}>OPERATIONAL LEAD</div>
+                      <div style={{ fontSize: 10, color: '#64748b', fontWeight: 600 }}>OPERATIONAL LEAD (valid − acquired)</div>
                     </div>
                     <div style={{ flex: 1, minWidth: 60, height: 2, background: 'linear-gradient(90deg, #2563eb, rgba(56, 189, 248, 0.2))' }} />
                     <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: '#64748b' }}>VALID</div>
-                      <div style={{ fontSize: 12, color: '#cbd5e1', marginTop: 2 }}>
-                        {validAt ? new Date(validAt).toUTCString().replace(' GMT', ' UTC') : '--'}
-                      </div>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: '#64748b' }}>VALID · f{String(SH.fhour).padStart(3, '0')}</div>
+                      <div style={{ fontSize: 13, color: '#e2e8f0', marginTop: 2 }}>{utc(SH.valid_time_utc)}</div>
+                      <div style={{ fontSize: 10, color: col, fontWeight: 700 }}>{SH.status.replace(/_/g, ' ')}</div>
                     </div>
                   </div>
-                  <div style={{ marginTop: 16, paddingTop: 14, borderTop: '1px solid rgba(255, 255, 255, 0.05)', fontSize: 12, color: '#64748b', lineHeight: 1.5 }}>
-                    Forecast valid {validAt ? new Date(validAt).toUTCString().replace(' GMT', ' UTC') : '--'} * Generated {gridMeta.generated_at_utc ? new Date(gridMeta.generated_at_utc).toUTCString().replace(' GMT', ' UTC') : genAt} * GFS cycle {gridMeta.gfs_cycle ?? '--'}
-                    <div style={{ marginTop: 4, color: '#94a3b8', fontSize: 11 }}>
-                      {leadH == null
-                        ? 'Operational lead could not be determined from the artifact timestamps.'
-                        : false
-                          ? ''
-                          : ''}
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 14 }}>
+                    {R.hours.map((h) => (
+                      <button key={h.index} onClick={() => setFieldHour(h.index)} title={`valid ${utc(h.valid_time_utc)}`}
+                        style={{ cursor: 'pointer', padding: '4px 10px', borderRadius: 8, fontSize: 11, fontWeight: 700,
+                          color: h.index === SH.index ? '#0b1220' : '#94a3b8', background: h.index === SH.index ? '#38bdf8' : 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                        f{h.fhour} · {h.operational_lead_hours != null ? `+${h.operational_lead_hours.toFixed(1)}h` : 'past'}
+                      </button>
+                    ))}
+                  </div>
+                  <div style={{ marginTop: 16, paddingTop: 14, borderTop: '1px solid rgba(255, 255, 255, 0.05)', fontSize: 12, color: '#94a3b8', lineHeight: 1.6 }}>
+                    Source: {R.cycle.source} · published by NOAA {utc(SH.published_at_utc)} (S3 Last-Modified) · acquired by DRIFT {utc(SH.acquired_at_utc)} · cell {R.cell.id}
+                    <div style={{ marginTop: 4, color: '#64748b', fontSize: 11 }}>
+                      The operational lead is the time from DRIFT holding the data to the valid time; it excludes any dissemination to users and is not a warning lead time.
                     </div>
                   </div>
                 </div>
@@ -4315,9 +4401,8 @@ function injectDrainageOverlay(map, liveData) { /* removed: connected terrain po
       const validStr = detail.validAt ? new Date(detail.validAt).toUTCString().replace(' GMT', ' UTC') : 'UNAVAILABLE';
       const DRIVER_LABELS = [
         ['cape', 'CAPE', 'J/kg'], ['cin', 'CIN', 'J/kg'], ['pwat_mm', 'PWAT / IWV', 'mm'],
-        ['convergence_s', 'CONVERGENCE', '/s'], ['ctt_c', 'CTT', '°C'], ['ctt_drop_rate_c_hr', 'CTT DROP RATE', '°C/hr'],
-        ['wind_shear_ms', 'SHEAR', 'm/s'], ['k_index', 'K-INDEX', ''], ['totals_totals', 'TOTALS TOTALS', ''],
-        ['qpe_mm', 'RAIN (QPE)', 'mm'],
+        ['convergence_s', 'CONVERGENCE 850 hPa', '×10⁻⁵ s⁻¹'], ['ctt_c', 'CLOUD-TOP BRIGHTNESS TEMP (Himawari-9, observed)', '°C'], ['ctt_drop_rate_c_hr', 'BT CHANGE, 60 min', 'K/h'],
+        ['wind_shear_ms', 'SHEAR 850–500 hPa', 'm/s'], ['k_index', 'K-INDEX', '°C'], ['totals_totals', 'TOTAL TOTALS', '°C'],
       ];
       const availableDrivers = DRIVER_LABELS.filter(([key]) => detail.drivers[key] != null);
 
