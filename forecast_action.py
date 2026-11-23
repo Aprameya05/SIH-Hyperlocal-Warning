@@ -312,7 +312,8 @@ def score_hazard_slots(obs_by_slot: dict, feature_cols: list,
             with open(cal_path, "rb") as f:
                 calibrator = pickle.load(f)
             obs = obs_by_slot.get(slot_id, {})
-            X   = np.array([[float(obs.get(c, 0.0)) for c in feature_cols]])
+            from station_inputs import feature_vector
+            X   = np.array([feature_vector(obs, feature_cols)])
             raw = float(model.predict_proba(X)[0][1])
             cal = float(calibrator.transform([raw])[0])
             probs[slot_id] = round(min(max(cal, 0.0), 1.0), 4)
@@ -566,7 +567,8 @@ def main():
         obs_by_slot[slot_id] = obs.copy()   # save for CB/FF scoring
 
         # Predict
-        X   = np.array([[float(obs.get(c, 0.0)) for c in feature_cols]])
+        from station_inputs import feature_vector
+        X   = np.array([feature_vector(obs, feature_cols)])   # absent features are NaN, never 0.0
         raw = float(model.predict_proba(X)[0][1])
         cal = apply_calibrator(artifact, raw)
         results[slot_id] = cal
@@ -597,7 +599,7 @@ def main():
         # Station-observation features have no live source: they are constants at inference. The slot is therefore
         # a FALLBACK (never alert-eligible, never labelled a live model output) and the constants are listed.
         from station_inputs import defaulted_inputs
-        _defaulted = defaulted_inputs(feature_cols)
+        _defaulted = defaulted_inputs(feature_cols, available=obs)
         if _defaulted:
             is_fallback = True
             fallback_reason = ((fallback_reason + "; ") if fallback_reason else "") + (

@@ -194,7 +194,8 @@ def compute_shap_for_slot(forecast: dict, slot_id: int, models_dir: Path,
                 "reason": f"declared model artifact missing model/feature_cols keys: {list(artifact.keys())}"}
 
     obs = build_obs(gfs_row, slot_id)
-    X   = np.array([[float(obs.get(c, 0.0)) for c in feature_cols]])
+    from station_inputs import feature_vector
+    X   = np.array([feature_vector(obs, feature_cols)])   # absent features are NaN, never 0.0
     df  = pd.DataFrame(X, columns=feature_cols)
 
     try:
@@ -225,7 +226,7 @@ def compute_shap_for_slot(forecast: dict, slot_id: int, models_dir: Path,
     # Only features backed by real inputs may be presented as drivers. Station-observation features are
     # fixed constants at live inference (see station_inputs.py); their SHAP values describe the constant, not the weather.
     from station_inputs import defaulted_inputs
-    _defaulted = set(defaulted_inputs(feature_cols))
+    _defaulted = set(defaulted_inputs(feature_cols, available=obs))
     feature_shap = sorted(((f, v) for f, v in zip(feature_cols, sv.tolist()) if f not in _defaulted),
                           key=lambda x: abs(x[1]), reverse=True)
 
