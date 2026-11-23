@@ -298,3 +298,27 @@ test('pan-India thunderstorm map layer shows each forecast hour\'s OWN model lea
   }
   await ctx.close();
 });
+
+test('legacy station dashboard: fallback/unscored slots are never shown as 0%, and PEAK marks only a real maximum', async () => {
+  const base = JSON.parse(fs.readFileSync(path.join(ROOT, 'forecast.json'), 'utf8'));
+  async function render(mutate) {
+    const ctx = await browser.newContext({ viewport: DESKTOP }); const page = await ctx.newPage(); const w = watch(page); await page.route(TILE, r => r.abort());
+    await page.route('**/forecast.json*', r => { const j = JSON.parse(JSON.stringify(base)); mutate(j); r.fulfill({ contentType: 'application/json', body: JSON.stringify(j) }); });
+    await page.goto(`${S.base}/legacy.html`); await page.waitForTimeout(5000);
+    const cards = await page.$$eval('button[title], button', bs => bs.filter(b => /LATE NIGHT|MORNING|AFTERNOON|EVENING/.test(b.innerText)).map(b => b.innerText.replace(/\s+/g, ' ').trim()));
+    const text = await page.evaluate(() => document.body.innerText);
+    await ctx.close(); assert.deepEqual(w.pageErrors, []); return { cards, text };
+  }
+  // Every slot is a fallback (inputs partly fixed constants): nothing may read as a probability.
+  const allFallback = await render(j => { j.slots.forEach(s => { s.fallback = true; s.fallback_reason = '20 of 64 model inputs are fixed climatological constants (no live station-observation source)'; s.ts_probability = 0.0016; });
+    j.peak_probability = null; j.peak_slot = null; j.alert_active = false; });
+  assert.equal(allFallback.cards.length, 4, JSON.stringify(allFallback.cards));
+  for (const c of allFallback.cards) { assert.doesNotMatch(c, /\d+%/, c); assert.doesNotMatch(c, /PEAK|MINIMAL/, c); assert.match(c, /WITHHELD/); }
+  assert.match(allFallback.text, /UNAVAILABLE: 20 of 64 model inputs are fixed/);
+  // One valid slot: exactly one PEAK, and the other slots stay withheld.
+  const oneValid = await render(j => { j.slots.forEach((s, i) => { s.fallback = i !== 2; s.fallback_reason = i !== 2 ? 'fixed constants' : null; s.ts_probability = i === 2 ? 0.42 : 0.01; });
+    j.peak_probability = 0.42; j.peak_slot = 2; });
+  assert.equal(oneValid.cards.filter(c => /PEAK/.test(c)).length, 1, JSON.stringify(oneValid.cards));
+  assert.ok(oneValid.cards.find(c => /AFTERNOON/.test(c) && /42%/.test(c) && /PEAK/.test(c)), JSON.stringify(oneValid.cards));
+  assert.equal(oneValid.cards.filter(c => /WITHHELD/.test(c)).length, 3);
+});
