@@ -23,6 +23,13 @@ from backend.location_service import Store, parse_utc  # noqa: E402
 from backend.model_features import build_feature_matrix  # noqa: E402
 
 OUT = ROOT / "data" / "india_rain_model_latest.json"
+# Training/evaluation initialisations were 2024-06-15 + 6k days (k < 16) and the same dates in 2025, i.e. 15 Jun - 13 Sep
+# (monsoon). Other seasons are an unvalidated extrapolation, so they are published as unavailable.
+VALIDATED_MONTHS = (6, 7, 8, 9)
+
+
+def in_validated_season(init, lead_h):
+    return init.month in VALIDATED_MONTHS and (init + timedelta(hours=lead_h)).month in VALIDATED_MONTHS
 
 
 def write(doc):
@@ -49,6 +56,10 @@ def main():
     keys = [k for k in meta["gate_passed"] if (mdir / f"rain_{k}.json").exists() and int(k.split("_f")[1]) in m["fhours"]]
     if not keys:
         return unavailable("no target passed the evaluation gate", m["cycle_init_utc"])
+    keys = [k for k in keys if in_validated_season(init, int(k.split("_f")[1]))]
+    if not keys:
+        return unavailable("outside the validated season: the rainfall models were evaluated on Jun-Sep (monsoon) initialisations only; "
+                           f"init {m['cycle_init_utc']} has no target whose init and valid time fall in Jun-Sep", m["cycle_init_utc"])
     import xgboost as xgb
     fh = m["fhours"]; F = s.fields_doc["fields"]; n = len(s.fields_doc["cells"]); feats = meta["features"]
     arr = lambda k, h: np.array([np.nan if v is None else v for v in F[k][fh.index(h)]], dtype="float64")
@@ -67,7 +78,7 @@ def main():
                      "temporal_holdout": {"auroc": A["auroc"], "pr_auc": A["pr_auc"], "pr_auc_no_skill": A["pr_auc_no_skill"], "brier_skill": A["bss_vs_climatology"], "pod": A["pod"], "far": A["far"], "csi": A["csi"]},
                      "leave_region_out": {"auroc": B["auroc"], "brier_skill": B["bss_vs_climatology"]}, "raw_gfs_rainfall_auroc": r["raw_gfs_rainfall_auroc_2025"]}
     write({"meta": {"model_version": "rain_panindia_xgb_v1", "model_evaluated": True, "cycle_init_utc": m["cycle_init_utc"], "targets": keys, "target_info": info,
-                    "value_type": "CALIBRATED_PROBABILITY_OF_CMORPH_3H_RAINFALL_AT_OR_ABOVE_THRESHOLD", "calibrated": True, "evaluation_ref": "data/rain_panindia_evaluation.json",
+                    "value_type": "CALIBRATED_PROBABILITY_OF_CMORPH_3H_RAINFALL_AT_OR_ABOVE_THRESHOLD", "calibrated": True, "validated_months": list(VALIDATED_MONTHS), "evaluation_ref": "data/rain_panindia_evaluation.json",
                     "features": feats, "not_cloudburst": True, "generated_at_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
                     "limits": ev["limits"]}, "cells": s.fields_doc["cells"], "targets": targets, "explanations": expl})
     print("wrote", OUT, keys)

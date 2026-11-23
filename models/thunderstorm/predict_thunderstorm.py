@@ -29,6 +29,15 @@ from backend.model_features import build_feature_matrix  # noqa: E402
 
 OUT = ROOT / "data" / "india_ts_model_latest.json"
 MODEL_VERSION = "ts_panindia_xgb_v1"
+# The model was trained and evaluated only on Apr-Jun 2024/2025 initialisations (data/ts_panindia_evaluation.json).
+# Applying it to other seasons would present an unvalidated extrapolation as an evaluated model, so a lead is published
+# only when BOTH its init and its valid time fall in the validated months.
+VALIDATED_MONTHS = (4, 5, 6)
+
+
+def in_validated_season(init, lead_h):
+    valid = init + timedelta(hours=lead_h)
+    return init.month in VALIDATED_MONTHS and valid.month in VALIDATED_MONTHS
 
 
 def write(doc):
@@ -55,6 +64,11 @@ def main():
     leads = [L for L in meta["gate_passed_leads"] if L in fh and (mdir / f"ts_lead{L:02d}.json").exists()]
     if not leads:
         return unavailable("no lead passed the evaluation gate (Brier skill > 0 and AUROC >= 0.65 in temporal and spatial holdout)", m["cycle_init_utc"])
+    in_season = [L for L in leads if in_validated_season(init, L)]
+    if not in_season:
+        return unavailable("outside the validated season: the model was evaluated on Apr-Jun initialisations only, and this cycle "
+                           f"(init {m['cycle_init_utc']}) has no lead whose init and valid time both fall in Apr-Jun", m["cycle_init_utc"])
+    leads = in_season
     feats = meta["features"]; probs, expl, vt = {}, {}, {}
     for L in leads:
         v = init + timedelta(hours=L)
@@ -77,7 +91,7 @@ def main():
     summary = (f"Pilot: {d['n_stations']} METAR stations, {d['n_init_dates']} init dates (Apr-Jun 2024/2025), event rate {d['event_rate']}. " + "; ".join(lines) +
                ". Calibrated to airport METAR reports; wide uncertainty; pre-monsoon season only.")
     write({"meta": {"model_version": MODEL_VERSION, "model_evaluated": True, "cycle_init_utc": m["cycle_init_utc"], "leads": leads, "valid_times": vt,
-                    "value_type": "CALIBRATED_PROBABILITY_OF_TS_REPORT_AT_METAR_STATION", "calibrated": True, "evaluation_ref": "data/ts_panindia_evaluation.json",
+                    "value_type": "CALIBRATED_PROBABILITY_OF_TS_REPORT_AT_METAR_STATION", "calibrated": True, "evaluation_ref": "data/ts_panindia_evaluation.json", "validated_months": list(VALIDATED_MONTHS),
                     "evaluation_summary": summary, "features": feats, "generated_at_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
                     "applicability": "probabilities are calibrated to airport METAR reports; for other cells they are model estimates of the same event"},
            "cells": s.fields_doc["cells"], "leads": probs, "explanations": expl})
