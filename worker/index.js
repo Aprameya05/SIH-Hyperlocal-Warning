@@ -49,6 +49,28 @@ function safeEqual(a, b) {
 
 const LIMITS = { name: 80, email: 254, wa_key: 64 };
 
+// Per-client fixed-window rate limit kept in KV (key rl:<action>:<ip>:<window>, auto-expiring).
+// KV is eventually consistent, so this is a best-effort brake against bursts and enumeration, not a hard guarantee;
+// put a Cloudflare WAF rate-limiting rule in front of /subscribe and /unsubscribe for hard limits.
+const RATE = { subscribe: { max: 5, windowS: 600 }, unsubscribe: { max: 20, windowS: 600 } };
+
+async function rateLimited(request, env, action) {
+  const cfg = RATE[action];
+  const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+  const win = Math.floor(Date.now() / (cfg.windowS * 1000));
+  const key = `rl:${action}:${ip}:${win}`;
+  const n = Number(await env.SUBSCRIBERS.get(key)) || 0;
+  if (n >= cfg.max) return true;
+  await env.SUBSCRIBERS.put(key, String(n + 1), { expirationTtl: cfg.windowS * 2 });
+  return false;
+}
+
+function tooMany() {
+  const r = json({ error: 'Too many requests. Try again later.' }, 429);
+  r.headers.set('Retry-After', '600');
+  return r;
+}
+
 // ── Helpers ────────────────────────────────────────────────────────────────
 
 function json(data, status = 200) {
@@ -68,6 +90,7 @@ function html(body, status = 200) {
 // ── Route handlers ─────────────────────────────────────────────────────────
 
 async function handleSubscribe(request, env) {
+  if (await rateLimited(request, env, 'subscribe')) return tooMany();
   let body;
   try { body = await request.json(); } catch {
     return json({ error: 'Invalid JSON body' }, 400);
@@ -121,6 +144,7 @@ async function handleSubscribe(request, env) {
 }
 
 async function handleUnsubscribe(request, env) {
+  if (await rateLimited(request, env, 'unsubscribe')) return tooMany();
   if (!env.TOKEN_SECRET) return json({ error: 'Service not configured.' }, 503);
   const url   = new URL(request.url);
   const token = url.searchParams.get('token') ||
