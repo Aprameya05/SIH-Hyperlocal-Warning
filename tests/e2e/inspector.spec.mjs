@@ -34,7 +34,7 @@ async function clickLatLon(page, lat, lon) {
   await page.mouse.click(xy[0], xy[1]); await page.waitForSelector('.di-panel.open', { timeout: 10000 });
 }
 const cellIdx = id => FIELDS.cells.indexOf(id);
-const panelText = page => page.$eval('.di-panel', e => e.innerText);
+const panelText = async page => { await page.waitForFunction(() => { const st = window.__driftInspector.state(), p = document.querySelector('.di-panel'); return p && p.getAttribute('data-cell') === st.cell_id; }, null, { timeout: 10000 }); return page.$eval('.di-panel', e => e.innerText); };   // the render is scheduled after a state change
 const rowOf = async (page, label) => page.$$eval('.di-row', (rows, l) => rows.filter(r => r.querySelector('.di-l') && r.querySelector('.di-l').innerText.trim() === l).map(r => r.innerText.replace(/\s+/g, ' ')), label);
 
 test('click a cell: it is highlighted, the panel shows its exact id and coordinates, and every category is populated from that cell', async () => {
