@@ -1,6 +1,6 @@
 {
   "date": "2026-11-23",
-  "generated_at": "2026-11-23 21:42 IST",
+  "generated_at": "2026-11-23 22:08 IST",
   "alert_active": false,
   "peak_slot": null,
   "peak_probability": null,
@@ -278,7 +278,7 @@
     "ERA5_v_850hPa": -3.419677429199219,
     "instability_level": "Stable",
     "iwv_mm": 21.71,
-    "ctt_drop_rate_c_per_h": null,
+    "ctt_drop_rate_c_per_h": -1.15,
     "iwv_category": "LOW",
     "iwv_threshold_mm": 55.0,
     "iwv_pct_of_threshold": 0.395,
@@ -286,34 +286,21 @@
   },
   "satellite": {
     "himawari9": {
-      "timestamp_utc": "2026-11-23T16:00:00",
-      "timestamp_ist": "2026-11-23T21:30:00",
-      "vobl_bt_celsius": 5.05,
-      "min_bt_50km": 4.19,
-      "mean_bt_50km": 7.0,
+      "timestamp_utc": "2026-11-23T16:30:00",
+      "timestamp_ist": "2026-11-23T22:00:00",
+      "vobl_bt_celsius": 5.9,
+      "min_bt_50km": 3.04,
+      "mean_bt_50km": 6.77,
       "cold_pixels_count": 0,
       "storm_detected": false,
       "alert_level": "GREEN",
       "nearest_pixel_dist_km": null,
       "threshold_celsius": -40.0,
-      "bt_trend_1h": null,
+      "bt_trend_1h": -1.15,
       "data_source": "Himawari-9 Band 13 (10.4\u00b5m) via NOAA AWS S3",
       "available": true
     },
     "history": [
-      {
-        "timestamp_utc": "2026-11-22T17:50:00",
-        "timestamp_ist": "2026-11-22T23:20:00",
-        "vobl_bt_celsius": 12.99,
-        "min_bt_50km": 12.48,
-        "mean_bt_50km": 13.34,
-        "cold_pixels_count": 0,
-        "storm_detected": false,
-        "nearest_pixel_dist_km": null,
-        "threshold_celsius": -40.0,
-        "data_source": "Himawari-9 Band 13 (10.4um) via NOAA AWS S3",
-        "bt_trend_1h": null
-      },
       {
         "timestamp_utc": "2026-11-22T21:40:00",
         "timestamp_ist": "2026-11-23T03:10:00",
@@ -378,6 +365,19 @@
         "threshold_celsius": -40.0,
         "data_source": "Himawari-9 Band 13 (10.4um) via NOAA AWS S3",
         "bt_trend_1h": null
+      },
+      {
+        "timestamp_utc": "2026-11-23T16:30:00",
+        "timestamp_ist": "2026-11-23T22:00:00",
+        "vobl_bt_celsius": 5.9,
+        "min_bt_50km": 3.04,
+        "mean_bt_50km": 6.77,
+        "cold_pixels_count": 0,
+        "storm_detected": false,
+        "nearest_pixel_dist_km": null,
+        "threshold_celsius": -40.0,
+        "data_source": "Himawari-9 Band 13 (10.4um) via NOAA AWS S3",
+        "bt_trend_1h": -1.15
       }
     ]
   },
@@ -389,9 +389,9 @@
   "convective_initiation": {
     "instability_score": 0.0,
     "initiation_status": "POST-CONVECTIVE",
-    "initiation_message": "Next peak window in 15.3h (tomorrow 1300 IST)",
+    "initiation_message": "Next peak window in 14.9h (tomorrow 1300 IST)",
     "initiation_risk": "MINIMAL",
-    "hours_to_peak": 15.3,
+    "hours_to_peak": 14.9,
     "cape_now": 0.0,
     "ki_now": 13.4,
     "li_now": 6.17,
@@ -404,7 +404,7 @@
     "monsoon_regime": "NEUTRAL",
     "regime_thresh_factor": 1.0,
     "peak_window_ist": "1300\u20131800 IST",
-    "computed_at": "2026-11-23 21:42 IST"
+    "computed_at": "2026-11-23 22:08 IST"
   },
   "multiday_outlook": [
     {
@@ -526,7 +526,7 @@
       }
     ],
     "data_file": "data/blr_terrain.json",
-    "computed_at": "2026-11-23 21:42 IST"
+    "computed_at": "2026-11-23 22:08 IST"
   },
   "hazard_summary": {
     "cloudburst": {
@@ -605,7 +605,7 @@
     "query_cape": 0.0,
     "query_ki": 13.4,
     "query_li": 6.17,
-    "computed_at": "2026-11-23 21:42 IST"
+    "computed_at": "2026-11-23 22:08 IST"
   },
   "airport_impact": {
     "total_departures_today": 143,
@@ -647,7 +647,7 @@
         "impact_pct": 0.6
       }
     ],
-    "computed_at": "2026-11-23 21:42 IST"
+    "computed_at": "2026-11-23 22:08 IST"
   },
   "synoptic_regime": {
     "regime_id": "R1",
@@ -660,7 +660,7 @@
     "ki_used": 13.4,
     "t2m_c": 28.0,
     "month": 11,
-    "computed_at": "2026-11-23 21:42 IST"
+    "computed_at": "2026-11-23 22:08 IST"
   },
   "verification": {
     "pod": 0.0,
@@ -814,7 +814,7 @@
         "wet_bulb_potential_temp"
       ],
       "note": "Drivers exclude inputs that are fixed constants at live inference (no live station-observation source); they are not explanatory.",
-      "computed_at": "2026-11-23 18:58 IST"
+      "computed_at": "2026-11-23 21:42 IST"
     },
     "1": {
       "slot": 1,
@@ -928,7 +928,7 @@
         "wet_bulb_potential_temp"
       ],
       "note": "Drivers exclude inputs that are fixed constants at live inference (no live station-observation source); they are not explanatory.",
-      "computed_at": "2026-11-23 18:58 IST"
+      "computed_at": "2026-11-23 21:42 IST"
     },
     "2": {
       "slot": 2,
@@ -1042,7 +1042,7 @@
         "wet_bulb_potential_temp"
       ],
       "note": "Drivers exclude inputs that are fixed constants at live inference (no live station-observation source); they are not explanatory.",
-      "computed_at": "2026-11-23 18:58 IST"
+      "computed_at": "2026-11-23 21:42 IST"
     },
     "3": {
       "slot": 3,
@@ -1127,7 +1127,7 @@
       ],
       "defaulted_features_excluded": [],
       "note": "Drivers exclude inputs that are fixed constants at live inference (no live station-observation source); they are not explanatory.",
-      "computed_at": "2026-11-23 18:58 IST"
+      "computed_at": "2026-11-23 21:42 IST"
     }
   },
   "metar": {
@@ -1156,12 +1156,12 @@
     ],
     "thunderstorm_present": false,
     "raw": "METAR VOBL 231600Z 05006KT 6000 FEW012 SCT080 24/18 Q1020 NOSIG",
-    "fetched_utc": "2026-11-23T16:12:27Z"
+    "fetched_utc": "2026-11-23T16:38:19Z"
   },
   "sigmet_bulletin": null,
   "pipeline_health": {
-    "generated_at_utc": "2026-11-23T16:12:28Z",
-    "generated_at_ist": "2026-11-23 21:42 IST",
+    "generated_at_utc": "2026-11-23T16:38:20Z",
+    "generated_at_ist": "2026-11-23 22:08 IST",
     "components": {
       "gfs": {
         "status": "MISSING",
@@ -1172,9 +1172,9 @@
       },
       "himawari9": {
         "status": "OK",
-        "timestamp_utc": "2026-11-23T16:00:00",
+        "timestamp_utc": "2026-11-23T16:30:00",
         "storm_detected": false,
-        "min_bt_50km": 4.19,
+        "min_bt_50km": 3.04,
         "staleness": "UNKNOWN"
       },
       "upper_air": {
