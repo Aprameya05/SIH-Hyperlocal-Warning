@@ -74,13 +74,13 @@ test('adjacent cells, cell boundaries, and points outside the grid', async () =>
   const { ctx, page } = await open(DESKTOP);
   await clickLatLon(page, 13.2, 77.7);  assert.equal((await page.evaluate(() => window.__driftInspector.state())).cell_id, 'IN025_1325_07775');           // same cell, different point
   await clickLatLon(page, 13.2, 77.88); const b = (await page.evaluate(() => window.__driftInspector.state())).cell_id; assert.notEqual(b, 'IN025_1325_07775');   // across the boundary
-  assert.equal(b, 'IN025_1325_08000'); assert.match(await panelText(page), /IN025_1325_08000/);
-  const cape = (await rowOf(page, 'CAPE'))[0]; assert.ok(cape.includes(String(Math.round(FIELDS.fields.cape[(await page.evaluate(() => window.__driftInspector.state())).hour][cellIdx('IN025_1325_08000')]))), cape);
+  assert.equal(b, 'IN025_1325_07800'); assert.match(await panelText(page), /IN025_1325_07800/);
+  const cape = (await rowOf(page, 'CAPE'))[0]; assert.ok(cape.includes(String(Math.round(FIELDS.fields.cape[(await page.evaluate(() => window.__driftInspector.state())).hour][cellIdx('IN025_1325_07800')]))), cape);
   await page.evaluate(() => window.__driftInspector.getMap().jumpTo({ center: [66.5, 15.0], zoom: 8 })); await page.waitForTimeout(250);             // Arabian Sea: no land cell
   await page.evaluate(() => window.__driftInspector.getMap().getContainer().scrollIntoView({ block: 'center' })); await page.waitForTimeout(200);
   const xy = await page.evaluate(() => { const m = window.__driftInspector.getMap(), p = m.project([66.5, 15.0]), r = m.getCanvas().getBoundingClientRect(); return [r.left + p.x, r.top + p.y]; });
   await page.mouse.click(xy[0], xy[1]); await page.waitForTimeout(300);
-  assert.equal((await page.evaluate(() => window.__driftInspector.state())).cell_id, 'IN025_1325_08000');                                                    // selection unchanged
+  assert.equal((await page.evaluate(() => window.__driftInspector.state())).cell_id, 'IN025_1325_07800');                                                    // selection unchanged
   assert.match(await page.$eval('.di-toast', e => e.textContent), /Not covered/); await ctx.close();
 });
 
@@ -88,10 +88,10 @@ test('selection persists until another cell is chosen or the panel is closed; cl
   const { ctx, page } = await open(DESKTOP);
   await clickLatLon(page, 13.25, 77.75);
   await page.evaluate(() => window.__driftInspector.getMap().getCanvas().focus());
-  await page.keyboard.press('ArrowRight'); await page.waitForFunction(() => window.__driftInspector.state().cell_id === 'IN025_1325_08000');
-  await page.keyboard.press('ArrowUp'); await page.waitForFunction(() => window.__driftInspector.state().cell_id === 'IN025_1350_08000');
-  assert.equal(await page.$eval('.di-panel', e => e.getAttribute('data-cell')), 'IN025_1350_08000');
-  assert.equal((await page.evaluate(() => window.__driftInspector.getMap().getSource('insp-sel')._data)).properties.id, 'IN025_1350_08000');
+  await page.keyboard.press('ArrowRight'); await page.waitForFunction(() => window.__driftInspector.state().cell_id === 'IN025_1325_07800');
+  await page.keyboard.press('ArrowUp'); await page.waitForFunction(() => window.__driftInspector.state().cell_id === 'IN025_1350_07800');
+  assert.equal(await page.$eval('.di-panel', e => e.getAttribute('data-cell')), 'IN025_1350_07800');
+  assert.equal((await page.evaluate(() => window.__driftInspector.getMap().getSource('insp-sel')._data)).properties.id, 'IN025_1350_07800');
   await page.keyboard.press('Escape'); await page.waitForFunction(() => window.__driftInspector.state().cell_id === null);
   assert.equal(await page.$('.di-panel.open'), null);
   assert.equal((await page.evaluate(() => window.__driftInspector.getMap().getSource('insp-sel')._data)).features?.length ?? 0, 0);                              // highlight removed
@@ -148,6 +148,7 @@ test('hazard status: a missing model is UNAVAILABLE with a reason, never 0%; clo
   const hz = await page.$eval('.di-sec:has(.di-haz)', e => e.innerText);
   assert.match(hz, /Thunderstorm[\s\S]*UNAVAILABLE/i); assert.match(hz, /Cloudburst[\s\S]*UNAVAILABLE/i); assert.match(hz, /Flash flood[\s\S]*UNAVAILABLE/i); assert.match(hz, /UNVALIDATED/);
   assert.ok(!/\b0%/.test(hz), 'no 0% for a missing model: ' + hz); assert.match(hz, /not a probability|Kept separate/i);
+  await page.$eval('.di-sec:has(.di-slim)', e => { e.open = true; });
   const terrain = await page.$eval('.di-sec:has(.di-slim)', e => e.innerText); assert.match(terrain, /Elevation/); assert.match(terrain, /not current flooding/i);
   await ctx.close();
 });
@@ -173,7 +174,7 @@ test('mobile: tapping opens a bottom sheet with expandable sections; the sheet d
   await page.click('.di-sec:not([open]) summary'); assert.ok((await page.$$eval('.di-sec', els => els.filter(e => !e.open).length)) < detailsClosed);
   const g = await page.$eval('.di-grab', e => { const r = e.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; });
   await page.mouse.move(g[0], g[1]); await page.mouse.down(); await page.mouse.move(g[0], g[1] - 120, { steps: 4 }); await page.mouse.up();
-  await page.waitForFunction(() => window.__driftInspector.state().sheet === 'full'); assert.ok((await page.$eval('.di-panel', e => e.getBoundingClientRect().height)) > box.vh * 0.8);
+  await page.waitForFunction(() => window.__driftInspector.state().sheet === 'full'); await page.waitForTimeout(700); assert.ok((await page.$eval('.di-panel', e => e.getBoundingClientRect().height)) > box.vh * 0.8);
   await page.evaluate(() => window.__driftInspector.getMap().panBy([40, 20], { duration: 0 }));                                                      // the map is still usable
   await page.click('.di-x'); await page.waitForFunction(() => window.__driftInspector.state().cell_id === null);
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), true, 'no horizontal overflow'); await ctx.close();
