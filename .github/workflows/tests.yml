@@ -40,3 +40,30 @@ jobs:
         env:
           PYTHONUTF8: "1"
         run: python -m pytest -q -p no:cacheprovider -rs
+
+  e2e:
+    # Browser tests against the BUILT publish bundle (system Chrome via playwright-core; no browser download).
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: System libraries
+        run: sudo apt-get update -y && sudo apt-get install -y libeccodes-dev libgeos-dev
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install bundle build dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r backend/requirements.txt "pandas>=2.0.0" "scipy>=1.12.0" "pyyaml"
+      - name: Install Playwright core
+        run: cd tests/e2e && npm install --no-audit --no-fund
+      - name: Run browser tests
+        env:
+          CHROME_PATH: /usr/bin/google-chrome
+          PYTHONUTF8: "1"
+        run: cd tests/e2e && node --test drift.spec.mjs

@@ -25,7 +25,7 @@ sys.path.insert(0, str(ROOT))
 from backend.location_service import Store  # noqa: E402
 from pipelines.publishing import build_pages_bundle as bpb  # noqa: E402
 
-REQUIRED = ["index.html", "drift.html", "sw.js", "data/india_grid_025.json", "data/india_fields_latest.json", "data/india_static_025.json",
+REQUIRED = ["index.html", "drift.html", "legacy.html", "sw.js", "data/india_grid_025.json", "data/india_fields_latest.json", "data/india_static_025.json",
             "data/india_ts_model_latest.json", "data/india_rain_model_latest.json", "data/drift_live.json", "data/hazard_evaluation.json",
             "assets/drift_app.js", "assets/drift_location.js", "assets/drift_sim.js", "assets/vendor/maplibre-gl.js"]
 

@@ -8,7 +8,9 @@ import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
-export const CHROME = process.env.CHROME_PATH || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+const DEFAULT_CHROME = { darwin: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+  win32: 'C:/Program Files/Google/Chrome/Application/chrome.exe', linux: '/usr/bin/google-chrome' }[process.platform];
+export const CHROME = process.env.CHROME_PATH || DEFAULT_CHROME;
 const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json', '.geojson': 'application/json', '.png': 'image/png', '.ico': 'image/x-icon', '.css': 'text/css' };
 
 // DRIFT_BASE_URL=https://<preview>.pages.dev runs the suite against a deployed site instead of a locally built bundle.
@@ -18,7 +20,7 @@ export function buildDist() {
   if (REMOTE) return null;
   const out = fs.mkdtempSync(path.join(os.tmpdir(), 'drift-dist-'));
   const dist = path.join(out, 'pages_dist');
-  execFileSync(process.env.PYTHON || 'python3', [path.join(ROOT, 'pipelines/publishing/build_pages_bundle.py'), dist], { stdio: 'pipe' });
+  execFileSync(process.env.PYTHON || (process.platform === 'win32' ? 'python' : 'python3'), [path.join(ROOT, 'pipelines/publishing/build_pages_bundle.py'), dist], { stdio: 'pipe' });
   return dist;
 }
 export function serve(dist) {
