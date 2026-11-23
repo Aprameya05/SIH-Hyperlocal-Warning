@@ -44,6 +44,13 @@ This audit maps each SIH26077 requirement to what the code and committed artifac
 - #17 workflows: external effects (push to main, Pages deploy, WhatsApp/Twilio/ntfy) are main-only, so a branch dispatch is a full dry run; a run whose unified artifact check is not ok now fails instead of ending green with nothing deployed; no swallowed failures in commit/deploy/smoke/validate steps.
 - Dry runs from a branch (no push, deploy or message): `drift_check` [45137120296](https://github.com/Aprameya05/SIH-Hyperlocal-Warning/actions/runs/45137120296), `retrain_trigger` [45137130937](https://github.com/Aprameya05/SIH-Hyperlocal-Warning/actions/runs/45137130937) and the full `forecast_update` pipeline [45137445636](https://github.com/Aprameya05/SIH-Hyperlocal-Warning/actions/runs/45137445636) all passed, including the 48 h national-fields gate, the grid and live-feed validators and the release-readiness gate. These are CI-runner validations, not production verification.
 
+- #21 legacy UI: withheld/unscored station slots no longer render as `0% MINIMAL` and PEAK marks only a real maximum (the exact screenshot case reproduced on the old code).
+- #22 operational lead per forecast hour = valid time minus DRIFT's recorded acquisition time (never negative; excludes dissemination to users). No 2-6 h warning is claimed.
+- #23 satellite: Himawari-9 B13 brightness temperature, p10/min, cold-pixel fraction and 30/60-min cooling rate per 0.25 deg cell, shown only while the scan is <= 90 min old; an observation, **not** a retrieved CTT and not a model input. This changes rows 9, 10 and 11 above from "null/not implemented" to "implemented as a display/diagnostic observation" (ingestion `pipelines/ingestion/ingest_himawari_ctt.py`, validator, `satellite_ctt.yml` every 30 min); row 17 (fusion) is unchanged because no model uses it.
+- #25 correction to this document's "20 of 64": 28 of 64 station-model inputs had no real live value (20 station observations + 8 never computed, silently 0.0 through `obs.get(c, 0.0)`). Missing features are now NaN and flagged.
+- #26 `v7_live_inputs` station model for slot 3 only (gate: >= 20 test events, 95% lower bounds of Brier skill > 0 and AUROC >= 0.60 on untouched label-valid years). Data finding: station labels for 2019 (all slots) and 2024-25 (slots 0, 1, 3) are missing, not negative. See `models/station_live_inputs_evaluation.json`.
+- #27 service worker: all same-origin code and data network-first (a stale cached `drift_location.js` could run against a new `drift_app.js`), cache v6, old caches replaced.
+
 Feasibility of a real 2-6 h lead, satellite inputs and retraining: [`docs/research/SATELLITE_AND_LEAD_TIME_FEASIBILITY.md`](research/SATELLITE_AND_LEAD_TIME_FEASIBILITY.md).
 
 **CI and production:**
