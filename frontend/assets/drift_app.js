@@ -345,7 +345,10 @@
       '<tr><th>Valid time</th><td>f' + h.fhour + ' · ' + esc(h.valid_time_utc.slice(0, 16).replace('T', ' ')) + 'Z (' + esc(ist(h.valid_time_utc)) + ') ' + chip(h.status === 'CURRENT' ? 'FRESH' : h.status === 'PAST_VALID_TIME' ? 'STALE' : 'UNAVAILABLE', h.status.replace(/_/g, ' ')) + '</td></tr>' +
       '<tr><th>NWP input published</th><td>' + esc(h.published_at_utc.slice(0, 16).replace('T', ' ')) + 'Z <span class="small mute">(S3 Last-Modified, observed)</span></td></tr>' +
       '<tr><th>Acquired by DRIFT</th><td>' + esc(h.acquired_at_utc.slice(0, 16).replace('T', ' ')) + 'Z</td></tr>' +
-      '<tr><th>Operational lead</th><td><span class="na">unavailable</span> <span class="small mute">(no DRIFT publication time recorded)</span></td></tr></table>';
+      '<tr><th>Operational lead</th><td>' + (h.operational_lead_hours != null
+        ? '<b>+' + h.operational_lead_hours.toFixed(1) + ' h</b> ' + chip(h.operational_lead_hours >= 2 && h.operational_lead_hours <= 6 ? 'FRESH' : 'STALE', h.operational_lead_hours >= 2 && h.operational_lead_hours <= 6 ? 'IN 2\u20136 h BAND' : 'OUTSIDE 2\u20136 h BAND')
+        : '<span class="na">none</span> <span class="small mute">(valid time was already past when DRIFT acquired the data)</span>') +
+      '<div class="small mute">' + esc(c.operational_lead_basis) + '</div></td></tr></table>';
   }
   var GROUPS = [
     ['Instability', [['cape', 'CAPE', 0], ['cin', 'CIN', 0], ['lftx', 'Lifted index', 1], ['k_index', 'K-index', 1], ['total_totals', 'Total Totals', 1], ['lapse_850_500', '850–500 hPa lapse rate', 2]]],

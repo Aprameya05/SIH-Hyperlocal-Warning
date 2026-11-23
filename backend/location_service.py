@@ -190,12 +190,19 @@ class Store:
         hours = []
         for k, f in enumerate(files):
             v = parse_utc(f["valid_time_utc"])
+            # Operational lead = valid - the time DRIFT actually held the data (recorded per file). Never negative: a valid time
+            # that was already past when the data arrived has no lead (None + status), as in the forecast_integrity contract.
+            from backend import forecast_integrity as fi
+            lead = fi.operational_lead_hours(f["valid_time_utc"], f["acquired_at_utc"])
             hours.append({"index": k, "fhour": f["fhour"], "valid_time_utc": f["valid_time_utc"], "published_at_utc": f["published_at_utc"],
-                          "acquired_at_utc": f["acquired_at_utc"], "status": hour_status(now, init, v, parse_utc(f["published_at_utc"]))})
+                          "acquired_at_utc": f["acquired_at_utc"], "status": hour_status(now, init, v, parse_utc(f["published_at_utc"])),
+                          "forecast_available_time_utc": f["acquired_at_utc"], "operational_lead_hours": lead,
+                          "operational_lead_status": "OK" if lead is not None else "NOT_APPLICABLE_PAST_VALID_TIME"})
         rec["cycle"] = {"model_init_utc": iso(init), "age_hours": round(age_h, 2), "source": SOURCE, "resolution_deg": RESOLUTION_DEG,
                         "extraction": self.fields_doc["meta"]["extraction"], "hours": hours,
                         "availability_note": self.fields_doc["meta"]["availability_note"],
-                        "operational_lead_hours": None, "operational_lead_status": "UNAVAILABLE_NO_DRIFT_PUBLICATION_TIME"}
+                        "operational_lead_hours": hours[hour]["operational_lead_hours"], "operational_lead_status": hours[hour]["operational_lead_status"],
+                        "operational_lead_basis": "valid time minus the time DRIFT acquired the NWP file; excludes dissemination to users"}
         rec["selected_hour"] = hours[hour]
         fl = {}
         for name, reg in R.items():
