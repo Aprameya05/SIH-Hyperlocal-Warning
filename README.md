@@ -83,7 +83,7 @@ Tests run on Linux in CI (`.github/workflows/tests.yml`: full suite on every pul
 | `tests/` | Python tests (flat), JS tests (`*.mjs`), `tests/e2e` (Playwright) |
 | `scripts/utilities`, `scripts/diagnostics` | Generated docs, acceptance run, inventory |
 | `data/`, `processed/`, `imd_rain/` | Generated artifacts and datasets |
-| `worker/` | Cloudflare Worker for alert subscriptions (not in the forecast-serving path; deploys manually and **requires a `TOKEN_SECRET` secret**, it refuses to run without one; `ADMIN_KEY` guards the subscriber list) |
+| `worker/` | Cloudflare Worker for alert subscriptions (not in the forecast-serving path; deploys manually and **requires a `TOKEN_SECRET` secret**, it refuses to run without one; `ADMIN_KEY` guards the subscriber list; per-client KV rate limits on `/subscribe` and `/unsubscribe`; run `python scripts/check_worker_config.py --remote` before deploying) |
 | `docs/` | Architecture, data sources, models, evaluation, operations, security, demo, archive |
 | `research/legacy_experiments/` | Archived experiments |
 | `.github/workflows/` | `tests.yml` (Linux suite), `india_fields.yml` (GFS ingest and models), `forecast_update.yml` (forecast artifacts, the allow-list bundle and the Wrangler Pages deploy) and `update_grid.yml` (hazard grid artifacts), `drift_check.yml`, `retrain_trigger.yml`, `weekly_digest.yml`; commits are fast-forward only and the forecast, grid, drift, retrain and digest workflows share one concurrency lock (`india_fields` has its own) |

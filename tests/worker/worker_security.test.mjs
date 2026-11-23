@@ -8,7 +8,7 @@ function kv() {
     get: async k => m.get(k) ?? null,
     put: async (k, v) => { m.set(k, v); },
     delete: async k => { m.delete(k); },
-    list: async () => ({ keys: [...m.keys()].map(name => ({ name })) }),
+    list: async (o = {}) => ({ keys: [...m.keys()].filter(k => k.startsWith(o.prefix || '')).map(name => ({ name })) }),
     _m: m,
   };
 }
@@ -37,7 +37,7 @@ test('subscribe never returns the unsubscribe token, new or existing', async () 
 test('unsubscribe page escapes user-controlled name (no stored XSS)', async () => {
   const env = mkEnv();
   await worker.fetch(req('/subscribe', 'POST', { email: 'x@y.co', name: '<script>alert(1)</script>' }), env);
-  const key = [...env.SUBSCRIBERS._m.keys()][0];
+  const key = [...env.SUBSCRIBERS._m.keys()].find(k => k.startsWith('sub:'));
   const html = await (await worker.fetch(req('/unsubscribe?token=' + key.slice(4)), env)).text();
   assert.ok(!html.includes('<script>alert(1)</script>'));
   assert.ok(html.includes('&lt;script&gt;'));
@@ -61,4 +61,28 @@ test('subscriber list requires the admin key', async () => {
 test('CORS does not advertise the admin header', async () => {
   const r = await worker.fetch(req('/health', 'OPTIONS'), mkEnv());
   assert.ok(!(r.headers.get('access-control-allow-headers') || '').includes('X-Admin-Key'));
+});
+
+test('subscribe is rate limited per client (429 + Retry-After), clients are independent', async () => {
+  const env = mkEnv();
+  const ip = (addr, i) => req('/subscribe', 'POST', { email: `u${i}@b.co` }, { 'CF-Connecting-IP': addr });
+  for (let i = 0; i < 5; i++) assert.equal((await worker.fetch(ip('1.1.1.1', i), env)).status, 200);
+  const blocked = await worker.fetch(ip('1.1.1.1', 99), env);
+  assert.equal(blocked.status, 429);
+  assert.equal(blocked.headers.get('retry-after'), '600');
+  assert.equal((await worker.fetch(ip('2.2.2.2', 1), env)).status, 200);   // another client is unaffected
+});
+
+test('unsubscribe token guessing is rate limited', async () => {
+  const env = mkEnv();
+  const g = i => req('/unsubscribe?token=guess' + i, 'GET', undefined, { 'CF-Connecting-IP': '3.3.3.3' });
+  for (let i = 0; i < 20; i++) assert.notEqual((await worker.fetch(g(i), env)).status, 429);
+  assert.equal((await worker.fetch(g(99), env)).status, 429);
+});
+
+test('rate-limit counters never appear in the admin subscriber list', async () => {
+  const env = mkEnv();
+  await worker.fetch(req('/subscribe', 'POST', { email: 'z@b.co' }, { 'CF-Connecting-IP': '4.4.4.4' }), env);
+  const r = await (await worker.fetch(req('/subscribers', 'GET', undefined, { 'X-Admin-Key': 'adm' }), env)).json();
+  assert.equal(r.count, 1);
 });
