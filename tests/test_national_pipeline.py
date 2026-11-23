@@ -231,6 +231,16 @@ def test_prediction_scripts_find_their_models_and_reproduce_the_committed_artifa
         assert new["meta"]["model_evaluated"] is False and "00Z" in new["meta"].get("reason", ""), new["meta"]
         assert committed["meta"]["model_evaluated"] is False and new[key] == committed[key] == {} and "explanations" not in new
         return
+    if new["meta"]["model_evaluated"] is False and "validated season" in new["meta"].get("reason", ""):
+        # Out of season the honest result is UNAVAILABLE and the committed artifact must say exactly the same ...
+        assert committed["meta"]["model_evaluated"] is False and new[key] == committed[key] == {} and "explanations" not in new
+        # ... while the model files must still be found and run when the season gate is lifted (path guard).
+        monkeypatch.setattr(m, "VALIDATED_MONTHS", tuple(range(1, 13)))
+        m.main()
+        ungated = json.loads(out.read_text())
+        assert ungated["meta"]["model_evaluated"] is True, ungated["meta"].get("reason")
+        assert ungated[key] and ungated["explanations"]
+        return
     assert new["meta"]["model_evaluated"] is True, new["meta"].get("reason")
     assert new[key] == committed[key] and new["explanations"] == committed["explanations"]
 
