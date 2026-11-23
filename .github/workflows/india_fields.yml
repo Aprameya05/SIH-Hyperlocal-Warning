@@ -47,7 +47,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/india_fields_latest.json data/india_ts_model_latest.json data/india_rain_model_latest.json
-          echo "--- tracked files modified by the pipeline but not part of this artifact set:"; git status --short | grep -v "^[AM] " || true
+          git add data/india_fields_latest.json data/india_ts_model_latest.json data/india_rain_model_latest.json data/ingest_status.json
           git diff --staged --quiet || git commit -m "Auto: India GFS fields $(date -u +%Y%m%dT%H%MZ)"
           git pull --rebase --autostash origin ${{ github.ref_name }} && git push
