@@ -90,6 +90,8 @@
   <script src="./assets/forecast_integrity.js"></script>
   <script src="./assets/drift_location.js"></script>
   <script src="./assets/legacy_fields_bridge.js"></script>
+  <link rel="stylesheet" href="./assets/cell_inspector.css">
+  <script src="./assets/cell_inspector.js"></script>
   <script>
     // The validated 0.25 deg artifacts (GFS fields with per-file provenance, grid, statics, Himawari B13). Reloaded every 10 minutes so the
     // card never keeps showing an old cycle; the dashboard re-renders when the store changes.
@@ -99,7 +101,23 @@
           window.__driftStore = r.store; window.__driftStoreProblems = r.problems; window.dispatchEvent(new Event('drift-store-ready'));
         });
       }
-      go(); setInterval(go, 10 * 60 * 1000);
+      // One shared inspector (cell + forecast hour) for the whole page. Other tabs read window.__driftInspector.state().
+      window.__driftInspector = window.DriftInspector.create(function () { return window.__driftStore; }, {
+        onSelect: function (cid) { try { var u = new URL(location.href); u.searchParams.set('cell', cid); history.replaceState(null, '', u); } catch (e) {} window.dispatchEvent(new CustomEvent('drift-cell-selected', { detail: { cell_id: cid } })); }
+      });
+      window.addEventListener('drift-store-ready', function () { window.__driftInspector.refresh(); });
+      go(); setInterval(go, 10 * 60 * 1000);            // GFS fields: NOAA publishes new cycles every 6 h, so 10 min is ample
+      // Himawari scans arrive every 10 minutes: check the small satellite file every 5 min and rebuild only when a newer scan exists.
+      var lastScene = null;
+      setInterval(function () {
+        fetch('data/india_satellite_ctt_latest.json?_=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
+          var sc = d && d.meta && d.meta.scene_nominal_utc; if (sc && sc !== lastScene) { lastScene = sc; go(); }
+        }).catch(function () {});
+      }, 5 * 60 * 1000);
+      // Deep link: ?cell=IN025_... restores the selection once the store is ready.
+      window.addEventListener('drift-store-ready', function once() {
+        var c = new URL(location.href).searchParams.get('cell'); if (c && window.__driftStore && window.__driftInspector.state().cell_id == null) window.__driftInspector.select(c);
+      });
     })();
   </script>
 
@@ -2551,6 +2569,9 @@ function injectDrainageOverlay(map, liveData) { /* removed: connected terrain po
           antialias: true,
         });
         mapRef.current = map;
+        // The grid-cell inspector owns map clicks (exact O(1) cell lookup on the validated 0.25 deg grid, highlight, side panel / bottom sheet). Attached
+        // immediately so selection works while the basemap style is still loading; it adds its layers once the style is ready.
+        if (window.__driftInspector && mapContainerRef.current) window.__driftInspector.attach(map, mapContainerRef.current.parentElement);
         map.on('error', (e) => { if (e.error && e.error.status === 0) setMapError(true); });
         map.on('load', () => {
           // Guard: the 'load' event is asynchronous (style/tile fetch), so
@@ -2655,7 +2676,7 @@ function injectDrainageOverlay(map, liveData) { /* removed: connected terrain po
               if (d < bestD) { bestD = d; best = c; }
             });
             if (!best || bestD > 5) return;
-            showCellPopup(map, lng, lat, best, null);
+            // (old heuristic 1 deg detail popup removed: replaced by the grid-cell inspector)
             // MAP CLICK -> canonical activeLocation update. This reuses the
             // exact tested lookup (assets/location_engine.js), so the
             // architecture panel below the map and this popup are always

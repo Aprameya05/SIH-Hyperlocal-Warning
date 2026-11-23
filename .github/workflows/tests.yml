@@ -67,8 +67,13 @@ jobs:
           pip install -r backend/requirements.txt "pandas>=2.0.0" "scipy>=1.12.0" "pyyaml"
       - name: Install Playwright core
         run: cd tests/e2e && npm install --no-audit --no-fund
-      - name: Run browser tests
+      - name: Browser tests (dashboard)
         env:
           CHROME_PATH: /usr/bin/google-chrome
           PYTHONUTF8: "1"
         run: cd tests/e2e && node --test drift.spec.mjs
+      - name: Browser tests (cell inspector)
+        env:
+          CHROME_PATH: /usr/bin/google-chrome
+          PYTHONUTF8: "1"
+        run: cd tests/e2e && node --test inspector.spec.mjs

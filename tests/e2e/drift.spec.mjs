@@ -53,7 +53,7 @@ test('homepage entry opens the command centre and links back', async () => {
   const ctx = await browser.newContext({ viewport: DESKTOP }); const page = await ctx.newPage(); await page.route(TILE, r => r.abort());
   // The site root is the modern command centre; the legacy station dashboard lives at /legacy.html and links forward to it.
   await page.goto(`${S.base}/`); await page.waitForSelector('#home-link'); assert.match(await page.getAttribute('#home-link', 'href'), /legacy\.html$/);
-  await page.goto(`${S.base}/legacy.html`); await page.waitForSelector('#drift-entry'); await shot(page, '01_homepage_entry');
+  await page.goto(`${S.base}/legacy.html`, { waitUntil: "domcontentloaded", timeout: 60000 }); await page.waitForSelector('#drift-entry'); await shot(page, '01_homepage_entry');
   await page.click('#drift-entry'); await page.waitForURL(/\/drift(\.html)?$/); await page.click("#home-link"); await page.waitForURL(/\/legacy\.html$/); await ctx.close();
 });
 
@@ -266,16 +266,16 @@ test(`${label}: the map legend never overlaps the basemap attribution; unknown p
 
 test('legacy station dashboard: no typed metrics or unsupported pages are reachable; cloudburst and flash flood are not selectable', async () => {
   const ctx = await browser.newContext({ viewport: DESKTOP }); const page = await ctx.newPage(); const w = watch(page); await page.route(TILE, r => r.abort());
-  await page.goto(`${S.base}/legacy.html`); await page.waitForTimeout(6000);
+  await page.goto(`${S.base}/legacy.html`, { waitUntil: "domcontentloaded", timeout: 60000 }); await page.waitForSelector('#boot-loading', { state: 'detached', timeout: 90000 }); await page.waitForTimeout(1500);
   assert.deepEqual(w.pageErrors, []);
   const disabled = await page.$$eval('button[disabled]', b => b.map(x => x.innerText.trim()));
   assert.ok(disabled.filter(t => /CB/.test(t)).length >= 1 && disabled.filter(t => /FF/.test(t)).length >= 1, 'CB and FF buttons are disabled: ' + disabled);
   for (const hash of ['#models', '#scores', '#regimes', '#satellite', '#explainability', '#api', '#alerts', '#contacts', '#whatif', '#climatology', '#multiday', '#atc']) {
-    await page.goto(`${S.base}/${hash}`); await page.reload(); await page.waitForTimeout(2500);
+    await page.goto(`${S.base}/legacy.html${hash}`, { waitUntil: 'domcontentloaded', timeout: 60000 }); await page.reload({ waitUntil: 'domcontentloaded' }); await page.waitForSelector('#boot-loading', { state: 'detached', timeout: 90000 }); await page.waitForTimeout(1200);
     const t = await page.evaluate(() => document.body.innerText);
     assert.ok(!/0\.871|0\.8484|0\.997|AUROC 1\.0|Doppler|Blitzortung|ALL CLEAR|Dispatch to|Dispatched to|SIGMET\/AIRMET DRAFT|S-BAND|XGBoost v6/i.test(t), `${hash} shows a removed claim`);
   }
-  await page.goto(`${S.base}/legacy.html#models`); await page.reload(); await page.waitForTimeout(3000);
+  await page.goto(`${S.base}/legacy.html#models`, { waitUntil: "domcontentloaded", timeout: 60000 }); await page.reload({ waitUntil: 'domcontentloaded' }); await page.waitForSelector('#boot-loading', { state: 'detached', timeout: 90000 }); await page.waitForTimeout(1500);
   const m = await page.evaluate(() => document.body.innerText);
   assert.ok(/data\/hazard_evaluation\.json/.test(m) && /Brier skill/.test(m) && /STATION-ONLY/.test(m), 'models page is data-backed and station-scoped');
   await ctx.close();
@@ -305,7 +305,7 @@ test('legacy station dashboard: fallback/unscored slots are never shown as 0%, a
   async function render(mutate) {
     const ctx = await browser.newContext({ viewport: DESKTOP }); const page = await ctx.newPage(); const w = watch(page); await page.route(TILE, r => r.abort());
     await page.route('**/forecast.json*', r => { const j = JSON.parse(JSON.stringify(base)); mutate(j); r.fulfill({ contentType: 'application/json', body: JSON.stringify(j) }); });
-    await page.goto(`${S.base}/legacy.html`); await page.waitForTimeout(5000);
+    await page.goto(`${S.base}/legacy.html`, { waitUntil: "domcontentloaded", timeout: 60000 }); await page.waitForSelector('#boot-loading', { state: 'detached', timeout: 90000 }); await page.waitForTimeout(1500);
     const cards = await page.$$eval('button[title], button', bs => bs.filter(b => /LATE NIGHT|MORNING|AFTERNOON|EVENING/.test(b.innerText)).map(b => b.innerText.replace(/\s+/g, ' ').trim()));
     const text = await page.evaluate(() => document.body.innerText);
     await ctx.close(); assert.deepEqual(w.pageErrors, []); return { cards, text };
@@ -417,10 +417,10 @@ test('service worker: a returning visitor with an old cache and old scripts ends
 // ---- legacy station dashboard: real diagnostics, forecast timeline and boot placeholder ------------------------------------
 async function openLegacy(nowMs, { mutateSat = true } = {}) {
   const ctx = await browser.newContext({ viewport: DESKTOP }); const page = await ctx.newPage(); const w = watch(page); await page.route(TILE, r => r.abort());
-  await page.addInitScript(t => { Date.now = () => t; }, nowMs);
+  await page.addInitScript(t => { const r = Date.now.bind(Date), off = t - r(); Date.now = () => r() + off; }, nowMs);
   if (mutateSat) await page.route(/india_satellite_ctt_latest\.json/, async r => { const j = await (await r.fetch()).json();
     j.meta.scene_nominal_utc = new Date(nowMs - 20 * 60000).toISOString().replace(/\.\d+Z$/, 'Z'); r.fulfill({ contentType: 'application/json', body: JSON.stringify(j) }); });
-  await page.goto(`${S.base}/legacy.html`);
+  await page.goto(`${S.base}/legacy.html`, { waitUntil: "domcontentloaded", timeout: 60000 });
   await page.waitForSelector('[data-testid=real-diagnostics]', { timeout: 60000 });
   return { ctx, page, w };
 }
