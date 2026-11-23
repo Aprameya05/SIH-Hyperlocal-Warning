@@ -306,6 +306,17 @@ def test_run_build_fails_at_the_raw_root_preflight_before_naming_individual_file
         )
 
 
+def _posix_bash_available() -> bool:
+    import subprocess
+    try:
+        r = subprocess.run(["bash", "-c", "echo ok"], capture_output=True, text=True, timeout=20)
+        return r.returncode == 0 and r.stdout.strip() == "ok"
+    except (OSError, subprocess.SubprocessError):
+        return False
+
+
+@pytest.mark.skipif(not _posix_bash_available(),
+                    reason="a working POSIX bash is required (on Windows, bash may resolve to a WSL stub with no distro)")
 def test_windows_backslash_path_is_corrupted_by_an_unquoted_posix_shell():
     # Documents and proves, via PureWindowsPath (the portable stand-in for
     # what Windows itself does with the string), that the real Phase
