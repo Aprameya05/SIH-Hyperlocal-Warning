@@ -111,8 +111,8 @@ check('unified page applies the client guard on both load paths', (html.match(/g
 check('unified page shows the no-lead-forecast banner', html.includes('data-testid="no-lead-forecast-banner"'));
 check('withheld hazards render an explicit unavailable state', (html.match(/data-testid="hazard-unavailable"/g) || []).length >= 2);
 check('cloudburst is shown as unavailable (a heavy-rain-day proxy is not a cloudburst)', html.includes('no validated cloudburst model') && html.includes('is not a cloudburst'));
-check('CTT is labelled a proxy', html.includes('CTT PROXY'));
-check('shear layer label matches the computation (850-200 hPa)', html.includes('850-200 hPa wind shear') && !html.includes('0-6 km bulk shear layer'));
+check('satellite temperature is labelled brightness temperature (observed), never a retrieved CTT or a GFS proxy', html.includes('CLOUD-TOP BRIGHTNESS TEMP (Himawari-9 B13, observed)') && html.includes('not a retrieved CTT') && !html.includes('CTT PROXY (GFS saturated-layer temp)'));
+check('shear label matches the computation (850-500 hPa bulk difference; 850-200 hPa and 0-6 km are not ingested)', html.includes('WIND SHEAR (850–500 hPa bulk)') && html.includes('850–200 hPa and 0–6 km shear are not ingested') && !html.includes('850-200 hPa wind shear') && !html.includes('0-6 km bulk shear layer'));
 
 if (failures.length) { console.log(`\n${failures.length} FAILED:`, failures); process.exit(1); }
 console.log('\nALL TESTS PASSED');

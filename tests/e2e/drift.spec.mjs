@@ -120,7 +120,8 @@ test('forecast hour changes the underlying values, status chips are recomputed, 
 });
 
 test('all three hazard views: every layer renders; every hazard panel is populated; unsupported capabilities are explicitly unavailable', async () => {
-  const { ctx, page, w } = await open(DESKTOP); await pick(page, 'Guwahati');
+  // The satellite layers are observations that are only shown while the scan is <= 90 min old, so give the committed artifact a current scan time.
+  const { ctx, page, w } = await open(DESKTOP, { mutate: { pattern: /india_satellite_ctt_latest\.json/, fn: j => { j.meta.scene_nominal_utc = new Date(Date.now() - 20 * 60000).toISOString().replace(/\.\d+Z$/, 'Z'); } } }); await pick(page, 'Guwahati');
   for (const h of ['thunderstorm', 'extreme_rainfall', 'flash_flood']) {
     await page.click(`[data-h=${h}]`);
     for (const o of await page.$$eval('#lyr option', o => o.map(x => x.value))) {
