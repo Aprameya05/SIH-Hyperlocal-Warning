@@ -35,7 +35,7 @@ async function pick(page, name) {
   return page.evaluate(() => window.__drift.state.sel);
 }
 const detail = page => page.textContent('#p-detail');
-const row = async (page, label) => (await page.$$eval('#p-detail tr', (tr, l) => tr.map(t => t.innerText.replace(/\s+/g, ' ').trim()).find(t => t.startsWith(l)) || null, label));
+const row = async (page, label) => (await page.$$eval('#p-detail tr, #p-detail .rows .r', (tr, l) => tr.map(t => t.innerText.replace(/\s+/g, ' ').trim()).find(t => t.startsWith(l)) || null, label));
 const num = (s, label) => { const t = (s || '').slice(label ? label.length : 0); const m = /(-?\d+(\.\d+)?)/.exec(t); return m ? +m[1] : null; };
 
 test('built bundle: every resource loads, nothing 404s, national artifacts verified', async () => {

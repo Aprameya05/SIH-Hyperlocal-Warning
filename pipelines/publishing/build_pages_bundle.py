@@ -39,6 +39,7 @@ ALIAS_FILES = {
     "morning1.png": "frontend/assets/images/morning1.png", "afternoon1.png": "frontend/assets/images/afternoon1.png",
     "evening1.png": "frontend/assets/images/evening1.png", "night1.png": "frontend/assets/images/night1.png",
     "favicon.ico": "frontend/assets/favicon.ico",
+    "earth_sunrise.webp": "frontend/assets/images/earth_sunrise.webp",   # page backdrop (cinematic sunrise over Earth)
     "data/station_live_inputs_evaluation.json": "models/station_live_inputs_evaluation.json",
 }
 # Directories published recursively (bundle-relative name -> source directory in the repository).

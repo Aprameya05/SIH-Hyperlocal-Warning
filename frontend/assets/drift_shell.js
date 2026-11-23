@@ -17,9 +17,19 @@
   if (!nav || !viewMain || !viewFrame || !frame) return;
   var current = 'main', frameReady = false, frameStarted = false;
 
+  var SV = function (d) { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + d + '</svg>'; };
+  var NAVICON = {
+    main: SV('<path d="M3 11l9-8 9 8M5 10v10h5v-6h4v6h5V10"/>'), forecast: SV('<circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/>'),
+    satellite: SV('<path d="M4 20l5-5M9 15l-2-2 3-3 2 2zM13 11l3-3 2 2-3 3zM15 5l4 4M18 2l4 4"/>'), models: SV('<path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 13l9 5 9-5M3 17.5l9 5 9-5"/>'),
+    explain: SV('<path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/>'), regimes: SV('<circle cx="12" cy="6" r="2.5"/><circle cx="5" cy="18" r="2.5"/><circle cx="19" cy="18" r="2.5"/><path d="M10.5 8l-4 8M13.5 8l4 8M7.5 18h9"/>'),
+    scores: SV('<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/>'), graphs: SV('<path d="M3 17l6-6 4 4 8-9"/><path d="M15 6h6v6"/>')
+  };
+  var ind = document.createElement('span'); ind.className = 'ind'; nav.appendChild(ind);
+  function placeInd() { var on = nav.querySelector('button[aria-selected=true]'); if (!on) return; ind.style.left = on.offsetLeft + 'px'; ind.style.width = on.offsetWidth + 'px'; try { on.scrollIntoView({ block: 'nearest', inline: 'center' }); } catch (e) { /* ignore */ } }
+  window.addEventListener('resize', placeInd);
   TABS.forEach(function (t) {
     var b = document.createElement('button');
-    b.type = 'button'; b.setAttribute('role', 'tab'); b.dataset.tab = t[0]; b.id = 'tab-' + t[0]; b.textContent = t[1];
+    b.type = 'button'; b.setAttribute('role', 'tab'); b.dataset.tab = t[0]; b.id = 'tab-' + t[0]; b.innerHTML = NAVICON[t[0]] + '<span>' + t[1] + '</span>';
     b.setAttribute('aria-selected', t[0] === 'main' ? 'true' : 'false'); b.tabIndex = t[0] === 'main' ? 0 : -1;
     b.addEventListener('click', function () { go(t[0], true); });
     nav.appendChild(b);
@@ -55,6 +65,7 @@
     var wasFrame = current !== 'main'; if (wasFrame && id === 'main') pullCellFromFrame();
     current = id;
     Array.prototype.forEach.call(nav.querySelectorAll('button'), function (b) { var on = b.dataset.tab === id; b.setAttribute('aria-selected', on ? 'true' : 'false'); b.tabIndex = on ? 0 : -1; });
+    placeInd();
     if (id === 'main') {
       viewFrame.classList.remove('on'); viewMain.classList.remove('off');
       var m = window.__drift && window.__drift.getMap && window.__drift.getMap(); if (m && m.resize) setTimeout(function () { m.resize(); }, 50);
@@ -89,5 +100,6 @@
   window.addEventListener('message', function (e) { if (e.origin !== location.origin || !e.data || e.data.type !== 'drift-embed-hash') return; var t = TABS.filter(function (x) { return x[2] === e.data.hash; })[0]; if (t && t[0] !== current) { current = t[0]; show(t[0]); history.replaceState({ tab: t[0] }, '', urlFor(t[0])); } });
 
   var first = tabFromUrl(); if (first !== 'main') show(first);
+  placeInd(); if (document.fonts && document.fonts.ready) document.fonts.ready.then(placeInd); setTimeout(placeInd, 300);
   window.__driftShell = { go: function (id) { go(id, true); }, current: function () { return current; }, ready: function () { return frameReady; }, tabs: TABS.map(function (t) { return t[0]; }) };
 })();
