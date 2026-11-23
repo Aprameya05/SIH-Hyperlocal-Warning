@@ -1,0 +1,18 @@
+Vendored front-end libraries for the legacy station dashboard (legacy.html). They used to be loaded from public CDNs at run time, which made first paint
+slow or blank when a CDN was slow or blocked. All are MIT licensed; the files are byte-for-byte the pinned upstream release files.
+
+react.production.min.js
+  source: https://unpkg.com/react@18.3.1/umd/react.production.min.js (React 18.3.1, MIT)
+  sha256: d949f1c3687aedadcedac85261865f29b17cd273997e7f6b2bfc53b2f9d4c4dd
+react-dom.production.min.js
+  source: https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js (React DOM 18.3.1, MIT)
+  sha256: 35f4f974f4b2bcd44da73963347f8952e341f83909e4498227d4e26b98f66f0d
+babel-standalone-7.26.4.min.js
+  source: https://unpkg.com/@babel/standalone@7.26.4/babel.min.js (Babel standalone 7.26.4, MIT)
+  sha256: a12872ea8da3d29b2a296c51bfac7c482e81419c755f2207a49ad9b77200f4ea
+framer-motion-10.16.4.js
+  source: https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js (Framer Motion 10.16.4, MIT)
+  sha256: f3eaabd254f47abbc88e17019c0734715f3eb714d65db60df6e0a3587d0cd3e1
+jspdf-2.5.1.umd.min.js
+  source: https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js (jsPDF 2.5.1, MIT)
+  sha256: 98ccf17aa10c20bb1301762618fcc9b6ab3a4e7f26b6071d64d0b41154df3875

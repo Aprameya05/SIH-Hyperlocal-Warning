@@ -412,3 +412,77 @@ test('service worker: a returning visitor with an old cache and old scripts ends
   assert.match(r.script, /DRIFT location store/);
   await ctx.close();
 });
+
+// ---- legacy station dashboard: real diagnostics, forecast timeline and boot placeholder ------------------------------------
+async function openLegacy(nowMs, { mutateSat = true } = {}) {
+  const ctx = await browser.newContext({ viewport: DESKTOP }); const page = await ctx.newPage(); const w = watch(page); await page.route(TILE, r => r.abort());
+  await page.addInitScript(t => { Date.now = () => t; }, nowMs);
+  if (mutateSat) await page.route(/india_satellite_ctt_latest\.json/, async r => { const j = await (await r.fetch()).json();
+    j.meta.scene_nominal_utc = new Date(nowMs - 20 * 60000).toISOString().replace(/\.\d+Z$/, 'Z'); r.fulfill({ contentType: 'application/json', body: JSON.stringify(j) }); });
+  await page.goto(`${S.base}/legacy.html`);
+  await page.waitForSelector('[data-testid=real-diagnostics]', { timeout: 60000 });
+  return { ctx, page, w };
+}
+const VOBL = { id: 'IN025_1325_07775' };
+async function pillars(page) { return page.$$eval('[data-testid=real-diagnostics] > div:nth-child(2) > div', els => els.map(e => e.innerText.replace(/\s+/g, ' ').trim())); }
+
+test('legacy dashboard: every diagnostic equals the published artifact for the selected hour; the satellite value is the observed one', async () => {
+  const fields = await (await fetch(`${S.base}/data/india_fields_latest.json`)).json(), sat = await (await fetch(`${S.base}/data/india_satellite_ctt_latest.json`)).json();
+  const ci = fields.cells.indexOf(VOBL.id), si = sat.cells.indexOf(VOBL.id); assert.ok(ci >= 0 && si >= 0);
+  const init = Date.parse(fields.meta.cycle_init_utc), now = init + 9 * 3600000;               // inside the validity window of f012..f024
+  const { ctx, page, w } = await openLegacy(now);
+  for (const fh of [12, 18, 24]) {
+    const h = fields.meta.fhours.indexOf(fh), g = k => fields.fields[k][h][ci];
+    await page.click(`[data-testid=real-diagnostics] button:text-is("f${fh}")`); await page.waitForTimeout(300);
+    const p = await pillars(page);
+    assert.equal(p.length, 8, JSON.stringify(p));
+    assert.ok(p[0].includes(String(Math.round(g('cape')))) && p[0].includes('J/kg') && p[0].includes(`CIN: ${g('cin').toFixed(0)} J/kg`), `f${fh} CAPE/CIN: ${p[0]}`);
+    assert.ok(p[1].includes(g('pwat').toFixed(1)) && p[1].includes('mm'), `f${fh} PWAT: ${p[1]}`);
+    assert.ok(p[3].includes(g('shear_850_500').toFixed(1)) && p[3].includes('m/s'), `f${fh} shear: ${p[3]}`);
+    assert.ok(p[4].includes(g('conv850').toFixed(2)), `f${fh} convergence: ${p[4]}`);
+    assert.ok(p[5].includes(g('k_index').toFixed(1)) && p[6].includes(g('total_totals').toFixed(1)) && p[7].includes(g('lftx').toFixed(1)), `f${fh} indices: ${p[5]} | ${p[6]} | ${p[7]}`);
+    assert.ok(!p.some(t => /WITHHELD/.test(t)), `f${fh} nothing may be withheld at a current hour: ${JSON.stringify(p)}`);
+    const banner = await page.$eval('[data-testid=real-diagnostics]', e => e.innerText);
+    assert.match(banner, new RegExp(`f0${fh} valid`)); assert.match(banner, /acquired by DRIFT/); assert.match(banner, /FRESH/);
+    const f = fields.meta.files[h], lead = (Date.parse(f.valid_time_utc) - Date.parse(f.acquired_at_utc)) / 3600000;
+    assert.ok(banner.includes(`+${lead.toFixed(1)} h`), `f${fh} lead ${lead}`);
+  }
+  const p = await pillars(page);                                                              // satellite pillar: observed brightness temperature, labelled as such
+  assert.ok(p[2].includes((sat.ctt_p10_k[si] - 273.15).toFixed(1)) && /observed/i.test(p[2]) && /not a retrieved CTT/i.test(p[2]) && /20 min ago/.test(p[2]), p[2]);
+  const rate = sat.dtdt_60min_k_per_h[si]; assert.ok(p[2].includes(`${rate > 0 ? '+' : ''}${rate.toFixed(1)} K/h`), p[2]);
+  assert.equal(w.pageErrors.length, 0, JSON.stringify(w.pageErrors)); await ctx.close();
+});
+
+test('legacy dashboard: a stale forecast cycle is shown as STALE with its real timestamp and every value is withheld', async () => {
+  const fields = await (await fetch(`${S.base}/data/india_fields_latest.json`)).json();
+  const { ctx, page } = await openLegacy(Date.parse(fields.meta.cycle_init_utc) + 40 * 3600000);
+  const p = await pillars(page);
+  assert.ok(p.every((t, i) => i === 2 || /WITHHELD/.test(t)), JSON.stringify(p));                // satellite scan is also 20 min old by the test clock, so it may show
+  assert.ok(!p.some((t, i) => i !== 2 && /\d+\s*(J\/kg|mm|m\/s)/.test(t.replace(/withheld.*/i, ''))), `no numeric value on a stale cycle: ${JSON.stringify(p)}`);
+  const banner = await page.$eval('[data-testid=real-diagnostics]', e => e.innerText);
+  assert.match(banner, /STALE/); assert.match(banner, new RegExp(fields.meta.cycle_init_utc.slice(0, 10))); assert.match(banner, /limit 18 h/);
+  const tl = await page.$eval('[data-testid=real-timeline]', e => e.innerText);
+  assert.match(tl, /STALE FORECAST/); assert.match(tl, /GFS CYCLE/); await ctx.close();
+});
+
+test('legacy dashboard: forecast timeline shows cycle, hour, valid time, publication, acquisition and the true lead for each hour chip', async () => {
+  const fields = await (await fetch(`${S.base}/data/india_fields_latest.json`)).json();
+  const { ctx, page } = await openLegacy(Date.parse(fields.meta.cycle_init_utc) + 9 * 3600000);
+  for (const f of fields.meta.files) {
+    await page.click(`[data-testid=real-timeline] button:has-text("f${f.fhour} ")`); await page.waitForTimeout(150);
+    const t = await page.$eval('[data-testid=real-timeline]', e => e.innerText), lead = (Date.parse(f.valid_time_utc) - Date.parse(f.acquired_at_utc)) / 3600000;
+    assert.ok(t.includes(f.valid_time_utc.slice(0, 16).replace('T', ' ') + 'Z') && t.includes(f.published_at_utc.slice(0, 16).replace('T', ' ') + 'Z') && t.includes(f.acquired_at_utc.slice(0, 16).replace('T', ' ') + 'Z'), `f${f.fhour} timestamps`);
+    assert.ok(lead > 0 ? t.includes(`+${lead.toFixed(1)} h`) : /NONE/.test(t), `f${f.fhour} lead ${lead}: ${t.slice(0, 200)}`);
+    assert.ok(t.includes(fields.meta.cycle_init_utc.slice(0, 16).replace('T', ' ') + 'Z'));
+  }
+  await ctx.close();
+});
+
+test('legacy dashboard: the black first paint is replaced by a visible loading state that disappears once the app has mounted', async () => {
+  const raw = await (await fetch(`${S.base}/legacy.html`)).text();
+  assert.match(raw, /id="boot-loading"/); assert.match(raw, /Loading the Bengaluru station dashboard/); assert.match(raw, /assets\/vendor\/react\.production\.min\.js/); assert.match(raw, /babel-standalone-7\.26\.4/);
+  const ext = [...raw.matchAll(/<script[^>]*\ssrc="(https?:\/\/[^"]+)"/g)].map(m => m[1]);
+  assert.deepEqual(ext, ['https://cdn.tailwindcss.com'], 'only the Tailwind runtime remains external; React/Babel/Framer/jsPDF/MapLibre are vendored and pinned: ' + ext);
+  const { ctx, page } = await openLegacy(Date.now() > 0 ? Date.parse('2026-11-23T10:00:00Z') : 0);
+  assert.equal(await page.$('#boot-loading'), null); await ctx.close();
+});
