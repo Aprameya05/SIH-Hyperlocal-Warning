@@ -12,7 +12,7 @@
   var HZ_ORDER = ['thunderstorm', 'extreme_rainfall', 'flash_flood'];
   var HZ_LABEL = { thunderstorm: 'Severe thunderstorm', extreme_rainfall: 'Extreme rainfall', flash_flood: 'Flash flood' };
 
-  var st = {
+  var st = { acc: {},
     mode: 'live', hazard: 'thunderstorm', layer: 'cape', hour: 0, sel: null, label: {}, compare: [], region: null, panel: 'detail',
     loading: true, store: null, live: null, ev: null, outline: null, tsm: null, hourCache: {},
     sc: null, t: 0, frame: null, narr: [], playing: false, timer: null, speed: 1100, lcShown: {}, thr: { cape: 1000, rain: 10 }
@@ -21,8 +21,8 @@
 
   /* ------------------------------------------------------------------ colour ramps */
   var RAMPS = {
-    seq: [[0, '#1b2a4a'], [.25, '#2b6cb0'], [.5, '#f6d860'], [.75, '#f08a3c'], [1, '#d62839']],
-    rain: [[0, '#14304d'], [.3, '#1f78b4'], [.6, '#6ec3c9'], [.8, '#f6d860'], [1, '#d62839']],
+    seq: [[0, '#1b3fb0'], [.2, '#1f78d8'], [.4, '#2fd0c8'], [.55, '#7ee06a'], [.7, '#f6d860'], [.85, '#f08a3c'], [1, '#d62839']],
+    rain: [[0, '#1b3fb0'], [.3, '#1f78d8'], [.6, '#2fd0c8'], [.8, '#f6d860'], [1, '#d62839']],
     terrain: [[0, '#1d3b2a'], [.4, '#5b8c3a'], [.7, '#c9a14a'], [1, '#f1e9d2']],
     susc: [[0, '#1b2a4a'], [.5, '#5aa6c9'], [1, '#e8f6ff']],
     flood: [[0, '#1b2a4a'], [.35, '#4b6cb7'], [.7, '#9b59b6'], [1, '#ff6fb5']],
@@ -41,7 +41,9 @@
 
   /* ------------------------------------------------------------------ helpers */
   function chip(cls, text) { return '<span class="chip ' + esc(cls) + '"><i></i>' + esc(text) + '</span>'; }
-  function fmt(v, d, u) { return v == null ? '<span class="na">unavailable</span>' : (+v).toFixed(d == null ? 0 : d) + (u ? ' ' + u : ''); }
+  var UNITS = { degC: '°C', deg: '°', degK: 'K' };
+  var unitL = function (u) { return UNITS[u] || u; };
+  function fmt(v, d, u) { return v == null ? '<span class="na">unavailable</span>' : (+v).toFixed(d == null ? 0 : d) + (u ? ' ' + unitL(u) : ''); }
   function ageH(iso) { var d = iso ? Date.parse(iso) : NaN; return isNaN(d) ? null : (Date.now() - d) / 36e5; }
   function agoText(iso) { var a = ageH(iso); if (a == null) return 'time unknown'; return a < 0 ? 'in ' + (-a).toFixed(1) + ' h' : a.toFixed(1) + ' h ago'; }
   function ist(iso) { var d = Date.parse(iso); if (isNaN(d)) return ''; var x = new Date(d + 330 * 60000); return ('0' + x.getUTCHours()).slice(-2) + ':' + ('0' + x.getUTCMinutes()).slice(-2) + ' IST'; }
@@ -165,7 +167,7 @@
             var v = L.get(i);
             if (v == null) { ft.properties.op = 0; return; }
             var on = L.id === 'cape' ? v >= st.thr.cape : L.id === 'precip_3h' ? v >= st.thr.rain : true;
-            ft.properties.color = ramp(L.ramp, Math.abs(v) / L.max); ft.properties.op = on ? 0.82 : 0.16; if (!on) ft.properties.color = '#33456b';
+            ft.properties.color = ramp(L.ramp, Math.abs(v) / L.max); ft.properties.op = on ? 0.9 : 0.62;   // every cell is coloured by its value; cells at or above the threshold are brighter
             rows.push(v);
             if (mx == null || v > mx) { mx = v; mxc = i; }
             if ((L.id === 'cape' || L.id === 'precip_3h') && on) { n++; area += 111 * 111 * 0.0625 * Math.cos(cells[i][1] * Math.PI / 180); }
@@ -191,7 +193,7 @@
     map = new maplibregl.Map({
       container: 'map', center: [82.5, 22.5], zoom: window.innerWidth < 760 ? 3 : 3.8, minZoom: 2.5, maxZoom: 10, attributionControl: false,
       style: { version: 8, sources: { base: { type: 'raster', tileSize: 256, attribution: '© OpenStreetMap contributors; outline: Natural Earth (public domain)', tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'] } },
-               layers: [{ id: 'bg', type: 'background', paint: { 'background-color': '#0b1220' } }, { id: 'base', type: 'raster', source: 'base', paint: { 'raster-opacity': 0.5, 'raster-saturation': -0.85, 'raster-brightness-max': 0.4, 'raster-contrast': 0.2 } }] }
+               layers: [{ id: 'base', type: 'raster', source: 'base', paint: { 'raster-opacity': 0.14, 'raster-saturation': -0.85, 'raster-brightness-max': 0.4, 'raster-contrast': 0.2 } }] }
     });
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
     map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-right');
@@ -212,8 +214,9 @@
       map.addSource('cells', { type: 'geojson', data: features([], 0.125) });
       map.addSource('india', { type: 'geojson', data: st.outline || { type: 'FeatureCollection', features: [] } });
       map.addSource('centre', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
-      map.addLayer({ id: 'india-fill', type: 'fill', source: 'india', paint: { 'fill-color': '#16243f', 'fill-opacity': 0.85 } });
+      map.addLayer({ id: 'india-fill', type: 'fill', source: 'india', paint: { 'fill-color': '#0d2a5c', 'fill-opacity': 0.4 } });
       map.addLayer({ id: 'fill', type: 'fill', source: 'cells', paint: { 'fill-color': ['get', 'color'], 'fill-opacity': ['get', 'op'] } });
+      map.addLayer({ id: 'cell-lines', type: 'line', source: 'cells', minzoom: 3.4, paint: { 'line-color': '#cfe8ff', 'line-width': 0.35, 'line-opacity': ['interpolate', ['linear'], ['zoom'], 3.4, 0.05, 5, 0.22] } });
       map.addLayer({ id: 'region-line', type: 'line', source: 'cells', filter: ['==', ['get', 'reg'], 1], paint: { 'line-color': '#fff', 'line-width': 1, 'line-opacity': 0.9 } });
       map.addLayer({ id: 'india-line', type: 'line', source: 'india', paint: { 'line-color': '#e6f1ff', 'line-width': 1.4, 'line-opacity': 0.9 } });
       map.addLayer({ id: 'centre-halo', type: 'circle', source: 'centre', paint: { 'circle-radius': 16, 'circle-color': '#ffffff', 'circle-opacity': 0.18, 'circle-stroke-color': '#fff', 'circle-stroke-width': 1.5 } });
@@ -238,14 +241,19 @@
     opts = opts || {};
     if (!st.store || st.store.idx[cid] == null) return;
     st.sel = cid; st.region = null;
+    try { window.dispatchEvent(new CustomEvent('drift-sel', { detail: { cell_id: cid } })); } catch (e) { /* ignore */ }
     if (opts.label) st.label[cid] = opts.label;
     var c = st.store.cells[cellIdx(cid)];
-    if (opts.fly !== false && map && mapReady) map.flyTo({ center: [c[2], c[1]], zoom: Math.max(map.getZoom(), 5.2), duration: 600 });
+    if (opts.fly !== false && map && mapReady) {   // keep the national view: only re-centre when the cell is outside the visible map, and never zoom in on a click
+      var inView = map.getBounds().contains([c[2], c[1]]), pad = 0.12 * Math.max(map.getContainer().clientWidth, 1);
+      if (!inView || opts.label) map.easeTo({ center: [c[2], c[1]], zoom: Math.max(map.getZoom(), opts.label ? 4.6 : map.getZoom()), duration: 600 });
+    }
     setPanel(opts.panel || 'detail');
     paint(); renderDetail(); renderHazards(); renderCompare(); renderAlerts(); renderSources();
   }
   function showNotCovered(r) {
     st.sel = null; setPanel('detail');
+    try { window.dispatchEvent(new CustomEvent('drift-sel', { detail: { cell_id: null } })); } catch (e) { /* ignore */ }
     var n = r.nearest_covered_cell;
     $('p-detail').innerHTML = '<div class="warn l2"><b>Not covered by DRIFT</b><div class="small">' + esc(r.reason) + ' (' + r.query.lat.toFixed(2) + '°N ' + r.query.lon.toFixed(2) + '°E).</div>' +
       (n ? '<div class="row" style="margin-top:6px"><button class="btn" id="nc-go">Use nearest covered cell ' + n.lat + '°N ' + n.lon + '°E</button></div>' : '') + '</div><p class="small mute">DRIFT only represents cells that are at least 50% Indian land. It never shows another cell\'s values for an uncovered point.</p>';
@@ -302,7 +310,7 @@
       if (!st.store || !st.store.fieldsOk) return 'Unavailable';
       return { thunderstorm: st.store.tsOk ? 'Indicators + evaluated model' : 'Indicators · model unavailable', extreme_rainfall: 'GFS rain + daily outlook', flash_flood: 'Screening only · prediction unavailable' }[h];
     };
-    $('hz').innerHTML = HZ_ORDER.map(function (h) { return '<button data-h="' + h + '" aria-pressed="' + (st.hazard === h) + '">' + esc(HZ_LABEL[h]) + '<small>' + esc(st2(h)) + '</small></button>'; }).join('');
+    $('hz').innerHTML = HZ_ORDER.map(function (h) { return '<button data-h="' + h + '" aria-pressed="' + (st.hazard === h) + '"><span class="hzi">' + ({ thunderstorm: ICONS.cloudbolt, extreme_rainfall: ICONS.drops, flash_flood: ICONS.waves }[h]) + '</span>' + esc(HZ_LABEL[h]) + '<small>' + esc(st2(h)) + '</small></button>'; }).join('');
     Array.prototype.forEach.call($('hz').querySelectorAll('button'), function (b) { b.onclick = function () { st.hazard = b.dataset.h; st.layer = layerDefs()[st.hazard][0].id; if (st.mode === 'sim') newScenario(); refresh(); }; });
   }
   function slider(id, label, min, max, step, v, suffix) { return '<label for="' + id + '">' + label + ': <b id="' + id + '-v">' + v + '</b>' + (suffix || '') + '</label><input id="' + id + '" type="range" min="' + min + '" max="' + max + '" step="' + step + '" value="' + v + '">'; }
@@ -339,7 +347,11 @@
       extreme_rainfall: [['GFS rainfall: 3 h, accumulation, spatial extent', ok ? 'AVAILABLE' : 'UNAVAILABLE'], ['Heavy-rain-day outlook (1°, uncalibrated)', st.store && Object.keys(st.store.cb).length ? 'AVAILABLE' : 'UNAVAILABLE'], ['Short-duration extreme rainfall', 'UNAVAILABLE'], ['Cloudburst', 'UNAVAILABLE']],
       flash_flood: [['Rainfall trigger, soil wetness (model), terrain, gauge history', ok ? 'AVAILABLE' : 'UNAVAILABLE'], ['Screening index (heuristic)', ok ? 'UNVALIDATED' : 'UNAVAILABLE'], ['Flash-flood prediction', 'UNAVAILABLE']]
     }[hz];
-    h += '<table>' + rows.map(function (r) { return '<tr><th>' + esc(r[0]) + '</th><td>' + chip(/UNAVAIL/.test(r[1]) ? 'UNAVAILABLE' : /UNVALID/.test(r[1]) ? 'STALE' : 'FRESH', r[1].replace(/_/g, ' ')) + '</td></tr>'; }).join('') + '</table>';
+    var nowMs = Date.now(), cyc = ok ? Date.parse(st.store.fields.meta.cycle_init_utc) : NaN, cycAge = (nowMs - cyc) / 36e5;
+    rows = rows.concat([
+      ['Satellite observations (Himawari-9 B13)', st.store && st.store.satOk ? ((nowMs - Date.parse(st.store.sat.meta.scene_nominal_utc)) / 6e4 <= 90 ? 'AVAILABLE' : 'STALE SCAN') : 'UNAVAILABLE'],
+      ['Forecast freshness (GFS cycle)', !ok ? 'UNAVAILABLE' : cycAge <= 18 ? 'AVAILABLE' : 'STALE CYCLE']]);
+    h += '<table>' + rows.map(function (r) { return '<tr><th>' + esc(r[0]) + '</th><td>' + chip(/UNAVAIL/.test(r[1]) ? 'UNAVAILABLE' : /UNVALID|STALE/.test(r[1]) ? 'STALE' : 'FRESH', r[1].replace(/_/g, ' ')) + '</td></tr>'; }).join('') + '</table>';
     if (hz === 'flash_flood') h += '<p class="small"><b>Live operation still needs:</b></p><ul class="small na"><li>observed flash-flood labels with time and place</li><li>observed soil moisture and live river levels</li><li>drainage / catchment hydrology beyond 106 gauges</li><li>a validated model and evaluation</li></ul>';
     if (hz === 'extreme_rainfall') h += '<p class="small mute">A heavy-rain day (≥ 64.5 mm/24 h) is not a cloudburst. Short-duration extreme rainfall needs hourly or sub-hourly rainfall labels that DRIFT does not have.</p>';
     $('hzinfo').innerHTML = h;
@@ -349,7 +361,7 @@
   function spark(series, hourIdx, color, unit) {
     var vals = series.map(function (v) { return v == null ? 0 : v; }), mx = Math.max.apply(null, vals.concat([1e-9])), w = 100 / series.length;
     return '<svg viewBox="0 0 100 30" preserveAspectRatio="none" class="spark" role="img" aria-label="series">' + vals.map(function (v, i) {
-      var h = Math.max(0.6, v / mx * 28); return '<rect x="' + (i * w + 1) + '" y="' + (30 - h) + '" width="' + (w - 2) + '" height="' + h + '" fill="' + (i === hourIdx ? 'var(--sim)' : color) + '" ' + (series[i] == null ? 'opacity=".25"' : '') + '><title>' + (series[i] == null ? 'unavailable' : series[i] + ' ' + unit) + '</title></rect>'; }).join('') + '</svg>';
+      var h = Math.max(0.6, v / mx * 28); return '<rect x="' + (i * w + 1) + '" y="' + (30 - h) + '" width="' + (w - 2) + '" height="' + h + '" fill="' + (i === hourIdx ? 'var(--sim)' : color) + '" ' + (series[i] == null ? 'opacity=".25"' : '') + '><title>' + (series[i] == null ? 'unavailable' : series[i] + ' ' + unit) + '</title></rect>'; }).join('') + '<path class="ln" fill="none" stroke="' + color + '" stroke-width=".9" vector-effect="non-scaling-stroke" d="' + vals.map(function (v, i) { return (i ? 'L' : 'M') + (i * w + w / 2).toFixed(1) + ' ' + (29 - v / mx * 26).toFixed(1); }).join('') + '"/></svg>';
   }
   function provBlock(rec) {
     var c = rec.cycle, h = rec.selected_hour;
@@ -370,6 +382,52 @@
     ['Temperature & pressure', [['t2m_c', '2 m temperature', 1], ['mslp_hpa', 'MSLP', 1]]],
     ['Precipitation & soil', [['precip_3h', 'Rain, 3 h amount', 1], ['apcp_cum', 'Rain accumulated since init', 1], ['soilw0_10', 'Soil moisture 0–10 cm (model)', 3]]]
   ];
+
+  /* ------------------------------------------------------------------ inspector accordion (collapsed summary -> animated expansion) */
+  var SV = function (d) { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + d + '</svg>'; };
+  var ICONS = {
+    bolt: SV('<path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z"/>'), drop: SV('<path d="M12 3s6 6.3 6 10.5A6 6 0 0 1 6 13.5C6 9.3 12 3 12 3z"/>'),
+    wind: SV('<path d="M3 8h11a3 3 0 1 0-3-3M3 12h15a3 3 0 1 1-3 3M3 16h7"/>'), temp: SV('<path d="M14 14.8V5a2 2 0 0 0-4 0v9.8a4 4 0 1 0 4 0z"/>'),
+    rain: SV('<path d="M7 16a4 4 0 0 1-.5-8A5.5 5.5 0 0 1 17 9a3.5 3.5 0 0 1 0 7H7z"/><path d="M9 19l-1 2M13 19l-1 2M17 19l-1 2"/>'),
+    sat: SV('<path d="M4 20l5-5M9 15l-2-2 3-3 2 2zM13 11l3-3 2 2-3 3zM15 5l4 4M18 2l4 4"/><circle cx="6" cy="18" r="1"/>'), chart: SV('<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>'),
+    mountain: SV('<path d="M3 20l6-11 4 6 3-4 5 9z"/>'), clock: SV('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'),
+    cloudbolt: SV('<path d="M7 16a4 4 0 0 1-.5-8A5.5 5.5 0 0 1 17 9a3.5 3.5 0 0 1 .5 7"/><path d="M12 11l-2 4h3l-1 4"/>'), waves: SV('<path d="M3 8c2.5-2 4.5 2 7 0s4.5 2 7 0 3 0 4 0M3 14c2.5-2 4.5 2 7 0s4.5 2 7 0 3 0 4 0M3 20c2.5-2 4.5 2 7 0s4.5 2 7 0 3 0 4 0"/>'),
+    drops: SV('<path d="M8 4l-2 6a2 2 0 1 0 4 0zM15 9l-2 5.5a2 2 0 1 0 4 0zM11 14l-1.6 4.4a1.7 1.7 0 1 0 3.2 0z"/>'), chev: SV('<path d="M6 9l6 6 6-6"/>')
+  };
+  var ACC = {
+    'Instability': { key: 'inst', icon: ICONS.bolt, th: 'linear-gradient(135deg,#43217d,#150a35)', tc: '#c9a2ff', sum: [['cape', 'CAPE', 0], ['lftx', 'LI', 1], ['total_totals', 'Total Totals', 1]], gauge: ['cape', 3000, 'CAPE'] },
+    'Moisture': { key: 'moist', icon: ICONS.drop, th: 'linear-gradient(135deg,#0c5b6b,#06202c)', tc: '#7be8ff', sum: [['pwat', 'PW', 1], ['rh2m', 'RH', 0], ['d2m_c', 'Dew point', 1]], gauge: ['pwat', 70, 'PRECIP. WATER'] },
+    'Wind & dynamics': { key: 'wind', icon: ICONS.wind, th: 'linear-gradient(135deg,#0a3f86,#061b3d)', tc: '#9ad0ff', sum: [['ws10', '10 m wind', 1], ['wd10', 'from', 0], ['shear_850_500', 'Shear', 1]], gauge: ['shear_850_500', 25, '850–500 SHEAR'] },
+    'Temperature & pressure': { key: 'temp', icon: ICONS.temp, th: 'linear-gradient(135deg,#7a4318,#2a1209)', tc: '#ffc98a', sum: [['t2m_c', 'T (2 m)', 1], ['mslp_hpa', 'MSLP', 1]], gauge: ['t2m_c', 50, '2 M TEMPERATURE'] },
+    'Precipitation & soil': { key: 'precip', icon: ICONS.rain, th: 'linear-gradient(135deg,#17406e,#081a33)', tc: '#8fd0ff', sum: [['precip_3h', 'Rain (3 h)', 1], ['soilw0_10', 'Soil moisture', 3]], gauge: ['precip_3h', 40, 'RAIN, 3 H'] }
+  };
+  var GAUGE_LEN = 157.08;
+  function gaugeHtml(v, max, unit, label) {
+    var ok = v != null && isFinite(v), ratio = ok ? Math.max(0, Math.min(1, v / max)) : 0;
+    return '<div class="gauge" role="img" aria-label="' + esc(label) + ' ' + (ok ? (+v).toFixed(0) + ' ' + esc(unit) : 'unavailable') + '"><svg viewBox="0 0 122 96"><defs><linearGradient id="gg" x1="0" x2="1"><stop offset="0" stop-color="#38d6ff"/><stop offset=".6" stop-color="#4f8cff"/><stop offset="1" stop-color="#a06bff"/></linearGradient></defs>' +
+      '<path class="tick" d="M2 86A59 59 0 0 1 120 86" fill="none" stroke-width="5" stroke-dasharray="1.2 5.1"/><path class="trk" d="M11 86A50 50 0 0 1 111 86" fill="none" stroke-width="9" stroke-linecap="round"/><path class="val" d="M11 86A50 50 0 0 1 111 86" fill="none" stroke-width="9" stroke-dasharray="' + GAUGE_LEN + '" stroke-dashoffset="' + GAUGE_LEN + '" data-target="' + (GAUGE_LEN * (1 - ratio)).toFixed(2) + '"/></svg>' +
+      '<div class="gv">' + (ok ? (+v).toFixed(Math.abs(v) < 10 && max < 100 ? 1 : 0) : '—') + '<small>' + esc(unitL(unit)) + '</small></div><div class="gl">' + esc(label) + '</div></div>';
+  }
+  function accCard(key, title, icon, th, tc, sum, bodyHtml, gauge) {
+    var open = !!st.acc[key], id = 'acc-' + key;
+    return '<section class="acc' + (open ? ' open' : '') + '" data-acc="' + key + '" style="--th:' + th + ';--tc:' + tc + '"><button type="button" aria-expanded="' + open + '" aria-controls="' + id + '"><span class="thumb">' + icon + '</span>' +
+      '<span><span class="ttl" style="display:block">' + esc(title) + '</span><span class="sum">' + sum + '</span></span><span class="chev">' + ICONS.chev + '</span></button>' +
+      '<div class="bodywrap" id="' + id + '" role="region" aria-label="' + esc(title) + '"><div class="body"><div class="inner">' + (gauge || '') + bodyHtml + '</div></div></div></section>';
+  }
+  function settleGauges(root) {   // animate each gauge arc from empty to its real value once its card is open
+    Array.prototype.forEach.call(root.querySelectorAll('.acc.open .gauge .val'), function (a) { requestAnimationFrame(function () { requestAnimationFrame(function () { a.style.strokeDashoffset = a.dataset.target; }); }); });
+    Array.prototype.forEach.call(root.querySelectorAll('.acc .spark path.ln'), function (p) { try { p.style.setProperty('--len', Math.ceil(p.getTotalLength()) + 2); } catch (e) { /* not rendered yet */ } });
+  }
+  function bindAcc(root) {
+    Array.prototype.forEach.call(root.querySelectorAll('.acc > button'), function (b) {
+      b.onclick = function () {
+        var c = b.parentNode, key = c.dataset.acc, open = !c.classList.contains('open');
+        st.acc[key] = open; c.classList.toggle('open', open); b.setAttribute('aria-expanded', open);
+        var g = c.querySelector('.gauge .val'); if (g) { if (open) { g.style.strokeDashoffset = GAUGE_LEN; requestAnimationFrame(function () { requestAnimationFrame(function () { g.style.strokeDashoffset = g.dataset.target; }); }); } }
+      };
+    });
+    settleGauges(root);
+  }
   var KIND = { RAW_MODEL_OUTPUT: 'raw model', DERIVED_PHYSICAL: 'derived', MODEL_DIAGNOSTIC: 'model state' };
   function renderDetail() {
     var el = $('p-detail');
@@ -378,19 +436,35 @@
     if (st.region) { renderRegion(el); return; }
     if (!st.sel) { el.innerHTML = '<p class="mute">Search for a city, district or state, or click anywhere on the map, to see that location\'s data.</p><p class="small mute">' + st.store.cells.length + ' land cells cover India at 0.25° (≈28 km): the same resolution as the GFS source, so no cell implies finer detail than the model has.</p>'; return; }
     var rec = st.store.record(st.sel, st.hour, Date.now()), loc = rec.location, inCmp = st.compare.indexOf(st.sel) >= 0;
-    var out = '<div class="row"><h3 style="margin:0">' + esc(labelOf(st.sel)) + '</h3><span class="spacer"></span><button class="btn" id="cmp-add"' + (inCmp || st.compare.length >= 4 ? ' disabled' : '') + '>' + (inCmp ? 'In compare' : 'Compare +') + '</button></div>' +
-      '<div class="small mute">' + esc(loc.cell_id) + ' · ' + loc.lat + '°N ' + loc.lon + '°E · ' + esc([loc.district, loc.state].filter(Boolean).join(', ')) + (loc.admin_method === 'nearest' ? ' (nearest polygon)' : '') + ' · land ' + Math.round(loc.land_fraction * 100) + '%</div>';
+    var h0 = rec.selected_hour;
+    var out = '<div class="loc-head"><div style="flex:1;min-width:0"><div class="coords">' + loc.lat.toFixed(2) + '° N <span>' + loc.lon.toFixed(2) + '° E</span></div>' +
+      '<div class="loc-meta">' + esc(labelOf(st.sel)) + ' · ' + esc([loc.district, loc.state].filter(Boolean).join(', ')) + (loc.admin_method === 'nearest' ? ' (nearest polygon)' : '') + ' · land ' + Math.round((loc.land_fraction == null ? 1 : loc.land_fraction) * 100) + '% · <span class="mono">' + esc(loc.cell_id) + '</span></div></div>' +
+      '<button class="btn" id="cmp-add"' + (inCmp || st.compare.length >= 4 ? ' disabled' : '') + '>' + (inCmp ? 'In compare' : 'Compare +') + '</button></div>';
     if (!st.store.fieldsOk) { el.innerHTML = out + '<p class="na">Atmospheric fields unavailable: ' + esc(rec.availability.problems.join('; ')) + '</p>' + staticTable(rec); bindDetail(); return; }
-    out += provBlock(rec);
+    var kvl = '<div class="kvl"><span>Source</span><span>' + esc(rec.cycle.source) + '</span><span></span>' +
+      '<span>Valid time</span><span>f' + h0.fhour + ' · ' + esc(h0.valid_time_utc.slice(0, 16).replace('T', ' ')) + 'Z (' + esc(ist(h0.valid_time_utc)) + ')</span><span>' + chip(h0.status === 'CURRENT' ? 'FRESH' : h0.status === 'PAST_VALID_TIME' ? 'STALE' : 'UNAVAILABLE', h0.status === 'CURRENT' ? 'CURRENT' : h0.status.replace(/_/g, ' ')) + '</span></div>';
+    out += kvl;
+    out += accCard('prov', 'Provenance & timing', ICONS.clock, 'linear-gradient(135deg,#0f4b6e,#08203a)', '#7be8ff',
+      '<span><b>init</b> ' + esc(rec.cycle.model_init_utc.slice(11, 16)) + 'Z</span><span><b>age</b> ' + rec.cycle.age_hours + ' h</span><span><b>lead</b> ' + (h0.operational_lead_hours != null ? '+' + h0.operational_lead_hours.toFixed(1) + ' h' : 'none') + '</span>', provBlock(rec), '');
     GROUPS.forEach(function (g) {
-      out += '<h2 style="margin-top:10px">' + g[0] + '</h2><table>' + g[1].map(function (r) {
-        var f = rec.fields[r[0]]; return '<tr><th>' + esc(r[1]) + '</th><td>' + fmt(f.value, r[2], f.unit) + ' <span class="small mute">' + esc(KIND[f.kind] || f.kind) + '</span>' + (f.value != null && f.status !== 'CURRENT' ? ' ' + chip('STALE', f.status.replace(/_/g, ' ')) : '') + '</td></tr>'; }).join('') + '</table>';
+      var m = ACC[g[0]] || {}, rows = g[1].map(function (r, k) {
+        var f = rec.fields[r[0]];
+        return '<div class="r" style="--i:' + k + '"><span>' + esc(r[1]) + '</span><b>' + fmt(f.value, r[2], f.unit) + '<small>' + esc(KIND[f.kind] || f.kind) + (f.value != null && f.status !== 'CURRENT' ? ' · ' + chip('STALE', f.status.replace(/_/g, ' ')) : '') + '</small></b></div>';
+      }).join('');
+      var sum = (m.sum || []).map(function (q) { var f = rec.fields[q[0]]; return '<span><b>' + esc(q[1]) + '</b> ' + (f && f.value != null ? (+f.value).toFixed(q[2]) + ' ' + esc(unitL(f.unit)) : '—') + '</span>'; }).join('');
+      var gv = m.gauge ? rec.fields[m.gauge[0]] : null;
+      out += accCard(m.key, g[0], m.icon, m.th, m.tc, sum, '<div class="rows">' + rows + '</div>', gv ? gaugeHtml(gv.value, m.gauge[1], gv.unit, m.gauge[2]) : '');
     });
-    out += satTable(rec);
-    out += '<div class="small mute" style="margin-top:6px">Unavailable everywhere: 0–6 km wind shear, observed rainfall, soil-moisture observations, radar. Satellite brightness temperature is shown above when the latest scan is current.</div>';
-    out += '<h2 style="margin-top:10px">Series by forecast hour</h2><div class="small">CAPE</div>' + spark(rec.fields.cape.series, st.hour, 'var(--accent)', 'J/kg') + '<div class="small">Rain (3 h)</div>' + spark(rec.fields.precip_3h.series, st.hour, '#6ec3c9', 'mm') + '<div class="ticks">' + rec.cycle.hours.map(function (h) { return '<span>f' + h.fhour + '</span>'; }).join('') + '</div>';
-    out += staticTable(rec);
-    el.innerHTML = out; bindDetail();
+    var b = rec.satellite, bsum = !b || b.status === 'UNAVAILABLE' ? '<span><b>status</b> unavailable</span>' : '<span><b>BT</b> ' + (b.ctt_p10_k == null ? '—' : (b.ctt_p10_k - 273.15).toFixed(1) + ' °C') + '</span><span>' + (b.status === 'STALE' ? '<b style="color:var(--warn)">scan ' + Math.round(b.age_minutes) + ' min old</b>' : '<b>scan</b> ' + Math.round(b.age_minutes) + ' min old') + '</span>';
+    out += accCard('sat', 'Satellite observation (Himawari-9 B13)', ICONS.sat, 'linear-gradient(135deg,#0d3a78,#04122c)', '#6ec3ff', bsum, satTable(rec).replace(/<h2[^>]*>.*?<\/h2>/, ''), '');
+    var ser = [['cape', 'CAPE', 'var(--accent)', 'J/kg'], ['precip_3h', 'Rain, 3 h', '#6ec3c9', 'mm'], ['pwat', 'Precipitable water', '#9ad0ff', 'mm'], ['t2m_c', '2 m temperature', '#ffc247', '°C'], ['ws10', '10 m wind speed', '#a7f3d0', 'm/s'], ['shear_850_500', '850–500 hPa shear', '#c4b5fd', 'm/s']];
+    out += accCard('ser', 'Series by forecast hour', ICONS.chart, 'linear-gradient(135deg,#143a6e,#07142c)', '#7be8ff', '<span>CAPE</span><span>Rain (3 h)</span><span>f' + rec.cycle.hours[0].fhour + '–f' + rec.cycle.hours[rec.cycle.hours.length - 1].fhour + '</span>',
+      ser.map(function (q) { var f = rec.fields[q[0]]; if (!f || !f.series) return ''; var cur = f.series[st.hour]; return '<div class="sparkrow"><div class="lbl"><span>' + esc(q[1]) + '</span><b>' + (cur == null ? '—' : (+cur).toFixed(1) + ' ' + q[3]) + '</b></div>' + spark(f.series, st.hour, q[2], q[3]) + '</div>'; }).join('') +
+      '<div class="ticks" style="width:100%">' + rec.cycle.hours.map(function (h) { return '<span>f' + h.fhour + '</span>'; }).join('') + '</div>', '');
+    var sx = rec.static, ssum = sx.status === 'AVAILABLE' ? '<span><b>Elev</b> ' + (sx.elev_mean_m == null ? '—' : Math.round(sx.elev_mean_m) + ' m') + '</span><span><b>Relief</b> ' + (sx.relief_m == null ? '—' : Math.round(sx.relief_m) + ' m') + '</span><span><b>Gauge</b> ' + (sx.nearest_gauge_km == null ? '> 100 km' : sx.nearest_gauge_km + ' km') + '</span>' : '<span><b>status</b> unavailable</span>';
+    out += accCard('ter', 'Terrain & hydrological context', ICONS.mountain, 'linear-gradient(135deg,#3d3a63,#10162f)', '#ffd79a', ssum, staticTable(rec).replace(/<h2[^>]*>.*?<\/h2>/, ''), '');
+    out += '<div class="small mute" style="margin-top:8px">Unavailable everywhere: 0–6 km wind shear, observed rainfall, soil-moisture observations, radar. Brightness temperature is an observation, not a retrieved cloud-top temperature.</div>';
+    el.innerHTML = out; bindDetail(); bindAcc(el);
   }
   function satTable(rec) {
     var b = rec.satellite, h = '<h2 style="margin-top:10px">Satellite observation (Himawari-9 B13)</h2>';

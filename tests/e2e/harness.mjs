@@ -11,7 +11,7 @@ export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '
 const DEFAULT_CHROME = { darwin: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
   win32: 'C:/Program Files/Google/Chrome/Application/chrome.exe', linux: '/usr/bin/google-chrome' }[process.platform];
 export const CHROME = process.env.CHROME_PATH || DEFAULT_CHROME;
-const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json', '.geojson': 'application/json', '.png': 'image/png', '.ico': 'image/x-icon', '.css': 'text/css' };
+const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json', '.geojson': 'application/json', '.png': 'image/png', '.webp': 'image/webp', '.ico': 'image/x-icon', '.css': 'text/css' };
 
 // DRIFT_BASE_URL=https://<preview>.pages.dev runs the suite against a deployed site instead of a locally built bundle.
 export const REMOTE = process.env.DRIFT_BASE_URL ? process.env.DRIFT_BASE_URL.replace(/\/$/, '') : null;

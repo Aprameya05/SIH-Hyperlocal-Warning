@@ -87,3 +87,8 @@ jobs:
           CHROME_PATH: /usr/bin/google-chrome
           PYTHONUTF8: "1"
         run: cd tests/e2e && node --test shell.spec.mjs
+      - name: Browser tests (premium interface)
+        env:
+          CHROME_PATH: /usr/bin/google-chrome
+          PYTHONUTF8: "1"
+        run: cd tests/e2e && node --test design.spec.mjs
