@@ -77,8 +77,10 @@ jobs:
         # currently on main (this workflow doesn't generate that file
         # itself) -- the pull step above guarantees it's the latest
         # committed version, not stale from checkout time.
-        run: python scripts/sync_unified_cb_into_pan_india_grid.py
-        continue-on-error: true
+        # Not fatal by design: without the sync the grid keeps its heuristic cloudburst values, which the integrity gate
+        # below labels as HEURISTIC_RISK_SCORE (never as a model output). The failure is surfaced as an annotation.
+        run: |
+          python scripts/sync_unified_cb_into_pan_india_grid.py || echo "::warning::CB sync failed; the grid keeps heuristic cloudburst values (labelled as such)"
 
       - name: Verify pan-India grid integrity (fail closed)
         # Independent gate: re-derives the grid contract from the data. A violation fails the job, so no canonical
