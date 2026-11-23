@@ -647,14 +647,29 @@ def main():
     cb_probs = {0: None, 1: None, 2: None, 3: None}
     ff_probs = {0: None, 1: None, 2: None, 3: None}
     cb_ff_feat_path = MODELS / "cb_ff_feature_list.json"
+    cb_ff_withheld_reason = None
     if cb_ff_feat_path.exists() and obs_by_slot:
         try:
             with open(cb_ff_feat_path) as f:
                 cb_ff_features = json.load(f)
+            from station_inputs import defaulted_inputs as _di
+            _leaky = _di(cb_ff_features)
+            if _leaky:
+                # The station CB/FF labels are cb = (same-day RF >= 64.5 mm) and a rainfall proxy for FF; same-day
+                # rainfall (RF, RF_3d, ...) is in the feature list (target leakage, AUROC 0.98 but AUPRC ~0.1), and at
+                # inference those inputs are constants. Scoring would produce meaningless numbers, so withhold.
+                cb_ff_withheld_reason = (
+                    f"station CB/FF models withheld: {len(_leaky)} of {len(cb_ff_features)} features are same-day "
+                    "observed rainfall / lagged-label inputs (target leakage in training) that have no live source: "
+                    + ", ".join(_leaky[:6]) + ("..." if len(_leaky) > 6 else ""))
+                print(f"  CB/FF {cb_ff_withheld_reason}")
+                raise RuntimeError("withheld")
             cb_probs = score_hazard_slots(obs_by_slot, cb_ff_features, "cb", MODELS)
             ff_probs = score_hazard_slots(obs_by_slot, cb_ff_features, "ff", MODELS)
             print(f"  CB probs: { {k: f'{v*100:.1f}%' for k,v in cb_probs.items()} }")
             print(f"  FF probs: { {k: f'{v*100:.1f}%' for k,v in ff_probs.items()} }")
+        except RuntimeError:
+            pass  # intentionally withheld (reason recorded above); probabilities stay None
         except Exception as e:
             print(f"  CB/FF scoring error (non-fatal): {e}")
     else:
@@ -1069,6 +1084,9 @@ def main():
         "cloudburst": _haz_summary(cb_probs, 0.30),
         "flash_flood": _haz_summary(ff_probs, 0.25),
     }
+    if cb_ff_withheld_reason:
+        for _k in ("cloudburst", "flash_flood"):
+            forecast["hazard_summary"][_k].update({"status": "UNAVAILABLE", "reason": cb_ff_withheld_reason})
 
     # ── Historical analogs ────────────────────────────────────────────────────
     analogs = []
