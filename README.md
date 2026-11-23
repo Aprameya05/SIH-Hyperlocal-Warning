@@ -86,7 +86,7 @@ Tests run on Linux in CI (`.github/workflows/tests.yml`: full suite on every pul
 | `worker/` | Cloudflare Worker for alert subscriptions (not in the forecast-serving path; deploys manually and **requires a `TOKEN_SECRET` secret**, it refuses to run without one; `ADMIN_KEY` guards the subscriber list) |
 | `docs/` | Architecture, data sources, models, evaluation, operations, security, demo, archive |
 | `research/legacy_experiments/` | Archived experiments |
-| `.github/workflows/` | `tests.yml` (Linux suite), `india_fields.yml` (GFS ingest and models), `forecast_update.yml` and `update_grid.yml` (artifacts and the only production Pages deploy, through the allow-list bundle), `drift_check.yml`, `retrain_trigger.yml`, `weekly_digest.yml`; commits are fast-forward only and the forecast, grid, drift, retrain and digest workflows share one concurrency lock (`india_fields` has its own) |
+| `.github/workflows/` | `tests.yml` (Linux suite), `india_fields.yml` (GFS ingest and models), `forecast_update.yml` (forecast artifacts, the allow-list bundle and the Wrangler Pages deploy) and `update_grid.yml` (hazard grid artifacts), `drift_check.yml`, `retrain_trigger.yml`, `weekly_digest.yml`; commits are fast-forward only and the forecast, grid, drift, retrain and digest workflows share one concurrency lock (`india_fields` has its own) |
 
 Root-level modules (`forecast_action.py`, `send_alerts.py`, `regrid.py`, …) belong to the older station/992-cell pipeline that workflows import by path; see [`docs/architecture/REPOSITORY_STRUCTURE.md`](docs/architecture/REPOSITORY_STRUCTURE.md).
 
