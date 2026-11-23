@@ -25,7 +25,7 @@ DRIFT turns NOAA GFS model guidance into a verified, location-specific view for 
 | Heavy rainfall: ≥20 mm / 3 h at forecast hour 9 | **Working in season only: 00Z cycles in Jun–Sep (monsoon), `unavailable` otherwise**; one target only |
 | Cloudburst prediction | **Unavailable** (no sub-hourly labels or observations). The only related output is a daily *heavy-rain-day* score (≥ 64.5 mm/24 h), which is not a cloudburst forecast |
 | Flash-flood prediction | **Unavailable**; an unvalidated heuristic *screening index* is shown, labelled as such |
-| 2–6 h operational lead time, nowcasting | **Not claimed** (DRIFT's own publication time is not recorded; satellite/radar inputs not accessible) |
+| 2–6 h operational lead time, nowcasting | **Lead is measured, a 2–6 h warning is not claimed.** The panel shows each hour's *operational lead* = valid time minus the time DRIFT acquired that NWP file (excludes dissemination to users; never negative). For a 00Z cycle acquired ~5 h after init, only f009 falls in 2–6 h, and no hazard model exists at that hour. Alerts stay disabled. See [`docs/research/SATELLITE_AND_LEAD_TIME_FEASIBILITY.md`](docs/research/SATELLITE_AND_LEAD_TIME_FEASIBILITY.md) |
 | Satellite (INSAT/MOSDAC, Himawari), IMDAA, radar, lightning | **Not integrated**; blockers in [`docs/data_sources/SATELLITE_AND_REANALYSIS_ACCESS.md`](docs/data_sources/SATELLITE_AND_REANALYSIS_ACCESS.md) |
 | Alert delivery | **Disabled by design** (fail-closed policy, empty registries) |
 | LIVE vs SIMULATION | Strictly separated; the simulator has no network capability and cannot alert |

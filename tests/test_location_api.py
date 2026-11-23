@@ -79,7 +79,14 @@ def test_every_value_is_traceable(client):
     for k, f in r["fields"].items():
         assert f["unit"] and f["kind"] in ("RAW_MODEL_OUTPUT", "DERIVED_PHYSICAL", "MODEL_DIAGNOSTIC") and f["definition"], k
         assert f["is_observation"] is False and f["is_calibrated_probability"] is False
-    assert r["cycle"]["operational_lead_hours"] is None
+    from backend import forecast_integrity as fi
+    assert r["cycle"]["operational_lead_hours"] == fi.operational_lead_hours(sel["valid_time_utc"], sel["acquired_at_utc"])
+    assert r["cycle"]["operational_lead_status"] == ("OK" if r["cycle"]["operational_lead_hours"] is not None else "NOT_APPLICABLE_PAST_VALID_TIME")
+    assert "acquired" in r["cycle"]["operational_lead_basis"] and "dissemination" in r["cycle"]["operational_lead_basis"]
+    for h in r["cycle"]["hours"]:      # per hour: valid - acquired, never negative, never model-init based
+        exp = fi.operational_lead_hours(h["valid_time_utc"], h["acquired_at_utc"])
+        assert h["operational_lead_hours"] == exp and h["forecast_available_time_utc"] == h["acquired_at_utc"]
+        assert h["operational_lead_hours"] is None or h["operational_lead_hours"] > 0
 
 
 def test_point_in_sea_or_abroad_is_not_covered_and_never_gets_a_neighbours_values(client):
@@ -165,7 +172,7 @@ def test_health_ready_forecast_explain_and_alert_eligibility(client):
     assert old["ready"] is False and old["components"]["gfs_fields"]["status"] == "STALE"
     cid = _cell(client, "Mumbai")
     f = client.get("/v1/forecast", params={"cell_id": cid}).json()
-    assert len(f["hours"]) == 8 and f["variables"]["cape"]["unit"] == "J/kg" and f["operational_lead_hours"] is None
+    assert len(f["hours"]) == 8 and f["variables"]["cape"]["unit"] == "J/kg" and f["operational_lead_hours"] in [h["operational_lead_hours"] for h in f["hours"]]
     e = client.get("/v1/explain", params={"cell_id": cid, "hazard": "thunderstorm", "lead": 12}).json()
     if e["status"] == "AVAILABLE_EVALUATED":
         assert len(e["top_contributions"]) == 3 and all(c["statement"] for c in e["top_contributions"]) and "causal" in e["caveat"]

@@ -322,3 +322,20 @@ test('legacy station dashboard: fallback/unscored slots are never shown as 0%, a
   assert.ok(oneValid.cards.find(c => /AFTERNOON/.test(c) && /42%/.test(c) && /PEAK/.test(c)), JSON.stringify(oneValid.cards));
   assert.equal(oneValid.cards.filter(c => /WITHHELD/.test(c)).length, 3);
 });
+
+test('operational lead: the panel shows valid time minus the recorded acquisition time of the SELECTED hour, never negative', async () => {
+  const fields = await (await fetch(`${S.base}/data/india_fields_latest.json`)).json();
+  const { ctx, page } = await open(DESKTOP); await page.waitForTimeout(500);
+  await page.evaluate(() => window.__drift.selectCell('IN025_1900_07300'));
+  for (let i = 0; i < fields.meta.files.length; i++) {
+    const f = fields.meta.files[i], h = (Date.parse(f.valid_time_utc) - Date.parse(f.acquired_at_utc)) / 3600000;
+    await page.evaluate(k => { window.__drift.state.hour = k; window.__drift.refresh(); }, i);
+    const rec = await page.evaluate(() => { const d = window.__drift; return d.state.store.record(d.state.sel, d.state.hour, Date.now()); });
+    assert.equal(rec.selected_hour.fhour, f.fhour);
+    if (h > 0) assert.equal(rec.selected_hour.operational_lead_hours, Math.round(h * 1000) / 1000, `f${f.fhour}`);
+    else { assert.equal(rec.selected_hour.operational_lead_hours, null, `f${f.fhour} was already past at acquisition`); assert.equal(rec.selected_hour.operational_lead_status, 'NOT_APPLICABLE_PAST_VALID_TIME'); }
+    const row = await page.evaluate(() => [...document.querySelectorAll('table.prov tr')].find(r => /Operational lead/.test(r.innerText)).innerText);
+    if (h > 0) assert.ok(row.includes('+' + h.toFixed(1) + ' h'), row); else assert.match(row, /already past/i, row);
+  }
+  await ctx.close();
+});

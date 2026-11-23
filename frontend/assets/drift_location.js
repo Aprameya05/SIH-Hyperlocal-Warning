@@ -122,11 +122,15 @@
       var hm = S.hourMeta(), init = hm.init, ageH = (now - init) / 3600000;
       hour = hour == null ? S.defaultHour(now) : hour;
       var hours = hm.files.map(function (f, k) {
+        // Operational lead = valid - the time DRIFT held the data (twin of backend/location_service.py; never negative).
+        var leadH = (T(f.valid_time_utc) - T(f.acquired_at_utc)) / 3600000, lead = leadH > 0 ? Math.round(leadH * 1000) / 1000 : null;
         return { index: k, fhour: f.fhour, valid_time_utc: f.valid_time_utc, published_at_utc: f.published_at_utc, acquired_at_utc: f.acquired_at_utc,
-                 status: hourStatus(now, init, T(f.valid_time_utc), T(f.published_at_utc)) };
+                 status: hourStatus(now, init, T(f.valid_time_utc), T(f.published_at_utc)),
+                 forecast_available_time_utc: f.acquired_at_utc, operational_lead_hours: lead, operational_lead_status: lead !== null ? 'OK' : 'NOT_APPLICABLE_PAST_VALID_TIME' };
       });
       rec.cycle = { model_init_utc: S.fields.meta.cycle_init_utc, age_hours: r2(ageH, 2), source: SOURCE, resolution_deg: RES, extraction: S.fields.meta.extraction, hours: hours,
-                    availability_note: S.fields.meta.availability_note, operational_lead_hours: null, operational_lead_status: 'UNAVAILABLE_NO_DRIFT_PUBLICATION_TIME' };
+                    availability_note: S.fields.meta.availability_note, operational_lead_hours: hours[hour].operational_lead_hours, operational_lead_status: hours[hour].operational_lead_status,
+                    operational_lead_basis: 'valid time minus the time DRIFT acquired the NWP file; excludes dissemination to users' };
       rec.selected_hour = hours[hour];
       var col = S.fcol[cid], fl = {};
       Object.keys(S.fields.registry).forEach(function (name) {

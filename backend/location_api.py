@@ -168,7 +168,8 @@ def forecast(request: Request, response: Response, cell_id: Optional[str] = None
     hours = rec["cycle"]["hours"]
     series = {k: {"unit": f["unit"], "kind": f["kind"], "values": f["series"]} for k, f in rec["fields"].items()}
     return _reply(request, response, {"location": rec["location"], "model_init_utc": rec["cycle"]["model_init_utc"], "hours": hours, "variables": series,
-                                      "operational_lead_hours": None, "operational_lead_status": rec["cycle"]["operational_lead_status"]})
+                                      "operational_lead_hours": rec["cycle"]["operational_lead_hours"], "operational_lead_status": rec["cycle"]["operational_lead_status"],
+                                      "operational_lead_basis": rec["cycle"]["operational_lead_basis"]})
 
 
 @router.get("/coverage")
