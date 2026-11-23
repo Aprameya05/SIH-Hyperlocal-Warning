@@ -334,7 +334,7 @@
     }
 
     return { getMap: function () { return map; }, attach: attach, select: select, selectAt: selectAt, close: close, setHour: function (h) { sel.hour = h; schedule(); }, setLayer: function (k) { layerKey = k; paintLayer(); schedule(); },
-             refresh: function () { features = null; paintLayer(); schedule(); }, state: function () { return { cell_id: sel.cid, hour: sel.hour, layer: layerKey, sheet: sheetState, model: lastModel }; }, renderNow: render };
+             refresh: function () { features = null; paintLayer(); schedule(); }, state: function () { return { cell_id: sel.cid, hour: sel.hour, layer: layerKey, sheet: sheetState, model_status: lastModel ? lastModel.status : null }; }, renderNow: render };
   }
 
   return { buildModel: buildModel, satelliteModel: satelliteModel, create: create, SECTIONS: SECTIONS, CHARTS: CHARTS, LAYERS: LAYERS };

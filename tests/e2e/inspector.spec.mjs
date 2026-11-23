@@ -28,8 +28,8 @@ async function open(viewport, { now = INIT() + 9 * 3600000, mutate = null } = {}
 }
 // Click the map at a lat/lon through real pointer events (projected to screen coordinates).
 async function clickLatLon(page, lat, lon) {
-  await page.evaluate(([la, lo]) => window.__driftInspector.getMap().jumpTo({ center: [lo, la], zoom: 8 }), [lat, lon]); await page.waitForTimeout(250);
-  await page.evaluate(() => window.__driftInspector.getMap().getContainer().scrollIntoView({ block: 'center' })); await page.waitForTimeout(200);
+  await page.evaluate(([la, lo]) => { window.__driftInspector.getMap().jumpTo({ center: [lo, la], zoom: 8 }); }, [lat, lon]); await page.waitForTimeout(250);
+  await page.evaluate(() => { window.__driftInspector.getMap().getContainer().scrollIntoView({ block: 'center' }); }); await page.waitForTimeout(200);
   const xy = await page.evaluate(([la, lo]) => { const m = window.__driftInspector.getMap(), p = m.project([lo, la]), r = m.getCanvas().getBoundingClientRect(); return [r.left + p.x, r.top + p.y]; }, [lat, lon]);
   await page.mouse.click(xy[0], xy[1]); await page.waitForSelector('.di-panel.open', { timeout: 10000 });
 }
@@ -76,8 +76,8 @@ test('adjacent cells, cell boundaries, and points outside the grid', async () =>
   await clickLatLon(page, 13.2, 77.88); const b = (await page.evaluate(() => window.__driftInspector.state())).cell_id; assert.notEqual(b, 'IN025_1325_07775');   // across the boundary
   assert.equal(b, 'IN025_1325_07800'); assert.match(await panelText(page), /IN025_1325_07800/);
   const cape = (await rowOf(page, 'CAPE'))[0]; assert.ok(cape.includes(String(Math.round(FIELDS.fields.cape[(await page.evaluate(() => window.__driftInspector.state())).hour][cellIdx('IN025_1325_07800')]))), cape);
-  await page.evaluate(() => window.__driftInspector.getMap().jumpTo({ center: [66.5, 15.0], zoom: 8 })); await page.waitForTimeout(250);             // Arabian Sea: no land cell
-  await page.evaluate(() => window.__driftInspector.getMap().getContainer().scrollIntoView({ block: 'center' })); await page.waitForTimeout(200);
+  await page.evaluate(() => { window.__driftInspector.getMap().jumpTo({ center: [66.5, 15.0], zoom: 8 }); }); await page.waitForTimeout(250);             // Arabian Sea: no land cell
+  await page.evaluate(() => { window.__driftInspector.getMap().getContainer().scrollIntoView({ block: 'center' }); }); await page.waitForTimeout(200);
   const xy = await page.evaluate(() => { const m = window.__driftInspector.getMap(), p = m.project([66.5, 15.0]), r = m.getCanvas().getBoundingClientRect(); return [r.left + p.x, r.top + p.y]; });
   await page.mouse.click(xy[0], xy[1]); await page.waitForTimeout(300);
   assert.equal((await page.evaluate(() => window.__driftInspector.state())).cell_id, 'IN025_1325_07800');                                                    // selection unchanged
@@ -87,14 +87,15 @@ test('adjacent cells, cell boundaries, and points outside the grid', async () =>
 test('selection persists until another cell is chosen or the panel is closed; close button and Escape work; keyboard arrows move to the adjacent cell', async () => {
   const { ctx, page } = await open(DESKTOP);
   await clickLatLon(page, 13.25, 77.75);
-  await page.evaluate(() => window.__driftInspector.getMap().getCanvas().focus());
+  await page.evaluate(() => { window.__driftInspector.getMap().getCanvas().focus(); });
   await page.keyboard.press('ArrowRight'); await page.waitForFunction(() => window.__driftInspector.state().cell_id === 'IN025_1325_07800');
   await page.keyboard.press('ArrowUp'); await page.waitForFunction(() => window.__driftInspector.state().cell_id === 'IN025_1350_07800');
+  await page.waitForFunction(() => document.querySelector('.di-panel').getAttribute('data-cell') === 'IN025_1350_07800');   // render is scheduled after the state change
   assert.equal(await page.$eval('.di-panel', e => e.getAttribute('data-cell')), 'IN025_1350_07800');
-  assert.equal((await page.evaluate(() => window.__driftInspector.getMap().getSource('insp-sel')._data)).properties.id, 'IN025_1350_07800');
+  assert.equal(await page.evaluate(() => { const d = window.__driftInspector.getMap().getSource('insp-sel')._data; return d && d.properties ? d.properties.id : null; }), 'IN025_1350_07800');
   await page.keyboard.press('Escape'); await page.waitForFunction(() => window.__driftInspector.state().cell_id === null);
   assert.equal(await page.$('.di-panel.open'), null);
-  assert.equal((await page.evaluate(() => window.__driftInspector.getMap().getSource('insp-sel')._data)).features?.length ?? 0, 0);                              // highlight removed
+  assert.equal(await page.evaluate(() => { const d = window.__driftInspector.getMap().getSource('insp-sel')._data; return d && d.features ? d.features.length : 0; }), 0);                              // highlight removed
   await clickLatLon(page, 13.25, 77.75); await page.click('.di-x'); await page.waitForFunction(() => window.__driftInspector.state().cell_id === null);
   const url = new URL(page.url()); assert.ok(url.searchParams.get('cell') !== undefined); await ctx.close();
 });
@@ -162,8 +163,8 @@ test('three time concepts are shown separately and no warning lead is claimed', 
 
 test('mobile: tapping opens a bottom sheet with expandable sections; the sheet drags between peek/half/full; the map stays interactive; close works', async () => {
   const { ctx, page } = await open(MOBILE);
-  await page.evaluate(() => window.__driftInspector.getMap().jumpTo({ center: [77.75, 13.25], zoom: 8 })); await page.waitForTimeout(250);
-  await page.evaluate(() => window.__driftInspector.getMap().getContainer().scrollIntoView({ block: 'center' })); await page.waitForTimeout(200);
+  await page.evaluate(() => { window.__driftInspector.getMap().jumpTo({ center: [77.75, 13.25], zoom: 8 }); }); await page.waitForTimeout(250);
+  await page.evaluate(() => { window.__driftInspector.getMap().getContainer().scrollIntoView({ block: 'center' }); }); await page.waitForTimeout(200);
   const xy = await page.evaluate(() => { const m = window.__driftInspector.getMap(), p = m.project([77.75, 13.25]), r = m.getCanvas().getBoundingClientRect(); return [r.left + p.x, r.top + p.y]; });
   await page.touchscreen.tap(xy[0], xy[1]); await page.waitForSelector('.di-panel.di-mobile.open');
   assert.equal((await page.evaluate(() => window.__driftInspector.state())).cell_id, 'IN025_1325_07775');
@@ -175,7 +176,7 @@ test('mobile: tapping opens a bottom sheet with expandable sections; the sheet d
   const g = await page.$eval('.di-grab', e => { const r = e.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; });
   await page.mouse.move(g[0], g[1]); await page.mouse.down(); await page.mouse.move(g[0], g[1] - 120, { steps: 4 }); await page.mouse.up();
   await page.waitForFunction(() => window.__driftInspector.state().sheet === 'full'); await page.waitForTimeout(700); assert.ok((await page.$eval('.di-panel', e => e.getBoundingClientRect().height)) > box.vh * 0.8);
-  await page.evaluate(() => window.__driftInspector.getMap().panBy([40, 20], { duration: 0 }));                                                      // the map is still usable
+  await page.evaluate(() => { window.__driftInspector.getMap().panBy([40, 20], { duration: 0 }); });                                                      // the map is still usable
   await page.click('.di-x'); await page.waitForFunction(() => window.__driftInspector.state().cell_id === null);
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), true, 'no horizontal overflow'); await ctx.close();
 });
