@@ -26,7 +26,8 @@ DRIFT turns NOAA GFS model guidance into a verified, location-specific view for 
 | Cloudburst prediction | **Unavailable** (no sub-hourly labels or observations). The only related output is a daily *heavy-rain-day* score (≥ 64.5 mm/24 h), which is not a cloudburst forecast |
 | Flash-flood prediction | **Unavailable**; an unvalidated heuristic *screening index* is shown, labelled as such |
 | 2–6 h operational lead time, nowcasting | **Lead is measured, a 2–6 h warning is not claimed.** The panel shows each hour's *operational lead* = valid time minus the time DRIFT acquired that NWP file (excludes dissemination to users; never negative). For a 00Z cycle acquired ~5 h after init, only f009 falls in 2–6 h, and no hazard model exists at that hour. Alerts stay disabled. See [`docs/research/SATELLITE_AND_LEAD_TIME_FEASIBILITY.md`](docs/research/SATELLITE_AND_LEAD_TIME_FEASIBILITY.md) |
-| Satellite (INSAT/MOSDAC, Himawari), IMDAA, radar, lightning | **Not integrated**; blockers in [`docs/data_sources/SATELLITE_AND_REANALYSIS_ACCESS.md`](docs/data_sources/SATELLITE_AND_REANALYSIS_ACCESS.md) |
+| Himawari-9 band-13 cloud-top **brightness temperature** and its 30/60-min change (`satellite_ctt.yml`, every 30 min) | **Working as an observation** (display and diagnostics, shown only while the scan is ≤ 90 min old; clear sky shows the surface, thin cirrus reads warm; coarse at the 70–80° view angle over western India). **Not a model input**: no historical archive has been joined to training labels. Production freshness depends on how often the site is redeployed |
+| INSAT/MOSDAC, IMDAA, radar, lightning | **Not integrated**; blockers in [`docs/data_sources/SATELLITE_AND_REANALYSIS_ACCESS.md`](docs/data_sources/SATELLITE_AND_REANALYSIS_ACCESS.md) |
 | Alert delivery | **Disabled by design** (fail-closed policy, empty registries) |
 | LIVE vs SIMULATION | Strictly separated; the simulator has no network capability and cannot alert |
 

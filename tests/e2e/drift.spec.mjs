@@ -339,3 +339,42 @@ test('operational lead: the panel shows valid time minus the recorded acquisitio
   }
   await ctx.close();
 });
+
+test('satellite observations: fresh scan shows exact artifact values in layers and panel, independent of the forecast-hour selector', async () => {
+  const sat = await (await fetch(`${S.base}/data/india_satellite_ctt_latest.json`)).json();
+  const scene = new Date(Date.now() - 20 * 60000); scene.setUTCSeconds(0, 0);
+  const sceneIso = scene.toISOString().replace('.000Z', 'Z');
+  const mutate = { pattern: /india_satellite_ctt_latest\.json/, fn: j => { j.meta.scene_nominal_utc = sceneIso; } };
+  const { ctx, page } = await open(DESKTOP, { mutate }); await page.waitForTimeout(500);
+  const probe = await page.evaluate(() => { const d = window.__drift; d.state.hazard = 'thunderstorm'; const out = {};
+    for (const id of ['sat_cold', 'sat_cool']) { const per = []; for (const h of [0, 3, 7]) { d.state.hour = h; per.push(d.layerValues(id)); } out[id] = per; }
+    return out; });
+  const iCell = sat.cells.indexOf('IN025_1300_08000'); assert.ok(iCell >= 0);
+  const gridIdx = await page.evaluate(() => window.__drift.state.store.cells.findIndex(c => c[0] === 'IN025_1300_08000'));
+  const expectCold = Math.max(0, 300 - sat.ctt_p10_k[iCell]), expectCool = Math.max(0, -sat.dtdt_60min_k_per_h[iCell]);
+  assert.ok(Math.abs(probe.sat_cold[0][gridIdx] - expectCold) < 1e-9, 'cold layer equals 300 K - p10 BT of the artifact');
+  assert.ok(Math.abs(probe.sat_cool[0][gridIdx] - expectCool) < 1e-9, 'cooling layer equals the 60-min drop of the artifact');
+  assert.ok(probe.sat_cold[0].filter(v => v != null).length > 4000);
+  assert.deepEqual(probe.sat_cold[0], probe.sat_cold[2], 'an observation does not change with the forecast-hour chips');
+  assert.deepEqual(probe.sat_cool[0], probe.sat_cool[1]);
+  await page.evaluate(() => window.__drift.selectCell('IN025_1300_08000')); await page.waitForTimeout(300);
+  const panel = await page.evaluate(() => document.getElementById('p-detail').innerText);
+  assert.match(panel, /Satellite observation \(Himawari-9 B13\)/i); assert.match(panel, /OBSERVED 20 MIN AGO/i);
+  assert.ok(panel.includes((sat.ctt_p10_k[iCell] - 273.15).toFixed(1) + ' °C'), 'panel shows the artifact p10 BT');
+  assert.match(panel, /not a forecast|Brightness temperature/i);
+  await ctx.close();
+});
+
+test('satellite observations: a stale scan is withheld everywhere (never shown as current) and a missing artifact is UNAVAILABLE', async () => {
+  const stale = new Date(Date.now() - 3 * 3600000).toISOString().replace(/\.\d+Z$/, 'Z');
+  let r = await open(DESKTOP, { mutate: { pattern: /india_satellite_ctt_latest\.json/, fn: j => { j.meta.scene_nominal_utc = stale; } } });
+  let res = await r.page.evaluate(() => { const d = window.__drift; d.state.hazard = 'thunderstorm'; d.state.layer = 'sat_cold'; d.refresh();
+    return { vals: d.layerValues('sat_cold').filter(v => v != null).length, ov: document.getElementById('overlay').innerText, rec: d.state.store.record('IN025_1300_08000', 0, Date.now()).satellite }; });
+  assert.equal(res.vals, 0); assert.match(res.ov, /withheld, not shown as current/); assert.equal(res.rec.status, 'STALE'); assert.equal(res.rec.ctt_p10_k, null);
+  await r.ctx.close();
+  r = await open(DESKTOP, { abort: [/india_satellite_ctt_latest\.json/] });
+  res = await r.page.evaluate(() => { const d = window.__drift; d.state.hazard = 'thunderstorm'; d.state.layer = 'sat_cold'; d.refresh();
+    return { vals: d.layerValues('sat_cold').filter(v => v != null).length, ov: document.getElementById('overlay').innerText, rec: d.state.store.record('IN025_1300_08000', 0, Date.now()).satellite }; });
+  assert.equal(res.vals, 0); assert.match(res.ov, /UNAVAILABLE/); assert.equal(res.rec.status, 'UNAVAILABLE');
+  await r.ctx.close();
+});

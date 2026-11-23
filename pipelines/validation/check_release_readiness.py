@@ -56,6 +56,10 @@ def main():
             c = h["components"][m]
             checks.append((f"{m} consistent with fields cycle", c["status"] in ("OK", "WITHHELD"), f"{c['status']} {c.get('reason') or ''}".strip()))
         checks.append(("alert dispatch disabled by policy", h["components"]["alert_policy"]["automated_dispatch"] == "DISABLED", "fail-closed"))
+        sat = b / "data/india_satellite_ctt_latest.json"
+        if sat.is_file():     # optional product: when published it must be structurally valid (age is judged by the dashboard, not this gate)
+            ok_s, tail_s = run(["pipelines/validation/validate_satellite_ctt.py", str(sat)])
+            checks.append(("satellite CTT artifact valid (if published)", ok_s, tail_s[0][:120]))
         ok, tail = run(["pipelines/validation/validate_live_feed.py", str(b / "data/drift_live.json"), "--max-age-minutes", str(int(a.max_age_hours * 60))])
         checks.append(("live feed validator", ok, tail[0][:120]))
         ok, tail = run(["pipelines/validation/validate_national_fields.py", str(b / "data"), "--max-age-hours", str(a.max_age_hours)])

@@ -11,6 +11,7 @@
   var IMD_BANDS = [[15.5, 'NO_HEAVY_RAIN'], [64.5, 'MODERATE'], [115.6, 'HEAVY'], [204.5, 'VERY_HEAVY'], [1e9, 'EXTREMELY_HEAVY']];
   var SOURCE = 'NOAA GFS 0.25 deg (AWS Open Data mirror)';
   var r2 = function (x, n) { var m = Math.pow(10, n); return Math.round(x * m) / m; };
+  var SAT_MAX_AGE_MIN = 90;   // twin of backend/location_service.py: a satellite scan older than this is not current
   var clip = function (x) { return Math.max(0, Math.min(1, x)); };
   var T = function (s) { var d = Date.parse(s); return isNaN(d) ? null : d; };
   var key = function (a, b) { return a.toFixed(2) + ',' + b.toFixed(2); };
@@ -54,7 +55,7 @@
   }
 
   function create(a) {
-    var grid = a.grid, places = a.places, fields = a.fields, statics = a.statics, live = a.live || null, ts = a.tsmodel || null, rain = a.rainmodel || null;
+    var grid = a.grid, places = a.places, fields = a.fields, statics = a.statics, live = a.live || null, ts = a.tsmodel || null, rain = a.rainmodel || null, sat = a.satellite || null;
     var S = { grid: grid, cells: grid.cells, idx: {}, byLL: {}, states: grid.states, districts: grid.districts, fcol: {}, sidx: {}, cb: {}, ts: ts };
     grid.cells.forEach(function (c, i) { S.idx[c[0]] = i; S.byLL[key(c[1], c[2])] = i; });
     S.problems = fields ? verifyFields(fields, grid) : ['fields artifact missing'];
@@ -67,6 +68,31 @@
     }
     S.tsOk = !!(ts && ts.meta && ts.meta.model_evaluated); S.tsIdx = {};
     if (ts) ts.cells.forEach(function (c, i) { S.tsIdx[c] = i; });
+    // Himawari-9 B13 brightness temperature (observation). Structural check mirrors pipelines/validation/validate_satellite_ctt.py.
+    S.sat = sat; S.satIdx = {}; S.satProblems = [];
+    if (!sat) S.satProblems = ['satellite artifact not published'];
+    else {
+      var sm = sat.meta || {}, sn = (sat.cells || []).length;
+      if (sm.schema !== 'drift_satellite_ctt_v1') S.satProblems.push('schema is not drift_satellite_ctt_v1');
+      if (sm.is_observation !== true || sm.is_forecast !== false || sm.is_retrieved_cloud_top_temperature !== false) S.satProblems.push('honesty flags missing');
+      ['ctt_p10_k', 'ctt_min_k', 'cold_frac_235k', 'n_pixels', 'dtdt_30min_k_per_h', 'dtdt_60min_k_per_h', 'view_zenith_deg'].forEach(function (k) { if (!Array.isArray(sat[k]) || sat[k].length !== sn) S.satProblems.push(k + ': missing or wrong length'); });
+      if (sn !== S.cells.length || (sat.cells || []).some(function (c, i) { return S.cells[i][0] !== c; })) S.satProblems.push('cells do not match the national grid');
+      if (!sm.scene_nominal_utc || isNaN(Date.parse(sm.scene_nominal_utc))) S.satProblems.push('scene_nominal_utc missing or malformed');
+    }
+    S.satOk = !!sat && S.satProblems.length === 0;
+    if (S.satOk) sat.cells.forEach(function (c, i) { S.satIdx[c] = i; });
+    S.satellite = function (cid, now) {
+      var base = { kind: 'SATELLITE_OBSERVATION', quantity: 'BRIGHTNESS_TEMPERATURE_K', is_observation: true, is_retrieved_cloud_top_temperature: false,
+                   source: 'Himawari-9 AHI L1b band 13 (10.4 um)', interpretation: 'Brightness temperature of the 10.4 um window band. Equals cloud-top temperature only for opaque cloud; clear sky shows the surface; thin cirrus reads warmer than its top.' };
+      if (!S.satOk || S.satIdx[cid] == null) return Object.assign(base, { status: 'UNAVAILABLE', reason: S.satProblems[0] || 'cell not in the satellite artifact' });
+      var i = S.satIdx[cid], age = r2((now - Date.parse(sat.meta.scene_nominal_utc)) / 60000, 1), cur = age >= 0 && age <= SAT_MAX_AGE_MIN;
+      var g = function (k) { return cur ? sat[k][i] : null; }, zen = sat.view_zenith_deg[i];
+      return Object.assign(base, { status: cur ? 'CURRENT' : 'STALE', scene_nominal_utc: sat.meta.scene_nominal_utc, age_minutes: age, max_age_minutes: SAT_MAX_AGE_MIN,
+        ctt_p10_k: g('ctt_p10_k'), ctt_min_k: g('ctt_min_k'), cold_frac_235k: g('cold_frac_235k'), n_pixels: g('n_pixels'),
+        dtdt_30min_k_per_h: g('dtdt_30min_k_per_h'), dtdt_60min_k_per_h: g('dtdt_60min_k_per_h'), view_zenith_deg: zen,
+        quality: zen != null && zen > 70 ? 'COARSE_VIEW_ANGLE' : 'OK',
+        reason: cur ? null : 'last satellite scan is ' + Math.round(age) + ' min old (current means <= ' + SAT_MAX_AGE_MIN + ' min): values withheld, not shown as current' });
+    };
     S.rain = rain; S.rainOk = !!(rain && rain.meta && rain.meta.model_evaluated); S.rainIdx = {};
     if (rain) rain.cells.forEach(function (c, i) { S.rainIdx[c] = i; });
     S.places = (places && places.places) || [];
@@ -118,6 +144,7 @@
       var rec = { location: S.locationInfo(cid), now_utc: new Date(now).toISOString().replace(/\.\d+Z$/, 'Z') };
       rec.availability = { fields: S.fieldsOk ? 'AVAILABLE' : 'UNAVAILABLE', problems: S.fieldsOk ? [] : S.problems.slice(0, 5) };
       rec.static = S.staticRecord(cid);
+      rec.satellite = S.satellite(cid, now);
       if (!S.fieldsOk) { rec.fields = {}; rec.hazards = S.hazards(cid, null, null, now); return rec; }
       var hm = S.hourMeta(), init = hm.init, ageH = (now - init) / 3600000;
       hour = hour == null ? S.defaultHour(now) : hour;
