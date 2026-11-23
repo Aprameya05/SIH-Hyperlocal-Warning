@@ -77,6 +77,16 @@
       get: function (i) { var c = st.store.cells[i], v = st.store.cb[(Math.floor(c[1] + 0.5)).toFixed(2) + ',' + (Math.floor(c[2] + 0.5)).toFixed(2)]; return v == null ? null : v; } };
     var tsm = { id: 'ts_model', label: 'Pan-India thunderstorm model', max: 1, ramp: 'seq', unit: 'score', kind: 'Calibrated model probability at its own leads only (+6, +12, +18, +24 h). Forecast hours without a model lead show no data, never another lead\'s value.', model: true,
       get: function (i) { var m = st.tsm; if (!m || !st.store.tsOk) return null; var j = st.store.tsIdx[st.store.cells[i][0]]; var hh = hours()[st.hour], L = hh ? hh.fhour : null; /* the model exists only at its own leads; no clamping/shifting to another lead */ if (L == null || m.meta.leads.indexOf(L) < 0) return null; return j == null ? null : m.leads[String(L)][j]; } };
+    var satLayer = function (id, label, unit, max, kind, valueOf) {
+      return { id: id, label: label, max: max, ramp: 'seq', unit: unit, kind: kind, obs: true,
+        get: function (i) { var b = st.store.satellite(st.store.cells[i][0], Date.now()); return b.status === 'CURRENT' ? valueOf(b) : null; } };
+    };
+    var satCold = satLayer('sat_cold', 'Cloud-top coldness (Himawari-9 B13)', 'K below 300 K (p10 brightness temperature)', 100,
+      'OBSERVATION, not a forecast: 300 K minus the 10th-percentile 10.4 \u00b5m brightness temperature in the cell. Equals cloud-top coldness only for opaque cloud; clear sky shows the surface. Independent of the forecast-hour chips.',
+      function (b) { return b.ctt_p10_k == null ? null : Math.max(0, 300 - b.ctt_p10_k); });
+    var satCool = satLayer('sat_cool', 'Cloud-top cooling rate, 60 min (Himawari-9 B13)', 'K/h of cooling', 40,
+      'OBSERVATION, not a forecast: fall of the cell p10 brightness temperature over the last 60 minutes (cooling = rising cloud top). Warming is shown as 0. Independent of the forecast-hour chips.',
+      function (b) { return b.dtdt_60min_k_per_h == null ? null : Math.max(0, -b.dtdt_60min_k_per_h); });
     var L = {
       thunderstorm: [
         fieldLayer('cape', 'CAPE', 'cape', 3000, 'seq', 'J/kg', 'GFS surface-based CAPE: instability guidance, not a probability.'),
@@ -88,7 +98,7 @@
         fieldLayer('shear_850_500', '850–500 hPa bulk shear', 'shear_850_500', 25, 'seq', 'm/s', 'Bulk wind difference 850–500 hPa. NOT 0–6 km shear.'),
         fieldLayer('w700', 'Ascent at 700 hPa', 'w700', 1.5, 'seq', 'Pa/s (−ω)', 'GFS vertical velocity; ascent shown positive.', function (v) { return Math.max(0, -v); }),
         fieldLayer('ws10', '10 m wind speed', 'ws10', 15, 'seq', 'm/s', 'GFS 10 m wind.'), fieldLayer('rh2m', '2 m relative humidity', 'rh2m', 100, 'rain', '%', 'GFS 2 m RH.'),
-        fieldLayer('t2m_c', '2 m temperature', 't2m_c', 45, 'seq', '°C', 'GFS 2 m temperature.'), tsm],
+        fieldLayer('t2m_c', '2 m temperature', 't2m_c', 45, 'seq', '°C', 'GFS 2 m temperature.'), tsm, satCold, satCool],
       extreme_rainfall: [
         fieldLayer('precip_3h', 'GFS precipitation, 3 h amount', 'precip_3h', 40, 'rain', 'mm / 3 h', '3-hourly amount = difference of verified 0–f accumulations. Model guidance, not observed rain.'),
         fieldLayer('apcp_cum', 'GFS accumulated since init', 'apcp_cum', 100, 'rain', 'mm', 'Accumulated rain from model init to the selected hour (verified 0–f window).'), cb,
@@ -111,10 +121,10 @@
     var opts = { cache: 'no-store' };
     var j = function (u) { return fetch(u, opts).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }).catch(function () { return null; }); };
     return Promise.all([j('data/india_grid_025.json'), j('data/india_places.json'), j('data/india_fields_latest.json'), j('data/india_static_025.json'), j('data/drift_live.json'),
-                        j('data/hazard_evaluation.json'), j('assets/india_outline.geojson'), j('data/india_ts_model_latest.json'), j('data/india_rain_model_latest.json')]).then(function (a) {
+                        j('data/hazard_evaluation.json'), j('assets/india_outline.geojson'), j('data/india_ts_model_latest.json'), j('data/india_rain_model_latest.json'), j('data/india_satellite_ctt_latest.json')]).then(function (a) {
       st.live = a[4]; st.ev = a[5]; st.outline = a[6]; st.tsm = a[7]; st.rainm = a[8];
       if (a[0]) {
-        st.store = DL.create({ grid: a[0], places: a[1], fields: a[2], statics: a[3], live: a[4], tsmodel: a[7], rainmodel: a[8] });
+        st.store = DL.create({ grid: a[0], places: a[1], fields: a[2], statics: a[3], live: a[4], tsmodel: a[7], rainmodel: a[8], satellite: a[9] });
         st.store.staticsDoc = a[3];
         if (st.store.fieldsOk) st.hour = st.store.defaultHour(Date.now());
       }
@@ -143,8 +153,11 @@
       else if (!st.store) ov = 'The national grid could not be loaded. No values are shown.';
       else if (!st.store.fieldsOk) ov = 'Atmospheric fields are UNAVAILABLE: ' + esc((st.store.problems[0] || 'artifact failed verification')) + '. No values are shown.';
       else {
-        var L = layerDef(), status = L.isStatic ? 'CURRENT' : L.daily ? 'CURRENT' : hourStatus(st.hour);
-        if (L.model && !st.store.tsOk) ov = 'The pan-India thunderstorm model has no evaluated artifact yet: UNAVAILABLE.';
+        var L = layerDef(), status = (L.isStatic || L.daily || L.obs) ? 'CURRENT' : hourStatus(st.hour);
+        var sb = L.obs ? st.store.satellite(st.store.cells[0][0], Date.now()) : null;
+        if (sb && sb.status === 'UNAVAILABLE') ov = 'Satellite observations are UNAVAILABLE: ' + esc(sb.reason) + '. No values are shown.';
+        else if (sb && sb.status === 'STALE') ov = 'Last satellite scan was ' + Math.round(sb.age_minutes) + ' min ago (current means \u2264 ' + sb.max_age_minutes + ' min) \u2014 values withheld, not shown as current.';
+        else if (L.model && !st.store.tsOk) ov = 'The pan-India thunderstorm model has no evaluated artifact yet: UNAVAILABLE.';
         else if (status === 'STALE' || status === 'INVALID_PROVENANCE' || status === 'UNAVAILABLE') ov = 'Model cycle is ' + status + ' — values are withheld, not shown as current.';
         if (!ov) {
           var rows = [], n = 0, area = 0, mx = null, mxc = null;
@@ -158,7 +171,7 @@
             if ((L.id === 'cape' || L.id === 'precip_3h') && on) { n++; area += 111 * 111 * 0.0625 * Math.cos(cells[i][1] * Math.PI / 180); }
           });
           if (st.region) data.features.forEach(function (ft, i) { ft.properties.reg = st.region.set[i] ? 1 : 0; });
-          var unitNote = (L.isStatic || L.daily) ? '' : ' · ' + esc(hours()[st.hour] ? 'f' + hours()[st.hour].fhour + ' valid ' + hours()[st.hour].valid_time_utc.slice(5, 16).replace('T', ' ') + 'Z' : '');
+          var unitNote = L.obs ? ' \u00b7 scan ' + esc(sb.scene_nominal_utc.slice(5, 16).replace('T', ' ')) + 'Z (observed ' + Math.round(sb.age_minutes) + ' min ago)' : (L.isStatic || L.daily) ? '' : ' · ' + esc(hours()[st.hour] ? 'f' + hours()[st.hour].fhour + ' valid ' + hours()[st.hour].valid_time_utc.slice(5, 16).replace('T', ' ') + 'Z' : '');
           legend = '<b>' + esc(L.label) + unitNote + '</b><div class="bar" style="background:' + gradient(L.ramp) + '"></div><span>0 → ' + L.max + ' ' + esc(L.unit) + '</span>' +
             (status === 'PAST_VALID_TIME' ? '<div class="small na">Valid time has passed: model value for a past hour, not current.</div>' : '') +
             '<details><summary>About this layer</summary><div class="small mute">' + esc(L.kind) + '</div><div class="small mute" style="margin-top:4px">Grid: 0.25° cells (~28 km), one GFS grid point each, India land cells only (' + cells.length + '). Cell-level guidance, not point forecasts.</div></details>';
@@ -373,10 +386,24 @@
       out += '<h2 style="margin-top:10px">' + g[0] + '</h2><table>' + g[1].map(function (r) {
         var f = rec.fields[r[0]]; return '<tr><th>' + esc(r[1]) + '</th><td>' + fmt(f.value, r[2], f.unit) + ' <span class="small mute">' + esc(KIND[f.kind] || f.kind) + '</span>' + (f.value != null && f.status !== 'CURRENT' ? ' ' + chip('STALE', f.status.replace(/_/g, ' ')) : '') + '</td></tr>'; }).join('') + '</table>';
     });
-    out += '<div class="small mute" style="margin-top:6px">Unavailable everywhere: 0–6 km wind shear, observed rainfall, soil-moisture observations, radar/satellite fields at grid scale.</div>';
+    out += satTable(rec);
+    out += '<div class="small mute" style="margin-top:6px">Unavailable everywhere: 0–6 km wind shear, observed rainfall, soil-moisture observations, radar. Satellite brightness temperature is shown above when the latest scan is current.</div>';
     out += '<h2 style="margin-top:10px">Series by forecast hour</h2><div class="small">CAPE</div>' + spark(rec.fields.cape.series, st.hour, 'var(--accent)', 'J/kg') + '<div class="small">Rain (3 h)</div>' + spark(rec.fields.precip_3h.series, st.hour, '#6ec3c9', 'mm') + '<div class="ticks">' + rec.cycle.hours.map(function (h) { return '<span>f' + h.fhour + '</span>'; }).join('') + '</div>';
     out += staticTable(rec);
     el.innerHTML = out; bindDetail();
+  }
+  function satTable(rec) {
+    var b = rec.satellite, h = '<h2 style="margin-top:10px">Satellite observation (Himawari-9 B13)</h2>';
+    if (!b) return '';
+    if (b.status === 'UNAVAILABLE') return h + '<p class="na small">Unavailable: ' + esc(b.reason) + '</p>';
+    if (b.status === 'STALE') return h + '<p>' + chip('STALE', 'SCAN ' + Math.round(b.age_minutes) + ' MIN OLD') + '</p><p class="na small">' + esc(b.reason) + '</p>';
+    var bt = function (k) { return k == null ? '<span class="na">n/a</span>' : (k - 273.15).toFixed(1) + ' \u00b0C <span class="small mute">(' + k.toFixed(1) + ' K)</span>'; };
+    var rate = function (r) { return r == null ? '<span class="na">n/a (earlier frame missing)</span>' : (r > 0 ? '+' : '') + r.toFixed(1) + ' K/h <span class="small mute">' + (r < -1 ? 'cooling' : r > 1 ? 'warming' : 'steady') + '</span>'; };
+    return h + '<p>' + chip('FRESH', 'OBSERVED ' + Math.round(b.age_minutes) + ' MIN AGO') + (b.quality === 'COARSE_VIEW_ANGLE' ? ' ' + chip('STALE', 'COARSE VIEW ANGLE ' + b.view_zenith_deg + '\u00b0') : '') + '</p><table>' +
+      '<tr><th>Cloud-top BT, 10th pct</th><td>' + bt(b.ctt_p10_k) + '</td></tr><tr><th>Coldest pixel</th><td>' + bt(b.ctt_min_k) + '</td></tr>' +
+      '<tr><th>Pixels colder than 235 K</th><td>' + (b.cold_frac_235k == null ? '<span class="na">n/a</span>' : Math.round(b.cold_frac_235k * 100) + ' %') + ' <span class="small mute">of ' + b.n_pixels + '</span></td></tr>' +
+      '<tr><th>BT change, 30 min</th><td>' + rate(b.dtdt_30min_k_per_h) + '</td></tr><tr><th>BT change, 60 min</th><td>' + rate(b.dtdt_60min_k_per_h) + '</td></tr></table>' +
+      '<div class="small mute">Observed ' + esc(b.scene_nominal_utc.slice(0, 16).replace('T', ' ')) + 'Z by ' + esc(b.source) + '. ' + esc(b.interpretation) + '</div>';
   }
   function staticTable(rec) {
     var s = rec.static; if (s.status !== 'AVAILABLE') return '<p class="na small">Terrain/gauge context unavailable.</p>';

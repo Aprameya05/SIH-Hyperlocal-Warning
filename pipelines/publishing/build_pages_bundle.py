@@ -30,6 +30,7 @@ ALLOW_FILES = [
     "data/india_grid_025.json", "data/india_places.json", "data/india_fields_latest.json", "data/india_static_025.json",
     "data/india_ts_model_latest.json", "data/india_rain_model_latest.json",
     "data/ingest_status.json",
+    "data/india_satellite_ctt_latest.json",   # optional: Himawari-9 B13 brightness temperature (observation; age is shown, stale is withheld)
 ]
 # Files published under a different name: index.html references ./night1.png etc. at the site root, but the sources
 # live in dev/. They were never published before (the hero backgrounds 404ed); publish them at the referenced path.

@@ -33,6 +33,7 @@ DATA = ROOT / "data"
 MODEL_MAX_AGE_H = 18.0          # a GFS cycle older than this is STALE (newer 00/12Z cycles exist after 12 h + publication delay)
 PAST_TOLERANCE_H = 1.5          # a value whose valid time passed more than this long ago is "PAST_VALID_TIME", not current
 RESOLUTION_DEG = 0.25
+SAT_MAX_AGE_MIN = 90            # a satellite scan older than this is NOT current (observation, so it ages in minutes, not hours)
 SOURCE = "NOAA GFS 0.25 deg (AWS Open Data mirror)"
 
 # thresholds used only for descriptive categories (never probabilities)
@@ -58,7 +59,7 @@ class Store:
 
     FILES = {"grid": "india_grid_025.json", "places": "india_places.json", "fields": "india_fields_latest.json",
              "static": "india_static_025.json", "live": "drift_live.json", "tsmodel": "india_ts_model_latest.json",
-             "rainmodel": "india_rain_model_latest.json"}
+             "rainmodel": "india_rain_model_latest.json", "satellite": "india_satellite_ctt_latest.json"}
 
     def __init__(self, data_dir: Path = DATA):
         self.dir = data_dir
@@ -97,6 +98,19 @@ class Store:
                     v = r[cols["cb_daily_outlook"]]
                     if v is not None:
                         self.cb[(float(r[0]), float(r[1]))] = v
+            self.sat_doc = load("satellite")
+            self.sat_problems, self.sat_idx = [], {}
+            if self.sat_doc:
+                try:
+                    from pipelines.validation.validate_satellite_ctt import problems as _sat_problems
+                    self.sat_problems = _sat_problems(self.sat_doc, grid_ids=[c[0] for c in self.cells] if self.cells else None)
+                except Exception as e:          # an unreadable/odd artifact must never break the rest of the service
+                    self.sat_problems = [f"satellite artifact could not be verified: {e}"]
+            else:
+                self.sat_problems = ["satellite artifact not published"]
+            self.sat_ok = bool(self.sat_doc) and not self.sat_problems
+            if self.sat_ok:
+                self.sat_idx = {c: i for i, c in enumerate(self.sat_doc["cells"])}
             self.rain_ok = bool(self.rain_doc and self.rain_doc.get("meta", {}).get("model_evaluated"))
             self.rain_idx = {c: i for i, c in enumerate(self.rain_doc["cells"])} if self.rain_doc else {}
             self.ts_ok = False
@@ -169,6 +183,25 @@ class Store:
                 return k
         return len(files) - 1
 
+    def satellite(self, cid: str, now: datetime) -> dict:
+        """Himawari-9 B13 brightness temperature for the cell: an OBSERVATION shown only while current (<= SAT_MAX_AGE_MIN old)."""
+        base = {"kind": "SATELLITE_OBSERVATION", "quantity": "BRIGHTNESS_TEMPERATURE_K", "is_observation": True, "is_retrieved_cloud_top_temperature": False,
+                "source": "Himawari-9 AHI L1b band 13 (10.4 um)", "interpretation": "Brightness temperature of the 10.4 um window band. Equals cloud-top temperature only for opaque cloud; clear sky shows the surface; thin cirrus reads warmer than its top."}
+        if not self.sat_ok or cid not in self.sat_idx:
+            return {**base, "status": "UNAVAILABLE", "reason": (self.sat_problems[0] if self.sat_problems else "cell not in the satellite artifact")}
+        m, i = self.sat_doc["meta"], self.sat_idx[cid]
+        scene = parse_utc(m["scene_nominal_utc"])
+        age = round((now - scene).total_seconds() / 60.0, 1)
+        cur = 0 <= age <= SAT_MAX_AGE_MIN
+        d = self.sat_doc
+        g = lambda k: d[k][i] if cur else None
+        zen = d["view_zenith_deg"][i]
+        return {**base, "status": "CURRENT" if cur else "STALE", "scene_nominal_utc": m["scene_nominal_utc"], "age_minutes": age, "max_age_minutes": SAT_MAX_AGE_MIN,
+                "ctt_p10_k": g("ctt_p10_k"), "ctt_min_k": g("ctt_min_k"), "cold_frac_235k": g("cold_frac_235k"), "n_pixels": g("n_pixels"),
+                "dtdt_30min_k_per_h": g("dtdt_30min_k_per_h"), "dtdt_60min_k_per_h": g("dtdt_60min_k_per_h"), "view_zenith_deg": zen,
+                "quality": "COARSE_VIEW_ANGLE" if zen is not None and zen > 70 else "OK",
+                "reason": None if cur else "last satellite scan is %.0f min old (current means <= %d min): values withheld, not shown as current" % (age, SAT_MAX_AGE_MIN)}
+
     def record(self, cid: str, hour: Optional[int] = None, now: Optional[datetime] = None) -> dict:
         now = now or datetime.now(timezone.utc)
         if cid not in self.idx:
@@ -177,6 +210,7 @@ class Store:
         rec["availability"] = {"fields": "AVAILABLE" if self.fields_ok else "UNAVAILABLE",
                                "problems": self.fields_problems[:5] if not self.fields_ok else []}
         rec["static"] = self.static_record(cid)
+        rec["satellite"] = self.satellite(cid, now)
         if not self.fields_ok:
             rec["fields"], rec["hazards"] = {}, self.hazards(cid, None, None, now)
             return rec

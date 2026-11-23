@@ -86,6 +86,8 @@ def _run_main_with_fixed_pixels(monkeypatch, tmp_path, raw_pixels, scene_dt=None
     scene_dt = scene_dt or datetime(2026, 10, 3, 3, 0, 0)
     monkeypatch.setattr(fhr, "latest_scene_dt", lambda now_utc: scene_dt, raising=True)
     monkeypatch.setattr(fhr, "try_scene", lambda dt: raw_pixels, raising=True)
+    # The B08 path is a separate download; without this it reaches the real network whenever satpy is installed.
+    monkeypatch.setattr(fhr, "try_scene_b08", lambda dt: None, raising=True)
     rc = fhr.main()
     return out_dir, rc
 
