@@ -52,7 +52,9 @@ def _fetch(url):
     failure -- a 403 must be distinguishable from a timeout or a 404
     in the final report, not collapsed into one generic 'FAILED'."""
     try:
-        with urllib.request.urlopen(url, timeout=20) as resp:
+        # Cloudflare answers 403 to the default 'Python-urllib' agent (verified: same URL is 200 with an identifying agent); this was misread as edge propagation.
+        req = urllib.request.Request(url, headers={'User-Agent': 'DRIFT-CI-smoke/1.0 (+https://github.com/Aprameya05/SIH-Hyperlocal-Warning)'})
+        with urllib.request.urlopen(req, timeout=20) as resp:
             return resp.status, resp.read(), None
     except urllib.error.HTTPError as exc:
         return exc.code, None, f"HTTP {exc.code} {exc.reason}"
