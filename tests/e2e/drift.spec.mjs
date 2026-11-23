@@ -279,3 +279,22 @@ test('legacy station dashboard: no typed metrics or unsupported pages are reacha
   assert.ok(/data\/hazard_evaluation\.json/.test(m) && /Brier skill/.test(m) && /STATION-ONLY/.test(m), 'models page is data-backed and station-scoped');
   await ctx.close();
 });
+
+test('pan-India thunderstorm map layer shows each forecast hour\'s OWN model lead, never a shifted or clamped one', async () => {
+  // Synthetic model artifact: a distinct constant per lead, so any lead/hour mix-up is visible. (Test fixture only; the app code is unmodified.)
+  const fields = await (await fetch(`${S.base}/data/india_fields_latest.json`)).json();
+  const n = fields.cells.length, LEADS = { 6: 0.1, 12: 0.2, 18: 0.3, 24: 0.4 };
+  const mutate = { pattern: /india_ts_model_latest\.json/, fn: j => {
+    j.meta = { model_version: 'fixture', model_evaluated: true, calibrated: true, leads: [6, 12, 18, 24], valid_times: {}, value_type: 'FIXTURE', evaluation_summary: 'fixture' };
+    j.cells = fields.cells; j.leads = Object.fromEntries(Object.entries(LEADS).map(([l, v]) => [l, new Array(n).fill(v)])); j.explanations = {}; } };
+  const { ctx, page } = await open(DESKTOP, { mutate }); await page.waitForTimeout(800);
+  const rows = await page.evaluate(() => { const d = window.__drift, out = []; d.state.hazard = 'thunderstorm';
+    const hrs = d.state.store.fields.meta.fhours;
+    for (let i = 0; i < hrs.length; i++) { d.state.hour = i; const v = d.layerValues('ts_model').filter(x => x != null); out.push({ fhour: hrs[i], n: v.length, uniq: [...new Set(v)] }); }
+    return out; });
+  for (const r of rows) {
+    if (LEADS[r.fhour] != null) assert.deepEqual(r.uniq, [LEADS[r.fhour]], `f${r.fhour} must show the +${r.fhour} h model value`);
+    else assert.equal(r.n, 0, `f${r.fhour} has no model lead, so the layer must be empty (not another lead's values)`);
+  }
+  await ctx.close();
+});
