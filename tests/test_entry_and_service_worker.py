@@ -26,5 +26,6 @@ def test_bundle_root_is_modern_dashboard_and_legacy_is_preserved():
 def test_service_worker_cache_bumped_and_entry_pages_network_first():
     sw = (REPO / "frontend" / "sw.js").read_text(encoding="utf-8")
     m = re.search(r"CACHE_NAME = 'drift-v(\d+)'", sw)
-    assert m and int(m.group(1)) >= 5, "cache version must stay bumped so clients drop the cached legacy index.html"
-    assert "'/'" in sw and "(index|legacy)" in sw     # entry pages are network-first, never served stale cache-first
+    assert m and int(m.group(1)) >= 6, "cache version must stay bumped so clients drop the cached legacy index.html"
+    assert "'/'" in sw and "html|js|css|json|geojson" in sw     # entry pages, scripts and data are network-first, never served stale cache-first
+    assert "drift(_app|_sim)" not in sw                          # the old allow-list let drift_location.js be cache-first (stale-script bug)

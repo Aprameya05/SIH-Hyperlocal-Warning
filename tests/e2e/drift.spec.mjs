@@ -378,3 +378,37 @@ test('satellite observations: a stale scan is withheld everywhere (never shown a
   assert.equal(res.vals, 0); assert.match(res.ov, /UNAVAILABLE/); assert.equal(res.rec.status, 'UNAVAILABLE');
   await r.ctx.close();
 });
+
+test('service worker: a returning visitor with an old cache and old scripts ends up on current content', async () => {
+  const ctx = await browser.newContext(); const page = await ctx.newPage(); await page.route(TILE, r => r.abort());
+  await page.goto(`${S.base}/manifest.json`);                      // same origin, no page scripts
+  // Plant what a visitor of the previous deployment has: an old cache holding the LEGACY page and a stale script.
+  await page.evaluate(async () => {
+    const c = await caches.open('drift-v4');
+    await c.put('./index.html', new Response('<html>LEGACY-CACHED</html>', { headers: { 'Content-Type': 'text/html' } }));
+    await c.put('/', new Response('<html>LEGACY-CACHED</html>', { headers: { 'Content-Type': 'text/html' } }));
+    await c.put('/assets/drift_location.js', new Response('window.__STALE_SCRIPT__ = true;', { headers: { 'Content-Type': 'text/javascript' } }));
+  });
+  await page.evaluate(async () => { const reg = await navigator.serviceWorker.register('/sw.js'); await navigator.serviceWorker.ready; return reg.scope; });
+  await page.waitForFunction(() => navigator.serviceWorker.controller, null, { timeout: 15000 }).catch(async () => { await page.reload(); });
+  await page.waitForFunction(async () => (await caches.keys()).every(k => k !== 'drift-v4'), null, { timeout: 15000 });
+  const keys = await page.evaluate(async () => caches.keys());
+  assert.ok(!keys.includes('drift-v4'), 'the previous deployment cache is deleted: ' + keys);
+  // The deploy-after-deploy scenario: the CURRENT worker's cache already holds an older script (cached by a previous visit).
+  await page.evaluate(async () => {
+    const name = /CACHE_NAME = '([^']+)'/.exec(await (await fetch('/sw.js', { cache: 'no-store' })).text())[1];
+    const c = await caches.open(name);
+    await c.put('/assets/drift_location.js', new Response('window.__STALE_SCRIPT__ = true;', { headers: { 'Content-Type': 'text/javascript' } }));
+    await c.put('/', new Response('<html>LEGACY-CACHED</html>', { headers: { 'Content-Type': 'text/html' } }));
+  });
+  const r = await page.evaluate(async () => {
+    const root = await (await fetch('/')).text();
+    const script = await (await fetch('/assets/drift_location.js')).text();
+    return { root: root.slice(0, 4000), script: script.slice(0, 200) };
+  });
+  assert.doesNotMatch(r.root, /LEGACY-CACHED/, 'the root is served from the network, never from the old cache');
+  assert.match(r.root, /DRIFT/i);
+  assert.doesNotMatch(r.script, /__STALE_SCRIPT__/, 'scripts are network-first: a stale cached script must not run');
+  assert.match(r.script, /DRIFT location store/);
+  await ctx.close();
+});
