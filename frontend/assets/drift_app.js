@@ -75,8 +75,8 @@
       get: function (i) { var r = staticOf(i); return r ? r[scol(col)] : null; } }; };
     var cb = { id: 'cb', label: 'Heavy-rain-day outlook (1° score)', max: 0.4, ramp: 'rain', unit: 'score', kind: 'Uncalibrated daily score for the 1° cell containing each 0.25° cell (>= 64.5 mm/24 h proxy). Not a cloudburst; not a probability.', daily: true,
       get: function (i) { var c = st.store.cells[i], v = st.store.cb[(Math.floor(c[1] + 0.5)).toFixed(2) + ',' + (Math.floor(c[2] + 0.5)).toFixed(2)]; return v == null ? null : v; } };
-    var tsm = { id: 'ts_model', label: 'Pan-India thunderstorm model', max: 1, ramp: 'seq', unit: 'score', kind: 'Model output (see its evaluation).', model: true,
-      get: function (i) { var m = st.tsm; if (!m || !st.store.tsOk) return null; var j = st.store.tsIdx[st.store.cells[i][0]]; var L = m.meta.leads[Math.min(st.hour, m.meta.leads.length - 1)]; return j == null ? null : m.leads[String(L)][j]; } };
+    var tsm = { id: 'ts_model', label: 'Pan-India thunderstorm model', max: 1, ramp: 'seq', unit: 'score', kind: 'Calibrated model probability at its own leads only (+6, +12, +18, +24 h). Forecast hours without a model lead show no data, never another lead\'s value.', model: true,
+      get: function (i) { var m = st.tsm; if (!m || !st.store.tsOk) return null; var j = st.store.tsIdx[st.store.cells[i][0]]; var hh = hours()[st.hour], L = hh ? hh.fhour : null; /* the model exists only at its own leads; no clamping/shifting to another lead */ if (L == null || m.meta.leads.indexOf(L) < 0) return null; return j == null ? null : m.leads[String(L)][j]; } };
     var L = {
       thunderstorm: [
         fieldLayer('cape', 'CAPE', 'cape', 3000, 'seq', 'J/kg', 'GFS surface-based CAPE: instability guidance, not a probability.'),
