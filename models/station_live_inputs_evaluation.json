@@ -1,0 +1,462 @@
+{
+ "schema": "station_live_inputs_evaluation_v1",
+ "generated_at_utc": "2026-11-23T09:53:50Z",
+ "target": "ts_label (thunderstorm in the 6-hour IST slot at VOBL)",
+ "features": [
+  "month",
+  "MONTH_sin",
+  "MONTH_cos",
+  "DOY_sin",
+  "DOY_cos",
+  "SEASON",
+  "HA_flag",
+  "CAPE",
+  "K_INDEX",
+  "LIFTED_INDEX",
+  "TOTALS_TOTALS",
+  "PRECIP_WATER",
+  "ERA5_T2M",
+  "ERA5_D2M",
+  "ERA5_U10",
+  "ERA5_V10",
+  "ERA5_CAPE",
+  "ERA5_SP",
+  "ERA5_t_500hPa",
+  "ERA5_t_700hPa",
+  "ERA5_t_850hPa",
+  "ERA5_q_500hPa",
+  "ERA5_q_700hPa",
+  "ERA5_q_850hPa",
+  "ERA5_u_500hPa",
+  "ERA5_u_700hPa",
+  "ERA5_u_850hPa",
+  "ERA5_v_500hPa",
+  "ERA5_v_700hPa",
+  "ERA5_v_850hPa",
+  "slot_sin",
+  "slot_cos",
+  "slot_month_clim",
+  "doy_sin",
+  "doy_cos",
+  "doy"
+ ],
+ "n_features": 36,
+ "excluded_station_features": [
+  "AW",
+  "DRNRF",
+  "DTR",
+  "DTR_3d_avg",
+  "EVP",
+  "LABEL_lag1",
+  "MAX",
+  "MAX_3d_avg",
+  "MAX_lag1",
+  "MIN",
+  "MIN_3d_avg",
+  "MIN_lag1",
+  "RF",
+  "RF_3d",
+  "RF_7d",
+  "RF_lag1",
+  "RF_nonzero",
+  "SSH",
+  "ts_any_yesterday",
+  "ts_label_lag1_slot"
+ ],
+ "excluded_never_computed_live": [
+  "cape_trend",
+  "is_october_slot2",
+  "lapse_rate_850_500",
+  "low_level_convergence",
+  "moisture_depth",
+  "monsoon_break_flag",
+  "rf_std_7d",
+  "wet_bulb_potential_temp"
+ ],
+ "data_file": "data/bengaluru_6hr_training_dataset_cb_ff.csv",
+ "data_sha256": "53fb02e5f4b9150785bfe7d3ba625ab4e82ab97e87fe86e40f246b88ff0261d7",
+ "split": {
+  "rule": "per slot: label-valid years only; test = last 2 valid years; dev = earlier valid years (leave-one-year-out for calibration/threshold)"
+ },
+ "xgb_params": {
+  "n_estimators": 250,
+  "learning_rate": 0.03,
+  "max_depth": 3,
+  "min_child_weight": 8,
+  "subsample": 0.8,
+  "colsample_bytree": 0.8,
+  "reg_lambda": 8.0,
+  "gamma": 0.5,
+  "tree_method": "hist",
+  "random_state": 20261123,
+  "n_jobs": 2,
+  "eval_metric": "logloss"
+ },
+ "gate": {
+  "min_test_events": 20,
+  "min_bss_vs_slot_month_clim_ci_low": 0.0,
+  "min_auroc_ci_low": 0.6
+ },
+ "caveat": "predictors in the table are reanalysis-like (ERA5_*); live inference uses GFS forecasts of the same quantities: train/serve skew is not quantified",
+ "slots": {
+  "0": {
+   "dev_years": [
+    2015,
+    2016,
+    2017,
+    2018,
+    2020,
+    2021
+   ],
+   "test_years": [
+    2022,
+    2023
+   ],
+   "excluded_label_drought_years": [
+    2019,
+    2024,
+    2025
+   ],
+   "n_dev": 2153,
+   "n_test": 693,
+   "test_events": 37,
+   "dev_base_rate": 0.0353,
+   "test_base_rate": 0.0534,
+   "AUROC": 0.8764,
+   "PR_AUC": 0.1926,
+   "PR_AUC_no_skill": 0.0534,
+   "Brier": 0.04583,
+   "Brier_climatology": 0.05087,
+   "Brier_slot_month_climatology": 0.04814,
+   "BSS_vs_climatology": 0.0991,
+   "BSS_vs_slot_month_climatology": 0.0481,
+   "AUROC_slot_month_climatology": 0.7822,
+   "categorical_at_dev_threshold": {
+    "threshold": 0.1667,
+    "hits": 15,
+    "false_alarms": 61,
+    "misses": 22,
+    "correct_negatives": 595,
+    "POD": 0.4054,
+    "FAR": 0.8026,
+    "CSI": 0.1531,
+    "HSS": 0.2087,
+    "bias": 2.054
+   },
+   "reliability": [
+    {
+     "mean_forecast": 0.0,
+     "observed_rate": 0.0,
+     "n": 306
+    },
+    {
+     "mean_forecast": 0.0089,
+     "observed_rate": 0.0,
+     "n": 107
+    },
+    {
+     "mean_forecast": 0.0178,
+     "observed_rate": 0.0,
+     "n": 45
+    },
+    {
+     "mean_forecast": 0.0568,
+     "observed_rate": 0.1181,
+     "n": 144
+    },
+    {
+     "mean_forecast": 0.1955,
+     "observed_rate": 0.2198,
+     "n": 91
+    }
+   ],
+   "bootstrap": {
+    "auroc_95ci": [
+     0.8396,
+     0.9103
+    ],
+    "bss_vs_slot_month_clim_95ci": [
+     -0.0265,
+     0.1167
+    ],
+    "n_resamples": 600
+   },
+   "gate": {
+    "passed": false,
+    "reasons": [
+     "Brier skill over slot-month climatology is not significantly > 0 (95% lower bound)"
+    ]
+   },
+   "decision_threshold_from_dev_oof": 0.1667
+  },
+  "1": {
+   "dev_years": [
+    2015,
+    2016,
+    2017,
+    2018,
+    2020,
+    2021
+   ],
+   "test_years": [
+    2022,
+    2023
+   ],
+   "excluded_label_drought_years": [
+    2019,
+    2024,
+    2025
+   ],
+   "n_dev": 2153,
+   "n_test": 693,
+   "test_events": 9,
+   "dev_base_rate": 0.0116,
+   "test_base_rate": 0.013,
+   "AUROC": 0.8925,
+   "PR_AUC": 0.0818,
+   "PR_AUC_no_skill": 0.013,
+   "Brier": 0.01291,
+   "Brier_climatology": 0.01282,
+   "Brier_slot_month_climatology": 0.01286,
+   "BSS_vs_climatology": -0.0072,
+   "BSS_vs_slot_month_climatology": -0.004,
+   "AUROC_slot_month_climatology": 0.5987,
+   "categorical_at_dev_threshold": {
+    "threshold": 0.1053,
+    "hits": 0,
+    "false_alarms": 16,
+    "misses": 9,
+    "correct_negatives": 668,
+    "POD": 0.0,
+    "FAR": 1.0,
+    "CSI": 0.0,
+    "HSS": -0.0169,
+    "bias": 1.778
+   },
+   "reliability": [
+    {
+     "mean_forecast": 0.0,
+     "observed_rate": 0.0,
+     "n": 169
+    },
+    {
+     "mean_forecast": 0.0011,
+     "observed_rate": 0.0,
+     "n": 257
+    },
+    {
+     "mean_forecast": 0.0111,
+     "observed_rate": 0.0169,
+     "n": 177
+    },
+    {
+     "mean_forecast": 0.067,
+     "observed_rate": 0.0667,
+     "n": 90
+    }
+   ],
+   "bootstrap": {
+    "auroc_95ci": [
+     0.8297,
+     0.9424
+    ],
+    "bss_vs_slot_month_clim_95ci": [
+     -0.0891,
+     0.0388
+    ],
+    "n_resamples": 600
+   },
+   "gate": {
+    "passed": false,
+    "reasons": [
+     "fewer test events than the minimum",
+     "Brier skill over slot-month climatology is not significantly > 0 (95% lower bound)"
+    ]
+   },
+   "decision_threshold_from_dev_oof": 0.1053
+  },
+  "2": {
+   "dev_years": [
+    2015,
+    2016,
+    2017,
+    2018,
+    2020,
+    2021,
+    2022,
+    2023
+   ],
+   "test_years": [
+    2024,
+    2025
+   ],
+   "excluded_label_drought_years": [
+    2019
+   ],
+   "n_dev": 2846,
+   "n_test": 670,
+   "test_events": 55,
+   "dev_base_rate": 0.0678,
+   "test_base_rate": 0.0821,
+   "AUROC": 0.8071,
+   "PR_AUC": 0.2394,
+   "PR_AUC_no_skill": 0.0821,
+   "Brier": 0.07356,
+   "Brier_climatology": 0.07555,
+   "Brier_slot_month_climatology": 0.07354,
+   "BSS_vs_climatology": 0.0264,
+   "BSS_vs_slot_month_climatology": -0.0002,
+   "AUROC_slot_month_climatology": 0.7053,
+   "categorical_at_dev_threshold": {
+    "threshold": 0.2954,
+    "hits": 18,
+    "false_alarms": 35,
+    "misses": 37,
+    "correct_negatives": 580,
+    "POD": 0.3273,
+    "FAR": 0.6604,
+    "CSI": 0.2,
+    "HSS": 0.2749,
+    "bias": 0.964
+   },
+   "reliability": [
+    {
+     "mean_forecast": 0.0,
+     "observed_rate": 0.0091,
+     "n": 329
+    },
+    {
+     "mean_forecast": 0.0164,
+     "observed_rate": 0.125,
+     "n": 32
+    },
+    {
+     "mean_forecast": 0.0329,
+     "observed_rate": 0.0758,
+     "n": 132
+    },
+    {
+     "mean_forecast": 0.085,
+     "observed_rate": 0.1613,
+     "n": 93
+    },
+    {
+     "mean_forecast": 0.354,
+     "observed_rate": 0.2738,
+     "n": 84
+    }
+   ],
+   "bootstrap": {
+    "auroc_95ci": [
+     0.7569,
+     0.8596
+    ],
+    "bss_vs_slot_month_clim_95ci": [
+     -0.118,
+     0.1051
+    ],
+    "n_resamples": 600
+   },
+   "gate": {
+    "passed": false,
+    "reasons": [
+     "Brier skill over slot-month climatology is not significantly > 0 (95% lower bound)"
+    ]
+   },
+   "decision_threshold_from_dev_oof": 0.2954
+  },
+  "3": {
+   "dev_years": [
+    2015,
+    2016,
+    2017,
+    2018,
+    2020,
+    2021
+   ],
+   "test_years": [
+    2022,
+    2023
+   ],
+   "excluded_label_drought_years": [
+    2019,
+    2024,
+    2025
+   ],
+   "n_dev": 2153,
+   "n_test": 693,
+   "test_events": 54,
+   "dev_base_rate": 0.0618,
+   "test_base_rate": 0.0779,
+   "AUROC": 0.8968,
+   "PR_AUC": 0.3825,
+   "PR_AUC_no_skill": 0.0779,
+   "Brier": 0.05574,
+   "Brier_climatology": 0.07211,
+   "Brier_slot_month_climatology": 0.06768,
+   "BSS_vs_climatology": 0.227,
+   "BSS_vs_slot_month_climatology": 0.1764,
+   "AUROC_slot_month_climatology": 0.767,
+   "categorical_at_dev_threshold": {
+    "threshold": 0.2392,
+    "hits": 29,
+    "false_alarms": 37,
+    "misses": 25,
+    "correct_negatives": 602,
+    "POD": 0.537,
+    "FAR": 0.5606,
+    "CSI": 0.3187,
+    "HSS": 0.4349,
+    "bias": 1.222
+   },
+   "reliability": [
+    {
+     "mean_forecast": 0.0,
+     "observed_rate": 0.0,
+     "n": 165
+    },
+    {
+     "mean_forecast": 0.0048,
+     "observed_rate": 0.0,
+     "n": 81
+    },
+    {
+     "mean_forecast": 0.0077,
+     "observed_rate": 0.012,
+     "n": 83
+    },
+    {
+     "mean_forecast": 0.0147,
+     "observed_rate": 0.0323,
+     "n": 155
+    },
+    {
+     "mean_forecast": 0.0713,
+     "observed_rate": 0.0617,
+     "n": 81
+    },
+    {
+     "mean_forecast": 0.2658,
+     "observed_rate": 0.3359,
+     "n": 128
+    }
+   ],
+   "bootstrap": {
+    "auroc_95ci": [
+     0.8602,
+     0.9283
+    ],
+    "bss_vs_slot_month_clim_95ci": [
+     0.0882,
+     0.2514
+    ],
+    "n_resamples": 600
+   },
+   "gate": {
+    "passed": true,
+    "reasons": []
+   },
+   "decision_threshold_from_dev_oof": 0.2392
+  }
+ }
+}

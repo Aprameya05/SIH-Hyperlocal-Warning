@@ -118,7 +118,10 @@ SLOT_MODEL_PRIORITY = {
         "nowcast_slot2_xgb_v4_calibrated.pkl",
         "nowcast_slot2_xgb_v3_calibrated.pkl",
         "nowcast_slot2_xgb_v2_calibrated.pkl"],
-    3: ["nowcast_slot3_xgb_v6_temporal.pkl",
+    # v7_live_inputs: trained ONLY on inputs that have a real live value (models/thunderstorm/station/train_live_inputs.py). A slot has
+    # such an artifact only if it passed the pre-set gate on label-valid test years (models/station_live_inputs_evaluation.json).
+    3: ["nowcast_slot3_xgb_v7_live_inputs.pkl",
+        "nowcast_slot3_xgb_v6_temporal.pkl",
         "nowcast_slot3_xgb_v5_temporal.pkl",
         "nowcast_slot3_xgb_v4_calibrated.pkl",
         "nowcast_slot3_xgb_v3_calibrated.pkl",
@@ -481,6 +484,10 @@ def main():
                 raise KeyError(f"No feature_cols/features key found. Keys: {list(artifact.keys())}")
             # Operational threshold always takes precedence (includes October fix)
             threshold = threshold_op
+            if str(artifact.get("model_version", "")).startswith("v7_live"):
+                # the v7 decision threshold was chosen on out-of-fold development predictions of THIS model; the v6 regime/October
+                # adjustments were fitted to a different model and do not apply
+                threshold = threshold_op = float(artifact["threshold"])
         except Exception as e:
             print(f"  ✗ Load failed: {e}")
             clim = {0: 0.037, 1: 0.011, 2: 0.063, 3: 0.059}
@@ -574,7 +581,9 @@ def main():
         results[slot_id] = cal
 
         # Determine model version label
-        if "v6" in model_name:
+        if "v7_live" in model_name:
+            model_ver = "v7_live_inputs"
+        elif "v6" in model_name:
             model_ver = "v6_temporal"
         elif "v5" in model_name:
             model_ver = "v5_temporal"
@@ -633,6 +642,7 @@ def main():
             "fallback":          is_fallback,
             "fallback_reason":   fallback_reason,
             "defaulted_inputs":  _defaulted,
+            "evaluation_ref":    artifact.get("evaluation_ref"),   # set for v7_live_inputs (models/station_live_inputs_evaluation.json)
             "raw_probability":   round(float(raw), 4),
             "cape":              round(obs.get("CAPE", 0), 1),
             "k_index":           round(obs.get("K_INDEX", 0), 1),
