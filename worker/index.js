@@ -20,7 +20,7 @@
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, X-Admin-Key',
+  'Access-Control-Allow-Headers': 'Content-Type',   // X-Admin-Key is server-to-server only; browsers must not send it
 };
 
 // ── Token ──────────────────────────────────────────────────────────────────
@@ -31,6 +31,23 @@ async function makeToken(email, secret) {
   const hashArr = Array.from(new Uint8Array(hashBuf));
   return hashArr.map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 32);
 }
+
+// ── Security helpers ──────────────────────────────────────────
+
+function esc(v) {
+  return String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+// Constant-time comparison (avoids leaking the admin key through response timing).
+function safeEqual(a, b) {
+  a = String(a); b = String(b);
+  let diff = a.length ^ b.length;
+  const n = Math.max(a.length, b.length);
+  for (let i = 0; i < n; i++) diff |= (a.charCodeAt(i) || 0) ^ (b.charCodeAt(i) || 0);
+  return diff === 0;
+}
+
+const LIMITS = { name: 80, email: 254, wa_key: 64 };
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -56,10 +73,17 @@ async function handleSubscribe(request, env) {
     return json({ error: 'Invalid JSON body' }, 400);
   }
 
-  const email = (body.email || '').trim().toLowerCase();
-  const name  = (body.name  || '').trim() || 'Researcher';
-  const phone = (body.phone || '').trim();
-  const wa_key = (body.whatsapp_apikey || '').trim();
+  const email = String(body.email ?? '').trim().toLowerCase();
+  if (email.length > LIMITS.email) return json({ error: 'Invalid email address.' }, 400);
+  if (!env.TOKEN_SECRET) {
+    // Fail closed: a default secret would make every unsubscribe token predictable.
+    return json({ error: 'Service not configured.' }, 503);
+  }
+  const name  = String(body.name ?? '').trim().slice(0, LIMITS.name) || 'Researcher';
+  const phone = String(body.phone ?? '').trim();
+  const wa_key = String(body.whatsapp_apikey ?? '').trim();
+  if (phone && !/^\+?[0-9 ()-]{6,20}$/.test(phone)) return json({ error: 'Invalid phone number.' }, 400);
+  if (wa_key.length > LIMITS.wa_key) return json({ error: 'Invalid WhatsApp key.' }, 400);
   const threshold = Math.min(Math.max(Number(body.threshold) || 30, 5), 95);
   const daily_digest = body.daily_digest !== false;
 
@@ -70,13 +94,15 @@ async function handleSubscribe(request, env) {
     return json({ error: 'Invalid email address.' }, 400);
   }
 
-  const token = await makeToken((email || phone), env.TOKEN_SECRET || 'csir-ts-default');
+  const token = await makeToken((email || phone), env.TOKEN_SECRET);
   const key   = `sub:${token}`;
 
   // Check for duplicate
   const existing = await env.SUBSCRIBERS.get(key);
   if (existing) {
-    return json({ ok: true, message: 'Already subscribed. Settings updated.', token });
+    // Same response as a new subscription and NO token: otherwise anyone who knows an address could fetch its
+    // unsubscribe token. Existing settings are not changed by unauthenticated requests.
+    return json({ ok: true, message: 'Subscription request received.' });
   }
 
   const record = {
@@ -91,10 +117,11 @@ async function handleSubscribe(request, env) {
   };
 
   await env.SUBSCRIBERS.put(key, JSON.stringify(record));
-  return json({ ok: true, message: `Subscribed! You'll receive alerts when thunderstorm probability exceeds ${threshold}%.`, token });
+  return json({ ok: true, message: 'Subscription request received.' });   // the token is only delivered inside alert emails
 }
 
 async function handleUnsubscribe(request, env) {
+  if (!env.TOKEN_SECRET) return json({ error: 'Service not configured.' }, 503);
   const url   = new URL(request.url);
   const token = url.searchParams.get('token') ||
     (request.method === 'POST' ? (await request.json().catch(() => ({}))).token : null);
@@ -125,14 +152,14 @@ h2{color:#4caf50;} p{color:#607d8b;font-size:13px;} a{color:#38bdf8;}</style></h
 <body><div class="card">
   <div style="font-size:48px;margin-bottom:16px;">✅</div>
   <h2>Unsubscribed Successfully</h2>
-  <p>${sub.name || 'You'} (${sub.email || sub.phone}) will no longer receive CSIR Thunderstorm alerts.</p>
+  <p>${esc(sub.name || 'You')} (${esc(sub.email || sub.phone)}) will no longer receive CSIR Thunderstorm alerts.</p>
   <p style="margin-top:20px;"><a href="https://csir-thunderstorm-bengaluru.pages.dev">← Back to Dashboard</a></p>
 </div></body></html>`);
 }
 
 async function handleListSubscribers(request, env) {
   const adminKey = request.headers.get('X-Admin-Key') || '';
-  if (!env.ADMIN_KEY || adminKey !== env.ADMIN_KEY) {
+  if (!env.ADMIN_KEY || !safeEqual(adminKey, env.ADMIN_KEY)) {
     return json({ error: 'Unauthorized' }, 401);
   }
 
