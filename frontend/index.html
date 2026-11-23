@@ -2486,7 +2486,7 @@ function injectDrainageOverlay(map, liveData) { /* removed: connected terrain po
         return slots.length > 0 ? Math.max(...slots.map(s => s[hazardCfg.probKey] || 0)) : 0;
       })();
       const alertActive = (hazardCfg.summaryKey ? liveData?.hazard_summary?.[hazardCfg.summaryKey]?.alert_active : liveData?.alert_active) ?? (peakProb >= 0.35);
-      const peakSlot = slots.length > 0 ? slots.reduce((a, b) => (a.probability > b.probability ? a : b), slots[0]) : null;
+      const peakSlot = (() => { const k = slots.filter(x => x.probability != null && isFinite(x.probability)); return k.length ? k.reduce((a, b) => (a.probability > b.probability ? a : b), k[0]) : null; })();
       const riskColor = mapRiskColor(peakProb);
       const riskLabel = mapRiskLabel(peakProb);
 
@@ -3831,13 +3831,14 @@ function injectDrainageOverlay(map, liveData) { /* removed: connected terrain po
               gap: isMobile ? 6 : 10, padding: isMobile ? '8px 10px 12px' : '12px 20px 16px',
             }}>
               {slots.slice(0, 4).map((s, i) => {
-                const p = s.probability || 0;
-                const col = mapRiskColor(p);
-                const risk = mapRiskLabel(p);
+                const known = s.probability != null && isFinite(s.probability);
+                const p = known ? s.probability : 0;
+                const col = known ? mapRiskColor(p) : '#64748b';
+                const risk = known ? mapRiskLabel(p) : (s.fallback ? 'WITHHELD' : 'UNAVAILABLE');
                 const isSelected = i === selectedSlotIndex;
-                const isPeak = peakSlot && s.slot_id === peakSlot.slot_id;
+                const isPeak = known && peakSlot && peakSlot.probability != null && s.slot === peakSlot.slot;
                 return (
-                  <button key={i} onClick={() => onSelectSlot(i)}
+                  <button key={i} onClick={() => onSelectSlot(i)} title={known ? undefined : (s.fallback_reason || 'No valid prediction for this slot')}
                     style={{
                       background: isSelected ? 'rgba(15, 23, 42, 0.96)' : 'rgba(8, 12, 22, 0.88)',
                       backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
@@ -3861,13 +3862,13 @@ function injectDrainageOverlay(map, liveData) { /* removed: connected terrain po
                     </div>
                     <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginTop: 4 }}>
                       <span style={{ fontSize: isMobile ? 22 : 28, fontWeight: 700, color: col, lineHeight: 1 }}>
-                        {(p * 100).toFixed(0)}%
+                        {known ? (p * 100).toFixed(0) + '%' : '\u2014'}
                       </span>
                       <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.04em', color: col }}>{risk}</span>
                     </div>
                     {/* Micro Fill Bar */}
                     <div style={{ marginTop: 6, height: 2, background: 'rgba(255,255,255,0.06)', borderRadius: 2, overflow: 'hidden' }}>
-                      <div style={{ height: 2, width: `${Math.max(p * 100, 2)}%`, background: col, borderRadius: 2, transition: 'width 0.6s ease' }} />
+                      <div style={{ height: 2, width: known ? `${Math.max(p * 100, 2)}%` : '0%', background: col, borderRadius: 2, transition: 'width 0.6s ease' }} />
                     </div>
                   </button>
                 );
@@ -3914,7 +3915,7 @@ function injectDrainageOverlay(map, liveData) { /* removed: connected terrain po
                 };
                 const [icon, label, probKey, desc] = cfgMap[hk];
                 const p = hk === 'thunderstorm'
-                  ? (liveData?.peak_probability ?? (() => { const v = slots.map(s => s.ts_probability ?? s.probability ?? null).filter(x => x != null); return v.length ? Math.max(...v) : null; })())
+                  ? (() => { const v = slots.map(s => s.ts_probability ?? s.probability ?? null).filter(x => x != null && isFinite(x)); return v.length ? Math.max(...v) : null; })()
                   : null;   // cloudburst and flash flood: no validated model, never shown as a probability
                 const known = p != null && isFinite(p);
                 const sev = !known ? null : p >= 0.55 ? 'EXTREME' : p >= 0.35 ? 'HIGH' : p >= 0.15 ? 'MODERATE' : 'LOW';
@@ -3934,7 +3935,7 @@ function injectDrainageOverlay(map, liveData) { /* removed: connected terrain po
                         {known ? `${Math.round(p * 100)}%` : 'UNAVAILABLE'}
                       </div>
                     </div>
-                    <div style={{ fontSize: 11, color: '#64748b', lineHeight: 1.4 }}>{desc}</div>
+                    <div style={{ fontSize: 11, color: '#64748b', lineHeight: 1.4 }}>{(hk === 'thunderstorm' && !known) ? ('UNAVAILABLE: ' + (slots.find(x => x.fallback_reason)?.fallback_reason || 'no valid station prediction (inputs missing or stale)')) : desc}</div>
                   </div>
                 );
               })}
@@ -6988,10 +6989,13 @@ function injectDrainageOverlay(map, liveData) { /* removed: connected terrain po
                 slot: s.slot,
                 label: s.label.toUpperCase(),
                 time: (s.time || '').replace(/ IST$/, ''),
-                ts_probability: s.ts_probability ?? null,
+                // A fallback slot (inputs partly fixed constants / default climatology) is not a prediction: no number is shown.
+                ts_probability: s.fallback ? null : (s.ts_probability ?? null),
+                fallback: !!s.fallback,
+                fallback_reason: s.fallback_reason || null,
                 cb_probability: s.cb_probability ?? null,   // unscored stays null; never shown as 0%
                 ff_probability: s.ff_probability ?? null,
-                probability: (hCfg.key === 'ts' ? (s[hCfg.probKey] ?? s.probability ?? null) : (s[hCfg.probKey] ?? null)),
+                probability: (s.fallback && hCfg.key === 'ts') ? null : (hCfg.key === 'ts' ? (s[hCfg.probKey] ?? s.probability ?? null) : (s[hCfg.probKey] ?? null)),
                 ts_predicted: s.ts_predicted,
                 threshold: s.threshold,
                 icon: s.slot === 0 ? "🌙" : s.slot === 1 ? "☀️" : s.slot === 2 ? "⛅" : "🌆"
