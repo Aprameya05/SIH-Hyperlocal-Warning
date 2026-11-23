@@ -35,6 +35,17 @@ This audit maps each SIH26077 requirement to what the code and committed artifac
 - #10: `worker/index.js` returns 503 without `TOKEN_SECRET` (L78, L124), uses `esc()` (L37) and constant-time `safeEqual` (L42).
 - #5: `drift_check.yml` has no `pages deploy` step and pushes with `git pull --rebase` + `git push origin HEAD:main`, with no force (L241-243). It **still POSTs to public `ntfy.sh/csir-vobl-thunderstorm`** (L245-257).
 
+**Later changes (after the second pass):**
+
+- #15 season gate: `predict_thunderstorm.py` now publishes only leads whose init and valid months are in Apr-Jun, and `predict_extreme_rainfall.py` only in Jun-Sep (months derived from the training-dataset builders' own init dates, enforced by `tests/test_ts_season_gate.py`). Outside those months both artifacts are the existing `model_evaluated: false` form with a reason, so `drift_live.json` `pan_india_model` becomes `UNAVAILABLE`. This resolves the "runs year-round with `model_evaluated: true`" finding for section 5 item 9; the missing live verification and the narrow training seasons remain.
+- #18 UI: the thunderstorm-model map layer indexed `meta.leads` by the forecast-hour chip index (f6 showed the +12 h value). Fixed; an e2e fixture test fails on the old code. This resolves the "TS-model map layer is mis-indexed" finding in row 23 and section 4.
+- #14 site root: the bundle publishes the modern dashboard as `index.html`/`drift.html` and the unchanged legacy dashboard as `legacy.html`; service-worker cache bumped (v5) with network-first entry pages.
+- #16 Worker: per-client KV rate limits on `/subscribe` and `/unsubscribe`; `scripts/check_worker_config.py` (`--remote` verifies deployed secrets; not run, no Cloudflare token here).
+- #17 workflows: external effects (push to main, Pages deploy, WhatsApp/Twilio/ntfy) are main-only, so a branch dispatch is a full dry run; a run whose unified artifact check is not ok now fails instead of ending green with nothing deployed; no swallowed failures in commit/deploy/smoke/validate steps.
+- Dry runs from a branch (no push, deploy or message): `drift_check` [45137120296](https://github.com/Aprameya05/SIH-Hyperlocal-Warning/actions/runs/45137120296), `retrain_trigger` [45137130937](https://github.com/Aprameya05/SIH-Hyperlocal-Warning/actions/runs/45137130937) and the full `forecast_update` pipeline [45137445636](https://github.com/Aprameya05/SIH-Hyperlocal-Warning/actions/runs/45137445636) all passed, including the 48 h national-fields gate, the grid and live-feed validators and the release-readiness gate. These are CI-runner validations, not production verification.
+
+Feasibility of a real 2-6 h lead, satellite inputs and retraining: [`docs/research/SATELLITE_AND_LEAD_TIME_FEASIBILITY.md`](research/SATELLITE_AND_LEAD_TIME_FEASIBILITY.md).
+
 **CI and production:**
 
 - CI: Linux `tests.yml` on `main` at `43d85e9` (run 45128681303) shows **884 passed, 51 skipped**.
