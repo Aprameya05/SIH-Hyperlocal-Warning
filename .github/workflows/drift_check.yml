@@ -162,7 +162,7 @@ jobs:
                   "psi_cape":      round(psi, 4) if psi is not None else None,
                   "n_days":        len(slot_data),
               }
-              print(f"  Slot {slot_id}: Brier={brier_recent:.5f} (ref={brier_ref:.5f}, +{brier_deg*100:.1f}%) PSI={psi:.4f if psi else '—'} → {'DRIFT' if slot_drift else 'OK'}")
+              print(f"  Slot {slot_id}: Brier={brier_recent:.5f} (ref={brier_ref:.5f}, +{brier_deg*100:.1f}%) PSI={(f'{psi:.4f}' if psi is not None else '—')} → {'DRIFT' if slot_drift else 'OK'}")
 
           # ── 4. Decision ───────────────────────────────────────────────────────
           should_recalibrate = FORCE or len(drift_flags) > 0
