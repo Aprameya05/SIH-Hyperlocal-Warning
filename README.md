@@ -20,9 +20,10 @@ DRIFT turns NOAA GFS model guidance into a verified, location-specific view for 
 |---|---|
 | National grid: 4,643 land cells, state/district per cell, 3,756-place gazetteer, search by name or coordinate | **Working**, independently checked against raw GRIB for 27 diverse locations ([report](docs/NATIONAL_COVERAGE_AND_LOCATION_TESTS.md)) |
 | GFS fields and derived physics (K-index, Total Totals, lapse rate, 850–500 hPa shear, convergence, PWAT gradient) | **Working**, refreshed twice daily |
-| Thunderstorm probability, +6/12/18/24 h | **Working**, calibrated XGBoost + TreeSHAP; target is *ordinary* thunderstorm (METAR TS/VCTS) |
+| Thunderstorm probability, +6/12/18/24 h | **Working, validated for Apr–Jun only** (2024/2025, 113 METAR stations); calibrated XGBoost + TreeSHAP; target is *ordinary* thunderstorm (METAR TS/VCTS); these are NWP forecast hours, not a nowcast |
+| Bengaluru (VOBL) station thunderstorm slots | **Fallback-flagged**: 19 of 64 model inputs (station observations) have no live source and are fixed constants, so these slots never drive an alert; SHAP excludes the constants. Station cloudburst/flash-flood scores are **withheld** (training-label leakage) |
 | Heavy rainfall: ≥20 mm / 3 h at forecast hour 9 | **Working**, one target only |
-| Cloudburst prediction | **Unavailable** (no sub-hourly labels or observations) |
+| Cloudburst prediction | **Unavailable** (no sub-hourly labels or observations). The only related output is a daily *heavy-rain-day* score (≥ 64.5 mm/24 h), which is not a cloudburst forecast |
 | Flash-flood prediction | **Unavailable**; an unvalidated heuristic *screening index* is shown, labelled as such |
 | 2–6 h operational lead time, nowcasting | **Not claimed** (DRIFT's own publication time is not recorded; satellite/radar inputs not accessible) |
 | Satellite (INSAT/MOSDAC, Himawari), IMDAA, radar, lightning | **Not integrated**; blockers in [`docs/data_sources/SATELLITE_AND_REANALYSIS_ACCESS.md`](docs/data_sources/SATELLITE_AND_REANALYSIS_ACCESS.md) |
@@ -65,7 +66,7 @@ make serve              # http://localhost:8000/drift.html
 
 Refresh data (network): `make ingest && make predict`. Browser tests: `cd tests/e2e && npm ci && npm test` (uses system Chrome; set `CHROME_PATH` if needed). Full list: `make help`.
 
-Known baseline failures on a fresh checkout (missing raw datasets, unrelated to the product): `test_indofloods_phase5` ×3, `test_vobl_historical_gfs_ts_join` ×6, and 3 modules that fail collection (`test_phase21/22/27`). See [`docs/operations/KNOWN_ISSUES.md`](docs/operations/KNOWN_ISSUES.md).
+Tests run on Linux in CI (`.github/workflows/tests.yml`: full suite on every pull request and push to `main`, plus the Worker's `node:test` security suite). A fresh checkout passes with no failures; about 51 tests skip, each with an explicit reason (raw GRIB2 files, `ts_labels.csv` and other git-ignored research inputs are not in the repository). Run `python -m pytest -rs` to list them. Set `PYTHONUTF8=1` on Windows.
 
 ## API (`backend/location_api.py`, prefix `/v1`)
 
@@ -82,16 +83,16 @@ Known baseline failures on a fresh checkout (missing raw datasets, unrelated to 
 | `tests/` | Python tests (flat), JS tests (`*.mjs`), `tests/e2e` (Playwright) |
 | `scripts/utilities`, `scripts/diagnostics` | Generated docs, acceptance run, inventory |
 | `data/`, `processed/`, `imd_rain/` | Generated artifacts and datasets |
-| `worker/` | Cloudflare Worker (not in the forecast-serving path) |
+| `worker/` | Cloudflare Worker for alert subscriptions (not in the forecast-serving path; deploys manually and **requires a `TOKEN_SECRET` secret**, it refuses to run without one; `ADMIN_KEY` guards the subscriber list) |
 | `docs/` | Architecture, data sources, models, evaluation, operations, security, demo, archive |
 | `research/legacy_experiments/` | Archived experiments |
-| `.github/workflows/` | Scheduled ingestion, forecasts, drift checks, retraining |
+| `.github/workflows/` | `tests.yml` (Linux suite), `india_fields.yml` (GFS ingest and models), `forecast_update.yml` (forecast artifacts, the allow-list bundle and the Wrangler Pages deploy) and `update_grid.yml` (hazard grid artifacts), `drift_check.yml`, `retrain_trigger.yml`, `weekly_digest.yml`; commits are fast-forward only and the forecast, grid, drift, retrain and digest workflows share one concurrency lock (`india_fields` has its own) |
 
 Root-level modules (`forecast_action.py`, `send_alerts.py`, `regrid.py`, …) belong to the older station/992-cell pipeline that workflows import by path; see [`docs/architecture/REPOSITORY_STRUCTURE.md`](docs/architecture/REPOSITORY_STRUCTURE.md).
 
 ## Documentation index
 
-[Architecture](docs/FINAL_SYSTEM_ARCHITECTURE.md) · [Data sources & provenance](docs/DATA_SOURCE_AND_PROVENANCE_MATRIX.md) · [Hazard model validation](docs/HAZARD_MODEL_VALIDATION.md) · [National coverage tests](docs/NATIONAL_COVERAGE_AND_LOCATION_TESTS.md) · [Lead-time validation](docs/FORECAST_LEAD_TIME_VALIDATION.md) · [Limitations](docs/OPERATIONAL_LIMITATIONS.md) · [SIH traceability](docs/FINAL_SIH_REQUIREMENT_TRACEABILITY.md) · [Demo runbook](docs/DEMO_RUNBOOK.md) · [Verification report](docs/FINAL_VERIFICATION_REPORT.md) · [National data report](docs/data_sources/NATIONAL_DATA_REPORT.md)
+[Architecture](docs/FINAL_SYSTEM_ARCHITECTURE.md) · [Data sources & provenance](docs/DATA_SOURCE_AND_PROVENANCE_MATRIX.md) · [Hazard model validation](docs/HAZARD_MODEL_VALIDATION.md) · [National coverage tests](docs/NATIONAL_COVERAGE_AND_LOCATION_TESTS.md) · [Lead-time validation](docs/FORECAST_LEAD_TIME_VALIDATION.md) · [Limitations](docs/OPERATIONAL_LIMITATIONS.md) · [SIH traceability (evidence-checked)](docs/SIH_TRACEABILITY.md) (supersedes the earlier [requirement list](docs/FINAL_SIH_REQUIREMENT_TRACEABILITY.md)) · [Demo runbook](docs/DEMO_RUNBOOK.md) · [Verification report](docs/FINAL_VERIFICATION_REPORT.md) · [National data report](docs/data_sources/NATIONAL_DATA_REPORT.md)
 
 The previous long-form README (engineering history, pre-national-grid) is archived at [`docs/archive/reports/README_legacy_20261011.md`](docs/archive/reports/README_legacy_20261011.md); its numbers (992-cell grid, 993 tests) are superseded.
 
