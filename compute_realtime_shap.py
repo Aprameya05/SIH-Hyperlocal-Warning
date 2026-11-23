@@ -222,7 +222,11 @@ def compute_shap_for_slot(forecast: dict, slot_id: int, models_dir: Path,
     else:
         base_val = float(base_val)
 
-    feature_shap = sorted(zip(feature_cols, sv.tolist()),
+    # Only features backed by real inputs may be presented as drivers. Station-observation features are
+    # fixed constants at live inference (see station_inputs.py); their SHAP values describe the constant, not the weather.
+    from station_inputs import defaulted_inputs
+    _defaulted = set(defaulted_inputs(feature_cols))
+    feature_shap = sorted(((f, v) for f, v in zip(feature_cols, sv.tolist()) if f not in _defaulted),
                           key=lambda x: abs(x[1]), reverse=True)
 
     return {
@@ -241,6 +245,9 @@ def compute_shap_for_slot(forecast: dict, slot_id: int, models_dir: Path,
             }
             for f, v in feature_shap[:12]   # top 12 for richer dashboard display
         ],
+        "defaulted_features_excluded": sorted(_defaulted),
+        "note": ("Drivers exclude inputs that are fixed constants at live inference "
+                 "(no live station-observation source); they are not explanatory."),
         "computed_at": datetime.now(IST).strftime("%Y-%m-%d %H:%M IST"),
     }
 

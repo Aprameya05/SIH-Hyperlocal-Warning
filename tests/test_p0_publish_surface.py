@@ -41,7 +41,7 @@ def test_nothing_sensitive_or_research_is_published(bundle):
 
 def test_only_allow_listed_paths_exist(bundle):
     out, files = bundle
-    on_disk = {str(p.relative_to(out)) for p in out.rglob("*") if p.is_file()}
+    on_disk = {p.relative_to(out).as_posix() for p in out.rglob("*") if p.is_file()}
     assert on_disk == set(files)
     assert bpd.check(out) == []
 
