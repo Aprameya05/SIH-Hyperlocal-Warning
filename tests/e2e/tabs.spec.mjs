@@ -23,7 +23,8 @@ const withheld = j => { j.slots.forEach(s => { s.fallback = true; s.fallback_rea
 
 async function open(hash = '', { now, mutateForecast = withheld } = {}) {
   const ctx = await browser.newContext({ viewport: DESKTOP }); const page = await ctx.newPage(); const w = watch(page); await page.route(TILE, r => r.abort());
-  const T = now ?? Date.parse(FIELDS.meta.cycle_init_utc) + 9 * 3600000;
+  // The simulated clock must be after the latest acquisition (bot grid commits can be acquired many hours after the cycle) yet inside the 18 h freshness window.
+  const T = now ?? Math.max(Date.parse(FIELDS.meta.cycle_init_utc) + 9 * 3600000, ...FIELDS.meta.files.map(f => Date.parse(f.acquired_at_utc)) .map(t => t + 600000));
   await page.addInitScript(t => { const r = Date.now.bind(Date), off = t - r(); Date.now = () => r() + off; }, T);
   if (mutateForecast) await page.route('**/forecast.json*', async r => { const j = JSON.parse(JSON.stringify(baseForecast())); mutateForecast(j); r.fulfill({ contentType: 'application/json', body: JSON.stringify(j) }); });
   await page.goto(`${S.base}/legacy.html${hash}`, { waitUntil: 'domcontentloaded', timeout: 60000 });
