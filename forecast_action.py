@@ -594,6 +594,15 @@ def main():
         )
         # M2: a slot scored on hard-coded climatological defaults (no GFS row) is a FALLBACK even when the preferred
         # model loaded; it must never be treated as a live model output or drive an alert.
+        # Station-observation features have no live source: they are constants at inference. The slot is therefore
+        # a FALLBACK (never alert-eligible, never labelled a live model output) and the constants are listed.
+        from station_inputs import defaulted_inputs
+        _defaulted = defaulted_inputs(feature_cols)
+        if _defaulted:
+            is_fallback = True
+            fallback_reason = ((fallback_reason + "; ") if fallback_reason else "") + (
+                f"{len(_defaulted)} of {len(feature_cols)} model inputs are fixed climatological constants "
+                "(no live station-observation source)")
         if data_source == "model_defaults":
             is_fallback = True
             fallback_reason = ((fallback_reason + "; ") if fallback_reason else "") + \
@@ -621,6 +630,7 @@ def main():
             "model_version":     model_ver,
             "fallback":          is_fallback,
             "fallback_reason":   fallback_reason,
+            "defaulted_inputs":  _defaulted,
             "raw_probability":   round(float(raw), 4),
             "cape":              round(obs.get("CAPE", 0), 1),
             "k_index":           round(obs.get("K_INDEX", 0), 1),
