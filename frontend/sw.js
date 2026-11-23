@@ -1,7 +1,7 @@
 // CSIR Thunderstorm Nowcast — Service Worker
 // Version: 2.0.0 — Offline-first with background sync
 
-const CACHE_NAME = 'drift-v5';   // bumped: index.html is now the modern dashboard; old clients must drop the cached legacy page
+const CACHE_NAME = 'drift-v6';   // bumped: index.html is now the modern dashboard; old clients must drop the cached legacy page
 const FORECAST_URL = './forecast.json';
 const DATA_URLS = [
   './',
@@ -25,13 +25,16 @@ self.addEventListener('install', event => {
 // ── Activate: clean old caches ────────────────────────────────────
 self.addEventListener('activate', event => {
   event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(
-        keys
-          .filter(k => k !== CACHE_NAME)
-          .map(k => caches.delete(k))
-      )
-    ).then(() => self.clients.claim())
+    caches.keys().then(keys => {
+      const stale = keys.filter(k => k !== CACHE_NAME);
+      return Promise.all(stale.map(k => caches.delete(k))).then(() => stale.length > 0);
+    }).then(hadOldCache => self.clients.claim().then(() => {
+      // A returning visitor whose previous worker/caches were replaced may be looking at a page served from the old cache:
+      // reload open tabs once so they show the current deployment (runs once per worker version, so no reload loop).
+      if (hadOldCache) {
+        return self.clients.matchAll({ type: 'window' }).then(cs => cs.forEach(c => { try { c.navigate(c.url); } catch (e) { /* ignore */ } }));
+      }
+    }))
   );
 });
 
@@ -41,8 +44,9 @@ self.addEventListener('fetch', event => {
 
   // Always network-first for forecast.json — data freshness is critical
   // Data feeds and the command-centre page/scripts are network-first: a cached copy must never be shown as current.
-  const networkFirst = url.origin === self.location.origin && (url.pathname.includes('/data/') || /drift(_app|_sim)?\.(html|js)$/.test(url.pathname) ||
-    url.pathname === '/' || /(^|\/)(index|legacy)\.html$/.test(url.pathname));
+  // Every same-origin page, script, stylesheet and data file is network-first: a cached copy must never be shown as current, and a
+  // new drift_app.js must never run against a cached older drift_location.js. Only fonts and images stay cache-first.
+  const networkFirst = url.origin === self.location.origin && (url.pathname === '/' || url.pathname.includes('/data/') || /\.(html|js|css|json|geojson)$/.test(url.pathname));
   if (networkFirst || url.pathname.endsWith('forecast.json') || url.pathname.endsWith('gfs_multiday_43295.json') || url.pathname.endsWith('himawari_realtime.json')) {
     event.respondWith(
       fetch(event.request, { cache: 'no-cache' })
