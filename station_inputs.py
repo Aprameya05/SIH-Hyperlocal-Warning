@@ -1,6 +1,6 @@
 """Single source of truth for station-model inputs that have NO live data source.
 
-The VOBL station thunderstorm models (models/nowcast_slot*_xgb_*.pkl) were trained with 19 features that come
+The VOBL station thunderstorm models (models/nowcast_slot*_xgb_*.pkl) were trained with 20 features that come
 from IMD station observations / previous-day labels (daily max/min temperature, rainfall, rolling windows,
 lagged labels). No live feed for them exists in this repository, so at inference they are fixed climatological
 constants. Such values must never be presented as observations, nor ranked as explanatory "drivers".
