@@ -30,6 +30,7 @@ ALLOW_FILES = [
     "data/india_grid_025.json", "data/india_places.json", "data/india_fields_latest.json", "data/india_static_025.json",
     "data/india_ts_model_latest.json", "data/india_rain_model_latest.json",
     "data/ingest_status.json",
+    "data/ts_panindia_evaluation.json", "data/rain_panindia_evaluation.json",   # held-out evaluation tables shown on Scores/Models (historical, labelled as such)
     "data/india_satellite_ctt_latest.json",   # optional: Himawari-9 B13 brightness temperature (observation; age is shown, stale is withheld)
 ]
 # Files published under a different name: index.html references ./night1.png etc. at the site root, but the sources
@@ -38,6 +39,7 @@ ALIAS_FILES = {
     "morning1.png": "frontend/assets/images/morning1.png", "afternoon1.png": "frontend/assets/images/afternoon1.png",
     "evening1.png": "frontend/assets/images/evening1.png", "night1.png": "frontend/assets/images/night1.png",
     "favicon.ico": "frontend/assets/favicon.ico",
+    "data/station_live_inputs_evaluation.json": "models/station_live_inputs_evaluation.json",
 }
 # Directories published recursively (bundle-relative name -> source directory in the repository).
 ALLOW_DIRS = ["assets"]

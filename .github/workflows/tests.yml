@@ -77,3 +77,8 @@ jobs:
           CHROME_PATH: /usr/bin/google-chrome
           PYTHONUTF8: "1"
         run: cd tests/e2e && node --test inspector.spec.mjs
+      - name: Browser tests (every tab)
+        env:
+          CHROME_PATH: /usr/bin/google-chrome
+          PYTHONUTF8: "1"
+        run: cd tests/e2e && node --test tabs.spec.mjs

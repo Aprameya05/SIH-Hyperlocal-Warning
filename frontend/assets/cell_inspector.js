@@ -130,7 +130,7 @@
   var utc = function (t) { return t ? String(t).slice(0, 16).replace('T', ' ') + 'Z' : '—'; };
   var num = function (v, d) { return v == null ? '—' : Number(v).toFixed(d == null ? 1 : d); };
   var LAYERS = [['cape', 'CAPE', 'J/kg', 3000], ['pwat', 'Precipitable water', 'mm', 70], ['k_index', 'K-index', '°C', 40], ['shear_850_500', '850–500 hPa shear', 'm/s', 25], ['t2m_c', '2 m temperature', '°C', 45],
-                ['ws10', '10 m wind speed', 'm/s', 15], ['precip_3h', 'Rain, 3 h', 'mm', 20], ['sat_bt', 'Himawari-9 B13 BT (observed)', '°C', null]];
+                ['ws10', '10 m wind speed', 'm/s', 15], ['precip_3h', 'Rain, 3 h', 'mm', 20], ['elev', 'Elevation, SRTM mean (static)', 'm', 4000], ['sat_bt', 'Himawari-9 B13 BT (observed)', '°C', null]];
   var RAMP = ['#0b1a33', '#12437a', '#1f7ea8', '#38bdf8', '#7dd3a8', '#e6c64a', '#f59e0b', '#ef4444'];
   var rampColor = function (t) { var i = Math.max(0, Math.min(RAMP.length - 1, Math.round(t * (RAMP.length - 1)))); return RAMP[i]; };
 
@@ -146,6 +146,7 @@
       return { type: 'FeatureCollection', features: S.cells.map(function (c, i) { return { type: 'Feature', id: i, properties: { id: c[0], v: null, c: 'rgba(0,0,0,0)' }, geometry: { type: 'Polygon', coordinates: cellPoly(c[1], c[2], 0.125) } }; }) };
     }
     function layerValue(S, key, i, hour, nowMs) {
+      if (key === 'elev') { var sr = S.staticRecord ? S.staticRecord(S.cells[i][0]) : null; return sr && sr.status === 'AVAILABLE' && sr.elev_mean_m != null ? sr.elev_mean_m : null; }
       if (key === 'sat_bt') { var b = satelliteModel(S, S.cells[i][0], nowMs); return b.status === 'FRESH' ? b.bt_p10_k - 273.15 : null; }
       var col = S.fcol[S.cells[i][0]]; if (col == null) return null;
       var arr = S.fields.fields[key] && S.fields.fields[key][hour]; var v = arr ? arr[col] : null; return v == null || !isFinite(v) ? null : v;
@@ -155,7 +156,7 @@
       if (!features) features = buildFeatures(); if (!features) return;
       var def = LAYERS.filter(function (l) { return l[0] === layerKey; })[0] || LAYERS[0], nowMs = now();
       var hr = sel.hour == null ? S.defaultHour(nowMs) : sel.hour, st = S.record(S.cells[0][0], hr, nowMs).selected_hour.status;
-      var fresh = def[0] === 'sat_bt' || st === 'CURRENT';
+      var fresh = def[0] === 'sat_bt' || def[0] === 'elev' || st === 'CURRENT';
       for (var i = 0; i < features.features.length; i++) {
         var v = layerValue(S, def[0], i, hr, nowMs), p = features.features[i].properties;
         p.v = v; p.c = v == null ? 'rgba(0,0,0,0)' : rampColor(def[3] ? Math.max(0, Math.min(1, v / def[3])) : Math.max(0, Math.min(1, (320 - (v + 273.15)) / 110)));
@@ -163,7 +164,7 @@
       }
       map.getSource('insp-cells').setData(features);
       var lg = host && host.querySelector('.di-legend');
-      if (lg) lg.innerHTML = '<b>' + esc(def[1]) + '</b> · ' + (def[0] === 'sat_bt' ? 'latest scan' : 'f' + S.fields.meta.fhours[hr] + ' valid ' + utc(S.fields.meta.files[hr].valid_time_utc)) +
+      if (lg) lg.innerHTML = '<b>' + esc(def[1]) + '</b> · ' + (def[0] === 'sat_bt' ? 'latest scan' : def[0] === 'elev' ? 'static terrain' : 'f' + S.fields.meta.fhours[hr] + ' valid ' + utc(S.fields.meta.files[hr].valid_time_utc)) +
         (fresh ? '' : ' · <span class="di-chip di-STALE">STALE</span>') + '<div class="di-ramp"></div><span>' + (def[3] ? '0 → ' + def[3] : 'warm → cold') + ' ' + esc(def[2]) + '</span>';
     }
 
@@ -269,6 +270,7 @@
       setTimeout(run, 120);                                   // background/throttled tabs do not run rAF
     }
 
+    function announceHour() { try { window.dispatchEvent(new CustomEvent('drift-hour-changed', { detail: { hour: sel.hour } })); } catch (e) { /* ignore */ } }
     function select(cid, hour) {
       var S = STORE(); if (!S || !S.fieldsOk || S.idx[cid] == null) return false;
       var changed = sel.cid !== cid; sel.cid = cid; if (hour != null) sel.hour = hour; schedule();
@@ -318,7 +320,7 @@
       panel.addEventListener('click', function (e) {
         var b = e.target.closest('[data-act],[data-hour]'); if (!b) return;
         if (b.dataset.act === 'close') { close(); cv.focus(); return; }
-        if (b.dataset.hour != null) { sel.hour = +b.dataset.hour; schedule(); }
+        if (b.dataset.hour != null) { sel.hour = +b.dataset.hour; announceHour(); schedule(); }
       });
       panel.addEventListener('change', function (e) { if (e.target.dataset.act === 'layer') { layerKey = e.target.value; paintLayer(); schedule(); } });
       panel.addEventListener('keydown', function (e) { if (e.key === 'Escape') { close(); cv.focus(); } });
@@ -331,9 +333,10 @@
         sheetState = order[i]; schedule();
       });
       window.addEventListener('resize', schedule);
+      if (sel.cid) schedule();            // re-attached after a tab switch recreated the map: restore panel, highlight and layer
     }
 
-    return { getMap: function () { return map; }, attach: attach, select: select, selectAt: selectAt, close: close, setHour: function (h) { sel.hour = h; schedule(); }, setLayer: function (k) { layerKey = k; paintLayer(); schedule(); },
+    return { getMap: function () { return map; }, attach: attach, select: select, selectAt: selectAt, close: close, setHour: function (h) { if (sel.hour === h) return; sel.hour = h; schedule(); }, setLayer: function (k) { layerKey = k; paintLayer(); schedule(); },
              refresh: function () { features = null; paintLayer(); schedule(); }, state: function () { return { cell_id: sel.cid, hour: sel.hour, layer: layerKey, sheet: sheetState, model_status: lastModel ? lastModel.status : null }; }, renderNow: render };
   }
 
