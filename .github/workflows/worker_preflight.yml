@@ -1,0 +1,28 @@
+name: Worker preflight (read-only)
+
+# Manual, read-only check that the Cloudflare Worker is safe to deploy: static config checks plus verification that the
+# secrets TOKEN_SECRET and ADMIN_KEY exist on the deployed Worker (names only; values are never read or printed).
+# It deploys nothing and writes nothing. CLOUDFLARE_API_TOKEN must be allowed to read Worker secrets.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Static and deployed-secret checks
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: d1ebec3d837d56d32a077b449a65f0c0
+        run: python scripts/check_worker_config.py --remote
