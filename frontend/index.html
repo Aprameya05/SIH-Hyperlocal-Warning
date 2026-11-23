@@ -102,6 +102,13 @@
         });
       }
       // One shared inspector (cell + forecast hour) for the whole page. Other tabs read window.__driftInspector.state().
+      // One regime label for every tab. The artifact's rule-based label (CAPE/K/T2m) is only shown when it is valid for the season.
+      window.driftRegimeLabel = function (ld, nowMs) {
+        var sr = ld && ld.synoptic_regime, month = new Date((nowMs || Date.now()) + 19800000).getUTCMonth() + 1;
+        if (!sr || !sr.regime_name) return { text: '\u2014', valid: false, reason: 'no regime classification in the forecast artifact' };
+        if (/pre-?monsoon/i.test(sr.regime_name) && (month < 3 || month > 6)) return { text: 'WITHHELD', valid: false, reason: 'the artifact label "' + sr.regime_name + '" describes Mar\u2013Jun and is not valid in month ' + month };
+        return { text: sr.regime_name, valid: true, reason: 'rule-based label from CAPE, K-index and 2 m temperature; not a trained classifier' };
+      };
       window.__driftInspector = window.DriftInspector.create(function () { return window.__driftStore; }, {
         onSelect: function (cid) { try { var u = new URL(location.href); u.searchParams.set('cell', cid); history.replaceState(null, '', u); } catch (e) {} window.dispatchEvent(new CustomEvent('drift-cell-selected', { detail: { cell_id: cid } })); }
       });
@@ -1386,6 +1393,7 @@
     ];
 
     const getRiskBadge = (prob) => {
+      if (prob == null || !isFinite(prob)) return { text: 'NO PREDICTION', color: 'text-slate-400', bg: 'bg-slate-500/20', bar: 'bg-slate-500' };   // missing is not low risk
       if (prob >= 0.50) return { text: 'CRITICAL RISK', color: 'text-red-500', bg: 'bg-red-500/20', bar: 'bg-red-500' };
       if (prob >= 0.30) return { text: 'HIGH RISK', color: 'text-orange-400', bg: 'bg-orange-500/20', bar: 'bg-orange-400' };
       if (prob >= 0.15) return { text: 'MODERATE RISK', color: 'text-yellow-400', bg: 'bg-yellow-500/20', bar: 'bg-yellow-400' };
@@ -1549,6 +1557,14 @@
 
     // --- CIRCULAR ARC GAUGE (270 DEGREE SWEEP) ---
     function CircularArcGauge({ probability, threshold = 0.34, size = 110 }) {
+      if (probability == null || !isFinite(probability)) {
+        return (
+          <div className="relative flex items-center justify-center mx-auto" style={{ width: size, height: size }} role="img" aria-label="No valid prediction">
+            <svg width={size} height={size} className="transform rotate-[135deg]"><circle cx={size / 2} cy={size / 2} r={(size - 9) / 2} stroke="#172338" strokeWidth={9} fill="transparent" strokeDasharray={`${(270 / 360) * Math.PI * (size - 9)} ${Math.PI * (size - 9)}`} strokeLinecap="round" /></svg>
+            <div className="absolute inset-0 flex flex-col items-center justify-center"><span className="font-mono text-xl font-extrabold text-slate-500">{'\u2014'}</span><span className="text-[11px] font-mono text-[#607d8b] uppercase tracking-wider">NO PREDICTION</span></div>
+          </div>
+        );
+      }
       const strokeWidth = 9;
       const radius = (size - strokeWidth) / 2;
       const circumference = 2 * Math.PI * radius;
@@ -2394,7 +2410,13 @@ function injectDrainageOverlay(map, liveData) { /* removed: connected terrain po
     function DashboardOverviewPage({ slots, selectedSlotIndex, onSelectSlot, isLiveData, lastUpdated, liveTime, liveData, onNavTabChange, fetchLatencyMs, mousePos, hazardCfg, canonicalPipelineRun }) {
       const { lang } = React.useContext(LangContext);
       const [fieldStore, setFieldStore] = React.useState(window.__driftStore || null);
-      const [fieldHour, setFieldHour] = React.useState(null);    // null = the store's default (next valid) forecast hour
+      const [fieldHour, setFieldHourRaw] = React.useState(window.__driftFieldHour ?? null);    // null = the store's default (next valid) forecast hour; kept across tab switches
+      const setFieldHour = (h) => { window.__driftFieldHour = h; setFieldHourRaw(h); if (window.__driftInspector) window.__driftInspector.setHour(h); };
+      React.useEffect(() => {
+        const onH = (e) => { window.__driftFieldHour = e.detail.hour; setFieldHourRaw(e.detail.hour); };
+        window.addEventListener('drift-hour-changed', onH);
+        return () => window.removeEventListener('drift-hour-changed', onH);
+      }, []);
       React.useEffect(() => {
         const h = () => setFieldStore(window.__driftStore || null);
         window.addEventListener('drift-store-ready', h);
@@ -2538,9 +2560,10 @@ function injectDrainageOverlay(map, liveData) { /* removed: connected terrain po
       }, []);
       const isMobile = winW < 640;
 
-      const peakProb = (() => {
-        if (hazardCfg.key === 'ts') return liveData?.peak_probability ?? (slots.length > 0 ? Math.max(...slots.map(s => s.ts_probability || s.probability || 0)) : 0);
-        return slots.length > 0 ? Math.max(...slots.map(s => s[hazardCfg.probKey] || 0)) : 0;
+      const peakProb = (() => {      // null = no valid prediction (never 0%)
+        const v = slots.map(s => (s.fallback ? null : (s.probability ?? null))).filter(x => x != null && isFinite(x));
+        if (hazardCfg.key === 'ts' && typeof liveData?.peak_probability === 'number') return liveData.peak_probability;
+        return v.length ? Math.max(...v) : null;
       })();
       const alertActive = (hazardCfg.summaryKey ? liveData?.hazard_summary?.[hazardCfg.summaryKey]?.alert_active : liveData?.alert_active) ?? (peakProb >= 0.35);
       const peakSlot = (() => { const k = slots.filter(x => x.probability != null && isFinite(x.probability)); return k.length ? k.reduce((a, b) => (a.probability > b.probability ? a : b), k[0]) : null; })();
@@ -3378,11 +3401,12 @@ function injectDrainageOverlay(map, liveData) { /* removed: connected terrain po
               </span>
               <span style={{ width: 3, height: 3, borderRadius: '50%', background: '#334155' }} />
               <span style={{ fontSize: 11, color: '#38bdf8', fontWeight: 600 }}>
-                {gridMeta?.gfs_fhour ? `NWP f${String(gridMeta.gfs_fhour).padStart(3, '0')}` : 'NWP hour unavailable'}
-                {` * operational lead ${window.DriftForecastIntegrity.leadLabel(gridMeta?.operational_lead_hours)}`}
+                {(() => { const R = window.DriftFieldsBridge.diagnostics(fieldStore, activeLocation.latitude, activeLocation.longitude, fieldHour, Date.now());
+                  if (!R.cycle) return 'GFS unavailable';
+                  const sh = R.selected_hour; return `GFS ${String(R.cycle.model_init_utc).slice(0, 13).replace('T', ' ')}Z f${String(sh.fhour).padStart(3, '0')} * operational lead ${sh.operational_lead_hours != null ? '+' + sh.operational_lead_hours.toFixed(1) + ' h' : 'none'}`; })()}
               </span>
               <span style={{ width: 3, height: 3, borderRadius: '50%', background: '#334155' }} />
-              <span style={{ fontSize: 11, color: '#64748b' }}>992 Grid Cells (structural)</span>
+              <span style={{ fontSize: 11, color: '#64748b' }}>{fieldStore && fieldStore.cells ? `${fieldStore.cells.length.toLocaleString()} grid cells (0.25\u00b0)` : 'grid loading'}</span>
             </div>
 
             {/* Confident Headline */}
@@ -3418,16 +3442,16 @@ function injectDrainageOverlay(map, liveData) { /* removed: connected terrain po
               <div className="drift-telemetry-card" style={{ padding: '10px 14px', borderRadius: 12, background: 'rgba(15, 23, 42, 0.6)', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
                 <div style={{ fontSize: 10, color: '#64748b', fontWeight: 600, letterSpacing: '0.06em' }}>SYNOPTIC REGIME</div>
                 <div style={{ fontSize: 14, fontWeight: 700, color: '#f8fafc', marginTop: 3 }}>
-                  {ci.monsoon_regime || '—'}
+                  {window.driftRegimeLabel(liveData, Date.now()).text}
                 </div>
                 <div style={{ fontSize: 10, color: ciColor, fontWeight: 600, marginTop: 2 }}>CI Risk: {ciRisk}</div>
               </div>
               <div className="drift-telemetry-card" style={{ padding: '10px 14px', borderRadius: 12, background: 'rgba(15, 23, 42, 0.6)', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
                 <div style={{ fontSize: 10, color: '#64748b', fontWeight: 600, letterSpacing: '0.06em' }}>MAX SYSTEM RISK</div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: riskColor, marginTop: 3 }}>
-                  {(peakProb * 100).toFixed(0)}% * {riskLabel}
+                <div style={{ fontSize: 14, fontWeight: 700, color: peakProb == null ? '#64748b' : riskColor, marginTop: 3 }}>
+                  {peakProb == null ? 'WITHHELD' : `${(peakProb * 100).toFixed(0)}% * ${riskLabel}`}
                 </div>
-                <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 2 }}>{peakSlot ? `${peakSlot.slot_label || 'Slot ' + peakSlot.slot}` : 'Baseline monitoring'}</div>
+                <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 2 }}>{peakSlot ? `${peakSlot.slot_label || 'Slot ' + peakSlot.slot}` : (peakProb == null ? 'no valid station prediction' : 'Baseline monitoring')}</div>
               </div>
               <div className="drift-telemetry-card" style={{ padding: '10px 14px', borderRadius: 12, background: 'rgba(15, 23, 42, 0.6)', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
                 <div style={{ fontSize: 10, color: '#64748b', fontWeight: 600, letterSpacing: '0.06em' }}>OPERATIONAL LEAD (not recorded)</div>
@@ -3628,13 +3652,13 @@ function injectDrainageOverlay(map, liveData) { /* removed: connected terrain po
                 onMouseEnter={e => e.currentTarget.style.color = '#f8fafc'}
                 onMouseLeave={e => e.currentTarget.style.color = '#94a3b8'}>BLR</button>
               <div style={{ height: 1, background: 'rgba(255, 255, 255, 0.10)', margin: '2px 4px' }} />
-              <button onClick={() => window.__DRAINAGE_TOGGLE__?.()}
-                title="Toggle Terrain & Drainage Runoff Overlay"
+              <button onClick={() => { const I = window.__driftInspector; if (I) I.setLayer(I.state().layer === 'elev' ? 'cape' : 'elev'); }}
+                title="Grid layer: SRTM-derived mean elevation per 0.25° cell (static terrain; click again to return to CAPE)"
                 style={{ padding: '6px 10px', borderRadius: 8, fontSize: 10, fontWeight: 700, border: 'none', background: 'transparent', color: '#94a3b8', cursor: 'pointer' }}
                 onMouseEnter={e => e.currentTarget.style.color = '#f8fafc'}
                 onMouseLeave={e => e.currentTarget.style.color = '#94a3b8'}>Terrain</button>
-              <button onClick={() => window.__IWV_TOGGLE__?.()}
-                title="Toggle IWV Moisture Tendency Overlay"
+              <button onClick={() => { const I = window.__driftInspector; if (I) I.setLayer(I.state().layer === 'pwat' ? 'cape' : 'pwat'); }}
+                title="Grid layer: GFS precipitable water (integrated water vapour) for the selected forecast hour; click again to return to CAPE"
                 style={{ padding: '6px 10px', borderRadius: 8, fontSize: 10, fontWeight: 700, border: 'none', background: 'transparent', color: '#94a3b8', cursor: 'pointer' }}
                 onMouseEnter={e => e.currentTarget.style.color = '#f8fafc'}
                 onMouseLeave={e => e.currentTarget.style.color = '#94a3b8'}>Moisture</button>
@@ -3651,6 +3675,7 @@ function injectDrainageOverlay(map, liveData) { /* removed: connected terrain po
                 { key: 'GFS', label: 'GFS' },
               ];
               const fmtPct = (v) => (v === null || v === undefined) ? '--' : `${Math.round(v * 100)}%`;
+              const fmtIdx = (v) => (v === null || v === undefined) ? '--' : `${Number(v).toFixed(2)} idx`;   // hand-weighted 1 deg heuristic: an index, never a probability
               const unavailable = (reason) => (
                 <div style={{ fontSize: 10, color: '#64748b', fontStyle: 'italic', padding: '4px 0' }}>
                   {reason || 'Unavailable for selected location'}
@@ -3685,15 +3710,15 @@ function injectDrainageOverlay(map, liveData) { /* removed: connected terrain po
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
                         <div style={{ background: 'rgba(255,255,255,0.03)', padding: '5px 7px', borderRadius: 6 }}>
                           <div style={{ fontSize: 8, color: '#64748b' }}>TS</div>
-                          <div style={{ fontSize: 13, fontWeight: 700, color: '#ef4444' }}>{fmtPct(R.pan_india.ts_probability)}</div>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: '#ef4444' }}>{fmtIdx(R.pan_india.ts_probability)}</div>
                         </div>
                         <div style={{ background: 'rgba(255,255,255,0.03)', padding: '5px 7px', borderRadius: 6 }}>
                           <div style={{ fontSize: 8, color: '#64748b' }}>CB</div>
-                          <div style={{ fontSize: 13, fontWeight: 700, color: '#38bdf8' }}>{fmtPct(R.pan_india.cb_probability)}</div>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: '#38bdf8' }}>{fmtIdx(R.pan_india.cb_probability)}</div>
                         </div>
                         <div style={{ background: 'rgba(255,255,255,0.03)', padding: '5px 7px', borderRadius: 6 }}>
                           <div style={{ fontSize: 8, color: '#64748b' }}>FF</div>
-                          <div style={{ fontSize: 13, fontWeight: 700, color: '#f59e0b' }}>{fmtPct(R.pan_india.ff_probability)}</div>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: '#f59e0b' }}>{fmtIdx(R.pan_india.ff_probability)}</div>
                         </div>
                       </div>
                       <div style={{ fontSize: 9, color: '#475569', marginTop: 6 }}>
@@ -3783,11 +3808,11 @@ function injectDrainageOverlay(map, liveData) { /* removed: connected terrain po
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginTop: 6 }}>
                         <div style={{ background: 'rgba(255,255,255,0.03)', padding: '4px 6px', borderRadius: 6 }}>
                           <div style={{ fontSize: 8, color: '#64748b' }}>FF BASE</div>
-                          <div style={{ fontSize: 12, fontWeight: 700 }}>{fmtPct(R.pan_india.ff_probability)}</div>
+                          <div style={{ fontSize: 12, fontWeight: 700 }}>{fmtIdx(R.pan_india.ff_probability)}</div>
                         </div>
                         <div style={{ background: 'rgba(255,255,255,0.03)', padding: '4px 6px', borderRadius: 6 }}>
                           <div style={{ fontSize: 8, color: '#64748b' }}>FF ROUTED</div>
-                          <div style={{ fontSize: 12, fontWeight: 700, color: '#f59e0b' }}>{fmtPct(R.pan_india.ff_probability_terrain_adjusted)}</div>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: '#f59e0b' }}>{fmtIdx(R.pan_india.ff_probability_terrain_adjusted)}</div>
                         </div>
                       </div>
                       <div style={{ fontSize: 9, color: '#64748b', marginTop: 6 }}>
@@ -4238,34 +4263,33 @@ function injectDrainageOverlay(map, liveData) { /* removed: connected terrain po
           {/* ── 6. DATA SOURCES & PROVENANCE (Real Operational Status Only) ───── */}
           <section style={{ padding: isMobile ? '28px 18px' : '44px 56px', borderBottom: '1px solid rgba(255, 255, 255, 0.07)' }}>
             <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', color: '#64748b', marginBottom: 4 }}>DATA SOURCES &amp; PROVENANCE</div>
-            <div style={{ fontSize: 13, color: '#94a3b8', marginBottom: isMobile ? 14 : 20 }}>Upstream channels and status as reported by the pipeline</div>
+            <div style={{ fontSize: 13, color: '#94a3b8', marginBottom: isMobile ? 14 : 20 }}>Each source's status is computed from its own timestamp and freshness limit</div>
             <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(6, 1fr)', gap: isMobile ? 10 : 16 }}>
               {(() => {
-                const gfsStatus = canonicalPipelineRun?.gfs?.status ?? (liveData ? 'FETCHED' : null);
-                const himawariStatus = canonicalPipelineRun?.himawari?.status ?? (liveData?.satellite?.himawari9 ? 'FETCHED' : null);
-                const rows = [
-                  ['GFS', gfsStatus === 'FETCHED' ? 'FETCHED' : gfsStatus === 'CACHED' ? 'CACHED' : 'UNAVAILABLE', '0.25° NWP Model'],
-                  ['HIMAWARI', himawariStatus === 'FETCHED' ? 'FETCHED' : himawariStatus === 'CACHED' ? 'CACHED' : 'UNAVAILABLE', 'AHI 10-min IR'],
-                  ['METAR', liveData?.metar ? 'FETCHED' : 'UNAVAILABLE', 'Surface METAR 43295'],
-                  ['DEM', 'ACTIVE', 'SRTM 30m Drainage'],
-                  ['IMDAA', 'BLOCKED', 'Air-gapped Reanalysis'],
-                  ['INSAT', 'BLOCKED', 'Restricted Feed'],
-                ];
+                // Every status is computed from the artifact's own timestamps and the source's own freshness limit (no literals, no 'FETCHED because a file loaded').
+                const now = Date.now(), Z = (t) => (t ? String(t).slice(0, 16).replace('T', ' ') + 'Z' : '—'), ageMin = (t) => Math.round((now - Date.parse(t)) / 60000);
+                const human = (m) => (m >= 120 ? (m / 60).toFixed(1) + ' h' : m + ' min');
+                const S = fieldStore, rows = [];
+                if (S && S.fieldsOk) { const m = S.fields.meta, a = ageMin(m.cycle_init_utc); rows.push(['GFS 0.25°', a / 60 <= 18 ? 'FRESH' : 'STALE', `cycle ${Z(m.cycle_init_utc)} · age ${human(a)} · limit 18 h`]); }
+                else rows.push(['GFS 0.25°', 'UNAVAILABLE', 'fields artifact missing or failed verification']);
+                if (S && S.satOk) { const a = ageMin(S.sat.meta.scene_nominal_utc); rows.push(['HIMAWARI-9 B13', a <= 90 ? 'FRESH' : 'STALE', `scan ${Z(S.sat.meta.scene_nominal_utc)} · age ${human(a)} · limit 90 min`]); }
+                else rows.push(['HIMAWARI-9 B13', 'UNAVAILABLE', 'satellite artifact missing or invalid']);
+                const mo = liveData?.metar;
+                if (mo && mo.obs_time) { const a = ageMin(mo.obs_time); rows.push(['METAR VOBL', a <= 120 ? 'FRESH' : 'STALE', `observed ${Z(mo.obs_time)} · age ${human(a)} · limit 2 h`]); }
+                else rows.push(['METAR VOBL', 'UNAVAILABLE', 'no observation in the forecast artifact']);
+                rows.push(['TERRAIN (SRTM)', S && S.sidx && Object.keys(S.sidx).length ? 'STATIC' : 'UNAVAILABLE', 'AWS Terrain Tiles z7 (SRTM-derived), static · not live']);
+                rows.push(['IMDAA', 'NOT INTEGRATED', 'no data access']);
+                rows.push(['INSAT-3D/3DR', 'NOT INTEGRATED', 'MOSDAC login required']);
+                const style = (st) => st === 'FRESH' ? ['#22c55e', 'rgba(34, 197, 94, 0.10)'] : st === 'STALE' ? ['#eab308', 'rgba(234, 179, 8, 0.10)'] : st === 'STATIC' ? ['#38bdf8', 'rgba(56, 189, 248, 0.10)'] : ['#64748b', 'rgba(100, 116, 139, 0.10)'];
                 return rows.map(([label, status, desc]) => {
-                  const isPositive = status === 'FETCHED' || status === 'ACTIVE';
-                  const isCached = status === 'CACHED';
-                  const col = isPositive ? '#22c55e' : isCached ? '#eab308' : '#64748b';
-                  const bg = isPositive ? 'rgba(34, 197, 94, 0.10)' : isCached ? 'rgba(234, 179, 8, 0.10)' : 'rgba(100, 116, 139, 0.10)';
+                  const [col, bg] = style(status);
                   return (
-                    <div key={label} style={{
-                      padding: '14px 16px', borderRadius: 12,
-                      background: 'rgba(15, 23, 42, 0.45)', border: '1px solid rgba(255, 255, 255, 0.06)'
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                    <div key={label} data-testid={'source-' + label.split(' ')[0].toLowerCase()} style={{ padding: '14px 16px', borderRadius: 12, background: 'rgba(15, 23, 42, 0.45)', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4, gap: 6 }}>
                         <span style={{ fontSize: 13, fontWeight: 700, color: '#f8fafc' }}>{label}</span>
-                        <span style={{ fontSize: 10, fontWeight: 700, color: col, background: bg, padding: '1px 6px', borderRadius: 4 }}>{status}</span>
+                        <span style={{ fontSize: 10, fontWeight: 700, color: col, background: bg, padding: '1px 6px', borderRadius: 4, whiteSpace: 'nowrap' }}>{status}</span>
                       </div>
-                      <div style={{ fontSize: 10, color: '#64748b', marginTop: 4 }}>{desc}</div>
+                      <div style={{ fontSize: 10, color: '#64748b', marginTop: 4, lineHeight: 1.4 }}>{desc}</div>
                     </div>
                   );
                 });
@@ -4278,7 +4302,7 @@ function injectDrainageOverlay(map, liveData) { /* removed: connected terrain po
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
               <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', color: '#64748b' }}>ALERT LOG (hand-maintained; no alerts are dispatched)</div>
               {alertLog?.summary_30d?.n_events && (
-                <span style={{ fontSize: 11, color: '#94a3b8' }}>{alertLog.summary_30d.n_events} events in the 30-day scorecard window</span>
+                <span style={{ fontSize: 11, color: '#94a3b8' }}>{(() => { const lu = alertLog.last_updated ? Date.parse(alertLog.last_updated) : NaN; const old = isFinite(lu) && (Date.now() - lu) / 86400000 > 30; return `${alertLog.summary_30d.n_events} events listed \u00b7 log last updated ${alertLog.last_updated || 'unknown'}${old ? ' \u00b7 OLDER THAN 30 DAYS: not a current scorecard' : ''}`; })()}</span>
               )}
             </div>
             <div style={{ fontSize: 13, color: '#94a3b8', marginBottom: isMobile ? 14 : 20 }}>
@@ -6110,7 +6134,9 @@ function injectDrainageOverlay(map, liveData) { /* removed: connected terrain po
                       <span className="text-slate-200 font-medium">see MODELS page</span>
                     </div>
                     <div className="text-center pt-1">
-                      {s.probability >= s.threshold
+                      {(s.probability == null || !isFinite(s.probability))
+                        ? <span className="inline-flex items-center gap-1 text-slate-400 font-semibold tracking-wide">NO VALID PREDICTION{s.fallback_reason ? ' · ' + s.fallback_reason.slice(0, 80) : ''}</span>
+                        : s.probability >= s.threshold
                         ? <span className="inline-flex items-center gap-1 text-rose-400 font-bold tracking-wide animate-pulse">⚠ THRESHOLD EXCEEDED</span>
                         : <span className="inline-flex items-center gap-1 text-emerald-400 font-semibold tracking-wide">✓ THRESHOLD NOMINAL</span>
                       }
@@ -6274,56 +6300,11 @@ function injectDrainageOverlay(map, liveData) { /* removed: connected terrain po
             </div>
           )}
 
-          {/* Multi-Day Outlook Panel */}
-          {liveData?.multiday_outlook?.length > 0 && (
-            <div className="atc-card p-6 rounded-2xl bg-[#0c1326]/75 border border-[#1e293b]/70 backdrop-blur-xl shadow-xl">
-              <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-4 border-b border-slate-800/80 pb-2">
-                EXTENDED OUTLOOK -- GFS PROBABILISTIC FORECAST
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {liveData.multiday_outlook.map((day, idx) => {
-                  const riskColor = day.risk_level === 'HIGH' ? 'text-rose-400' : day.risk_level === 'MODERATE' ? 'text-orange-400' : day.risk_level === 'LOW' ? 'text-yellow-400' : 'text-emerald-400';
-                  const riskBg = day.risk_level === 'HIGH' ? 'bg-rose-500/10 border-rose-500/30' : day.risk_level === 'MODERATE' ? 'bg-orange-500/10 border-orange-500/30' : 'bg-[#060a17] border-slate-800/80';
-                  return (
-                    <div key={idx} className={`p-5 rounded-xl border ${riskBg}`}>
-                      <div className="flex justify-between items-start mb-3">
-                        <div>
-                          <div className="text-sm font-bold text-white capitalize">{day.day_label?.replace('_', ' ') ?? 'Future'}</div>
-                          <div className="text-xs font-mono text-slate-400 mt-0.5">{day.date}</div>
-                        </div>
-                        <span className={`text-xs font-bold px-2.5 py-1 rounded-full border border-current/30 ${riskColor}`}>{day.risk_level}</span>
-                      </div>
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs mb-3">
-                        <div className="p-2 rounded-lg bg-slate-900/60 border border-slate-800">
-                          <div className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">CAPE</div>
-                          <div className="font-bold font-mono text-white mt-0.5">{day.cape}</div>
-                        </div>
-                        <div className="p-2 rounded-lg bg-slate-900/60 border border-slate-800">
-                          <div className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">K-INDEX</div>
-                          <div className="font-bold font-mono text-white mt-0.5">{day.k_index}</div>
-                        </div>
-                        <div className="p-2 rounded-lg bg-slate-900/60 border border-slate-800">
-                          <div className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">LI</div>
-                          <div className="font-bold font-mono text-white mt-0.5">{day.lifted_index}</div>
-                        </div>
-                        <div className="p-2 rounded-lg bg-slate-900/60 border border-slate-800">
-                          <div className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">TT</div>
-                          <div className={`font-bold font-mono mt-0.5 ${day.totals_totals >= 50 ? 'text-rose-400' : day.totals_totals >= 44 ? 'text-amber-400' : 'text-white'}`}>
-                            {day.totals_totals ?? '--'}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex justify-between items-center text-xs border-t border-slate-800/80 pt-2.5">
-                        <span className="text-slate-400">Slot 2 TS model score</span>
-                        <span className={`font-bold font-mono text-sm ${riskColor}`}>{(day.ts_probability_slot2 * 100).toFixed(1)}%</span>
-                      </div>
-                      <div className="text-[11px] text-slate-400 mt-1">Peak window: {day.peak_window}</div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
+          {/* Multi-day outlook: no validated multi-day model exists. The hand-weighted score that used to be shown here was removed (see MULTIDAY page). */}
+          <div className="atc-card p-5 rounded-2xl bg-[#0c1326]/75 border border-[#1e293b]/70" data-testid="no-multiday-score">
+            <div className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">EXTENDED OUTLOOK</div>
+            <div className="text-sm text-slate-400">No validated multi-day thunderstorm model exists, so no multi-day score is shown. The GFS fields (CAPE, K-index, precipitable water, shear) for the next 24 h are on the Dashboard for any selected cell.</div>
+          </div>
         </div>
       );
     }
@@ -6346,7 +6327,7 @@ function injectDrainageOverlay(map, liveData) { /* removed: connected terrain po
           <InfoCard title="What this is">Thunderstorm in a 6-hour IST slot window at ONE station (Bengaluru airport, VOBL). {t.target}. {t.scope}. Validation: {t.validation}. Not a pan-India model, not severe-thunderstorm, not lead-specific.</InfoCard>
           <InfoCard title="Walk-forward results by test year (VOBL only)">
             <div className="overflow-x-auto"><table className="w-full text-[12px] font-mono">
-              <thead><tr className="text-slate-400 text-left"><th>Test year</th><th>Trained on</th><th>Slots</th><th>Event slots</th><th>AUROC</th><th>Brier</th><th>Brier skill</th><th>POD</th><th>FAR</th><th>CSI</th><th>HSS</th></tr></thead>
+              <thead><tr className="text-slate-400 text-left"><th>Test year</th><th>Trained on</th><th>Days</th><th>Event slots</th><th>AUROC</th><th>Brier</th><th>Brier skill</th><th>POD</th><th>FAR</th><th>CSI</th><th>HSS</th></tr></thead>
               <tbody>{t.folds.map(f => (<tr key={f.test_year} className="border-t border-[#1e293b]/60"><td>{f.test_year}</td><td>{f.train_years}</td><td>{f.n}</td><td>{f.n_event_slots}</td><td>{fmtN(f.auroc)}</td><td>{fmtN(f.brier, 4)}</td><td className={f.bss_vs_climatology < 0 ? 'text-rose-400' : ''}>{fmtN(f.bss_vs_climatology)}</td><td>{fmtN(f.pod)}</td><td>{fmtN(f.far)}</td><td>{fmtN(f.csi)}</td><td>{fmtN(f.hss)}</td></tr>))}</tbody>
               <tfoot><tr className="border-t border-[#334155] text-slate-200"><td colSpan="4">Mean of folds</td><td>{fmtN(sm.mean_auroc)}</td><td>—</td><td>{fmtN(sm.mean_bss_vs_climatology)}</td><td>{fmtN(sm.mean_pod)}</td><td>{fmtN(sm.mean_far)}</td><td>—</td><td>{fmtN(sm.mean_hss)}</td></tr></tfoot>
             </table></div>
@@ -6377,6 +6358,12 @@ function injectDrainageOverlay(map, liveData) { /* removed: connected terrain po
         <div className="font-sans max-w-[1100px] mx-auto space-y-6">
           <PageHeader eyebrow="MODEL EVALUATION * VOBL STATION" title={'Model evaluation — ' + (hazardCfg ? hazardCfg.label : 'Thunderstorm')} subtitle={src} badge="STATION-ONLY" badgeColor="amber" />
           {body}
+          {key === 'ts' && <HeldOutEvaluation />}
+          {key === 'ts' && <InfoCard title="Model inventory"><div className="text-[12px] font-mono space-y-1">
+            <div>VOBL station slots: <b>v7_live_inputs</b> (slot 3, only if it passed its gate) and <b>v6_temporal</b> (slots 0–2, inputs partly constant: withheld). Season: all year.</div>
+            <div>Pan-India thunderstorm: <b>ts_panindia_xgb_v1</b>, leads +6/12/18/24 h, season Apr–Jun only (outside it the output is UNAVAILABLE).</div>
+            <div>Short-duration rain: <b>rain_panindia_xgb_v1</b>, 00Z cycles, season Jun–Sep only.</div>
+            <div>Cloudburst and flash flood: no validated model exists (nothing is predicted).</div></div></InfoCard>}
           {ev && <InfoCard title="Claims policy">{ev.claims_policy}</InfoCard>}
         </div>
       );
@@ -6394,8 +6381,18 @@ function injectDrainageOverlay(map, liveData) { /* removed: connected terrain po
       return (
         <div className="font-sans max-w-[1100px] mx-auto space-y-6">
           <PageHeader eyebrow="EXPLAINABILITY * VOBL STATION MODEL" title="Why this score" subtitle={'TreeSHAP on the latest run (forecast.json realtime_shap); generated ' + (liveData.generated_at || '—')} badge="STATION-ONLY" badgeColor="amber" />
-          {slots.map(k => { const r = sh[k]; const mx = Math.max(...r.top_features.map(f => Math.abs(f.shap)), 1e-9); return (
+          {slots.map(k => { const r = sh[k]; const mx = Math.max(...r.top_features.map(f => Math.abs(f.shap)), 1e-9);
+            const sl = (liveData.slots || []).find(x => String(x.slot) === String(k)) || {};
+            const sameScore = sl.raw_probability != null && r.prob != null && Math.abs(sl.raw_probability - r.prob) <= 0.002 && (sl.threshold == null || Math.abs((sl.threshold || 0) - (r.threshold || 0)) <= 0.005);
+            const excl = r.defaulted_features_excluded || [];
+            return (
             <InfoCard key={k} title={'Slot ' + k + ' · ' + r.model_used + ' · model score ' + fmtN(r.prob, 4) + ' · threshold ' + fmtN(r.threshold, 2)}>
+              <div data-testid={'shap-consistency-' + k} className={'mb-2 text-[11px] ' + (sameScore ? 'text-emerald-400' : 'text-amber-400')}>
+                {sl.fallback ? 'The displayed slot score is WITHHELD (' + (sl.fallback_reason || 'inputs without a live value') + '). This attribution describes the raw model only and is not an explanation of any published forecast.'
+                  : sameScore ? 'Matches the displayed slot: same raw model output and threshold.'
+                  : 'Does NOT match the displayed slot (displayed raw score ' + fmtN(sl.raw_probability, 4) + ', threshold ' + fmtN(sl.threshold, 2) + '): this explains the raw model before regime adjustment and is not shown as the reason for the displayed score.'}
+                {excl.length ? ' ' + excl.length + ' inputs that are constants at live inference are excluded from the ranking.' : ''}
+              </div>
               {r.top_features.map(f => (<div key={f.feature} className="flex items-center gap-3 text-[12px] font-mono py-0.5"><span className="w-40 truncate">{f.feature}</span><span className="w-16 text-right">{fmtN(f.value, 2)}</span><span className="flex-1 h-2 bg-[#1e293b] rounded"><span style={{ display: 'block', height: '100%', width: (100 * Math.abs(f.shap) / mx) + '%', background: f.shap >= 0 ? '#f97316' : '#38bdf8' }} /></span><span className="w-20 text-right">{f.shap >= 0 ? '+' : ''}{fmtN(f.shap, 3)}</span></div>))}
               <div className="mt-2 text-slate-400">Log-odds contribution, model attribution only, not a causal explanation. Single-station model.</div>
             </InfoCard>); })}
@@ -6406,13 +6403,16 @@ function injectDrainageOverlay(map, liveData) { /* removed: connected terrain po
 
     function RegimesPage({ liveData, hazardCfg }) {
       const r = liveData && liveData.synoptic_regime;
+      const lab = window.driftRegimeLabel(liveData, Date.now());
       return (
         <div className="font-sans max-w-[1100px] mx-auto space-y-6">
-          <PageHeader eyebrow="SYNOPTIC REGIME * BENGALURU (VOBL) ONLY" title="Synoptic regime label" subtitle="Descriptive label from forecast.json; not national" badge="STATION-ONLY" badgeColor="amber" />
-          {r ? <InfoCard title={'Today: ' + (r.regime_name || r.regime_id)}>
-            {r.description}. Inputs: CAPE {fmtN(r.cape_used, 0)} J/kg, K-index {fmtN(r.ki_used, 1)}, T2m {fmtN(r.t2m_c, 1)} °C, month {r.month}. Computed {r.computed_at}.
-          </InfoCard> : <InfoCard tone="warn" title="Regime label unavailable">The latest forecast.json has no synoptic_regime.</InfoCard>}
-          <InfoCard title="What is deliberately not shown">Per-regime thunderstorm rates and AUROC values that earlier versions of this page displayed (including an AUROC of 1.000) had no dataset, period or model provenance and were removed. No per-regime evaluation is published.</InfoCard>
+          <PageHeader eyebrow="SYNOPTIC REGIME * BENGALURU (VOBL) ONLY" title="Synoptic regime label" subtitle="Rule-based label from forecast.json; not national, not a trained classifier" badge="STATION-ONLY" badgeColor="amber" />
+          {r ? (lab.valid
+            ? <InfoCard title={'Today: ' + lab.text}><span data-testid="regime-valid">
+                {r.description}. Inputs: CAPE {fmtN(r.cape_used, 0)} J/kg, K-index {fmtN(r.ki_used, 1)}, T2m {fmtN(r.t2m_c, 1)} °C, month {r.month}. Computed {r.computed_at}. {lab.reason}.</span></InfoCard>
+            : <InfoCard tone="warn" title="Regime label withheld"><span data-testid="regime-withheld">{lab.reason}. Inputs in the artifact: CAPE {fmtN(r.cape_used, 0)} J/kg, K-index {fmtN(r.ki_used, 1)}, T2m {fmtN(r.t2m_c, 1)} °C, month {r.month}. A season-appropriate classification needs the backend rule set to be extended; nothing is substituted.</span></InfoCard>)
+            : <InfoCard tone="warn" title="Regime label unavailable">The latest forecast.json has no synoptic_regime.</InfoCard>}
+          <InfoCard title="What is deliberately not shown">Per-regime thunderstorm rates and AUROC values that earlier versions of this page displayed (including an AUROC of 1.000) had no dataset, period or model version behind them and were removed. Historical comparison by regime requires a published regime-labelled evaluation set, which does not exist yet.</InfoCard>
         </div>
       );
     }
@@ -6422,15 +6422,40 @@ function injectDrainageOverlay(map, liveData) { /* removed: connected terrain po
 
 
     function RadarMapPage({ liveData }) {
-      const sat = liveData && liveData.satellite && liveData.satellite.himawari9;
+      const [tick, setTick] = useState(0);
+      useEffect(() => {
+        const h = () => setTick(t => t + 1);
+        window.addEventListener('drift-cell-selected', h); window.addEventListener('drift-store-ready', h);
+        return () => { window.removeEventListener('drift-cell-selected', h); window.removeEventListener('drift-store-ready', h); };
+      }, []);
+      const store = window.__driftStore, insp = window.__driftInspector;
+      const cid = (insp && insp.state().cell_id) || 'IN025_1325_07775';
+      const M = store ? window.DriftInspector.buildModel(store, cid, null, Date.now()) : null;
+      const sat = M && M.satellite;
+      const vobl = liveData && liveData.satellite && liveData.satellite.himawari9;
       const hist = (liveData && liveData.satellite && liveData.satellite.history) || [];
+      const age = (t) => { const a = Math.round((Date.now() - Date.parse(t)) / 60000); return a >= 120 ? (a / 60).toFixed(1) + ' h' : a + ' min'; };
+      const chip = (st) => <span className={'inline-block px-2 py-0.5 rounded-full text-[10px] font-bold border ' + (st === 'FRESH' ? 'text-emerald-400 border-emerald-500/40' : st === 'STALE' ? 'text-yellow-400 border-yellow-500/40' : 'text-slate-400 border-slate-500/40')}>{st}</span>;
       return (
-        <div className="font-sans max-w-[1100px] mx-auto space-y-6">
-          <PageHeader eyebrow="HIMAWARI-9 BAND 13 * VOBL" title="Satellite cloud-top temperature" subtitle="There is no radar and no lightning-network data in DRIFT" badge="SAT ONLY" badgeColor="amber" />
-          {sat && sat.available ? <InfoCard title={'Observation ' + sat.timestamp_utc + ' UTC'}>
-            Brightness temperature at VOBL {fmtN(sat.vobl_bt_celsius, 1)} °C; minimum within 50 km {fmtN(sat.min_bt_50km, 1)} °C; mean {fmtN(sat.mean_bt_50km, 1)} °C; {sat.cold_pixels_count} pixels below {sat.threshold_celsius} °C; nearest cold pixel {fmtN(sat.nearest_pixel_dist_km, 1)} km. Source: {sat.data_source}. A cold pixel is a brightness-temperature threshold, not a storm detection.
-          </InfoCard> : <InfoCard tone="warn" title="Satellite observation unavailable">No Himawari-9 record in the latest forecast.json.</InfoCard>}
-          {hist.length > 0 && <InfoCard title="Recent frames">{hist.slice(-12).map((h, i) => <div key={i} className="font-mono text-[12px]">{h.timestamp_utc} UTC · min BT {fmtN(h.min_bt_50km != null ? h.min_bt_50km : h.min_bt, 1)} °C</div>)}</InfoCard>}
+        <div className="font-sans max-w-[1100px] mx-auto space-y-6" data-testid="satellite-page">
+          <PageHeader eyebrow="HIMAWARI-9 BAND 13 (10.4 µm) * BRIGHTNESS TEMPERATURE" title="Satellite observations" subtitle="Observed brightness temperature, not a retrieved cloud-top temperature. There is no radar and no lightning-network data in DRIFT" badge="SAT ONLY" badgeColor="amber" />
+          <InfoCard title={'Selected cell ' + (M && M.cell ? M.cell.id + ' · ' + M.cell.lat.toFixed(2) + '°N ' + M.cell.lon.toFixed(2) + '°E' + (M.cell.district ? ' · ' + M.cell.district + ', ' + M.cell.state : '') : cid)}>
+            {!sat ? 'Field artifacts are not loaded.' : sat.status === 'MISSING' ? <span>{chip('MISSING')} {sat.reason}. Needs: {sat.required_source}.</span> : (
+              <div className="space-y-1 text-[13px]">
+                <div>{chip(sat.status)} scan {String(sat.scene_nominal_utc).slice(0, 16).replace('T', ' ')}Z · age {age(sat.scene_nominal_utc)}{sat.status === 'STALE' ? ' (older than ' + sat.max_age_minutes + ' min: last valid measurement, not current)' : ''}</div>
+                <div className="font-mono">Brightness temperature (10th percentile of cell pixels): <b>{fmtN(sat.bt_p10_k - 273.15, 1)} °C</b> ({fmtN(sat.bt_p10_k, 1)} K); coldest pixel {fmtN(sat.bt_min_k - 273.15, 1)} °C; {Math.round(sat.cold_frac_235k * 100)}% of {sat.n_pixels} pixels colder than 235 K</div>
+                <div className="font-mono">Change over 30 min: <b>{sat.dtdt_30_k_per_h == null ? 'n/a' : (sat.dtdt_30_k_per_h > 0 ? '+' : '') + fmtN(sat.dtdt_30_k_per_h, 1) + ' K/h'}</b> · over 60 min: <b>{sat.dtdt_60_k_per_h == null ? 'n/a' : (sat.dtdt_60_k_per_h > 0 ? '+' : '') + fmtN(sat.dtdt_60_k_per_h, 1) + ' K/h'}</b> (between successive scans; negative = cooling)</div>
+                <div className="text-slate-400">{sat.coverage}{sat.quality === 'COARSE_VIEW_ANGLE' ? ' View zenith here: ' + sat.view_zenith_deg + '°.' : ''}</div>
+                <div className="text-amber-300">{sat.interpretation}</div>
+                {sat.frames && sat.frames.length ? <div className="text-slate-400 font-mono">Frames used: {sat.frames.map(f => String(f.scene_nominal_utc).slice(11, 16) + 'Z').join(', ')}</div> : null}
+              </div>)}
+            <div className="mt-3"><button className="px-3 py-1.5 rounded-lg bg-sky-700 text-white text-xs font-semibold" data-testid="show-sat-on-map" onClick={() => { if (insp) insp.setLayer('sat_bt'); window.location.hash = '#dashboard'; }}>Show brightness-temperature map (Dashboard)</button>
+              <span className="ml-3 text-[11px] text-slate-400">Select another cell on the Dashboard map; this page follows the selection.</span></div>
+          </InfoCard>
+          {vobl && vobl.available ? <InfoCard title={'VOBL point observation ' + vobl.timestamp_utc + ' UTC · age ' + age(String(vobl.timestamp_utc).replace(' ', 'T') + (String(vobl.timestamp_utc).endsWith('Z') ? '' : 'Z'))}>
+            Brightness temperature at VOBL {fmtN(vobl.vobl_bt_celsius, 1)} °C; minimum within 50 km {fmtN(vobl.min_bt_50km, 1)} °C; mean {fmtN(vobl.mean_bt_50km, 1)} °C; {vobl.cold_pixels_count} pixels below the cold threshold. Source: forecast.json (station pipeline).
+          </InfoCard> : <InfoCard tone="warn" title="VOBL point observation unavailable">No Himawari-9 record in the latest forecast.json.</InfoCard>}
+          {hist.length > 0 && <InfoCard title="Recent VOBL frames (as recorded by the station pipeline; frame spacing is irregular)">{hist.slice(-12).map((h, i) => <div key={i} className="font-mono text-[12px]">{h.timestamp_utc} UTC · min BT {fmtN(h.min_bt_50km != null ? h.min_bt_50km : h.vobl_bt_celsius, 1)} °C</div>)}</InfoCard>}
         </div>
       );
     }
@@ -6936,9 +6961,9 @@ function injectDrainageOverlay(map, liveData) { /* removed: connected terrain po
       const [currentSlots, setCurrentSlots] = useState(DEFAULT_SLOTS);
       const [selectedSlotIndex, setSelectedSlotIndex] = useState(() => getInitialSlotByIstTime());
       const [liveTime, setLiveTime] = useState('');
-      const NAV_TAB_LIST = ['DASHBOARD', 'FORECAST', 'UNIFIED FORECAST', 'SATELLITE', 'MODELS', 'EXPLAINABILITY', 'REGIMES', 'DATA & GRAPHS'];
+      const NAV_TAB_LIST = ['DASHBOARD', 'FORECAST', 'SATELLITE', 'MODELS', 'EXPLAINABILITY', 'REGIMES', 'SKILL SCORES', 'DATA & GRAPHS'];   // same order as the visible navigation
       const hashToTab = (h) => {
-        const map = { '#dashboard':'DASHBOARD','#forecast':'FORECAST','#unified':'UNIFIED FORECAST','#satellite':'SATELLITE','#radar':'SATELLITE','#models':'MODELS','#explainability':'EXPLAINABILITY','#regimes':'REGIMES','#api':'LIVE API','#atc':'ATC VIEW','#multiday':'MULTIDAY','#climatology':'CLIMATOLOGY','#scores':'SKILL SCORES','#alerts':'ALERTS','#graphs':'DATA & GRAPHS','#contacts':'CONTACTS','#whatif':'WHATIF' };
+        const map = { '#dashboard':'DASHBOARD','#forecast':'FORECAST','#unified':'UNIFIED FORECAST','#satellite':'SATELLITE','#radar':'SATELLITE','#models':'MODELS','#explainability':'EXPLAINABILITY','#regimes':'REGIMES','#api':'LIVE API','#atc':'DASHBOARD','#multiday':'MULTIDAY','#climatology':'CLIMATOLOGY','#scores':'SKILL SCORES','#alerts':'ALERTS','#graphs':'DATA & GRAPHS','#contacts':'CONTACTS','#whatif':'WHATIF' };
         return map[h.toLowerCase()] || 'DASHBOARD';
       };
       const tabToHash = (t) => {
@@ -7099,6 +7124,10 @@ function injectDrainageOverlay(map, liveData) { /* removed: connected terrain po
                 ts_probability: s.fallback ? null : (s.ts_probability ?? null),
                 fallback: !!s.fallback,
                 fallback_reason: s.fallback_reason || null,
+                ...(typeof s.prev_probability === 'number' ? { prev_probability: s.prev_probability } : {}),
+                ...(typeof s.trend_diff === 'number' ? { trend_diff: s.trend_diff } : {}),
+                ...(s.trend ? { trend: s.trend } : {}),
+                model_used: s.model_used || null, raw_probability: s.raw_probability ?? null,
                 cb_probability: s.cb_probability ?? null,   // unscored stays null; never shown as 0%
                 ff_probability: s.ff_probability ?? null,
                 probability: (s.fallback && hCfg.key === 'ts') ? null : (hCfg.key === 'ts' ? (s[hCfg.probKey] ?? s.probability ?? null) : (s[hCfg.probKey] ?? null)),
@@ -7166,6 +7195,13 @@ function injectDrainageOverlay(map, liveData) { /* removed: connected terrain po
         return () => clearInterval(timer);
       }, []);
 
+      // Browser Back/Forward and edited URLs: the tab follows the hash (it was only read once at load before).
+      React.useEffect(() => {
+        const onHash = () => { const t = hashToTab(window.location.hash || '#dashboard'); setActiveNavTab(prev => (prev === t ? prev : t)); setIsAtcMode(t === 'ATC VIEW'); };
+        window.addEventListener('hashchange', onHash);
+        return () => window.removeEventListener('hashchange', onHash);
+      }, []);
+
       const handleNavTabClick = (tab) => {
         setActiveNavTab(tab);
         if (typeof window !== 'undefined') window.location.hash = tabToHash(tab);
@@ -7212,7 +7248,7 @@ function injectDrainageOverlay(map, liveData) { /* removed: connected terrain po
         const date  = liveData?.date || new Date().toISOString().slice(0, 10);
         const regime = liveData?.monsoon_regime?.regime || liveData?.synoptic_regime?.regime_name || 'N/A';
         const hazard = hazardCfg?.label || 'TS';
-        const slotLabels = ['00-06 UTC (Night)', '06-12 UTC (Morning)', '12-18 UTC (Afternoon)', '18-24 UTC (Evening)'];
+        const slotLabels = ['00-06 IST (Night)', '06-12 IST (Morning)', '12-18 IST (Afternoon)', '18-24 IST (Evening)'];   // slot windows are IST
         const riskColor = (p) => p >= 0.55 ? [220,38,38] : p >= 0.35 ? [234,88,12] : p >= 0.15 ? [202,138,4] : [22,163,74];
 
         // Header bar
@@ -7239,7 +7275,7 @@ function injectDrainageOverlay(map, liveData) { /* removed: connected terrain po
         doc.setTextColor(200, 200, 200);
         doc.text(hazard, 140, 30);
         doc.setTextColor(96, 125, 139);
-        doc.text(`Generated (IST): ${new Date().toLocaleString('en-IN',{timeZone:'Asia/Kolkata'})}`, 14, 37);
+        doc.text(`Forecast generated (IST): ${liveData?.generated_at || 'unknown'}  |  Bulletin printed (IST): ${new Date().toLocaleString('en-IN',{timeZone:'Asia/Kolkata'})}`, 14, 37);
 
         // Divider
         doc.setDrawColor(0, 100, 60);
@@ -7248,10 +7284,13 @@ function injectDrainageOverlay(map, liveData) { /* removed: connected terrain po
         // Slot cards
         let yOff = 47;
         slots.slice(0, 4).forEach((s, i) => {
-          const prob = s.probability ?? s[probKey] ?? s.ts_probability ?? 0;
-          const pct  = (prob * 100).toFixed(1);
-          const pred = s.ts_predicted ? 'ALERT' : 'STABLE';
-          const [r, g, b] = riskColor(prob);
+          // A fallback/unscored slot has NO prediction: never printed as 0.0% STABLE.
+          const rawProb = s.fallback ? null : (s.probability ?? s[probKey] ?? s.ts_probability ?? null);
+          const known = rawProb != null && isFinite(rawProb);
+          const prob = known ? rawProb : 0;
+          const pct  = known ? (prob * 100).toFixed(1) + '%' : 'WITHHELD';
+          const pred = !known ? 'NO VALID PREDICTION' : (s.ts_predicted ? 'ALERT' : 'STABLE');
+          const [r, g, b] = known ? riskColor(prob) : [100, 116, 139];
           // Card background
           doc.setFillColor(15, 23, 42);
           doc.roundedRect(14, yOff, 182, 36, 3, 3, 'F');
@@ -7265,7 +7304,7 @@ function injectDrainageOverlay(map, liveData) { /* removed: connected terrain po
           // Probability ring label
           doc.setTextColor(r, g, b);
           doc.setFontSize(22);
-          doc.text(`${pct}%`, 22, yOff + 26);
+          doc.text(`${pct}`, 22, yOff + 26);
           // Status badge
           doc.setFontSize(8);
           doc.setTextColor(r, g, b);
@@ -7302,19 +7341,20 @@ function injectDrainageOverlay(map, liveData) { /* removed: connected terrain po
       // Copy forecast summary
       const copyForecastSummary = () => {
         if (!liveData) return;
-        const slots = liveData.slots || currentSlots;
+        const slots = (currentSlots && currentSlots.length > 0) ? currentSlots : (liveData.slots || []);
         const regime = liveData.monsoon_regime?.regime || 'UNKNOWN';
-        const maxProb = Math.max(...slots.map(s => s.probability ?? s.ts_prob ?? 0));
+        const pOf = (s) => { const v = s.fallback ? null : (s.probability ?? null); return (v != null && isFinite(v)) ? v : null; };   // missing is never 0%
+        const known = slots.map(pOf).filter(v => v != null);
+        const maxProb = known.length ? Math.max(...known) : null;
         const slotLines = slots.map(s => {
           const labels = ['00-06 IST','06-12 IST','12-18 IST','18-24 IST'];
-          const p = ((s.probability ?? s.ts_prob ?? 0)*100).toFixed(1);
-          const pred = s.ts_predicted ? '⚡ ALERT' : 'STABLE';
-          return `  ${labels[s.slot] || `Slot ${s.slot}`}: ${p}% -- ${pred}`;
+          const v = pOf(s);
+          return `  ${labels[s.slot] || `Slot ${s.slot}`}: ` + (v == null ? `WITHHELD${s.fallback_reason ? ' (' + String(s.fallback_reason).slice(0, 90) + ')' : ' (no valid prediction)'}` : `${(v * 100).toFixed(1)}% -- ${s.ts_predicted ? '⚡ ALERT' : 'STABLE'}`);
         }).join('\n');
         const text = `${hazardCfg.label} model score (experimental, not an official warning) -- VOBL Bengaluru -- ${liveData.date || new Date().toISOString().slice(0,10)}
-Regime: ${regime} | Max Prob: ${(maxProb*100).toFixed(1)}%
+Regime: ${regime} | Max Prob: ${maxProb == null ? 'none (no valid slot prediction)' : (maxProb*100).toFixed(1) + '%'} | Forecast generated (IST): ${liveData.generated_at || 'unknown'}
 ${slotLines}
-Source: csir-thunderstorm-bengaluru.pages.dev | IMD Station 43295`;
+Source: sih-hyperlocal-warning.pages.dev | VOBL (IMD Station 43295) | NOT an official IMD/NDMA warning`;
         navigator.clipboard.writeText(text).then(() => {
           setCopyFeedback(true);
           setTimeout(() => setCopyFeedback(false), 2000);
@@ -7622,6 +7662,53 @@ Source: csir-thunderstorm-bengaluru.pages.dev | IMD Station 43295`;
     function ClimatologyPage({ liveData, hazardCfg }) { return <UnavailablePage eyebrow="CLIMATOLOGY" title="Climatology" why="The monthly, diurnal and seasonal tables on this page were typed by hand with no computation from station data (the stated record length contradicted the code comment), and included invented cloudburst and flash-flood days. They were removed. A climatology can be added only if it is computed from the METAR record." />; }
 
 
+
+    // Held-out evaluation tables (historical, NOT live operational performance), read from the published evaluation artifacts.
+    function HeldOutEvaluation() {
+      const [d, setD] = useState({ ts: null, rain: null, st: null });
+      useEffect(() => {
+        const g = (u, k) => fetch(u, { cache: 'no-cache' }).then(r => (r.ok ? r.json() : Promise.reject(r.status))).then(j => setD(p => ({ ...p, [k]: j }))).catch(() => setD(p => ({ ...p, [k]: false })));
+        g('./data/ts_panindia_evaluation.json', 'ts'); g('./data/rain_panindia_evaluation.json', 'rain'); g('./data/station_live_inputs_evaluation.json', 'st');
+      }, []);
+      const m = (v, n = 3) => (v == null || Number.isNaN(v) ? '—' : Number(v).toFixed(n));
+      const ci = (c) => (c ? ` [${m(c[0])}, ${m(c[1])}]` : '');
+      const Head = ({ cols }) => (<thead><tr className="text-slate-400 text-left">{cols.map(c => <th key={c} className="pr-3 font-semibold">{c}</th>)}</tr></thead>);
+      const cols = ['Lead / target', 'Test events / n', 'AUROC [95% CI]', 'PR-AUC (no skill)', 'Brier (clim.)', 'Brier skill', 'ECE', 'POD', 'FAR', 'CSI', 'HSS', 'Gate'];
+      const row = (label, a, passed) => (
+        <tr key={label} className="border-t border-[#1e293b]/60">
+          <td className="pr-3">{label}</td><td className="pr-3">{a.n_events} / {a.n}</td><td className="pr-3">{m(a.auroc)}{ci(a.uncertainty && a.uncertainty.auroc_95ci)}</td>
+          <td className="pr-3">{m(a.pr_auc)} ({m(a.pr_auc_no_skill)})</td><td className="pr-3">{m(a.brier, 4)} ({m(a.brier_climatology, 4)})</td>
+          <td className="pr-3">{m(a.bss_vs_climatology)}{ci(a.uncertainty && a.uncertainty.bss_95ci)}</td><td className="pr-3">{m(a.ece)}</td>
+          <td className="pr-3">{m(a.pod)}</td><td className="pr-3">{m(a.far)}</td><td className="pr-3">{m(a.csi)}</td><td className="pr-3">{m(a.hss)}</td>
+          <td className={passed ? 'text-emerald-400' : 'text-amber-400'}>{passed ? 'PASSED' : 'FAILED'}</td>
+        </tr>);
+      const card = (key, title, src, body, note) => (
+        <InfoCard key={key} title={title}>
+          {d[key] === null ? 'Loading…' : d[key] === false ? ('Evaluation artifact unavailable (' + src + ').') : (<>
+            <div className="overflow-x-auto"><table className="w-full text-[12px] font-mono">{body}</table></div>
+            <div className="mt-2 text-slate-400">{note} Source: {src}{d[key].generated_at_utc ? ', generated ' + d[key].generated_at_utc : ''}. These are held-out HISTORICAL results, not live operational performance.</div>
+          </>)}
+        </InfoCard>);
+      const ts = d.ts, rain = d.rain, st = d.st;
+      return (
+        <div className="space-y-6" data-testid="held-out-evaluation">
+          {card('ts', 'Pan-India thunderstorm model (ts_panindia_xgb_v1): temporal holdout 2025', 'data/ts_panindia_evaluation.json',
+            ts ? (<><Head cols={cols} /><tbody>{Object.keys(ts.leads).map(L => row('+' + L + ' h', ts.leads[L].A_temporal_holdout.xgboost_calibrated, ts.leads[L].passes_gate))}</tbody></>) : null,
+            ts ? ('Trained on ' + (ts.data.years || []).join('/') + ' ' + (ts.data.n_stations || '') + ' METAR stations, ' + (ts.data.n_init_dates || '') + ' init dates, Apr–Jun only; published only in that season. Categorical scores use the model’s own threshold.') : '')}
+          {card('rain', 'Short-duration rain model (rain_panindia_xgb_v1): >= 20 mm / 3 h', 'data/rain_panindia_evaluation.json',
+            rain ? (<><Head cols={cols} /><tbody>{Object.keys(rain.targets).map(k => row(k, rain.targets[k].A_temporal_holdout.xgboost_calibrated, rain.targets[k].passes_gate))}</tbody></>) : null,
+            rain ? 'Labels are CMORPH 3-hourly rainfall; evaluated on Jun–Sep 2025 initialisations; published only in that season (00Z cycles).' : '')}
+          {card('st', 'VOBL station thunderstorm, live-inputs model (v7): chronological test years', 'data/station_live_inputs_evaluation.json',
+            st ? (<><thead><tr className="text-slate-400 text-left">{['Slot', 'Dev / test years', 'Test events / n', 'AUROC [95% CI]', 'PR-AUC (no skill)', 'Brier skill vs slot-month clim. [95% CI]', 'POD', 'FAR', 'CSI', 'HSS', 'Gate'].map(c => <th key={c} className="pr-3 font-semibold">{c}</th>)}</tr></thead>
+              <tbody>{Object.keys(st.slots).map(k => { const r = st.slots[k], c = r.categorical_at_dev_threshold || {}, b = r.bootstrap || {}; return (
+                <tr key={k} className="border-t border-[#1e293b]/60"><td className="pr-3">{['00–06', '06–12', '12–18', '18–24'][k]} IST</td><td className="pr-3">{(r.dev_years || []).length ? r.dev_years[0] + '–' + r.dev_years[r.dev_years.length - 1] : '—'} / {(r.test_years || []).join(', ')}</td>
+                  <td className="pr-3">{r.test_events} / {r.n_test}</td><td className="pr-3">{m(r.AUROC)}{ci(b.auroc_95ci)}</td><td className="pr-3">{m(r.PR_AUC)} ({m(r.PR_AUC_no_skill)})</td>
+                  <td className="pr-3">{m(r.BSS_vs_slot_month_climatology)}{ci(b.bss_vs_slot_month_clim_95ci)}</td><td className="pr-3">{m(c.POD)}</td><td className="pr-3">{m(c.FAR)}</td><td className="pr-3">{m(c.CSI)}</td><td className="pr-3">{m(c.HSS)}</td>
+                  <td className={r.gate && r.gate.passed ? 'text-emerald-400' : 'text-amber-400'} title={(r.gate && r.gate.reasons || []).join('; ')}>{r.gate && r.gate.passed ? 'PASSED → published' : 'FAILED → withheld'}</td></tr>); })}</tbody></>) : null,
+            st ? ('Gate: >= ' + st.gate.min_test_events + ' test events, 95% lower bound of Brier skill vs slot-month climatology > 0 and of AUROC >= ' + st.gate.min_auroc_ci_low + '. Label-drought years are excluded (' + Object.values(st.slots).map(r => (r.excluded_label_drought_years || []).join('/')).filter((v, i, a) => v && a.indexOf(v) === i).join('; ') + '). ' + st.caveat) : '')}
+        </div>);
+    }
+
     function SkillScoresPage({ liveData, hazardCfg }) {
       const [sk, setSk] = useState(null);
       const [ev, setEv] = useState(null);
@@ -7635,13 +7722,18 @@ Source: csir-thunderstorm-bengaluru.pages.dev | IMD Station 43295`;
       const t = ev && ev.hazards ? ev.hazards.thunderstorm : null;
       return (
         <div className="font-sans max-w-[1100px] mx-auto space-y-6">
-          <PageHeader eyebrow="VOBL (BENGALURU) THUNDERSTORM MODEL" title="Verification" subtitle={'Rolling ' + (sk && sk.window_days ? sk.window_days : 30) + '-day verification (data/skill_scores.json, computed ' + (sk && sk.generated_at ? sk.generated_at : '—') + ')'} badge="STATION-ONLY" badgeColor="amber" />
-          <InfoCard title="Rolling verification by 6-hour slot (METAR thunderstorm reports at VOBL)">
-            {sk === null ? 'Loading…' : sk === false ? 'Verification artifact unavailable.' : (<div className="overflow-x-auto"><table className="w-full text-[12px] font-mono"><thead><tr className="text-slate-400 text-left"><th>Slot</th><th>Days</th><th>Event days</th><th>POD</th><th>FAR</th><th>CSI</th><th>Brier</th></tr></thead><tbody>
-              {slots.map(r => { const m = r.metrics || {}; const ev = (m.TP || 0) + (m.FN || 0); return (<tr key={r.slot} className="border-t border-[#1e293b]/60"><td>{r.slot_name}</td><td>{(m.TP || 0) + (m.FP || 0) + (m.FN || 0) + (m.TN || 0)}</td><td>{ev}</td><td>{ev ? fmtN(m.POD) : '—'}</td><td>{(m.TP || 0) + (m.FP || 0) ? fmtN(m.FAR) : '—'}</td><td>{ev ? fmtN(m.CSI) : '—'}</td><td>{fmtN(m.Brier, 4)}</td></tr>); })}
-            </tbody></table></div>)}
-            <div className="mt-2 text-slate-400">POD, FAR and CSI are shown only when the window contains events; a window with no event days has no defined skill, and a zero is never displayed as a score.</div>
-          </InfoCard>
+          <PageHeader eyebrow="VOBL (BENGALURU) THUNDERSTORM MODEL" title="Verification" subtitle={'Rolling ' + (sk && sk.window_days ? sk.window_days : 30) + '-day station verification (data/skill_scores.json, table generated ' + (sk && sk.generated_at ? sk.generated_at : '—') + '; the observation period behind it is not recorded in the artifact). Held-out evaluations below.'} badge="STATION-ONLY" badgeColor="amber" />
+          {(() => { const vd = liveData && liveData.verification_daily, miss = vd && /not found|no observation/i.test(String(vd.note || ''));
+            return miss
+              ? <InfoCard tone="warn" title="Rolling verification: UNAVAILABLE"><span data-testid="verification-unavailable">The forecast artifact reports "{vd.note}". Without observations the table cannot say how many days were quiet, so its true-negative counts are not shown. Verification resumes when the IMD/METAR observation file is available.</span></InfoCard>
+              : (          <InfoCard title="Rolling verification by 6-hour slot (METAR thunderstorm reports at VOBL)">
+              {sk === null ? 'Loading…' : sk === false ? 'Verification artifact unavailable.' : (<div className="overflow-x-auto"><table className="w-full text-[12px] font-mono"><thead><tr className="text-slate-400 text-left"><th>Slot</th><th>Days</th><th>Event days</th><th>POD</th><th>FAR</th><th>CSI</th><th>Brier</th></tr></thead><tbody>
+                {slots.map(r => { const m = r.metrics || {}; const ev = (m.TP || 0) + (m.FN || 0); return (<tr key={r.slot} className="border-t border-[#1e293b]/60"><td>{r.slot_name}</td><td>{(m.TP || 0) + (m.FP || 0) + (m.FN || 0) + (m.TN || 0)}</td><td>{ev}</td><td>{ev ? fmtN(m.POD) : '—'}</td><td>{(m.TP || 0) + (m.FP || 0) ? fmtN(m.FAR) : '—'}</td><td>{ev ? fmtN(m.CSI) : '—'}</td><td>{fmtN(m.Brier, 4)}</td></tr>); })}
+              </tbody></table></div>)}
+              <div className="mt-2 text-slate-400">POD, FAR and CSI are shown only when the window contains events; a window with no event days has no defined skill, and a zero is never displayed as a score.</div>
+            </InfoCard>);
+          })()}
+          <HeldOutEvaluation />
           {t && <InfoCard title="Independent walk-forward evaluation (VOBL, by test year)">Mean AUROC {fmtN(t.summary.mean_auroc)}, mean POD {fmtN(t.summary.mean_pod)}, mean FAR {fmtN(t.summary.mean_far)}, mean HSS {fmtN(t.summary.mean_hss)}; Brier skill positive in {t.summary.years_with_positive_bss} of {t.folds.length} years. Full table on the MODELS page. Station-only, slot windows, not lead-specific.</InfoCard>}
         </div>
       );
@@ -7656,225 +7748,52 @@ Source: csir-thunderstorm-bengaluru.pages.dev | IMD Station 43295`;
     function WhatIfPage({ liveData, hazardCfg }) { return <UnavailablePage eyebrow="SIMULATION" title="What-if simulator" why="The simulator used invented weights and invented cloudburst and flash-flood formulas, and implied it mirrored the production model. It was removed. The DRIFT command centre has a separate, clearly labelled SIMULATION mode for alert-pipeline demonstrations." />; }
 
     function DataGraphsPage({ liveData }) {
-      const { lang } = React.useContext(LangContext);
-      const [history, setHistory] = React.useState(() => {
-        try { return JSON.parse(localStorage.getItem('sih_history') || '[]'); } catch { return []; }
-      });
-      const [selectedMetric, setSelectedMetric] = React.useState('probability');
-
-      React.useEffect(() => {
-        if (!liveData) return;
-        const now = new Date();
-        const istStr = now.toLocaleString('en-IN', { timeZone:'Asia/Kolkata', hour12:false, hour:'2-digit', minute:'2-digit', month:'short', day:'numeric' });
-        const snap = {
-          ts: Date.now(), label: istStr,
-          probability: Math.round((liveData.peak_probability || 0) * 100),
-          iwv:  liveData.gfs?.iwv_kg_m2        != null ? Math.round(liveData.gfs.iwv_kg_m2) : null,
-          cape: liveData.gfs?.ua_cape_jkg       != null ? Math.round(liveData.gfs.ua_cape_jkg) : null,
-          shear:liveData.gfs?.wind_shear_0_6km_ms != null ? Math.round(liveData.gfs.wind_shear_0_6km_ms*10)/10 : null,
-          kidx: liveData.gfs?.ua_k_index        != null ? Math.round(liveData.gfs.ua_k_index) : null,
-        };
-        setHistory(prev => {
-          const last = prev[prev.length - 1];
-          if (last && (snap.ts - last.ts) < 5 * 60 * 1000) return prev;
-          const next = [...prev.slice(-47), snap];
-          try { localStorage.setItem('sih_history', JSON.stringify(next)); } catch {}
-          return next;
-        });
-      }, [liveData]);
-
-      const METRICS = [
-        { key:'probability', label:'VOBL station thunderstorm score', unit:'%',     color:'#ef5350', max:100,  thresholdLine:35   },
-        { key:'iwv',         label:'Integrated Water Vapour',  unit:'kg/m²',color:'#38bdf8', max:60,   thresholdLine:45   },
-        { key:'cape',        label:'CAPE  (Storm Energy)',      unit:'J/kg',  color:'#ffa726', max:3000, thresholdLine:1500 },
-        { key:'shear',       label:'Wind shear (as published in forecast.json)',       unit:'m/s',   color:'#66bb6a', max:30,   thresholdLine:12   },
-        { key:'kidx',        label:'K-Index',                  unit:'',      color:'#ab47bc', max:50,   thresholdLine:35   },
-      ];
-      const m = METRICS.find(x => x.key === selectedMetric) || METRICS[0];
-      const data = history.filter(h => h[m.key] != null);
-
-      const W=640, H=180, PAD={l:42,r:12,t:16,b:36};
-      const cW=W-PAD.l-PAD.r, cH=H-PAD.t-PAD.b;
-      const toX = i => PAD.l + (data.length<=1 ? cW/2 : (i/(data.length-1))*cW);
-      const toY = v => PAD.t + cH - Math.min(1,Math.max(0,v/(m.max||100)))*cH;
-      const pts  = data.map((d,i)=>`${toX(i)},${toY(d[m.key])}`).join(' ');
-      const poly = data.length>1
-        ? `${PAD.l},${PAD.t+cH} ${data.map((d,i)=>`${toX(i)},${toY(d[m.key])}`).join(' ')} ${toX(data.length-1)},${PAD.t+cH}`
-        : '';
-
-      const cv = liveData ? (() => {
-        if(m.key==='probability') return Math.round((liveData.peak_probability||0)*100);
-        if(m.key==='iwv')   return liveData.gfs?.iwv_kg_m2!=null?Math.round(liveData.gfs.iwv_kg_m2):null;
-        if(m.key==='cape')  return liveData.gfs?.ua_cape_jkg!=null?Math.round(liveData.gfs.ua_cape_jkg):null;
-        if(m.key==='shear') return liveData.gfs?.wind_shear_0_6km_ms!=null?Math.round(liveData.gfs.wind_shear_0_6km_ms*10)/10:null;
-        if(m.key==='kidx')  return liveData.gfs?.ua_k_index!=null?Math.round(liveData.gfs.ua_k_index):null;
-        return null;
-      })() : null;
-      const aboveThresh = m.thresholdLine && cv!=null && cv>=m.thresholdLine;
-
+      const [tick, setTick] = useState(0);
+      const [param, setParam] = useState('cape');
+      useEffect(() => {
+        const h = () => setTick(t => t + 1);
+        window.addEventListener('drift-cell-selected', h); window.addEventListener('drift-store-ready', h); window.addEventListener('drift-hour-changed', h);
+        return () => { window.removeEventListener('drift-cell-selected', h); window.removeEventListener('drift-store-ready', h); window.removeEventListener('drift-hour-changed', h); };
+      }, []);
+      const store = window.__driftStore, insp = window.__driftInspector;
+      const cid = (insp && insp.state().cell_id) || 'IN025_1325_07775';
+      const hour = insp ? insp.state().hour : null;
+      const M = store ? window.DriftInspector.buildModel(store, cid, hour, Date.now()) : null;
+      const PARAMS = [['cape', 'CAPE'], ['pwat', 'Precipitable water'], ['k_index', 'K-index'], ['shear_850_500', '850–500 hPa shear'], ['t2m_c', '2 m temperature'], ['ws10', '10 m wind'], ['precip_3h', 'Rain, 3 h']];
+      const rows = M && M.status === 'OK' ? M.sections.flatMap(s => s.rows) : [];
+      const row = rows.find(r => r.key === param);
+      const ch = M && M.status === 'OK' ? M.charts.find(c => c.key === param) : null;
+      const vals = ch ? ch.values : [];
+      const fin = vals.filter(v => v != null && isFinite(v));
+      const W = 640, H = 220, L = 54, B = 34, T = 14, R = 14;
+      const lo = fin.length ? Math.min(...fin, 0) : 0, hi = fin.length ? Math.max(...fin, lo + 1e-9) : 1;
+      const x = (i) => L + (i * (W - L - R)) / Math.max(1, vals.length - 1), y = (v) => T + (1 - (v - lo) / (hi - lo)) * (H - T - B);
+      const pts = vals.map((v, i) => (v == null || !isFinite(v) ? null : [x(i), y(v)]));
+      let d = ''; pts.forEach((p, i) => { if (p) d += (i > 0 && pts[i - 1] ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1) + ' '; });
+      const hrs = M && M.hours ? M.hours : [];
       return (
-        <div className="font-sans max-w-[1750px] mx-auto space-y-6">
-          <PageHeader 
-            eyebrow="METEOROLOGICAL TIME SERIES" 
-            title="Data & Atmospheric Graphs"
-            subtitle="Atmospheric parameters tracked over time at VOBL/Bengaluru. Readings captured automatically each session."
-            badge="DATA & GRAPHS" 
-            badgeColor="sky" 
-          />
-
-          {/* Parameter selector pills */}
-          <div className="bg-[#0c1326]/75 border border-[#1e293b]/70 backdrop-blur-xl rounded-2xl p-5 shadow-2xl">
-            <div className="text-xs font-bold tracking-wider text-slate-400 uppercase mb-3">SELECT ATMOSPHERIC PARAMETER</div>
-            <div className="flex flex-wrap gap-2.5">
-              {METRICS.map(mx => {
-                const isActive = selectedMetric === mx.key;
-                return (
-                  <button 
-                    key={mx.key} 
-                    onClick={() => setSelectedMetric(mx.key)}
-                    className={`px-4 py-2 rounded-xl text-xs font-bold tracking-wider transition-all flex items-center gap-2 ${
-                      isActive 
-                        ? 'border shadow-[0_0_14px_rgba(56,189,248,0.2)]' 
-                        : 'bg-[#080d1a]/80 border border-[#1e293b]/70 text-slate-400 hover:text-slate-200 hover:bg-[#111c38]'
-                    }`}
-                    style={isActive ? {
-                      backgroundColor: `${mx.color}22`,
-                      borderColor: mx.color,
-                      color: mx.color
-                    } : {}}
-                  >
-                    <span className="w-2 h-2 rounded-full" style={{backgroundColor: mx.color}}></span>
-                    <span>{mx.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* KPI Stat Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-            <div className={`bg-[#0c1326]/75 border backdrop-blur-xl rounded-2xl p-5 shadow-xl transition-all ${aboveThresh ? 'border-rose-500/50 shadow-[0_0_20px_rgba(244,63,94,0.15)]' : 'border-[#1e293b]/70'}`}>
-              <div className="text-xs font-bold tracking-wider text-slate-400 uppercase mb-1">CURRENT READING</div>
-              <div className="text-3xl font-mono font-black" style={{color: aboveThresh ? '#f43f5e' : m.color}}>
-                {cv != null ? cv : '--'}<span className="text-xs text-slate-400 ml-1.5 font-normal">{m.unit}</span>
-              </div>
-              {aboveThresh && (
-                <div className="text-[10px] text-rose-400 font-bold tracking-wider uppercase mt-2 flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-ping"></span>
-                  ABOVE REFERENCE LINE ({m.thresholdLine}{m.unit}, not a validated threshold)
-                </div>
-              )}
-            </div>
-            {data.length > 0 && [
-              {label:'SESSION MAXIMUM', val:Math.max(...data.map(d=>d[m.key]))},
-              {label:'SESSION AVERAGE', val:Math.round(data.reduce((a,d)=>a+d[m.key],0)/data.length)},
-            ].map(x => (
-              <div key={x.label} className="bg-[#0c1326]/75 border border-[#1e293b]/70 backdrop-blur-xl rounded-2xl p-5 shadow-xl">
-                <div className="text-xs font-bold tracking-wider text-slate-400 uppercase mb-1">{x.label}</div>
-                <div className="text-3xl font-mono font-black text-slate-100">
-                  {x.val}<span className="text-xs text-slate-400 ml-1.5 font-normal">{m.unit}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* SVG Timeseries Graph */}
-          <div className="bg-[#0c1326]/75 border border-[#1e293b]/70 backdrop-blur-xl rounded-2xl p-6 shadow-2xl">
-            <div className="flex justify-between items-center mb-5">
-              <div>
-                <div className="text-xs font-bold tracking-wider text-slate-300 uppercase">{m.label.toUpperCase()} OVER TIME</div>
-                <div className="text-xs font-mono text-slate-400 mt-0.5">{data.length} telemetry readings recorded this session</div>
-              </div>
-              {data.length > 0 && (
-                <button 
-                  onClick={() => { try{localStorage.removeItem('sih_history');}catch{} setHistory([]); }}
-                  className="px-3 py-1.5 rounded-lg text-xs font-mono text-slate-400 hover:text-rose-400 bg-[#080d1a] border border-[#1e293b] hover:border-rose-500/40 transition-colors"
-                >
-                  Clear History
-                </button>
-              )}
-            </div>
-
-            {data.length < 2 ? (
-              <div className="text-center py-14 text-slate-400 text-sm">
-                <div className="text-4xl mb-3">📊</div>
-                Readings accumulate automatically as you monitor conditions. Check back after a few minutes.
-              </div>
-            ) : (
-              <div style={{overflowX:'auto'}}>
-                <svg viewBox={`0 0 ${W} ${H}`} style={{width:'100%',minWidth:'320px',height:'auto',fontFamily:'system-ui, -apple-system, sans-serif'}}>
-                  <defs>
-                    <linearGradient id="metricGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor={m.color} stopOpacity="0.25" />
-                      <stop offset="100%" stopColor={m.color} stopOpacity="0.0" />
-                    </linearGradient>
-                  </defs>
-                  {[0,0.25,0.5,0.75,1].map(f => {
-                    const y = PAD.t + cH * (1 - f);
-                    const val = Math.round(m.max * f);
-                    return (
-                      <g key={f}>
-                        <line x1={PAD.l} x2={PAD.l + cW} y1={y} y2={y} stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
-                        <text x={PAD.l - 6} y={y + 3.5} textAnchor="end" fontSize="8" fill="#64748b" fontFamily="monospace">{val}</text>
-                      </g>
-                    );
-                  })}
-                  {m.thresholdLine && (() => {
-                    const ty = toY(m.thresholdLine);
-                    return (
-                      <g>
-                        <line x1={PAD.l} x2={PAD.l + cW} y1={ty} y2={ty} stroke="#f43f5e" strokeWidth="1" strokeDasharray="4 3" opacity="0.7" />
-                        <text x={PAD.l + cW} y={ty - 3} textAnchor="end" fontSize="8" fill="#f43f5e" fontWeight="bold">threshold ({m.thresholdLine})</text>
-                      </g>
-                    );
-                  })()}
-                  {poly && <polygon points={poly} fill="url(#metricGrad)" />}
-                  <polyline points={pts} fill="none" stroke={m.color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                  {data.map((d, i) => (
-                    <circle key={i} cx={toX(i)} cy={toY(d[m.key])} r="3.5" fill={m.color} stroke="#0c1326" strokeWidth="1.5" />
-                  ))}
-                  {data.filter((_,i) => i % Math.max(1, Math.floor(data.length / 6)) === 0 || i === data.length - 1).map(d => (
-                    <text key={d.ts} x={toX(data.indexOf(d))} y={H - 8} textAnchor="middle" fontSize="7.5" fill="#64748b" fontFamily="monospace">
-                      {d.label.split(',')[0]}
-                    </text>
-                  ))}
-                  <text x={PAD.l - 2} y={PAD.t - 5} textAnchor="middle" fontSize="8" fill="#94a3b8" fontFamily="monospace">{m.unit}</text>
-                </svg>
-              </div>
-            )}
-          </div>
-
-          {/* Historical Readings Table */}
-          {data.length > 0 && (
-            <div className="bg-[#0c1326]/75 border border-[#1e293b]/70 backdrop-blur-xl rounded-2xl p-6 shadow-2xl overflow-x-auto">
-              <div className="text-xs font-bold tracking-wider text-slate-400 uppercase mb-4">LAST {Math.min(data.length, 10)} TELEMETRY READINGS</div>
-              <table className="w-full text-left border-collapse text-xs">
-                <thead>
-                  <tr className="border-b border-[#1e293b]/70 text-slate-400 font-mono">
-                    {['TIME (IST)','PROB %','IWV','CAPE','K-IDX'].map(h => (
-                      <th key={h} className={`p-3 font-bold tracking-wider ${h==='TIME (IST)' ? 'text-left' : 'text-right'}`}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#1e293b]/40 font-mono">
-                  {[...history].reverse().slice(0, 10).map((row, i) => (
-                    <tr key={row.ts} className="hover:bg-sky-500/5 transition-colors">
-                      <td className="p-3 text-slate-300">{row.label}</td>
-                      <td className={`p-3 text-right font-bold ${row.probability>=35 ? 'text-rose-400' : 'text-slate-200'}`}>{row.probability ?? '--'}%</td>
-                      <td className="p-3 text-right text-sky-400">{row.iwv ?? '--'}</td>
-                      <td className={`p-3 text-right font-bold ${(row.cape||0)>=1500 ? 'text-amber-400' : 'text-slate-300'}`}>{row.cape ?? '--'}</td>
-                      <td className={`p-3 text-right font-bold ${(row.kidx||0)>=35 ? 'text-purple-400' : 'text-slate-300'}`}>{row.kidx ?? '--'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+        <div className="font-sans max-w-[1100px] mx-auto space-y-6" data-testid="graphs-page">
+          <PageHeader eyebrow="GFS 0.25° FORECAST-HOUR SERIES * SELECTED CELL" title="Data & graphs" subtitle="The series of the cell chosen on the Dashboard map over every forecast hour of the latest cycle. This page replaced a browser-local snapshot log that was not real telemetry." badge="CELL SERIES" badgeColor="cyan" />
+          <InfoCard title={M && M.cell ? 'Cell ' + M.cell.id + ' · ' + M.cell.lat.toFixed(2) + '°N ' + M.cell.lon.toFixed(2) + '°E' + (M.cell.district ? ' · ' + M.cell.district + ', ' + M.cell.state : '') : 'Loading the validated fields store…'}>
+            {!M || M.status !== 'OK' ? <span data-testid="graphs-unavailable">Series unavailable: {M ? M.reason : 'fields not loaded yet'}.</span> : (<>
+              <div className="flex flex-wrap gap-2 mb-3">{PARAMS.map(([k, label]) => (
+                <button key={k} data-testid={'graph-param-' + k} onClick={() => setParam(k)} className={'px-3 py-1 rounded-lg text-xs font-bold border ' + (param === k ? 'bg-sky-600 text-white border-sky-400' : 'bg-transparent text-slate-300 border-slate-600 hover:border-sky-500')}>{label}</button>))}</div>
+              <svg viewBox={'0 0 ' + W + ' ' + H} className="w-full" role="img" aria-label={(ch && ch.label) + ' by forecast hour'} data-testid="graph-svg">
+                <line x1={L} y1={H - B} x2={W - R} y2={H - B} stroke="#334155" /><line x1={L} y1={T} x2={L} y2={H - B} stroke="#334155" />
+                <text x={L - 6} y={T + 8} textAnchor="end" fontSize="10" fill="#94a3b8">{fin.length ? hi.toFixed(ch.decimals) : ''}</text><text x={L - 6} y={H - B} textAnchor="end" fontSize="10" fill="#94a3b8">{fin.length ? lo.toFixed(ch.decimals) : ''}</text>
+                <path d={d} fill="none" stroke="#38bdf8" strokeWidth="2" />
+                {pts.map((p, i) => p ? <circle key={i} cx={p[0]} cy={p[1]} r={i === M.selected ? 5 : 3} fill={i === M.selected ? '#f8fafc' : '#38bdf8'} data-hour={i} data-value={vals[i]}><title>{'f' + ch.fhours[i] + ' valid ' + String(hrs[i].valid_time_utc).slice(5, 16).replace('T', ' ') + 'Z: ' + Number(vals[i]).toFixed(ch.decimals) + ' ' + ch.unit}</title></circle> : null)}
+                {hrs.map((h, i) => <text key={i} x={x(i)} y={H - 14} textAnchor="middle" fontSize="10" fill={i === M.selected ? '#f8fafc' : '#94a3b8'}>f{h.fhour}</text>)}
+                {hrs.map((h, i) => <text key={'v' + i} x={x(i)} y={H - 3} textAnchor="middle" fontSize="8" fill="#64748b">{String(h.valid_time_utc).slice(11, 13)}Z</text>)}
+              </svg>
+              <div className="text-[12px] font-mono text-slate-300" data-testid="graph-meta">{ch ? ch.label : ''} ({ch ? ch.unit : ''}) · {row ? row.kind_label + ' · ' + row.status + ' · acquired ' + String(row.acquired_at_utc).slice(0, 16).replace('T', ' ') + 'Z · age ' + fmtN(row.age_hours, 1) + ' h' : ''} · GFS cycle {String(M.time.model_init_utc).slice(0, 13).replace('T', ' ')}Z</div>
+              <div className="mt-2 text-slate-400 text-[12px]">Every point is this cell’s published GFS value for that forecast hour (no smoothing or fill). Missing hours are gaps. Satellite brightness temperature is an observation with only the latest scan and its 30/60-minute change published: no satellite time series exists to chart. There is no validated alert threshold, so none is drawn.</div>
+            </>)}
+          </InfoCard>
         </div>
       );
     }
 
-    // == CONTACTS PAGE =======================================================
 
     function ContactsPage({ liveData }) { return <UnavailablePage eyebrow="CONTACTS" title="Contacts" why="The page offered to 'dispatch' alerts and simulated a successful send. DRIFT sends no messages from this site, so the contact list and dispatch controls were removed." />; }
 
