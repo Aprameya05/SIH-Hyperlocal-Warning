@@ -110,6 +110,8 @@ jobs:
           }
 
       - name: Dispatch alerts if hazard thresholds exceeded
+        # Sends external messages: main only; other refs are a safe dry run.
+        if: github.ref == 'refs/heads/main'
         env:
           TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
           TWILIO_AUTH_TOKEN:  ${{ secrets.TWILIO_AUTH_TOKEN }}

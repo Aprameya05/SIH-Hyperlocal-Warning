@@ -107,6 +107,7 @@ jobs:
       - name: Run v6 retrain (CPU, single slot)
         if: steps.action.outputs.source == 'v6'
         run: |
+          set -o pipefail   # a failing trainer must fail the job even though its output is piped through tail
           SLOT="${{ steps.action.outputs.slot }}"
           if [ "$SLOT" = "all" ]; then
             echo "Full v6 retrain on CPU is slow — use A100 Colab for all slots."
@@ -115,7 +116,6 @@ jobs:
           fi
           python train_v6_slot_models.py --slot $SLOT --trials 20 \
             2>&1 | tail -50
-        continue-on-error: true
 
       - name: Verify new model loads correctly
         run: |
@@ -140,7 +140,6 @@ jobs:
 
       - name: Run forecast pipeline to confirm inference works
         run: python forecast_action.py
-        continue-on-error: true
 
       - name: Update calibration results in README badge
         run: |
@@ -156,8 +155,8 @@ jobs:
                       if s.get("status") == "ok":
                           print(f"  Slot {s['slot']}: Brier {s['brier_before']:.4f} → "
                                 f"{s['brier_after']:.4f} (delta {s['improvement']:+.4f})")
-              except Exception:
-                  pass
+              except Exception as e:
+                  print(f"::warning::could not summarise {f.name}: {e}")
           EOF
 
       - name: Commit updated models and results
@@ -167,16 +166,13 @@ jobs:
           git config --global user.name  "CSIR Retrain Bot"
           git config --global user.email "bot@csir-thunderstorm.in"
 
-          cp forecast.json /tmp/forecast_generated.json
           git pull --rebase --autostash origin main
-          cp /tmp/forecast_generated.json forecast.json
 
           git add \
             models/*recal*.pkl \
             results/calibration_results_*.json \
             results/reliability_slot*.png \
-            forecast.json \
-            2>/dev/null || true
+            2>/dev/null || true   # forecast.json belongs to forecast_update.yml and is never committed here
 
           git diff --staged --quiet || \
             git commit -m "retrain: recalibration $(date -u '+%Y-%m-%d') slot=${{ steps.action.outputs.slot }}"

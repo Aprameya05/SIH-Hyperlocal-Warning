@@ -160,6 +160,7 @@ jobs:
           PYEOF
 
       - name: Send digest via ntfy (push notification)
+        if: github.ref == 'refs/heads/main'
         env:
           NTFY_TOKEN: ${{ secrets.NTFY_TOKEN }}
         run: |
@@ -203,6 +204,7 @@ jobs:
           PYEOF
 
       - name: Commit digest JSON
+        if: github.ref == 'refs/heads/main'
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"

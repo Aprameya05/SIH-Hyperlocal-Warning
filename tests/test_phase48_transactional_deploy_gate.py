@@ -63,7 +63,12 @@ def test_unified_artifact_step_has_the_id_the_gate_depends_on():
 def test_every_deploy_path_step_is_gated_on_unified_artifact_success():
     steps = _steps()
     by_name = {s["name"]: s for s in steps}
-    missing_gate = [name for name in GATED_STEP_NAMES if by_name.get(name, {}).get("if") != EXPECTED_GATE]
+    # The unified-artifact gate must be a conjunct of the condition. Production steps are additionally main-only
+    # (github.ref == refs/heads/main) so a manual run from another ref is a safe dry run; that must be the ONLY other term.
+    def gated(cond):
+        parts = [p.strip() for p in str(cond or "").split("&&")]
+        return EXPECTED_GATE in parts and set(parts) <= {EXPECTED_GATE, "github.ref == 'refs/heads/main'"}
+    missing_gate = [name for name in GATED_STEP_NAMES if not gated(by_name.get(name, {}).get("if"))]
     assert not missing_gate, f"these steps must gate on {EXPECTED_GATE!r}: {missing_gate}"
 
 
@@ -107,4 +112,6 @@ def test_commit_step_is_not_gated_away_entirely():
     not from skipping the whole step."""
     steps = _steps()
     commit_step = next(s for s in steps if s["name"] == "Commit and push forecast outputs")
-    assert "if" not in commit_step
+    # May be main-only, but must never be gated on the unified artifact check (that would skip legacy-file commits).
+    assert "unified_artifact" not in str(commit_step.get("if", ""))
+    assert str(commit_step.get("if", "")) in ("", "github.ref == 'refs/heads/main'")
