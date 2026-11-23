@@ -8,6 +8,9 @@ const DESKTOP = { width: 1440, height: 900 }, MOBILE = { width: 390, height: 844
 const TILE = /tile\.openstreetmap\.org/;
 before(async () => {
   S = await serve(buildDist()); browser = await launch();
+  // Hermetic: the remote CARTO basemap style is not under test (the inspector's layers are added once a style has loaded), so every context gets a local stand-in.
+  const newContext = browser.newContext.bind(browser);
+  browser.newContext = async (o) => { const c = await newContext(o); await c.route(/basemaps\.cartocdn\.com\/gl\/dark-matter-gl-style\/style\.json/, r => r.fulfill({ contentType: 'application/json', body: JSON.stringify({ version: 8, sources: {}, layers: [{ id: 'bg', type: 'background', paint: { 'background-color': '#0b1020' } }] }) })); return c; };
   FIELDS = await (await fetch(`${S.base}/data/india_fields_latest.json`)).json();
   SAT = await (await fetch(`${S.base}/data/india_satellite_ctt_latest.json`)).json();
   GRID = await (await fetch(`${S.base}/data/india_grid_025.json`)).json();
@@ -24,6 +27,7 @@ async function open(viewport, { now = INIT() + 9 * 3600000, mutate = null } = {}
   await page.waitForSelector('#boot-loading', { state: 'detached', timeout: 90000 });
   await page.waitForFunction(() => window.__driftInspector && window.__driftInspector.getMap() && window.__driftStore && window.__driftStore.fieldsOk, null, { timeout: 60000 });
   await page.waitForFunction(() => { const m = window.__driftInspector.getMap(); return m && m.getContainer(); }, null, { timeout: 30000 });
+  await page.waitForFunction(() => { const m = window.__driftInspector.getMap(); return m && m.getSource('insp-cells') && m.getSource('insp-sel'); }, null, { timeout: 60000 });   // the inspector's sources are added once the (remote) basemap style has loaded
   return { ctx, page, w };
 }
 // Click the map at a lat/lon through real pointer events (projected to screen coordinates).
