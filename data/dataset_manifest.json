@@ -39,7 +39,7 @@
   "label_sources": {
     "ts": "VOBL METAR/station observation (data/actual_log.csv lineage) -- VOBL cell only, 991/992 cells UNKNOWN",
     "cb": "IMD 0.25deg gridded daily rainfall (imd_rain/rain/*.grd), threshold 64.5mm/day -- genuinely pan-India",
-    "ff_observed": "UNKNOWN everywhere -- data/catchment_characteristics_indofloods.csv (required for spatial gauge join) does not exist in this repo",
+    "ff_observed": "0 rows in THIS built dataset: no observed flash-flood label was joined into processed/dataset/*. IndoFloods inputs now exist in the repo (see indofloods_inputs) but are not wired into this partition build, and the CWC gauge flood events they contain are river-gauge events, not validated flash-flood labels.",
     "ff_proxy": "rainfall-only proxy (3-day cumsum>=100mm AND daily>=40mm), kept in ff_proxy_* fields, never written to ff_label"
   },
   "source_resolution": {
@@ -69,7 +69,41 @@
     "ff_observed_rows": 0,
     "ff_proxy_rows": 16072
   },
-  "git_commit_if_available": "a7d54dd8e5ed4b505e342c1b5342c1998c93e5ac (base commit this dataset was built on top of; the Phase 5 scripts/docs themselves are uncommitted local changes, per the no-commit instruction)",
+  "git_commit_if_available": "a7d54dd8e5ed4b505e342c1b5342c1998c93e5ac (base commit the original Phase 5 dataset build ran on; the build scripts were committed later)",
   "schema_version": "docs/PANINDIA_DATASET_SCHEMA.md v1 (2026-09-30)",
-  "reproducibility_note": "Regenerate exactly via: python3 scripts/build_panindia_dataset.py (from repo root, with imd_rain/rain/*.grd and data/era5_6hrly_bengaluru_2015_2025.csv present). Deterministic -- no random sampling or seeded process is used anywhere in construction."
+  "reproducibility_note": "Regenerate exactly via: python3 scripts/build_panindia_dataset.py (from repo root, with imd_rain/rain/*.grd and data/era5_6hrly_bengaluru_2015_2025.csv present). Deterministic -- no random sampling or seeded process is used anywhere in construction.",
+  "indofloods_inputs": {
+    "status": "present in repo; NOT joined into the partitions described above (manifest not regenerated)",
+    "catchment_characteristics": {
+      "file": "data/catchment_characteristics_indofloods.csv",
+      "gauges": 155,
+      "columns": 108,
+      "meaning": "static morphometric/catchment attributes per CWC gauge; contain NO event labels and NO time dimension"
+    },
+    "gauge_metadata": {
+      "file": "data/metadata_indofloods.csv",
+      "gauges": 214,
+      "gauges_with_catchment_characteristics": 155,
+      "meaning": "gauge identity, location, river/basin, record dates, warning/danger levels"
+    },
+    "catchment_polygons": {
+      "file": "data/catchments_shapefiles_indofloods.zip",
+      "polygons": 155,
+      "meaning": "gauge catchment boundaries (shapefile set)"
+    },
+    "spatial_mapping": {
+      "files": [
+        "processed/indofloods/indofloods_grid_mapping.csv"
+      ],
+      "script": "scripts/map_indofloods_to_grid.py",
+      "meaning": "gauge -> canonical 992-cell grid cell assignment"
+    },
+    "observed_events": {
+      "file": "data/floodevents_indofloods.csv",
+      "event_rows": 4548,
+      "meaning": "observed CWC gauge flood events (level/discharge based). Evidence of river floods at gauges only; not flash-flood labels, not hourly, not rainfall-attributed",
+      "grid_joined": "processed/indofloods/indofloods_grid_events.csv"
+    },
+    "line_ending_note": "these files are hash-pinned by tests/test_indofloods_phase5.py; .gitattributes marks them -text so bytes are preserved"
+  }
 }
