@@ -5246,7 +5246,7 @@ function injectDrainageOverlay(map, liveData) { /* removed: connected terrain po
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs text-[#607d8b] font-bold">MODEL SCORE{currentSlot.slot !== peakSlotData.slot ? <span className="text-[11px] text-[#607d8b] ml-1">(Slot {currentSlot.slot} selected * Peak: Slot {peakSlotData.slot})</span> : ''}</span>
                   <div className="text-right flex items-baseline gap-2">
-                    <span className="text-2xl font-extrabold text-white">{(currentSlot.probability * 100).toFixed(1)}%</span>
+                    <span className="text-2xl font-extrabold text-white">{currentSlot.probability == null || currentSlot.fallback ? 'WITHHELD' : `${(currentSlot.probability * 100).toFixed(1)}%`}</span>
                     <span className={`text-xs font-bold ${riskInfo.color}`}>{riskInfo.text}</span>
                   </div>
                 </div>
@@ -6213,8 +6213,8 @@ function injectDrainageOverlay(map, liveData) { /* removed: connected terrain po
                       {isActiveNow && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping inline-block" />}
                     </div>
                     <div className="text-[11px] font-mono text-slate-400 mt-0.5">{s.time}</div>
-                    <div className={`text-base font-extrabold font-mono mt-1 ${rInfo.color}`}>
-                      {(s.probability * 100).toFixed(1)}%
+                    <div className={`text-base font-extrabold font-mono mt-1 ${s.probability == null || s.fallback ? 'text-slate-500' : rInfo.color}`}>
+                      {s.probability == null || s.fallback ? 'WITHHELD' : `${(s.probability * 100).toFixed(1)}%`}
                     </div>
                     <div className={`text-[11px] font-semibold mt-1 ${SLOT_MODEL_META[s.slot].color}`}>
                       {SLOT_MODEL_META[s.slot].model}

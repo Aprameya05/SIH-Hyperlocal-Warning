@@ -8,8 +8,13 @@ import { buildDist, serve, launch, watch, ROOT } from './harness.mjs';
 let browser, S, FIELDS;
 const DESKTOP = { width: 1440, height: 900 };
 const TILE = /tile\.openstreetmap\.org/;
-const TABS = [['FORECAST', '#forecast'], ['SATELLITE', '#satellite'], ['MODELS', '#models'], ['EXPLAINABILITY', '#explainability'], ['REGIMES', '#regimes'], ['SKILL SCORES', '#scores'], ['DATA & GRAPHS', '#graphs']];
-before(async () => { S = await serve(buildDist()); browser = await launch(); FIELDS = await (await fetch(`${S.base}/data/india_fields_latest.json`)).json(); });
+const TABS = [['FORECAST', '#forecast'], ['SATELLITE', '#satellite'], ['MODELS', '#models'], ['EXPLAIN', '#explainability'], ['REGIMES', '#regimes'], ['SCORES', '#scores'], ['GRAPHS', '#graphs']];
+before(async () => {
+  S = await serve(buildDist()); browser = await launch(); FIELDS = await (await fetch(`${S.base}/data/india_fields_latest.json`)).json();
+  // Hermetic: the remote CARTO basemap style is not under test; every context gets a local stand-in so the map layers can attach.
+  const newContext = browser.newContext.bind(browser);
+  browser.newContext = async (o) => { const c = await newContext(o); await c.route(/basemaps\.cartocdn\.com\/gl\/dark-matter-gl-style\/style\.json/, r => r.fulfill({ contentType: 'application/json', body: JSON.stringify({ version: 8, sources: {}, layers: [{ id: 'bg', type: 'background', paint: { 'background-color': '#0b1020' } }] }) })); return c; };
+});
 after(async () => { await browser?.close(); S?.srv.close(); });
 
 const baseForecast = () => JSON.parse(fs.readFileSync(path.join(ROOT, 'forecast.json'), 'utf8'));
@@ -26,7 +31,7 @@ async function open(hash = '', { now, mutateForecast = withheld } = {}) {
   return { ctx, page, w };
 }
 async function clickNav(page, label) {
-  const ok = await page.evaluate(l => { const b = [...document.querySelectorAll('button,a,[role=button],[role=tab]')].find(e => e.innerText && e.innerText.trim().toUpperCase() === l && e.getBoundingClientRect().top < 90 && e.getBoundingClientRect().height > 0); if (b) { b.click(); return true; } return false; }, label);
+  const ok = await page.evaluate(l => { const b = [...document.querySelectorAll('button,a,[role=button],[role=tab]')].find(e => e.innerText && e.innerText.trim().toUpperCase() === l && e.getBoundingClientRect().top < 220 && e.getBoundingClientRect().height > 0); if (b) { b.click(); return true; } return false; }, label);
   assert.ok(ok, `nav tab ${label} must exist in the header`); await page.waitForTimeout(600);
 }
 const body = page => page.evaluate(() => document.body.innerText);
@@ -49,7 +54,7 @@ test('direct links open the right tab, and Back/Forward move between tabs', asyn
     assert.equal(await page.evaluate(() => location.hash), hash); const t = await body(page); assert.ok(t.length > 300, `${hash} renders`); await ctx.close();
   }
   const { ctx, page } = await open();
-  await clickNav(page, 'FORECAST'); const forecastText = await body(page); await clickNav(page, 'MODELS'); const modelsText = await body(page); assert.notEqual(forecastText, modelsText);
+  await clickNav(page, 'FORECAST'); const forecastText = await body(page); await clickNav(page, 'MODELS'); await page.waitForFunction(prev => document.body.innerText !== prev, forecastText, { timeout: 15000 }); const modelsText = await body(page); assert.ok(modelsText !== forecastText, 'MODELS differs from FORECAST');   // (compare booleans, not 3 kB strings)
   await page.goBack(); await page.waitForTimeout(800); assert.equal(await page.evaluate(() => location.hash), '#forecast'); assert.equal(await body(page).then(t => t.includes('MODEL THRESHOLD') || t.length > 400), true);
   await page.goForward(); await page.waitForTimeout(800); assert.equal(await page.evaluate(() => location.hash), '#models');
   await ctx.close();
