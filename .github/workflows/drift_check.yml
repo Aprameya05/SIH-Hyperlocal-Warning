@@ -221,6 +221,8 @@ jobs:
           EOF
 
       - name: Commit drift report and recalibrated models
+        # main only: a manual run from another ref is a safe dry run (everything above executes, nothing is written to main).
+        if: github.ref == 'refs/heads/main'
         run: |
           git config --global user.name  "CSIR Drift Monitor"
           git config --global user.email "drift@csir-thunderstorm.in"
@@ -243,6 +245,7 @@ jobs:
           git push origin HEAD:main
 
       - name: Notify drift status via ntfy.sh
+        if: github.ref == 'refs/heads/main'
         run: |
           DRIFT_SLOTS="${{ steps.drift.outputs.drift_slots }}"
           if [ -n "$DRIFT_SLOTS" ] && [ "$DRIFT_SLOTS" != "none" ]; then

@@ -56,3 +56,33 @@ def test_no_force_push_and_no_repo_root_deploy(wf):
     text = wf.read_text(encoding="utf-8")
     assert not re.search(r"git push[^\n]*(--force\b|-f\b|--force-with-lease)", text), f"{wf.name}: force push"
     assert not re.search(r"pages deploy \.(\s|$)", text), f"{wf.name}: deploys the repository root"
+
+
+EXTERNAL_EFFECTS = re.compile(r"(git push[^\n]*\bmain\b|pages deploy|send_alerts\.py|dispatch_alerts\.py|ntfy\.sh|wrangler)")
+
+
+@pytest.mark.parametrize("wf", WORKFLOWS, ids=lambda p: p.name)
+def test_external_effects_only_run_on_main(wf):
+    """A manual run from any other ref must be a safe dry run: no push to main, no deploy, no outbound notifications."""
+    doc = yaml.safe_load(wf.read_text(encoding="utf-8"))
+    for job in doc["jobs"].values():
+        for step in job.get("steps", []):
+            blob = (step.get("run") or "") + " " + str((step.get("uses") or ""))
+            if EXTERNAL_EFFECTS.search(blob) or "wrangler-action" in blob:
+                cond = str(step.get("if", ""))
+                assert "refs/heads/main" in cond, f"{wf.name}: step '{step.get('name')}' has external effects but is not main-only"
+
+
+def test_forecast_update_fails_when_nothing_was_deployed():
+    text = (WF_DIR / "forecast_update.yml").read_text(encoding="utf-8")
+    assert "Fail loudly when nothing was deployed" in text and "unified_artifact_check.outputs.ok != 'true'" in text
+
+
+def test_no_swallowed_failures_in_commit_deploy_or_smoke_steps():
+    for wf in WORKFLOWS:
+        doc = yaml.safe_load(wf.read_text(encoding="utf-8"))
+        for job in doc["jobs"].values():
+            for step in job.get("steps", []):
+                name = str(step.get("name", "")).lower()
+                if any(k in name for k in ("commit", "deploy", "smoke", "release-readiness", "validate")):
+                    assert not step.get("continue-on-error"), f"{wf.name}: '{step.get('name')}' must not continue-on-error"
