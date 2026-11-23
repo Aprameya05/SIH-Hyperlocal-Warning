@@ -7693,10 +7693,10 @@ Source: sih-hyperlocal-warning.pages.dev | VOBL (IMD Station 43295) | NOT an off
       return (
         <div className="space-y-6" data-testid="held-out-evaluation">
           {card('ts', 'Pan-India thunderstorm model (ts_panindia_xgb_v1): temporal holdout 2025', 'data/ts_panindia_evaluation.json',
-            ts ? (<><Head cols={cols} /><tbody>{Object.keys(ts.leads).map(L => row('+' + L + ' h', ts.leads[L].A_temporal_holdout.xgboost_calibrated, ts.leads[L].passes_gate))}</tbody></>) : null,
+            ts ? (<><Head cols={cols} /><tbody>{Object.keys(ts.leads).map(L => { const t = ts.leads[L]; return t.A_temporal_holdout ? row('+' + L + ' h', t.A_temporal_holdout.xgboost_calibrated, t.passes_gate) : <tr key={L}><td className="pr-3">{'+' + L + ' h'}</td><td colSpan={11} className="text-amber-400">NOT EVALUATED: {t.status || 'no holdout'}</td></tr>; })}</tbody></>) : null,
             ts ? ('Trained on ' + (ts.data.years || []).join('/') + ' ' + (ts.data.n_stations || '') + ' METAR stations, ' + (ts.data.n_init_dates || '') + ' init dates, Apr–Jun only; published only in that season. Categorical scores use the model’s own threshold.') : '')}
           {card('rain', 'Short-duration rain model (rain_panindia_xgb_v1): >= 20 mm / 3 h', 'data/rain_panindia_evaluation.json',
-            rain ? (<><Head cols={cols} /><tbody>{Object.keys(rain.targets).map(k => row(k, rain.targets[k].A_temporal_holdout.xgboost_calibrated, rain.targets[k].passes_gate))}</tbody></>) : null,
+            rain ? (<><Head cols={cols} /><tbody>{Object.keys(rain.targets).map(k => { const t = rain.targets[k]; return t.A_temporal_holdout ? row(k, t.A_temporal_holdout.xgboost_calibrated, t.passes_gate) : <tr key={k}><td className="pr-3">{k}</td><td colSpan={11} className="text-amber-400">NOT EVALUATED: {t.status || 'no holdout'} (train events {t.train_events}, test events {t.test_events})</td></tr>; })}</tbody></>) : null,
             rain ? 'Labels are CMORPH 3-hourly rainfall; evaluated on Jun–Sep 2025 initialisations; published only in that season (00Z cycles).' : '')}
           {card('st', 'VOBL station thunderstorm, live-inputs model (v7): chronological test years', 'data/station_live_inputs_evaluation.json',
             st ? (<><thead><tr className="text-slate-400 text-left">{['Slot', 'Dev / test years', 'Test events / n', 'AUROC [95% CI]', 'PR-AUC (no skill)', 'Brier skill vs slot-month clim. [95% CI]', 'POD', 'FAR', 'CSI', 'HSS', 'Gate'].map(c => <th key={c} className="pr-3 font-semibold">{c}</th>)}</tr></thead>

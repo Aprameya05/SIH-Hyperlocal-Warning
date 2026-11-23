@@ -157,3 +157,17 @@ test('alert log header states its real window and age; PDF briefing does not mis
   assert.doesNotMatch(html, /00-06 UTC \(Night\)/); assert.match(html, /00-06 IST \(Night\)/); assert.match(html, /WITHHELD/); assert.match(html, /Forecast generated \(IST\)/);
   await ctx.close();
 });
+
+test('Models and Scores show the held-out evaluation tables from the published artifacts, including targets that could not be evaluated, without crashing', async () => {
+  const { ctx, page, w } = await open('#models');
+  await page.waitForFunction(() => /not live operational performance/i.test(document.body.innerText) && !/Loading…/.test((document.querySelector('[data-testid=held-out-evaluation]') || {}).innerText || 'Loading…'), null, { timeout: 30000 });
+  const m = await body(page);
+  assert.match(m, /Pan-India thunderstorm model/i); assert.match(m, /Short-duration rain model/i); assert.match(m, /VOBL station thunderstorm, live-inputs model/i);
+  assert.match(m, /NOT EVALUATED: INSUFFICIENT_EVENTS/i); assert.match(m, /held-out HISTORICAL results, not live operational performance/i); assert.match(m, /data\/hazard_evaluation\.json/i);
+  const ts = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/ts_panindia_evaluation.json'), 'utf8')).leads['6'].A_temporal_holdout.xgboost_calibrated;
+  assert.ok(m.includes(ts.auroc.toFixed(3)) && m.includes(ts.bss_vs_climatology.toFixed(3)), 'the +6 h AUROC and Brier skill printed are the artifact values');
+  await clickNav(page, 'SCORES'); const sc = await body(page);
+  await page.waitForFunction(() => /not live operational performance/i.test(document.body.innerText), null, { timeout: 30000 }); const sc2 = await body(page);
+  assert.ok(/Pan-India thunderstorm model/i.test(sc2) && /UNAVAILABLE|Rolling/i.test(sc2)); assert.doesNotMatch(sc, forbidden);
+  assert.equal(w.pageErrors.length, 0, JSON.stringify(w.pageErrors)); await ctx.close();
+});
