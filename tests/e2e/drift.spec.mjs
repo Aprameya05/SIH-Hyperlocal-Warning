@@ -359,7 +359,7 @@ test('satellite observations: fresh scan shows exact artifact values in layers a
   assert.deepEqual(probe.sat_cool[0], probe.sat_cool[1]);
   await page.evaluate(() => window.__drift.selectCell('IN025_1300_08000')); await page.waitForTimeout(300);
   const panel = await page.evaluate(() => document.getElementById('p-detail').innerText);
-  assert.match(panel, /Satellite observation \(Himawari-9 B13\)/i); assert.match(panel, /OBSERVED 20 MIN AGO/i);
+  assert.match(panel, /Satellite observation \(Himawari-9 B13\)/i); { const m = panel.match(/OBSERVED (\d+) MIN AGO/i); assert.ok(m && +m[1] >= 20 && +m[1] <= 30, 'age shown must be the 20 min we set plus elapsed test time: ' + (m && m[0])); }
   assert.ok(panel.includes((sat.ctt_p10_k[iCell] - 273.15).toFixed(1) + ' °C'), 'panel shows the artifact p10 BT');
   assert.match(panel, /not a forecast|Brightness temperature/i);
   await ctx.close();
