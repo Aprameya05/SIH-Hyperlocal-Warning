@@ -1097,6 +1097,13 @@
     .drift-entry .cta{background:#38bdf8;color:#04121f;border-radius:999px;padding:6px 16px;font-weight:800;white-space:nowrap}
     .drift-entry small{font-weight:400;opacity:.85}
   </style>
+<script>if (/[?&]embed=1(&|$)/.test(location.search)) document.documentElement.classList.add('embed');</script>
+<style>
+/* embed mode: the page is shown inside the command centre's tab frame, which supplies the navigation */
+html.embed #drift-entry, html.embed #legacy-note, html.embed header.sticky, html.embed .bottom-nav, html.embed .scan-line { display: none !important; }
+html.embed .h-screen { height: 100vh !important; }
+html.embed body { overflow: hidden; }
+</style>
 </head>
 <body class="bg-[#040711] text-[#e8eaf6] antialiased min-h-screen font-sans relative overflow-x-hidden selection:bg-sky-400 selection:text-black">
 
@@ -1105,7 +1112,7 @@
     <small>Thunderstorms · extreme rainfall · flash floods — live NWP guidance, honest provenance, and an interactive scenario simulation</small>
     <span class="cta">Open command centre &rarr;</span>
   </a>
-  <div style="background:#1b2742;color:#cfe3ff;font:12px system-ui;padding:8px 14px;text-align:center;border-bottom:1px solid #2c3d63">Legacy Bengaluru (VOBL airport) station dashboard. It is separate from the <a href="drift.html" style="color:#7cc4ff">DRIFT pan-India command centre</a>; station-model tiles describe Bengaluru only and must not be read as national performance. Tiles without a verified live source show —.</div>
+  <div id="legacy-note" style="background:#1b2742;color:#cfe3ff;font:12px system-ui;padding:8px 14px;text-align:center;border-bottom:1px solid #2c3d63">Legacy Bengaluru (VOBL airport) station dashboard. It is separate from the <a href="drift.html" style="color:#7cc4ff">DRIFT pan-India command centre</a>; station-model tiles describe Bengaluru only and must not be read as national performance. Tiles without a verified live source show —.</div>
   <div id="root">
     <!-- Shown until React mounts (the page is compiled in the browser, which takes a few seconds); React replaces this on render. -->
     <div id="boot-loading" role="status" aria-live="polite" style="min-height:60vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:#94a3b8;font-family:-apple-system,BlinkMacSystemFont,'Inter',sans-serif;text-align:center;padding:24px">

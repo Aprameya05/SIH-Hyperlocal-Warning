@@ -8,9 +8,8 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230b1220'/%3E%3Cpath d='M6 20c4-8 8-8 10-3s6 4 10-5' stroke='%2338bdf8' stroke-width='3' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
 <link href="assets/vendor/maplibre-gl.css" rel="stylesheet">
 <style>
-:root{--bg:#0b1220;--panel:#111a2e;--panel2:#16213a;--line:#24324f;--text:#e6edf7;--mute:#93a4c3;--accent:#38bdf8;
+:root{color-scheme:dark;--bg:#060a17;--panel:rgba(12,19,38,.88);--panel2:#0f1830;--line:#1e293b;--text:#e8eaf6;--mute:#94a3b8;--accent:#38bdf8;
   --ok:#34d399;--warn:#fbbf24;--bad:#f87171;--sim:#f59e0b;--r:10px;--gap:12px}
-@media (prefers-color-scheme:light){:root:not([data-theme=dark]){--bg:#eef2f8;--panel:#fff;--panel2:#f3f6fb;--line:#d5deec;--text:#0f1b33;--mute:#51627f;--accent:#0369a1;--ok:#047857;--warn:#a16207;--bad:#b91c1c;--sim:#b45309}}
 *{box-sizing:border-box}html,body{margin:0;height:100%}
 body{background:var(--bg);color:var(--text);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;display:flex;flex-direction:column;min-height:100vh}
 button{font:inherit;color:inherit}
@@ -92,9 +91,31 @@ footer{padding:8px 16px;color:var(--mute);font-size:11px;border-top:1px solid va
 .lvl0{color:var(--mute)}.lvl1{color:var(--warn)}.lvl2{color:var(--sim)}.lvl3{color:var(--bad)}
 @media (max-width:1100px){main{grid-template-columns:260px minmax(0,1fr)}section.right{grid-column:1/-1}}
 @media (max-width:760px){#legend{max-width:62%;font-size:10px;padding:5px 7px;bottom:58px}#legend .mute{display:none}main{grid-template-columns:1fr;padding:8px}.center{order:-1}section.right{order:0}aside{order:1}#mapwrap{height:58vh}header{padding:8px 10px}.seg button{padding:6px 10px}.brand small{display:none}}
+
+body{background:radial-gradient(1200px 600px at 12% -10%,#0b2a4a55,transparent 60%),radial-gradient(900px 500px at 100% 0,#1b1a4a44,transparent 55%),var(--bg)}
+.card{backdrop-filter:blur(6px);box-shadow:0 1px 0 rgba(255,255,255,.03) inset,0 8px 24px rgba(0,0,0,.25)}
+#nav{flex:none;display:flex;gap:2px;align-items:center;padding:0 12px;background:rgba(6,10,23,.92);border-bottom:1px solid var(--line);overflow-x:auto;position:sticky;top:0;z-index:15;scrollbar-width:none}
+#nav::-webkit-scrollbar{display:none}
+#nav button{background:transparent;border:0;border-bottom:2px solid transparent;padding:11px 14px;color:var(--mute);font-weight:700;letter-spacing:.05em;font-size:12px;cursor:pointer;white-space:nowrap;text-transform:uppercase}
+#nav button:hover{color:var(--text)}#nav button[aria-selected=true]{color:var(--accent);border-bottom-color:var(--accent)}
+#nav .sep{flex:1}#nav .note{color:var(--mute);font-size:11px;padding:0 8px;white-space:nowrap}
+#view-frame{display:none;flex:1;min-height:0;position:relative}#view-frame.on{display:block}
+#view-frame iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:var(--bg)}
+#frame-load{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--mute);gap:10px;z-index:1;background:var(--bg)}
+#view-main{display:contents}#view-main.off{display:none}
+@media (max-width:760px){header .brand small{display:none}header{padding:8px 12px}#nav button{padding:12px 12px}}
+@media (min-width:1101px){
+  body{height:100vh;overflow:hidden}
+  main{min-height:0;overflow:hidden;grid-template-rows:minmax(0,1fr);align-items:stretch}
+  .center{display:flex;flex-direction:column}
+  aside,section.right,.center{min-height:0;max-height:100%;overflow:auto}
+  #mapwrap{flex:1 1 auto;height:auto;min-height:300px}
+  footer{display:none}
+}
 </style>
 </head>
 <body>
+<nav id="nav" role="tablist" aria-label="Sections"></nav>
 <header>
   <div class="brand">DRIFT<small>Pan-India severe-weather command centre</small></div>
   <div class="seg" role="group" aria-label="Operating mode">
@@ -105,10 +126,10 @@ footer{padding:8px 16px;color:var(--mute);font-size:11px;border-top:1px solid va
   <span class="spacer"></span>
   <button class="btn primary" id="tour-start">Guided tour</button>
   <span id="fresh" class="chip UNAVAILABLE"><i></i><span>loading…</span></span>
-  <a class="btn" href="index.html" id="home-link">&larr; Legacy Bengaluru station dashboard</a>
+  <a class="btn" href="index.html" id="home-link" title="Open the previous (classic) dashboard">&larr; Classic dashboard</a>
 </header>
 <div id="banner" class="live" role="status"></div>
-<main>
+<div id="view-main"><main>
   <aside>
     <div class="card"><h2>Hazard pathway</h2><div id="hz" class="tabs" role="group" aria-label="Hazard"></div></div>
     <div class="card" id="controls"></div>
@@ -132,12 +153,14 @@ footer{padding:8px 16px;color:var(--mute);font-size:11px;border-top:1px solid va
       <div id="p-sources" class="pane"></div><div id="p-eval" class="pane"></div>
     </div>
   </section>
-</main>
+</main></div>
+<div id="view-frame" role="tabpanel"><div id="frame-load"><span>Loading section&hellip;</span></div><iframe id="legacy-frame" title="DRIFT section" loading="lazy"></iframe></div>
 <div id="tour" class="card" role="dialog" aria-label="Guided tour" style="display:none"></div>
 <footer>DRIFT outputs are research/advisory model outputs, not IMD/NDMA warnings. For official warnings consult IMD, NDMA and local authorities.</footer>
 <script src="assets/vendor/maplibre-gl.js"></script>
 <script src="assets/drift_sim.js"></script>
 <script src="assets/drift_location.js"></script>
 <script src="assets/drift_app.js"></script>
+<script src="assets/drift_shell.js"></script>
 </body>
 </html>

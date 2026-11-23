@@ -446,7 +446,8 @@ test('legacy dashboard: every diagnostic equals the published artifact for the s
     const banner = await page.$eval('[data-testid=real-diagnostics]', e => e.innerText);
     assert.match(banner, new RegExp(`f0${fh} valid`)); assert.match(banner, /acquired by DRIFT/); assert.match(banner, /FRESH/);
     const f = fields.meta.files[h], lead = (Date.parse(f.valid_time_utc) - Date.parse(f.acquired_at_utc)) / 3600000;
-    assert.ok(banner.includes(`+${lead.toFixed(1)} h`), `f${fh} lead ${lead}`);
+    if (lead >= 0) assert.ok(banner.includes(`+${lead.toFixed(1)} h`), `f${fh} lead ${lead}`);
+    else { assert.match(banner, /operational lead none \(valid time already past at acquisition\)/, `f${fh}: a late-acquired hour has NO lead (never negative): ${lead}`); assert.ok(!/lead -/.test(banner)); }   // data-dependent: bot grid commits can be acquired after an early hour's valid time
   }
   const p = await pillars(page);                                                              // satellite pillar: observed brightness temperature, labelled as such
   assert.ok(p[2].includes((sat.ctt_p10_k[si] - 273.15).toFixed(1)) && /observed/i.test(p[2]) && /not a retrieved CTT/i.test(p[2]) && /20 min ago/.test(p[2]), p[2]);
