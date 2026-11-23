@@ -1,7 +1,7 @@
 // CSIR Thunderstorm Nowcast — Service Worker
 // Version: 2.0.0 — Offline-first with background sync
 
-const CACHE_NAME = 'drift-v4';
+const CACHE_NAME = 'drift-v5';   // bumped: index.html is now the modern dashboard; old clients must drop the cached legacy page
 const FORECAST_URL = './forecast.json';
 const DATA_URLS = [
   './',
@@ -41,7 +41,8 @@ self.addEventListener('fetch', event => {
 
   // Always network-first for forecast.json — data freshness is critical
   // Data feeds and the command-centre page/scripts are network-first: a cached copy must never be shown as current.
-  const networkFirst = url.origin === self.location.origin && (url.pathname.includes('/data/') || /drift(_app|_sim)?\.(html|js)$/.test(url.pathname));
+  const networkFirst = url.origin === self.location.origin && (url.pathname.includes('/data/') || /drift(_app|_sim)?\.(html|js)$/.test(url.pathname) ||
+    url.pathname === '/' || /(^|\/)(index|legacy)\.html$/.test(url.pathname));
   if (networkFirst || url.pathname.endsWith('forecast.json') || url.pathname.endsWith('gfs_multiday_43295.json') || url.pathname.endsWith('himawari_realtime.json')) {
     event.respondWith(
       fetch(event.request, { cache: 'no-cache' })

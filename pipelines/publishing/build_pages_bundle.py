@@ -22,7 +22,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 
 # Single files that are published (relative to the repo root).
 ALLOW_FILES = [
-    "index.html", "drift.html", "sw.js", "manifest.json", "404.html",
+    "index.html", "drift.html", "legacy.html", "sw.js", "manifest.json", "404.html",
     "forecast.json", "alert_log.json",
     "data/pan_india_grid.json", "data/canonical_forecast.json", "data/unified_forecast.json",
     "data/drift_live.json", "data/gfs_multiday_43295.json", "data/skill_scores.json",
@@ -73,6 +73,27 @@ def _write_slim_unified(src: Path, dst: Path) -> None:
     dst.write_text(json.dumps(art, separators=(",", ":")))
 
 
+def _publish_entry_pages(out_dir: Path, repo_root: Path) -> None:
+    """The site root serves the modern DRIFT command centre; the original Bengaluru station dashboard stays reachable.
+
+    Source files are untouched (tests pin the legacy page byte-for-byte). In the published bundle:
+      index.html  = frontend/drift.html          (primary entry point)
+      drift.html  = frontend/drift.html          (existing links keep working)
+      legacy.html = frontend/index.html          (legacy station dashboard, unchanged; it already links to drift.html)
+    The modern page's 'Legacy Bengaluru station dashboard' link is rewritten from index.html to legacy.html.
+    """
+    modern_src, legacy_src = repo_root / "frontend" / "drift.html", repo_root / "frontend" / "index.html"
+    if not (modern_src.exists() and legacy_src.exists()):
+        return
+    modern = modern_src.read_text(encoding="utf-8")
+    if 'href="index.html"' not in modern:
+        raise SystemExit("ERROR: frontend/drift.html no longer links to the legacy page (href=\"index.html\")")
+    modern = modern.replace('href="index.html"', 'href="legacy.html"')
+    (out_dir / "index.html").write_text(modern, encoding="utf-8", newline="")
+    (out_dir / "drift.html").write_text(modern, encoding="utf-8", newline="")
+    shutil.copy2(legacy_src, out_dir / "legacy.html")
+
+
 def build(out_dir: Path, repo_root: Path = REPO_ROOT) -> list[str]:
     if out_dir.exists():
         shutil.rmtree(out_dir)
@@ -94,6 +115,9 @@ def build(out_dir: Path, repo_root: Path = REPO_ROOT) -> list[str]:
         if src.exists():
             shutil.copy2(src, out_dir / dst_rel)
             copied.append(dst_rel)
+    _publish_entry_pages(out_dir, repo_root)
+    if (out_dir / "legacy.html").exists():
+        copied.append("legacy.html")
     for d in ALLOW_DIRS:
         base = repo_root / SOURCE_DIRS.get(d, d)
         for src in sorted(base.rglob("*")) if base.exists() else []:

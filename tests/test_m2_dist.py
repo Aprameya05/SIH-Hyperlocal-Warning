@@ -26,15 +26,16 @@ def _refs(text):
 
 
 def test_entry_point_links_both_ways(dist):
-    index, drift = (dist / "index.html").read_text(), (dist / "drift.html").read_text()
-    assert 'href="drift.html"' in index and "DRIFT PAN-INDIA COMMAND CENTRE" in index
-    assert 'href="index.html"' in drift
+    index, drift, legacy = [(dist / n).read_text() for n in ("index.html", "drift.html", "legacy.html")]
+    assert index == drift                                            # the site root IS the modern dashboard
+    assert 'href="legacy.html"' in index and 'href="index.html"' not in index   # legacy stays reachable, no self-link
+    assert 'href="drift.html"' in legacy and "DRIFT PAN-INDIA COMMAND CENTRE" in legacy
 
 
-@pytest.mark.parametrize("page", ["drift.html", "index.html"])
+@pytest.mark.parametrize("page", ["drift.html", "index.html", "legacy.html"])
 def test_every_local_reference_exists_in_the_bundle(dist, page):
     text = (dist / page).read_text()
-    if page == "drift.html":
+    if page in ("drift.html", "index.html"):
         text += (dist / "assets/drift_app.js").read_text()
     missing = [r for r in _refs(text) if not r.startswith(("http", "data:", "//", "/", "mailto", "javascript")) and
                not (dist / r).exists() and r not in ("forecast/all",)]
@@ -77,7 +78,7 @@ def test_service_worker_never_serves_stale_data_or_drift_pages():
 
 
 def test_hero_background_images_referenced_by_the_homepage_are_published(dist):
-    text = (dist / "index.html").read_text()
+    text = (dist / "legacy.html").read_text()
     for img in set(re.findall(r"\./([A-Za-z0-9_-]+\.png)", text)):
         assert (dist / img).is_file(), f"index.html references ./{img} but it is not published"
 
