@@ -74,7 +74,8 @@ test('adjacent cells, cell boundaries, and points outside the grid', async () =>
   const { ctx, page } = await open(DESKTOP);
   await clickLatLon(page, 13.2, 77.7);  assert.equal((await page.evaluate(() => window.__driftInspector.state())).cell_id, 'IN025_1325_07775');           // same cell, different point
   await clickLatLon(page, 13.2, 77.88); const b = (await page.evaluate(() => window.__driftInspector.state())).cell_id; assert.notEqual(b, 'IN025_1325_07775');   // across the boundary
-  assert.equal(b, 'IN025_1325_07800'); assert.match(await panelText(page), /IN025_1325_07800/);
+  assert.equal(b, 'IN025_1325_07800'); await page.waitForFunction(() => document.querySelector('.di-panel').getAttribute('data-cell') === 'IN025_1325_07800');   // render is scheduled after the state change
+  assert.match(await panelText(page), /IN025_1325_07800/);
   const cape = (await rowOf(page, 'CAPE'))[0]; assert.ok(cape.includes(String(Math.round(FIELDS.fields.cape[(await page.evaluate(() => window.__driftInspector.state())).hour][cellIdx('IN025_1325_07800')]))), cape);
   await page.evaluate(() => { window.__driftInspector.getMap().jumpTo({ center: [66.5, 15.0], zoom: 8 }); }); await page.waitForTimeout(250);             // Arabian Sea: no land cell
   await page.evaluate(() => { window.__driftInspector.getMap().getContainer().scrollIntoView({ block: 'center' }); }); await page.waitForTimeout(200);
