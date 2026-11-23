@@ -71,4 +71,4 @@ jobs:
         env:
           CHROME_PATH: /usr/bin/google-chrome
           PYTHONUTF8: "1"
-        run: cd tests/e2e && node --test drift.spec.mjs inspector.spec.mjs
+        run: cd tests/e2e && node --test --test-concurrency=1 drift.spec.mjs inspector.spec.mjs
