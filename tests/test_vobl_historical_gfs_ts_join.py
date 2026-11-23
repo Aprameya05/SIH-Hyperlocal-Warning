@@ -20,6 +20,16 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 sys.path.insert(0, str(REPO_ROOT / "scripts"))
 
+# The raw NOAA GRIB2 files are git-ignored by design (see .gitignore) and are
+# downloaded separately; a clean clone / CI runner does not have them. Tests that
+# genuinely read them are skipped with this explicit reason instead of failing.
+_RAW_2020 = REPO_ROOT / "data" / "external" / "historical_gfs" / "raw" / "gfs.0p25.2020071500.f003.grib2"
+requires_raw_gfs = pytest.mark.skipif(
+    not _RAW_2020.exists(),
+    reason="raw historical GFS GRIB2 files not present (git-ignored; download per docs before running)",
+)
+
+
 from build_vobl_historical_gfs_ts_join import (  # noqa: E402
     ist_slot_for, parse_grib_dt, cell_id_for, SLOT_WINDOWS_IST,
     VOBL_CELL_LAT, VOBL_CELL_LON, IST,
@@ -272,6 +282,7 @@ def test_param_default_args_match_original_phase_0_4_8_pilot():
     assert [int(x) for x in args.leads] == DEFAULT_LEADS == [3, 6]
 
 
+@requires_raw_gfs
 def test_param_2020_f003_f006_still_works_with_no_args():
     # Running with no CLI arguments must reproduce the exact original
     # Phase 0.4.8 pilot -- same cycle, same leads, same output paths.
@@ -296,14 +307,14 @@ def test_param_2020_f003_f006_explicit_args_match_no_args():
     assert [int(x) for x in args.leads] == [3, 6]
 
 
-def test_param_2015_cycle_is_selectable_and_reports_missing_files_honestly():
+def test_param_2015_cycle_is_selectable_and_reports_missing_files_honestly(tmp_path):
     # The 2015-03-03 cycle selected in Phase 0.4.9 has not been downloaded
     # in this environment (Phase 0.4.10 found the sandbox's egress policy
     # blocks the GDEX host). The script must select the correct filenames
     # and report MISSING_PILOT_FILES explicitly -- never fabricate rows,
     # never silently fall back to a different cycle.
-    missing_csv = Path("/tmp/_phase_0_4_10_test_2015_pilot.csv")
-    missing_manifest = Path("/tmp/_phase_0_4_10_test_2015_pilot_manifest.json")
+    missing_csv = (tmp_path / "_phase_0_4_10_test_2015_pilot.csv")
+    missing_manifest = (tmp_path / "_phase_0_4_10_test_2015_pilot_manifest.json")
     result = build_pilot("2015030300", [3, 9], missing_csv, missing_manifest)
     expected_f003 = path_for("2015030300", 3)
     expected_f009 = path_for("2015030300", 9)
@@ -322,13 +333,14 @@ def test_param_2015_cycle_is_selectable_and_reports_missing_files_honestly():
         assert result["leads"] == [3, 9]
 
 
-def test_param_arbitrary_cycle_lead_metadata_preserved_in_manifest():
+@requires_raw_gfs
+def test_param_arbitrary_cycle_lead_metadata_preserved_in_manifest(tmp_path):
     # Re-run the real, already-downloaded 2020 pilot through the
     # generalized build_pilot() with EXPLICIT (non-default) output paths,
     # proving the function threads arbitrary cycle/lead/path arguments
     # through correctly rather than only working via its hardcoded default.
-    out_csv = Path("/tmp/_phase_0_4_10_test_2020_explicit.csv")
-    out_manifest = Path("/tmp/_phase_0_4_10_test_2020_explicit_manifest.json")
+    out_csv = (tmp_path / "_phase_0_4_10_test_2020_explicit.csv")
+    out_manifest = (tmp_path / "_phase_0_4_10_test_2020_explicit_manifest.json")
     summary = build_pilot("2020071500", [3, 6], out_csv, out_manifest)
     assert summary["status"] == "BUILT_FROM_ACTUAL_FILES"
     manifest = json.loads(out_manifest.read_text())
@@ -386,14 +398,15 @@ def test_no_production_code_imports_research_builder_repo_wide():
 TS_LABELS_DEFAULT_PATH = REPO_ROOT / "processed" / "labels" / "ts_labels.csv"
 
 
-def test_ts_labels_default_path_preserves_existing_behavior():
+@requires_raw_gfs
+def test_ts_labels_default_path_preserves_existing_behavior(tmp_path):
     # Omitting --ts-labels / ts_labels_path must behave exactly as before:
     # same default path, same output, same result as the original Phase
     # 0.4.8/0.4.10 pilot.
     if not TS_LABELS_DEFAULT_PATH.exists():
         pytest.skip("default ts_labels.csv not present in this checkout")
-    out_csv = Path("/tmp/_phase_0_4_10b_test_default_labels.csv")
-    out_manifest = Path("/tmp/_phase_0_4_10b_test_default_labels_manifest.json")
+    out_csv = (tmp_path / "_phase_0_4_10b_test_default_labels.csv")
+    out_manifest = (tmp_path / "_phase_0_4_10b_test_default_labels_manifest.json")
     summary = build_pilot(DEFAULT_CYCLE, DEFAULT_LEADS, out_csv, out_manifest)  # no ts_labels_path passed
     assert summary["status"] == "BUILT_FROM_ACTUAL_FILES"
     manifest = json.loads(out_manifest.read_text())
@@ -402,11 +415,12 @@ def test_ts_labels_default_path_preserves_existing_behavior():
     out_manifest.unlink(missing_ok=True)
 
 
-def test_ts_labels_explicit_path_is_used():
+@requires_raw_gfs
+def test_ts_labels_explicit_path_is_used(tmp_path):
     # An explicit --ts-labels path must be read from exactly that file, not
     # silently substituted with the default path or any other file.
     import shutil
-    explicit_labels = Path("/tmp/_phase_0_4_10b_explicit_ts_labels.csv")
+    explicit_labels = (tmp_path / "_phase_0_4_10b_explicit_ts_labels.csv")
     if not TS_LABELS_DEFAULT_PATH.exists():
         pytest.skip("no real ts_labels.csv available to copy for this test")
     # Copy (not alter) the real label file to a differently-named path, to
@@ -414,8 +428,8 @@ def test_ts_labels_explicit_path_is_used():
     # what gets read.
     shutil.copyfile(TS_LABELS_DEFAULT_PATH, explicit_labels)
 
-    out_csv = Path("/tmp/_phase_0_4_10b_test_explicit_labels.csv")
-    out_manifest = Path("/tmp/_phase_0_4_10b_test_explicit_labels_manifest.json")
+    out_csv = (tmp_path / "_phase_0_4_10b_test_explicit_labels.csv")
+    out_manifest = (tmp_path / "_phase_0_4_10b_test_explicit_labels_manifest.json")
     summary = build_pilot(DEFAULT_CYCLE, DEFAULT_LEADS, out_csv, out_manifest, ts_labels_path=explicit_labels)
     assert summary["status"] == "BUILT_FROM_ACTUAL_FILES"
     manifest = json.loads(out_manifest.read_text())
@@ -432,14 +446,15 @@ def test_ts_labels_explicit_path_is_used():
     explicit_labels.unlink(missing_ok=True)
 
 
-def test_ts_labels_missing_explicit_path_fails_clearly():
+@requires_raw_gfs
+def test_ts_labels_missing_explicit_path_fails_clearly(tmp_path):
     # A nonexistent explicit path must produce an explicit BLOCKED result
     # naming the exact path checked -- never silently fall back to the
     # default file, and never crash uninformatively.
-    bogus_path = Path("/tmp/_phase_0_4_10b_this_file_does_not_exist_ts_labels.csv")
+    bogus_path = (tmp_path / "_phase_0_4_10b_this_file_does_not_exist_ts_labels.csv")
     assert not bogus_path.exists()
-    out_csv = Path("/tmp/_phase_0_4_10b_test_bogus_labels.csv")
-    out_manifest = Path("/tmp/_phase_0_4_10b_test_bogus_labels_manifest.json")
+    out_csv = (tmp_path / "_phase_0_4_10b_test_bogus_labels.csv")
+    out_manifest = (tmp_path / "_phase_0_4_10b_test_bogus_labels_manifest.json")
     result = build_pilot(DEFAULT_CYCLE, DEFAULT_LEADS, out_csv, out_manifest, ts_labels_path=bogus_path)
     assert result["status"] == "BLOCKED"
     assert result["reason"] == "ts_labels.csv not found"
@@ -496,6 +511,7 @@ def test_event_group_key_shared_by_same_slot_leads_in_real_pilot():
 
 # -------------------- Phase 0.4.12: prate extraction contract --------------------
 
+@requires_raw_gfs
 def test_prate_extraction_from_real_2020_file():
     msgs = enumerate_messages(Path("data/external/historical_gfs/raw/gfs.0p25.2020071500.f003.grib2"))
     res = extract_prate(msgs, VOBL_CELL_LAT, VOBL_CELL_LON, "20200715 0300")

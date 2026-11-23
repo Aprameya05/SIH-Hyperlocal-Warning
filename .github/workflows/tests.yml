@@ -1,0 +1,39 @@
+name: Tests (Linux)
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: System libraries
+        run: sudo apt-get update -y && sudo apt-get install -y libeccodes-dev libgeos-dev
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install dependencies
+        # scikit-learn is pinned to the version the model artifacts were trained with.
+        run: |
+          pip install --upgrade pip
+          pip install -r backend/requirements.txt
+          pip install pytest "scikit-learn==1.7.2" "xgboost>=2.0.0" "joblib>=1.3.0" "shap>=0.45.0" \
+            "pandas>=2.0.0" "scipy>=1.12.0" "metpy>=1.6.0" "pytz>=2024.1" "pyproj>=3.6.0" \
+            "pyarrow>=14.0.0" "httpx>=0.27.0" "shapely" "pillow" "pyyaml" "boto3>=1.34.0"
+      - name: Run the full test suite
+        env:
+          PYTHONUTF8: "1"
+        run: python -m pytest -q -p no:cacheprovider -rs
