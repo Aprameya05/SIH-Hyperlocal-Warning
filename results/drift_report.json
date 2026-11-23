@@ -1,26 +1,47 @@
 {
-  "run_at": "2026-09-28 10:35 UTC",
+  "run_at": "2026-11-23 14:02 UTC",
   "brier_threshold": 0.15,
   "psi_threshold": 0.2,
   "forced": false,
   "slots": {
     "0": {
-      "status": "INSUFFICIENT_DATA",
-      "n_days": 1
+      "status": "DRIFT_DETECTED",
+      "brier_recent": NaN,
+      "brier_ref": 0.0136,
+      "brier_degradation_pct": NaN,
+      "psi_cape": 2.5249,
+      "n_days": 149
     },
     "1": {
-      "status": "INSUFFICIENT_DATA",
-      "n_days": 1
+      "status": "DRIFT_DETECTED",
+      "brier_recent": NaN,
+      "brier_ref": 0.0063,
+      "brier_degradation_pct": NaN,
+      "psi_cape": 3.7476,
+      "n_days": 149
     },
     "2": {
-      "status": "INSUFFICIENT_DATA",
-      "n_days": 1
+      "status": "DRIFT_DETECTED",
+      "brier_recent": NaN,
+      "brier_ref": 0.0365,
+      "brier_degradation_pct": NaN,
+      "psi_cape": 0.5714,
+      "n_days": 149
     },
     "3": {
-      "status": "INSUFFICIENT_DATA",
-      "n_days": 1
+      "status": "DRIFT_DETECTED",
+      "brier_recent": NaN,
+      "brier_ref": 0.0408,
+      "brier_degradation_pct": NaN,
+      "psi_cape": 0.7353,
+      "n_days": 149
     }
   },
-  "recalibration_triggered": false,
-  "drift_detected_slots": []
+  "recalibration_triggered": true,
+  "drift_detected_slots": [
+    0,
+    1,
+    2,
+    3
+  ]
 }
