@@ -1,9 +1,11 @@
 name: India fields (GFS 0.25 deg, all land cells)
 
-# GFS 00Z/12Z cycles are published on the AWS mirror ~3.5-4 h after init; run once they are complete.
+# GFS cycles (00/06/12/18Z) are published on the AWS mirror ~3.5-4.5 h after init; run once each is complete. A second, later run per cycle
+# covers GitHub delaying or dropping a scheduled run (the ingest is idempotent: an unchanged cycle commits nothing).
 on:
   schedule:
-    - cron: "40 4,16 * * *"
+    - cron: "40 4,10,16,22 * * *"
+    - cron: "20 6,12,18,0 * * *"
   workflow_dispatch:
 
 permissions:

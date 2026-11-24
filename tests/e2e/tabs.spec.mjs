@@ -136,7 +136,7 @@ test('Forecast: no hand-weighted multi-day score or "Tomorrow" label; trend fiel
 test('Dashboard hero and telemetry: GFS cycle comes from the 0.25 deg store, grid count from the grid, MAX SYSTEM RISK is WITHHELD (not 0%), one regime label with a season check', async () => {
   const { ctx, page } = await open('', { mutateForecast: j => { withheld(j); j.synoptic_regime = { regime_id: 'R1', regime_name: 'Hot Pre-Monsoon / Stable', color: 'red' }; } });
   const t = await body(page);
-  assert.match(t, /GFS 2026-11-23 00Z f\d{3}/); assert.match(t, /4,643 grid cells/); assert.doesNotMatch(t, /992 Grid Cells/);
+  assert.ok(t.includes('GFS ' + FIELDS.meta.cycle_init_utc.slice(0, 13).replace('T', ' ') + 'Z f'), 'the hero names the cycle of the published fields artifact'); assert.match(t, /4,643 grid cells/); assert.doesNotMatch(t, /992 Grid Cells/);
   assert.match(t, /MAX SYSTEM RISK[\s\S]{0,40}WITHHELD/); assert.doesNotMatch(t, /0% \* MINIMAL/);
   assert.doesNotMatch(t, /Hot Pre-Monsoon/);                                   // November: the artifact's Mar-Jun label is withheld
   await ctx.close();
@@ -196,4 +196,11 @@ test('Forecast tab: every 6-hour slot shows real GFS guidance for VOBL equal to 
   const allCape = FIELDS.fields.cape.map(row => row[fi]); const mx = Math.max(...allCape);
   assert.ok(cap.filter(v => v != null).every(v => allCape.some(a => Math.round(a) === v)), `every shown CAPE is an artifact value: ${cap} vs ${allCape}`); assert.ok(Math.max(...cap.filter(v => v != null)) <= Math.round(mx));
   assert.equal(w.pageErrors.length, 0, JSON.stringify(w.pageErrors)); await ctx.close();
+});
+
+test('Regimes tab always states the IMD calendar season for today even when the artifact label is withheld', async () => {
+  const { ctx, page } = await open('#regimes');
+  const t = await body(page); assert.match(t, /Calendar season:/i);
+  const m = new Date(Date.now() + 19800000).getUTCMonth() + 1; const want = m <= 2 ? /Winter/i : m <= 5 ? /Pre-monsoon/i : m <= 9 ? /Southwest monsoon/i : /Post-monsoon/i;
+  assert.match(t, want); await ctx.close();
 });

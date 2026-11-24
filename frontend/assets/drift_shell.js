@@ -85,7 +85,8 @@
   function hideWhenMounted() {   // the frame's page compiles in the browser: keep the loading note until its own loading state is gone
     loading.style.display = 'flex';
     var t = 0; (function chk() {
-      try { var w = childWin(); if (w && w.document && w.document.getElementById('root') && !w.document.getElementById('boot-loading') && w.document.body.innerText.length > 300) { loading.style.display = 'none'; return; } } catch (e) { loading.style.display = 'none'; return; }
+      // also wait for the page's own data store, so a section never shows a half-loaded 'unavailable' state
+      try { var w = childWin(); if (w && w.document && w.document.getElementById('root') && !w.document.getElementById('boot-loading') && w.document.body.innerText.length > 300 && (w.__driftStore || w.__driftStoreProblems !== undefined)) { setTimeout(function () { loading.style.display = 'none'; }, 700); return; } } catch (e) { loading.style.display = 'none'; return; }
       if (++t < 600) setTimeout(chk, 150); else loading.style.display = 'none';
     })();
   }

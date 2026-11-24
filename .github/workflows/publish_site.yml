@@ -1,0 +1,104 @@
+name: Publish site (keep data current)
+
+# Why this exists: the data workflows (India GFS fields, Himawari-9 satellite) only COMMIT their artifacts; the public site shows
+# them only after a deploy, and the heavy forecast workflow deploys only a few times a day. The app withholds model values older
+# than 18 h and satellite values older than 90 min, so a quiet deploy schedule meant users saw "stale" despite fresh data.
+#
+# This light workflow (no forecasting, no ingestion) publishes the repository's current artifacts:
+#   - right after the India-fields or satellite workflow finishes (workflow_run),
+#   - and on a 20-minute schedule as a safety net (GitHub delays or drops scheduled runs, so several triggers overlap),
+#   - only when the site differs from the repository (scripts/ci_publish_needed.py), so unchanged data costs no deploy.
+# It also acts as a watchdog: when a feed is overdue it re-triggers that feed's workflow.
+# The release-readiness gate and the national-field validation run before every deploy and fail closed.
+on:
+  workflow_run:
+    workflows: ["India fields (GFS 0.25 deg, all land cells)", "Satellite CTT (Himawari-9 B13)"]
+    types: [completed]
+  schedule:
+    - cron: "5,25,45 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: write
+
+# Same lock as the forecast workflow: two deploys never overlap; a waiting run is replaced by the newest one.
+concurrency:
+  group: sih-forecast-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout main (the data workflows commit there)
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Is a publish needed? (repository artifacts vs the live site) and how old is each feed
+        id: need
+        run: python3 scripts/ci_publish_needed.py
+
+      - name: Watchdog - re-trigger an overdue GFS fields feed
+        if: github.ref == 'refs/heads/main' && steps.need.outputs.fields_overdue == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          busy=$(( $(gh run list --workflow india_fields.yml --status in_progress --json databaseId --jq length) + $(gh run list --workflow india_fields.yml --status queued --json databaseId --jq length) ))
+          if [ "$busy" -gt 0 ]; then echo "fields workflow already running"; else
+            echo "GFS cycle is ${{ steps.need.outputs.fields_cycle_age_h }} h old: dispatching the fields workflow"
+            gh workflow run india_fields.yml --ref main
+          fi
+
+      - name: Watchdog - re-trigger an overdue satellite feed
+        if: github.ref == 'refs/heads/main' && steps.need.outputs.satellite_overdue == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          busy=$(( $(gh run list --workflow satellite_ctt.yml --status in_progress --json databaseId --jq length) + $(gh run list --workflow satellite_ctt.yml --status queued --json databaseId --jq length) ))
+          if [ "$busy" -gt 0 ]; then echo "satellite workflow already running"; else
+            echo "satellite scan is ${{ steps.need.outputs.satellite_age_min }} min old: dispatching the satellite workflow"
+            gh workflow run satellite_ctt.yml --ref main
+          fi
+
+      - name: Report
+        run: |
+          echo "publish_needed=${{ steps.need.outputs.publish_needed }}"
+          echo "reason: ${{ steps.need.outputs.reason }}"
+
+      - name: Build the publish bundle (allow-list)
+        if: steps.need.outputs.publish_needed == 'true'
+        run: |
+          set -e
+          rm -rf pages_dist && mkdir -p pages_dist
+          python3 pipelines/publishing/build_pages_bundle.py pages_dist
+          if [ -n "$(find pages_dist -type f -size +25M)" ]; then echo "ERROR: file over 25 MiB"; exit 1; fi
+          du -sh pages_dist
+
+      - name: Validate national location artifacts in the bundle (fail closed)
+        if: steps.need.outputs.publish_needed == 'true'
+        run: python3 pipelines/validation/validate_national_fields.py pages_dist/data --max-age-hours 48
+
+      - name: Release-readiness gate (fail closed; every check must pass before any deployment)
+        if: steps.need.outputs.publish_needed == 'true'
+        run: python3 pipelines/validation/check_release_readiness.py pages_dist --max-age-hours 48
+
+      - name: Deploy to Cloudflare Pages
+        # Production deploy: main only.
+        if: github.ref == 'refs/heads/main' && steps.need.outputs.publish_needed == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          CLOUDFLARE_ACCOUNT_ID="d1ebec3d837d56d32a077b449a65f0c0" \
+          npx wrangler@3.87.0 pages deploy pages_dist --project-name=sih-hyperlocal-warning --branch=main
+
+      - name: Post-deploy smoke test (the public site serves the artifacts)
+        if: github.ref == 'refs/heads/main' && steps.need.outputs.publish_needed == 'true'
+        run: python3 scripts/ci_smoke_test_deployed_site.py https://sih-hyperlocal-warning.pages.dev

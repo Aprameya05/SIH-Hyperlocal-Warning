@@ -1,8 +1,8 @@
 name: Satellite CTT (Himawari-9 B13)
 
 # Near-real-time satellite OBSERVATION: Himawari-9 band-13 brightness temperature and its 30/60-minute change on the 0.25 deg
-# grid. Commit-only: nothing is deployed here. The dashboard marks the observation stale after 90 minutes, so how current it is
-# in production depends on how often the site bundle is redeployed (forecast_update.yml); see docs/research.
+# grid. Commit-only: the deploy is done by publish_site.yml, which runs right after this workflow (workflow_run) and on a 20-minute
+# schedule. The dashboard marks the observation stale after 90 minutes.
 on:
   schedule:
     - cron: "7,37 * * * *"

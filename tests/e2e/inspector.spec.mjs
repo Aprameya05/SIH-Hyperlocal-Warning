@@ -18,7 +18,9 @@ before(async () => {
 after(async () => { await browser?.close(); S?.srv.close(); });
 
 const INIT = () => Date.parse(FIELDS.meta.cycle_init_utc);
-async function open(viewport, { now = INIT() + 9 * 3600000, mutate = null } = {}) {
+// default simulated clock: inside the 18 h freshness window AND after the latest acquisition (a scheduled run can acquire a cycle many hours after its init)
+const NOW_DEFAULT = () => Math.max(INIT() + 9 * 3600000, ...FIELDS.meta.files.map(f => Date.parse(f.acquired_at_utc) + 600000));
+async function open(viewport, { now = NOW_DEFAULT(), mutate = null } = {}) {
   const ctx = await browser.newContext({ viewport, hasTouch: viewport.width < 700 }); const page = await ctx.newPage(); const w = watch(page); await page.route(TILE, r => r.abort());
   await page.addInitScript(t => { const r = Date.now.bind(Date), off = t - r(); Date.now = () => r() + off; }, now);
   await page.route(/india_satellite_ctt_latest\.json/, async r => { const j = await (await r.fetch()).json(); j.meta.scene_nominal_utc = new Date(now - 20 * 60000).toISOString().replace(/\.\d+Z$/, 'Z'); r.fulfill({ contentType: 'application/json', body: JSON.stringify(j) }); });
