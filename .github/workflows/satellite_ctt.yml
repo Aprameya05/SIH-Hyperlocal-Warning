@@ -10,6 +10,7 @@ on:
 
 permissions:
   contents: write
+  actions: write   # to request a site publish after committing (workflow_dispatch is allowed with GITHUB_TOKEN; workflow_run chains are not reliable)
 
 # Own lock: sharing the forecast lock could make GitHub drop a pending forecast run in favour of this one.
 concurrency:
@@ -46,3 +47,8 @@ jobs:
             sleep $((i * 5))
           done
           echo "::error::could not push the satellite artifact after 3 attempts"; exit 1
+      - name: Request a site publish (so the new data reaches the live site now, not at the next scheduled deploy)
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run publish_site.yml --ref main
