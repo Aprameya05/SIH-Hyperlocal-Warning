@@ -101,3 +101,16 @@ test('mobile: the inspector is a draggable bottom sheet (peek, half, full) over 
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), true);
   await ctx.close();
 });
+
+test('an open page stays current: when newer artifacts are published the store is rebuilt without a reload and statuses follow the data', async () => {
+  const { ctx, page, w } = await open();
+  const before = await page.evaluate(() => window.__drift.state.store.fields.meta.generated_at_utc);
+  let served = 0;
+  await page.route(/data\/india_fields_latest\.json/, async r => { const j = await (await r.fetch()).json(); j.meta.generated_at_utc = '2099-01-01T00:00:00Z'; served++; r.fulfill({ contentType: 'application/json', body: JSON.stringify(j) }); });
+  const changed = await page.evaluate(() => window.__drift.refreshData());
+  assert.equal(changed, true, 'a newer artifact triggers a rebuild'); assert.ok(served >= 1);
+  const after = await page.evaluate(() => window.__drift.state.store.fields.meta.generated_at_utc);
+  assert.notEqual(after, before); assert.equal(after, '2099-01-01T00:00:00Z');
+  assert.equal(await page.evaluate(() => window.__drift.refreshData()), false, 'nothing new: no rebuild');
+  assert.equal(w.pageErrors.length, 0, JSON.stringify(w.pageErrors)); await ctx.close();
+});

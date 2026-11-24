@@ -125,6 +125,7 @@
     return Promise.all([j('data/india_grid_025.json'), j('data/india_places.json'), j('data/india_fields_latest.json'), j('data/india_static_025.json'), j('data/drift_live.json'),
                         j('data/hazard_evaluation.json'), j('assets/india_outline.geojson'), j('data/india_ts_model_latest.json'), j('data/india_rain_model_latest.json'), j('data/india_satellite_ctt_latest.json')]).then(function (a) {
       st.live = a[4]; st.ev = a[5]; st.outline = a[6]; st.tsm = a[7]; st.rainm = a[8];
+      st.docs = { grid: a[0], places: a[1], statics: a[3] };
       if (a[0]) {
         st.store = DL.create({ grid: a[0], places: a[1], fields: a[2], statics: a[3], live: a[4], tsmodel: a[7], rainmodel: a[8], satellite: a[9] });
         st.store.staticsDoc = a[3];
@@ -132,6 +133,31 @@
       }
     });
   }
+
+  /* Keep an open page current without a reload: re-fetch only the volatile artifacts (fields, models, satellite, live feed), rebuild the
+     store when any of them changed, and re-evaluate every status from the clock. Runs every 5 min, on tab focus, and re-renders each minute. */
+  var refreshing = false;
+  function tick() { try { banner(); renderHazardInfo(); renderTimeline(); paint(); } catch (e) { /* a render must never stop the refresh loop */ } }
+  function refreshData() {
+    if (refreshing || !st.docs || !st.docs.grid || st.mode !== 'live') return Promise.resolve(false);
+    refreshing = true;
+    var j = function (u) { return fetch(u + '?_=' + Date.now(), { cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }).catch(function () { return null; }); };
+    return Promise.all([j('data/india_fields_latest.json'), j('data/drift_live.json'), j('data/india_ts_model_latest.json'), j('data/india_rain_model_latest.json'), j('data/india_satellite_ctt_latest.json')]).then(function (a) {
+      refreshing = false;
+      var f = a[0], old = st.store && st.store.fields, sat = a[4], oldSat = st.store && st.store.sat;
+      var changed = (f && (!old || f.meta.generated_at_utc !== old.meta.generated_at_utc)) || (sat && (!oldSat || sat.meta.generated_at_utc !== oldSat.meta.generated_at_utc)) || (a[1] && JSON.stringify(a[1].generated_at_utc || a[1].generated_at) !== JSON.stringify(st.live && (st.live.generated_at_utc || st.live.generated_at)));
+      if (!changed) return false;
+      st.live = a[1] || st.live; st.tsm = a[2] || st.tsm; st.rainm = a[3] || st.rainm;
+      var prev = { cycle: old && old.meta.cycle_init_utc, hour: st.hour };
+      st.store = DL.create({ grid: st.docs.grid, places: st.docs.places, fields: f || old, statics: st.docs.statics, live: st.live, tsmodel: st.tsm, rainmodel: st.rainm, satellite: sat || oldSat });
+      st.store.staticsDoc = st.docs.statics;
+      if (st.store.fieldsOk) st.hour = (st.store.fields.meta.cycle_init_utc === prev.cycle && st.hour < st.store.fields.meta.files.length) ? st.hour : st.store.defaultHour(Date.now());
+      refresh(); return true;
+    }).catch(function () { refreshing = false; return false; });
+  }
+  setInterval(function () { if (!document.hidden) refreshData().then(function (ch) { if (!ch) tick(); }); }, 5 * 60 * 1000);
+  setInterval(function () { if (!document.hidden && st.mode === 'live' && !st.loading) tick(); }, 60 * 1000);   // statuses and ages are recomputed from the clock
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) refreshData().then(function (ch) { if (!ch) tick(); }); });
 
   /* ------------------------------------------------------------------ map */
   function poly(la, lo, h) { return [[[lo - h, la - h], [lo + h, la - h], [lo + h, la + h], [lo - h, la + h], [lo - h, la - h]]]; }
@@ -733,7 +759,7 @@
     Array.prototype.forEach.call(document.querySelectorAll('.rtabs button'), function (b) { b.onclick = function () { setPanel(b.dataset.p); }; });
     bindSearch(); initMap();
     load().then(function () { st.loading = false; st.layer = layerDefs()[st.hazard][0].id; setOutlineSource(); if (location.hash === '#sim') setMode('sim'); else refresh(); });
-    window.__drift = { getMap: function () { return map; }, ready: function () { return mapReady; }, state: st, setMode: setMode, selectCell: selectCell, selectRegion: selectRegion, refresh: refresh, setT: setT, tour: tourGo, labelOf: labelOf, layerValues: function (id) { var L = layerDefs()[st.hazard].filter(function (x) { return x.id === id; })[0]; return st.store.cells.map(function (c, i) { return L.get(i); }); } };
+    window.__drift = { refreshData: refreshData, getMap: function () { return map; }, ready: function () { return mapReady; }, state: st, setMode: setMode, selectCell: selectCell, selectRegion: selectRegion, refresh: refresh, setT: setT, tour: tourGo, labelOf: labelOf, layerValues: function (id) { var L = layerDefs()[st.hazard].filter(function (x) { return x.id === id; })[0]; return st.store.cells.map(function (c, i) { return L.get(i); }); } };
   }
   boot();
 })();
