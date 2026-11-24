@@ -15,8 +15,8 @@
     6
   ],
   "calibration_method": "satpy ahi_hsd reader (automatic digital-number -> brightness-temperature)",
-  "observation_time_utc": "2026-11-24T10:50:00",
-  "processing_timestamp_utc": "2026-11-24T11:04:03",
+  "observation_time_utc": "2026-11-24T16:20:00",
+  "processing_timestamp_utc": "2026-11-24T16:34:37",
   "raw_pixels_available_this_run": true,
   "geometry_verification": {
     "status": "verified_match",
@@ -34,23 +34,23 @@
     "compatible": true
   },
   "b08_observed": {
-    "brightness_temperature_vobl_c": -42.17,
-    "brightness_temperature_mean_50km_c": -43.77,
-    "brightness_temperature_min_50km_c": -61.81,
+    "brightness_temperature_vobl_c": -46.9,
+    "brightness_temperature_mean_50km_c": -45.67,
+    "brightness_temperature_min_50km_c": -48.75,
     "valid_pixel_count_50km": 493
   },
   "b13_minus_b08_derived": {
-    "b13_minus_b08_brightness_temperature_vobl_c": 47.07,
-    "b13_minus_b08_brightness_temperature_mean_50km_c": 35.45,
+    "b13_minus_b08_brightness_temperature_vobl_c": 52.92,
+    "b13_minus_b08_brightness_temperature_mean_50km_c": 49.67,
     "category": "derived_from_observation",
     "available": true,
     "reason": null
   },
   "temporal": {
-    "previous_observation_time_utc": "2026-11-24T03:20:00",
-    "actual_gap_minutes": 450.0,
-    "brightness_temperature_change_c": -18.08,
-    "cooling_rate_c_per_hour": -2.41,
+    "previous_observation_time_utc": "2026-11-24T10:50:00",
+    "actual_gap_minutes": 330.0,
+    "brightness_temperature_change_c": 13.06,
+    "cooling_rate_c_per_hour": 2.37,
     "available": true,
     "reason": null
   },
