@@ -119,9 +119,10 @@
   function layerDef() { var l = layerDefs()[st.hazard]; return l.filter(function (x) { return x.id === st.layer; })[0] || l[0]; }
 
   /* ------------------------------------------------------------------ data load */
+  // the one place the app fetches data: same-origin artifacts only, never cached
+  var fetchJson = function (u) { return fetch(u, { cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }).catch(function () { return null; }); };
   function load() {
-    var opts = { cache: 'no-store' };
-    var j = function (u) { return fetch(u, opts).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }).catch(function () { return null; }); };
+    var j = fetchJson;
     return Promise.all([j('data/india_grid_025.json'), j('data/india_places.json'), j('data/india_fields_latest.json'), j('data/india_static_025.json'), j('data/drift_live.json'),
                         j('data/hazard_evaluation.json'), j('assets/india_outline.geojson'), j('data/india_ts_model_latest.json'), j('data/india_rain_model_latest.json'), j('data/india_satellite_ctt_latest.json')]).then(function (a) {
       st.live = a[4]; st.ev = a[5]; st.outline = a[6]; st.tsm = a[7]; st.rainm = a[8];
@@ -141,8 +142,8 @@
   function refreshData() {
     if (refreshing || !st.docs || !st.docs.grid || st.mode !== 'live') return Promise.resolve(false);
     refreshing = true;
-    var j = function (u) { return fetch(u + '?_=' + Date.now(), { cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }).catch(function () { return null; }); };
-    return Promise.all([j('data/india_fields_latest.json'), j('data/drift_live.json'), j('data/india_ts_model_latest.json'), j('data/india_rain_model_latest.json'), j('data/india_satellite_ctt_latest.json')]).then(function (a) {
+    var j = fetchJson;
+    return Promise.all([j('data/india_fields_latest.json?_=' + Date.now()), j('data/drift_live.json?_=' + Date.now()), j('data/india_ts_model_latest.json?_=' + Date.now()), j('data/india_rain_model_latest.json?_=' + Date.now()), j('data/india_satellite_ctt_latest.json?_=' + Date.now())]).then(function (a) {
       refreshing = false;
       var f = a[0], old = st.store && st.store.fields, sat = a[4], oldSat = st.store && st.store.sat;
       var changed = (f && (!old || f.meta.generated_at_utc !== old.meta.generated_at_utc)) || (sat && (!oldSat || sat.meta.generated_at_utc !== oldSat.meta.generated_at_utc)) || (a[1] && JSON.stringify(a[1].generated_at_utc || a[1].generated_at) !== JSON.stringify(st.live && (st.live.generated_at_utc || st.live.generated_at)));

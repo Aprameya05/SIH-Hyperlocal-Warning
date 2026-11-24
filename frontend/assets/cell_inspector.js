@@ -227,7 +227,7 @@
       if (m.status !== 'OK') return '<div class="di-head"><div class="di-title">Grid cell</div><button class="di-x" data-act="close" aria-label="Close cell inspector">✕</button></div><div class="di-na">UNAVAILABLE</div><div class="di-sub">' + esc(m.reason) + '</div>';
       var c = m.cell, t = m.time, selH = m.hours[m.selected];
       var chips = m.hours.map(function (h) { return '<button class="di-hr' + (h.index === m.selected ? ' on' : '') + '" data-hour="' + h.index + '" aria-pressed="' + (h.index === m.selected) + '" title="valid ' + utc(h.valid_time_utc) + ' · ' + h.status + '">f' + h.fhour + '</button>'; }).join('');
-      var sec = function (id, title, body, open) { return '<details class="di-sec" ' + (open ? 'open' : '') + '><summary>' + esc(title) + '</summary>' + body + '</details>'; };
+      var sec = function (id, title, body, open) { if (openSecs[id] !== undefined) open = openSecs[id]; return '<details class="di-sec" data-sec="' + esc(id) + '" ' + (open ? 'open' : '') + '><summary>' + esc(title) + '</summary>' + body + '</details>'; };
       var prov = [['Cell ID', c.id], ['Coordinates', num(c.lat, 2) + '°N ' + num(c.lon, 2) + '°E'], ['Region', [c.district, c.state].filter(Boolean).join(', ') + (c.admin_method === 'nearest' ? ' (nearest)' : '') || '—'], ['Land / ocean', c.land_class + ' (' + Math.round(c.land_fraction * 100) + '% land)'],
         ['Source', c.source], ['Resolution', c.resolution_deg + '° (~28 km)'], ['Grid match', c.extraction], ['Model init', utc(t.model_init_utc)], ['Forecast hour', 'f' + String(t.forecast_hour).padStart(3, '0')], ['Valid time', utc(t.valid_time_utc) + ' ' + chip(HOUR_STATUS[t.cycle_status] || 'INVALID')],
         ['NOAA published', utc(t.published_at_utc) + ' (S3 Last-Modified)'], ['Acquired by DRIFT', utc(t.acquired_at_utc)], ['Last successful update', utc(t.last_update_utc)]];
@@ -270,6 +270,7 @@
       setTimeout(run, 120);                                   // background/throttled tabs do not run rAF
     }
 
+    var openSecs = {};      // sections the user opened or closed stay that way across re-renders (hour change, data refresh)
     function announceHour() { try { window.dispatchEvent(new CustomEvent('drift-hour-changed', { detail: { hour: sel.hour } })); } catch (e) { /* ignore */ } }
     function select(cid, hour) {
       var S = STORE(); if (!S || !S.fieldsOk || S.idx[cid] == null) return false;
@@ -318,10 +319,13 @@
         else if (k === 'Escape') { close(); }
       });
       panel.addEventListener('click', function (e) {
+        var sm = e.target.closest && e.target.closest('.di-sec > summary');
+        if (sm) { var dd = sm.parentNode; setTimeout(function () { if (dd.dataset.sec) openSecs[dd.dataset.sec] = dd.open; }, 0); }   // remember the choice before any re-render
         var b = e.target.closest('[data-act],[data-hour]'); if (!b) return;
         if (b.dataset.act === 'close') { close(); cv.focus(); return; }
         if (b.dataset.hour != null) { sel.hour = +b.dataset.hour; announceHour(); schedule(); }
       });
+      panel.addEventListener('toggle', function (e) { var d = e.target; if (d && d.classList && d.classList.contains('di-sec') && d.dataset.sec) openSecs[d.dataset.sec] = d.open; }, true);
       panel.addEventListener('change', function (e) { if (e.target.dataset.act === 'layer') { layerKey = e.target.value; paintLayer(); schedule(); } });
       panel.addEventListener('keydown', function (e) { if (e.key === 'Escape') { close(); cv.focus(); } });
       // mobile bottom sheet: drag the handle between peek / half / full; the map above stays interactive
