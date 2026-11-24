@@ -6474,6 +6474,8 @@ function injectDrainageOverlay(map, liveData) { /* removed: connected terrain po
                 {r.description}. Inputs: CAPE {fmtN(r.cape_used, 0)} J/kg, K-index {fmtN(r.ki_used, 1)}, T2m {fmtN(r.t2m_c, 1)} °C, month {r.month}. Computed {r.computed_at}. {lab.reason}.</span></InfoCard>
             : <InfoCard tone="warn" title="Regime label withheld"><span data-testid="regime-withheld">{lab.reason}. Inputs in the artifact: CAPE {fmtN(r.cape_used, 0)} J/kg, K-index {fmtN(r.ki_used, 1)}, T2m {fmtN(r.t2m_c, 1)} °C, month {r.month}. A season-appropriate classification needs the backend rule set to be extended; nothing is substituted.</span></InfoCard>)
             : <InfoCard tone="warn" title="Regime label unavailable">The latest forecast.json has no synoptic_regime.</InfoCard>}
+          {(() => { const m = new Date(Date.now() + 19800000).getUTCMonth() + 1; const seas = m <= 2 ? 'Winter (Jan–Feb)' : m <= 5 ? 'Pre-monsoon / hot weather (Mar–May)' : m <= 9 ? 'Southwest monsoon (Jun–Sep)' : 'Post-monsoon / northeast monsoon (Oct–Dec)';
+            return <InfoCard title={'Calendar season: ' + seas}><span data-testid="calendar-season">IMD calendar season from today's date. This is context, not a classification from the forecast artifact; the rule-based regime label above is shown only when it is valid for the month.</span></InfoCard>; })()}
           <InfoCard title="What is deliberately not shown">Per-regime thunderstorm rates and AUROC values that earlier versions of this page displayed (including an AUROC of 1.000) had no dataset, period or model version behind them and were removed. Historical comparison by regime requires a published regime-labelled evaluation set, which does not exist yet.</InfoCard>
         </div>
       );
