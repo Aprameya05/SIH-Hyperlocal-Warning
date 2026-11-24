@@ -136,7 +136,7 @@ test('Forecast: no hand-weighted multi-day score or "Tomorrow" label; trend fiel
 test('Dashboard hero and telemetry: GFS cycle comes from the 0.25 deg store, grid count from the grid, MAX SYSTEM RISK is WITHHELD (not 0%), one regime label with a season check', async () => {
   const { ctx, page } = await open('', { mutateForecast: j => { withheld(j); j.synoptic_regime = { regime_id: 'R1', regime_name: 'Hot Pre-Monsoon / Stable', color: 'red' }; } });
   const t = await body(page);
-  assert.match(t, /GFS 2026-11-23 00Z f\d{3}/); assert.match(t, /4,643 grid cells/); assert.doesNotMatch(t, /992 Grid Cells/);
+  assert.ok(t.includes('GFS ' + FIELDS.meta.cycle_init_utc.slice(0, 13).replace('T', ' ') + 'Z f'), 'the hero names the cycle of the published fields artifact'); assert.match(t, /4,643 grid cells/); assert.doesNotMatch(t, /992 Grid Cells/);
   assert.match(t, /MAX SYSTEM RISK[\s\S]{0,40}WITHHELD/); assert.doesNotMatch(t, /0% \* MINIMAL/);
   assert.doesNotMatch(t, /Hot Pre-Monsoon/);                                   // November: the artifact's Mar-Jun label is withheld
   await ctx.close();
