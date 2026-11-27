@@ -3,80 +3,80 @@
     "slot": 0,
     "available": true,
     "model_used": "nowcast_slot0_xgb_v6_temporal.pkl",
-    "prob": 0.0047,
+    "prob": 0.0039,
     "threshold": 0.12,
     "base_value": 2.3716,
     "top_features": [
       {
         "feature": "CAPE",
-        "shap": -0.84498,
-        "value": 0.0,
-        "direction": "decreases_risk"
-      },
-      {
-        "feature": "K_INDEX",
-        "shap": -0.70395,
-        "value": 30.0,
+        "shap": -0.87718,
+        "value": 4.0,
         "direction": "decreases_risk"
       },
       {
         "feature": "LIFTED_INDEX",
-        "shap": -0.64293,
-        "value": -2.0,
+        "shap": -0.7582,
+        "value": 1.2222,
         "direction": "decreases_risk"
       },
       {
         "feature": "TOTALS_TOTALS",
-        "shap": -0.55552,
-        "value": 44.0,
+        "shap": -0.72292,
+        "value": 40.9418,
         "direction": "decreases_risk"
       },
       {
-        "feature": "ERA5_SP",
-        "shap": -0.43431,
-        "value": 91500.0,
+        "feature": "ERA5_T2M",
+        "shap": -0.49316,
+        "value": 292.6437,
         "direction": "decreases_risk"
       },
       {
-        "feature": "slot_month_clim",
-        "shap": -0.37788,
-        "value": 0.02,
+        "feature": "K_INDEX",
+        "shap": -0.40053,
+        "value": 34.5483,
         "direction": "decreases_risk"
       },
       {
         "feature": "ERA5_v_850hPa",
-        "shap": -0.29685,
-        "value": 2.0,
+        "shap": -0.33114,
+        "value": 1.1774,
         "direction": "decreases_risk"
       },
       {
-        "feature": "ERA5_u_700hPa",
-        "shap": 0.27771,
-        "value": 2.0,
-        "direction": "increases_risk"
+        "feature": "ERA5_q_500hPa",
+        "shap": -0.31112,
+        "value": 0.0021,
+        "direction": "decreases_risk"
+      },
+      {
+        "feature": "ERA5_SP",
+        "shap": -0.30748,
+        "value": 91890.3,
+        "direction": "decreases_risk"
+      },
+      {
+        "feature": "slot_month_clim",
+        "shap": -0.26944,
+        "value": 0.02,
+        "direction": "decreases_risk"
       },
       {
         "feature": "ERA5_V10",
-        "shap": -0.24717,
-        "value": 1.0,
+        "shap": -0.26277,
+        "value": 0.7793,
+        "direction": "decreases_risk"
+      },
+      {
+        "feature": "PRECIP_WATER",
+        "shap": -0.19455,
+        "value": 36.6707,
         "direction": "decreases_risk"
       },
       {
         "feature": "ERA5_q_700hPa",
-        "shap": -0.2095,
-        "value": 0.009,
-        "direction": "decreases_risk"
-      },
-      {
-        "feature": "DOY_cos",
-        "shap": -0.19815,
-        "value": 0.8336,
-        "direction": "decreases_risk"
-      },
-      {
-        "feature": "ERA5_v_700hPa",
-        "shap": -0.17603,
-        "value": 1.0,
+        "shap": -0.17791,
+        "value": 0.0088,
         "direction": "decreases_risk"
       }
     ],
@@ -111,86 +111,86 @@
       "wet_bulb_potential_temp"
     ],
     "note": "Drivers exclude inputs that are fixed constants at live inference (no live station-observation source); they are not explanatory.",
-    "computed_at": "2026-11-27 21:14 IST"
+    "computed_at": "2026-11-28 01:05 IST"
   },
   "1": {
     "slot": 1,
     "available": true,
     "model_used": "nowcast_slot1_xgb_v6_temporal.pkl",
-    "prob": 0.0069,
+    "prob": 0.0052,
     "threshold": 0.1,
     "base_value": 3.7014,
     "top_features": [
       {
         "feature": "CAPE",
-        "shap": -1.01044,
-        "value": 0.0,
-        "direction": "decreases_risk"
-      },
-      {
-        "feature": "ERA5_CAPE",
-        "shap": -0.6337,
-        "value": 0.0,
+        "shap": -1.00913,
+        "value": 4.0,
         "direction": "decreases_risk"
       },
       {
         "feature": "TOTALS_TOTALS",
-        "shap": -0.61937,
-        "value": 44.0,
+        "shap": -0.75341,
+        "value": 40.9418,
         "direction": "decreases_risk"
       },
       {
-        "feature": "K_INDEX",
-        "shap": -0.56806,
-        "value": 30.0,
-        "direction": "decreases_risk"
-      },
-      {
-        "feature": "ERA5_V10",
-        "shap": -0.43526,
-        "value": 1.0,
-        "direction": "decreases_risk"
-      },
-      {
-        "feature": "ERA5_SP",
-        "shap": -0.33883,
-        "value": 91500.0,
-        "direction": "decreases_risk"
-      },
-      {
-        "feature": "PRECIP_WATER",
-        "shap": -0.29978,
-        "value": 40.0,
+        "feature": "ERA5_CAPE",
+        "shap": -0.61399,
+        "value": 4.0,
         "direction": "decreases_risk"
       },
       {
         "feature": "ERA5_u_700hPa",
-        "shap": 0.26426,
-        "value": 2.0,
+        "shap": -0.51442,
+        "value": -2.2629,
+        "direction": "decreases_risk"
+      },
+      {
+        "feature": "K_INDEX",
+        "shap": -0.42274,
+        "value": 34.5483,
+        "direction": "decreases_risk"
+      },
+      {
+        "feature": "ERA5_SP",
+        "shap": -0.33601,
+        "value": 91890.3,
+        "direction": "decreases_risk"
+      },
+      {
+        "feature": "ERA5_V10",
+        "shap": -0.33303,
+        "value": 0.7793,
+        "direction": "decreases_risk"
+      },
+      {
+        "feature": "PRECIP_WATER",
+        "shap": -0.30997,
+        "value": 36.6707,
+        "direction": "decreases_risk"
+      },
+      {
+        "feature": "ERA5_U10",
+        "shap": 0.21594,
+        "value": -4.1109,
         "direction": "increases_risk"
       },
       {
-        "feature": "ERA5_T2M",
-        "shap": -0.25342,
-        "value": 299.0,
-        "direction": "decreases_risk"
-      },
-      {
-        "feature": "ERA5_u_500hPa",
-        "shap": -0.24938,
-        "value": 5.0,
-        "direction": "decreases_risk"
-      },
-      {
         "feature": "ERA5_q_850hPa",
-        "shap": -0.21413,
-        "value": 0.013,
+        "shap": -0.17968,
+        "value": 0.0127,
         "direction": "decreases_risk"
       },
       {
-        "feature": "ERA5_u_850hPa",
-        "shap": -0.19396,
-        "value": -3.0,
+        "feature": "ERA5_T2M",
+        "shap": -0.14246,
+        "value": 292.6437,
+        "direction": "decreases_risk"
+      },
+      {
+        "feature": "ERA5_D2M",
+        "shap": -0.13399,
+        "value": 291.8136,
         "direction": "decreases_risk"
       }
     ],
@@ -225,87 +225,87 @@
       "wet_bulb_potential_temp"
     ],
     "note": "Drivers exclude inputs that are fixed constants at live inference (no live station-observation source); they are not explanatory.",
-    "computed_at": "2026-11-27 21:14 IST"
+    "computed_at": "2026-11-28 01:05 IST"
   },
   "2": {
     "slot": 2,
     "available": true,
     "model_used": "nowcast_slot2_xgb_v6_temporal.pkl",
-    "prob": 0.0014,
+    "prob": 0.001,
     "threshold": 0.13,
     "base_value": 1.4007,
     "top_features": [
       {
-        "feature": "CAPE",
-        "shap": -1.23529,
-        "value": 0.0,
+        "feature": "TOTALS_TOTALS",
+        "shap": -0.93883,
+        "value": 40.9418,
         "direction": "decreases_risk"
       },
       {
         "feature": "K_INDEX",
-        "shap": -1.20851,
-        "value": 30.0,
+        "shap": -0.88474,
+        "value": 34.5483,
+        "direction": "decreases_risk"
+      },
+      {
+        "feature": "CAPE",
+        "shap": -0.75111,
+        "value": 4.0,
+        "direction": "decreases_risk"
+      },
+      {
+        "feature": "ERA5_T2M",
+        "shap": 0.68325,
+        "value": 292.6437,
+        "direction": "increases_risk"
+      },
+      {
+        "feature": "ERA5_v_850hPa",
+        "shap": -0.6599,
+        "value": 1.1774,
         "direction": "decreases_risk"
       },
       {
         "feature": "ERA5_CAPE",
-        "shap": -0.64664,
-        "value": 0.0,
-        "direction": "decreases_risk"
-      },
-      {
-        "feature": "ERA5_v_850hPa",
-        "shap": -0.59885,
-        "value": 2.0,
-        "direction": "decreases_risk"
-      },
-      {
-        "feature": "TOTALS_TOTALS",
-        "shap": -0.42547,
-        "value": 44.0,
-        "direction": "decreases_risk"
-      },
-      {
-        "feature": "DOY_cos",
-        "shap": -0.29917,
-        "value": 0.8336,
-        "direction": "decreases_risk"
-      },
-      {
-        "feature": "doy",
-        "shap": -0.28521,
-        "value": 331.0,
+        "shap": -0.42055,
+        "value": 4.0,
         "direction": "decreases_risk"
       },
       {
         "feature": "doy_cos",
-        "shap": -0.27466,
-        "value": 0.8336,
+        "shap": -0.38115,
+        "value": 0.8429,
         "direction": "decreases_risk"
       },
       {
-        "feature": "ERA5_U10",
-        "shap": -0.26589,
-        "value": -2.0,
+        "feature": "DOY_cos",
+        "shap": -0.35229,
+        "value": 0.8429,
+        "direction": "decreases_risk"
+      },
+      {
+        "feature": "ERA5_q_500hPa",
+        "shap": -0.30577,
+        "value": 0.0021,
+        "direction": "decreases_risk"
+      },
+      {
+        "feature": "LIFTED_INDEX",
+        "shap": -0.30159,
+        "value": 1.2222,
         "direction": "decreases_risk"
       },
       {
         "feature": "ERA5_v_700hPa",
-        "shap": -0.25446,
-        "value": 1.0,
+        "shap": -0.26342,
+        "value": -0.4945,
         "direction": "decreases_risk"
       },
       {
-        "feature": "DOY_sin",
-        "shap": -0.20997,
-        "value": -0.5524,
+        "feature": "ERA5_t_500hPa",
+        "shap": -0.26103,
+        "value": 269.1341,
         "direction": "decreases_risk"
-      },
-      {
-        "feature": "ERA5_V10",
-        "shap": 0.13063,
-        "value": 1.0,
-        "direction": "increases_risk"
       }
     ],
     "defaulted_features_excluded": [
@@ -339,91 +339,91 @@
       "wet_bulb_potential_temp"
     ],
     "note": "Drivers exclude inputs that are fixed constants at live inference (no live station-observation source); they are not explanatory.",
-    "computed_at": "2026-11-27 21:14 IST"
+    "computed_at": "2026-11-28 01:05 IST"
   },
   "3": {
     "slot": 3,
     "available": true,
     "model_used": "nowcast_slot3_xgb_v7_live_inputs.pkl",
-    "prob": 0.0357,
+    "prob": 0.0072,
     "threshold": 0.23923074803692132,
     "base_value": -0.2164,
     "top_features": [
       {
         "feature": "K_INDEX",
-        "shap": -1.04762,
-        "value": 30.0,
+        "shap": -0.91271,
+        "value": 34.5483,
         "direction": "decreases_risk"
       },
       {
-        "feature": "CAPE",
-        "shap": -0.75977,
-        "value": 0.0,
+        "feature": "TOTALS_TOTALS",
+        "shap": -0.69907,
+        "value": 40.9418,
         "direction": "decreases_risk"
       },
       {
         "feature": "LIFTED_INDEX",
-        "shap": -0.63228,
-        "value": -2.0,
-        "direction": "decreases_risk"
-      },
-      {
-        "feature": "ERA5_CAPE",
-        "shap": -0.45035,
-        "value": 0.0,
-        "direction": "decreases_risk"
-      },
-      {
-        "feature": "ERA5_U10",
-        "shap": 0.3437,
-        "value": -2.0,
-        "direction": "increases_risk"
-      },
-      {
-        "feature": "ERA5_T2M",
-        "shap": -0.23821,
-        "value": 299.0,
-        "direction": "decreases_risk"
-      },
-      {
-        "feature": "ERA5_q_700hPa",
-        "shap": 0.22724,
-        "value": 0.009,
-        "direction": "increases_risk"
-      },
-      {
-        "feature": "ERA5_q_850hPa",
-        "shap": -0.14491,
-        "value": 0.013,
-        "direction": "decreases_risk"
-      },
-      {
-        "feature": "ERA5_V10",
-        "shap": -0.1449,
-        "value": 1.0,
+        "shap": -0.63583,
+        "value": 1.2222,
         "direction": "decreases_risk"
       },
       {
         "feature": "ERA5_u_850hPa",
-        "shap": 0.13955,
-        "value": -3.0,
+        "shap": -0.48178,
+        "value": -7.4779,
+        "direction": "decreases_risk"
+      },
+      {
+        "feature": "ERA5_U10",
+        "shap": -0.45073,
+        "value": -4.1109,
+        "direction": "decreases_risk"
+      },
+      {
+        "feature": "ERA5_CAPE",
+        "shap": -0.43897,
+        "value": 4.0,
+        "direction": "decreases_risk"
+      },
+      {
+        "feature": "CAPE",
+        "shap": -0.33707,
+        "value": 4.0,
+        "direction": "decreases_risk"
+      },
+      {
+        "feature": "ERA5_q_850hPa",
+        "shap": -0.20259,
+        "value": 0.0127,
+        "direction": "decreases_risk"
+      },
+      {
+        "feature": "ERA5_T2M",
+        "shap": 0.18249,
+        "value": 292.6437,
+        "direction": "increases_risk"
+      },
+      {
+        "feature": "ERA5_q_700hPa",
+        "shap": 0.13639,
+        "value": 0.0088,
         "direction": "increases_risk"
       },
       {
         "feature": "doy",
-        "shap": -0.13358,
-        "value": 331.0,
+        "shap": -0.13596,
+        "value": 332.0,
         "direction": "decreases_risk"
       },
       {
         "feature": "DOY_cos",
-        "shap": -0.11199,
-        "value": 0.8336,
+        "shap": -0.13111,
+        "value": 0.8429,
         "direction": "decreases_risk"
       }
     ],
     "defaulted_features_excluded": [],
     "note": "Drivers exclude inputs that are fixed constants at live inference (no live station-observation source); they are not explanatory.",
-    "computed_at": "2026-11-27 21:14 IST"
+    "computed_at": "2026-11-28 01:05 IST"
   }
 }
